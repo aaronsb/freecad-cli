@@ -9,8 +9,9 @@ form, so a fully mouse-driven command can be replayed from history as text.
 from typing import Any, Dict, List, Optional
 
 from . import bus as _bus
-from .grammar import CHOICE, POINT, QUANTITY, SELECTION, Registry, Step, Verb
-from .parsing import format_point, parse_point, parse_quantity
+from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
+                      Registry, Step, Verb)
+from .parsing import format_point, format_quantity, parse_point, parse_quantity
 
 IDLE = "idle"
 COLLECTING = "collecting"
@@ -95,6 +96,9 @@ class Engine:
     def _start(self, text: str) -> None:
         parts = text.split()
         token, rest = parts[0], parts[1:]
+        force = token.endswith("!")
+        if force:
+            token = token[:-1]
         hits = self.registry.resolve_prefix(token)
         if not hits:
             self.bus.emit(_bus.ERROR, f"unknown command: {token}")
@@ -107,12 +111,15 @@ class Engine:
         self.state = COLLECTING
         self.step_index = 0
         self.values = {}
-        self.flags = {}
-        self.replay = [self.verb.name]
-        self.bus.emit(_bus.ECHO, self.verb.name)
+        self.flags = {"force": force}
+        self.replay = [self.verb.name + ("!" if force else "")]
+        self._emit_live()
         for tok in rest:  # inline arguments, e.g. "line 0,0,0 10,0,0"
             if self.state == COLLECTING:
                 self._feed_text(tok)
+        if self.state == COLLECTING and not self.verb.steps:
+            self._finish()
+            return
         self._announce()
 
     def _feed_text(self, text: str) -> None:
@@ -125,7 +132,7 @@ class Engine:
             if opt.name.lower().startswith(text.lower()):
                 self.replay.append(opt.name.lower())
                 done = opt.action(self) if opt.action else False
-                self.bus.emit(_bus.ECHO, opt.name)
+                self._emit_live()
                 if done:
                     self._finish()
                 else:
@@ -137,13 +144,15 @@ class Engine:
             if not res.ok:
                 self.bus.emit(_bus.ERROR, res.error)
                 return
-            self._accept(step, res.value, text)
+            self._accept(step, res.value, format_point(res.value))
         elif step.kind == QUANTITY:
             res = parse_quantity(text)
             if not res.ok:
                 self.bus.emit(_bus.ERROR, res.error)
                 return
-            self._accept(step, res.value, text)
+            self._accept(step, res.value, format_quantity(res.value, step.unit))
+        elif step.kind in (TEXT, PATH):
+            self._accept(step, text, text)
         elif step.kind == CHOICE:
             hits = [c for c in step.choices if c.lower().startswith(text.lower())]
             if len(hits) != 1:
@@ -160,6 +169,8 @@ class Engine:
         "c" stays the Close option inside polyline rather than becoming
         the circle verb.
         """
+        if step.kind in (TEXT, PATH):
+            return False        # these steps accept arbitrary text by design
         token = text.split()[0].lower()
         if any(o.name.lower().startswith(token) for o in step.options):
             return False
@@ -183,7 +194,7 @@ class Engine:
         else:
             self.values[step.id] = value
         self.replay.append(typed)
-        self.bus.emit(_bus.ECHO, typed)
+        self._emit_live()
         if not step.repeat:
             self.step_index += 1
         if self.step_index >= len(self.verb.steps):
@@ -211,6 +222,14 @@ class Engine:
         if step.default is not None:
             self._accept(step, step.default, str(step.default))
             return
+        if step.optional:
+            self.values[step.id] = None
+            self.step_index += 1
+            if self.step_index >= len(self.verb.steps):
+                self._finish()
+            else:
+                self._announce()
+            return
         self.bus.emit(_bus.ERROR, f"{step.prompt} is required")
 
     def _finish(self) -> None:
@@ -219,7 +238,7 @@ class Engine:
         self._stop_picking()
         self._reset()
         try:
-            obj = verb.emit({**values, "_flags": flags})
+            obj = verb.emit({**values, "_flags": flags, "_engine": self})
         except Exception as exc:
             self.bus.emit(_bus.ERROR, f"{verb.name} failed: {exc}")
             self._announce()
@@ -227,6 +246,9 @@ class Engine:
         self.bus.emit(_bus.RESULT, replay,
                       verb=verb.name, replay=replay, object=obj)
         self._announce()
+
+    def _emit_live(self) -> None:
+        self.bus.emit(_bus.LIVE, " ".join(self.replay))
 
     def _reset(self) -> None:
         self.state = IDLE

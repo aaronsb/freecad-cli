@@ -15,9 +15,55 @@ def _doc():
     return App.ActiveDocument or App.newDocument()
 
 
+DIRTY = set()
+
+
+def mark_dirty(doc=None):
+    doc = doc or App.ActiveDocument
+    if doc is not None:
+        DIRTY.add(doc.Name)
+
+
+def mark_clean(doc=None, name=None):
+    if name is None:
+        doc = doc or App.ActiveDocument
+        if doc is None:
+            return
+        name = doc.Name
+    DIRTY.discard(name)
+
+
+def is_dirty(doc=None):
+    """Whether this session has changed the document since it was last saved.
+
+    App.Document.isSaved() reports whether the document has a file at all --
+    it stays True after every subsequent edit -- and the GUI's modified flag
+    is not exposed to Python, so the only reliable signal is the one we keep.
+    """
+    doc = doc or App.ActiveDocument
+    return doc is not None and doc.Name in DIRTY
+
+
 def _recompute(obj):
     _doc().recompute()
+    mark_dirty()
+    _refresh_view()
     return obj
+
+
+def _refresh_view():
+    """Push the new geometry to the screen now.
+
+    A recompute alone leaves the 3D view stale until some other event pumps
+    the GUI, so a command can look like it did nothing until the next click.
+    """
+    try:
+        import FreeCADGui as Gui
+        if Gui.ActiveDocument is not None:
+            Gui.ActiveDocument.update()
+        Gui.updateGui()
+    except Exception:
+        pass
 
 
 # ---------------------------------------------------------------- emitters
@@ -150,3 +196,4 @@ REGISTRY.add(Verb(
     steps=[Step("at", POINT, "Point location")],
     emit=_emit_point,
 ))
+from . import shell  # noqa: F401,E402  -- registers the shell builtins

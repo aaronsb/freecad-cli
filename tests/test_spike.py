@@ -23,7 +23,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import FreeCAD as App  # noqa: E402
 from PySide6 import QtCore, QtGui, QtWidgets  # noqa: E402
 
-from fccli.bus import Bus, ERROR, RESULT  # noqa: E402
+from fccli.bus import Bus, ERROR, LIVE, RESULT  # noqa: E402
 from fccli.engine import Engine  # noqa: E402
 from fccli.grammar import REGISTRY  # noqa: E402
 from fccli.keyfilter import KeyFilter  # noqa: E402
@@ -66,6 +66,8 @@ def main():
     bus.subscribe(lambda m: errors.append(m.text) if m.kind == ERROR else None)
     bus.subscribe(lambda m: results.append(m.data.get("replay"))
                   if m.kind == RESULT else None)
+    live = []
+    bus.subscribe(lambda m: live.append(m.text) if m.kind == LIVE else None)
     engine = Engine(bus, REGISTRY, picker=None)
 
     window = QtWidgets.QWidget()
@@ -120,6 +122,7 @@ def main():
     check("after cancel: passes through again", kf.should_usurp(ev), False)
 
     print("\n4. typed values and picks share one state machine")
+    live.clear()
     engine.submit("polyline")
     engine.submit("0,0,0")
     engine.feed_point(App.Vector(25, 0, 0))
@@ -127,8 +130,50 @@ def main():
     engine.feed_point(App.Vector(0, 25, 0))
     engine.submit("")
     check("command completed", len(results), 1)
-    check("mouse picks replay as text",
-          results[-1], "polyline 0,0,0 25,0,0 @0,25,0 0,25,0")
+    check("mouse picks replay as text, canonicalized",
+          results[-1], "polyline 0,0,0 25,0,0 25,25,0 0,25,0")
+    check("the command built up on one accumulating line", live, [
+        "polyline",
+        "polyline 0,0,0",
+        "polyline 0,0,0 25,0,0",
+        "polyline 0,0,0 25,0,0 25,25,0",
+        "polyline 0,0,0 25,0,0 25,25,0 0,25,0",
+    ])
+
+    print("\n4b. typed values echo back in canonical form")
+    live.clear()
+    for line in ["box", "0,0,0", "10", "3/8in", "2.5cm"]:
+        engine.submit(line)
+    check("units normalized on input", results[-1],
+          "box 0,0,0 10mm 9.525mm 25mm")
+
+    print("\n4c. shell builtins run without dialogs")
+    import os
+    tmp = os.path.join(os.environ.get("TMPDIR", "/tmp"), "fccli_spike.FCStd")
+    if os.path.exists(tmp):
+        os.remove(tmp)
+    engine.submit("new spikedoc")
+    check("zero-step verb runs on Enter", App.ActiveDocument.Name, "spikedoc")
+    engine.submit("box 0,0,0 10 10 10")
+    engine.submit(f"save {tmp}")
+    check("save took the path instead of a dialog", os.path.exists(tmp), True)
+    engine.submit("close")
+    engine.submit(f"open {tmp}")
+    check("reopened with its contents",
+          [o.Name for o in App.ActiveDocument.Objects], ["Box"])
+    errors.clear()
+    engine.submit("help polyline")
+    check("free-text step does not trigger a restart", errors, [])
+
+    engine.submit("new dirtydoc")
+    engine.submit("box 0,0,0 5 5 5")
+    errors.clear()
+    engine.submit("close")
+    check("close refuses to discard unsaved work", len(errors), 1)
+    engine.submit("close!")
+    check("the ! suffix forces it through",
+          "dirtydoc" not in App.listDocuments(), True)
+    os.remove(tmp)
 
     print("\n5. terminal conventions")
     console.set_input("")

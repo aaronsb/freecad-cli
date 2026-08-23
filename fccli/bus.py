@@ -12,10 +12,12 @@ from typing import Any, Callable, Dict, List
 PROMPT = "prompt"    # engine wants input; payload: text, options, kind
 OPTIONS = "options"  # the legal option keywords at this step
 ECHO = "echo"        # a command line, as typed or as reconstructed
+LIVE = "live"        # the command being built, rewritten in place
 INFO = "info"        # chatter
 ERROR = "error"      # something did not parse or did not resolve
 RESULT = "result"    # a command completed; payload includes replay text
 STATE = "state"      # engine idle/collecting transitions
+CLEAR = "clear"      # a console builtin asking for a wiped scrollback
 
 
 @dataclass

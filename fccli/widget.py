@@ -41,6 +41,7 @@ class Console(QtWidgets.QPlainTextEdit):
         self._suggestion = ""
         self._search_mode = False
         self._search_buffer = ""
+        self._live = False
 
         font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
         font.setPointSize(font.pointSize() + 1)
@@ -98,6 +99,45 @@ class Console(QtWidgets.QPlainTextEdit):
         cur.insertText(self._prompt + pending)
         self.setTextCursor(cur)
         self.ensureCursorVisible()
+
+    def write_live(self, text, role="echo"):
+        """Write the command being built, rewriting it in place.
+
+        A multi-step command occupies one line that grows as each value
+        lands, rather than one line per step.
+        """
+        if not self._live:
+            self.write(text, role)
+            self._live = True
+            return
+        doc = self.document()
+        block = doc.lastBlock().previous()
+        if not block.isValid():
+            self.write(text, role)
+            return
+        cur = QtGui.QTextCursor(block)
+        cur.movePosition(QtGui.QTextCursor.StartOfBlock)
+        cur.movePosition(QtGui.QTextCursor.EndOfBlock,
+                         QtGui.QTextCursor.KeepAnchor)
+        fmt = QtGui.QTextCharFormat()
+        fmt.setForeground(QtGui.QColor(ROLE_COLOURS.get(role, "#d4d4d4")))
+        cur.setCharFormat(fmt)
+        cur.insertText(text)
+        self.moveCursor(QtGui.QTextCursor.End)
+        self.ensureCursorVisible()
+
+    def end_live(self, text=None, role="result"):
+        """Finalize the live line, optionally replacing its text."""
+        if self._live and text is not None:
+            self.write_live(text, role)
+        self._live = False
+
+    def clear_scrollback(self):
+        pending = self.input_text()
+        self._live = False
+        self.setPlainText("")
+        self._render_prompt()
+        self.set_input(pending)
 
     def _render_prompt(self):
         cur = self.textCursor()

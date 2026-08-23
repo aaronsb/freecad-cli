@@ -53,8 +53,10 @@ toolbars and the 3D view. `Ctrl+\`` toggles it, and it is listed under
 
 | | |
 |---|---|
-| `line` `polyline` `circle` `box` `move` `point` | the seed verbs |
-| `l` `pl` `ci` `bx` `mv` `pt` | aliases |
+| `line` `polyline` `circle` `box` `move` `point` | the drawing verbs |
+| `save` `open` `new` `close` `clear` `undo` `redo` `fit` `delete` `help` | shell builtins |
+| `l` `pl` `ci` `bx` `mv` `pt` `w` `cls` `zf` `?` | aliases |
+| `close!` | a trailing `!` forces past a refusal |
 | `pol` + Enter | prefix-unique execution, no Tab needed |
 | Tab / Shift+Tab | cycle completions |
 | ↑ ↓ | history, in parameterized form |
@@ -62,6 +64,29 @@ toolbars and the 3D view. `Ctrl+\`` toggles it, and it is listed under
 | Ctrl+R, Ctrl+A/E/K/U/W | readline editing (off by default; Ctrl+A is Select All in FreeCAD) |
 | Enter on an empty line | finish a repeating step |
 | Esc / Ctrl+C | cancel |
+
+### Shell builtins
+
+The GUI equivalents route through modal dialogs — Save on an unnamed
+document opens a file chooser, closing a modified one asks for confirmation.
+A command line that has already been given the path should not stop to ask
+again, so these take their arguments inline:
+
+```
+> save ~/parts/bracket.FCStd     saves there, no dialog
+> save                           saves in place
+> open ~/parts/bracket.FCStd
+> new bracket
+> close                          refuses if there are unsaved changes
+> close!                         discards them
+> help                           lists the verbs
+> help polyline                  describes one
+```
+
+`close` refuses rather than prompting, because FreeCAD exposes no
+unsaved-changes flag to Python — `isSaved()` reports whether the document
+has a file at all and stays true after every later edit — so the addon
+tracks its own edits and turns the modal into a refusal you can override.
 
 ### Coordinates
 
@@ -82,8 +107,12 @@ r10,0,0       relative           (Rhino spelling)
 - **gui** — what a toolbar click does: `echo` logs it, `ghost` pre-fills the
   input line, `follow` opens the grammar instead of the Task panel, `off`
   disconnects.
-- **pick** — `snapper` uses `Gui.Snapper.getPoint` and gets FreeCAD's
-  snapping; `raw` uses Coin3D callbacks directly and gets no Draft toolbar.
+- **pick** — `snap` (default) takes clicks through Coin3D and resolves them
+  with `Gui.Snapper.snap()`: snapping and trackers, no UI of its own.
+  `getpoint` uses `Gui.Snapper.getPoint()`, which also brings
+  `Gui.draftToolBar` and opens Draft's Point dialog in the Tasks panel — a
+  second input surface competing with the command line. `raw` is Coin3D
+  alone, no snapping.
 - **width** — `full` spans the window; `partial` hands the corners back to
   the left and right docks, so the row is shared and other docks can be
   dragged in beside the command line. Qt toolbars live in their own band

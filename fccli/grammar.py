@@ -14,6 +14,8 @@ POINT = "point"
 QUANTITY = "quantity"
 SELECTION = "selection"
 CHOICE = "choice"
+TEXT = "text"
+PATH = "path"
 
 
 @dataclass
@@ -37,6 +39,8 @@ class Step:
     options: List[Option] = field(default_factory=list)
     choices: List[str] = field(default_factory=list)
     default: Any = None
+    unit: str = "mm"          # how a QUANTITY value is echoed back
+    optional: bool = False    # bare Enter skips it, leaving the value None
 
     def option_names(self) -> List[str]:
         return [o.name for o in self.options]

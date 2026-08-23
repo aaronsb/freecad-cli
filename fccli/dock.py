@@ -64,7 +64,7 @@ class CliDock(QtWidgets.QDockWidget):
 
         self.bus = _bus.Bus()
         import fccli.verbs  # noqa: F401  -- registers the seed verbs
-        self.picker = make_picker("snapper")
+        self.picker = make_picker("snap", notify=self._notify)
         self.engine = Engine(self.bus, REGISTRY, picker=self.picker)
         self.console = Console(self.engine)
         self.bridge = ActionBridge(self.engine, self.console, REGISTRY, self)
@@ -140,7 +140,7 @@ class CliDock(QtWidgets.QDockWidget):
         self.width_box.currentTextChanged.connect(self._set_width_mode)
 
         self.pick_box = QtWidgets.QComboBox(strip)
-        self.pick_box.addItems(["snapper", "raw"])
+        self.pick_box.addItems(["snap", "getpoint", "raw"])
         self.pick_box.setToolTip("Picking backend")
         self.pick_box.currentTextChanged.connect(self._set_picker)
 
@@ -185,9 +185,12 @@ class CliDock(QtWidgets.QDockWidget):
         self.show()
         QtCore.QTimer.singleShot(0, lambda: _resize(mw, self))
 
+    def _notify(self, text):
+        self.bus.emit(_bus.INFO, text)
+
     def _set_picker(self, kind):
         self.picker.stop()
-        self.picker = make_picker(kind)
+        self.picker = make_picker(kind, notify=self._notify)
         self.engine.picker = self.picker
 
     # ------------------------------------------------------------ messages
@@ -195,14 +198,19 @@ class CliDock(QtWidgets.QDockWidget):
     def _on_message(self, msg):
         if msg.kind == _bus.PROMPT:
             self._on_prompt(msg)
+        elif msg.kind == _bus.CLEAR:
+            self.console.clear_scrollback()
+        elif msg.kind == _bus.LIVE:
+            self.console.write_live("  " + msg.text, "echo")
         elif msg.kind == _bus.ECHO:
             self.console.write("  " + msg.text, "echo")
         elif msg.kind == _bus.ERROR:
             self.console.write("  ! " + msg.text, "error")
         elif msg.kind == _bus.INFO:
+            self.console.end_live()
             self.console.write("  " + msg.text, "info")
         elif msg.kind == _bus.RESULT:
-            self.console.write("  = " + msg.text, "result")
+            self.console.end_live("  " + msg.text, "result")
             verb = REGISTRY.get(msg.data.get("verb", ""))
             if verb and verb.gui_command:
                 flash(verb.gui_command)

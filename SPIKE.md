@@ -34,6 +34,29 @@ editable text.
 the token cannot be read as input for the open step, so `c` stays the
 `Close` option inside `polyline` rather than becoming `circle`.
 
+## Answered since
+
+**`Snapper.getPoint` does drag Draft's toolbar along.** Confirmed against a
+running GUI: it opens Draft's Point dialog — `Local ΔX/ΔY/ΔZ`, *Enter
+Point*, *Relative*, *Global* — in the Tasks panel, competing with the
+command line for the same input.
+
+The fix keeps the snapping and drops the dialog: take the click through
+Coin3D event callbacks and resolve the screen position with
+`Gui.Snapper.snap()`, which has no UI of its own. That is the `snap`
+backend, now the default. `getpoint` remains selectable for comparison.
+
+**`Gui.Snapper` does not exist until Draft is loaded.** It is installed by
+Draft, not the core GUI, so a first point step raised *module 'FreeCADGui'
+has no attribute 'Snapper'*. `import DraftTools` is the bootstrap Draft
+documents for this; it runs lazily on the first pick, and falls back to
+un-snapped picking if Draft will not load.
+
+**FreeCAD exposes no unsaved-changes flag to Python.** `Document.isSaved()`
+reports whether the document has a file at all and stays true after every
+later edit; the GUI's modified flag is C++ only. The addon tracks its own
+edits, so `close` can refuse instead of raising FreeCAD's modal.
+
 ## Found while wiring it up
 
 **`package.xml` gates whether `Init.py` and `InitGui.py` run at all.** With
@@ -60,11 +83,6 @@ added to the main window appears there automatically.
 type, not the symlink.
 
 ## Not yet answered
-
-**Whether `Snapper.getPoint` drags Draft's toolbar along.** `getPoint` sets
-`self.ui = Gui.draftToolBar`, so a second input surface may appear beside
-the command line. The control strip switches to a raw Coin3D picker so the
-difference can be felt. This needs a running GUI to settle.
 
 **Whether `follow` mode fights the Task panels.** Swallowing a `QAction`
 trigger and opening the grammar instead is the invasive part of the design:
