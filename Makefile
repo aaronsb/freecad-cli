@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 # FreeCAD CLI
 
 VERSION      := $(shell python3 tools/version.py)
@@ -71,13 +72,20 @@ bump: check  ## Bump the version (PART=major|minor|patch)
 release: check  ## Tag and push the current version
 	@git diff --quiet || { echo "working tree is dirty"; exit 1; }
 	@python3 tools/version.py stamp
-	@git tag -a v$(VERSION) -m "FreeCAD CLI $(VERSION)"
+	@git tag -a v$(VERSION) -F <(python3 tools/release_notes.py $(VERSION))
 	@git push origin main
 	@git push origin v$(VERSION)
 	@echo "tagged v$(VERSION)"
+	@python3 tools/release_notes.py $(VERSION) > /tmp/fccli-notes.md
 	@command -v gh >/dev/null && gh release create v$(VERSION) \
 	  --title "FreeCAD CLI $(VERSION)" \
-	  --notes-from-tag || echo "(install gh to create the GitHub release)"
+	  --notes-file /tmp/fccli-notes.md \
+	  || echo "(install gh to create the GitHub release)"
+	@rm -f /tmp/fccli-notes.md
+
+.PHONY: notes
+notes:  ## Print the current version's release notes
+	@python3 tools/release_notes.py
 
 .PHONY: clean
 clean:  ## Remove build leftovers
