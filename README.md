@@ -21,8 +21,13 @@ would write.
 
 ## Status
 
-Spike. Six verbs, one grammar, one event filter. See [SPIKE.md](SPIKE.md)
-for what is proven and what is still open.
+Working, and in use. ~1200 commands: a dozen hand-written verbs with
+viewport picking, ~200 generated from FreeCAD's type registry, and every
+registered command as a launcher.
+
+[CHANGELOG.md](CHANGELOG.md) tracks releases. [FINDINGS.md](FINDINGS.md)
+records what was learned about FreeCAD's internals along the way, including
+several things that are not documented anywhere obvious.
 
 ## Install
 
@@ -234,13 +239,24 @@ REGISTRY.add(Verb(
 The completer, the highlighter, the prompt, and history replay all follow
 from the descriptor.
 
-## Tests
+## Development
 
 ```bash
-QT_QPA_PLATFORM=offscreen python3 tests/test_spike.py
+make            # list the targets
+make install    # symlink into FreeCAD's Mod directory
+make check      # compile, version-check, test
+make descriptor # regenerate fccli/descriptor.json
+make bump PART=minor
+make release    # stamp the commit, tag, push, cut a GitHub release
 ```
 
-Runs offscreen without a FreeCAD GUI.
+`make check` runs offscreen and needs no FreeCAD GUI.
+
+The version prints in the banner as `0.2.0+dd069a6 (2026-08-23)` — semantic
+version, the commit it was built from, and that commit's date. Running from
+a checkout, the commit is read live from git and marked `-dirty` when the
+tree has changes; a released copy carries a stamped `fccli/_build.py`
+instead.
 
 ## License
 

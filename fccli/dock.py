@@ -61,11 +61,13 @@ def _load_factory():
         return {"error": str(exc)}
 
 
-BANNER = (
-    "FreeCAD CLI spike -- type a verb, or click in the viewport.\n"
-    "  verbs: line polyline circle box move point   (Tab completes, "
-    "Up recalls, Esc cancels)\n"
-)
+def _banner(counts):
+    from .build_info import describe
+    n = (counts or {}).get("total", 0)
+    return (f"FreeCAD CLI {describe()} -- {n} commands. "
+            "Type man for the list, or click in the viewport.")
+
+
 
 
 class CliDock(QtWidgets.QDockWidget):
@@ -92,16 +94,9 @@ class CliDock(QtWidgets.QDockWidget):
         self.bus.subscribe(self._on_message)
         self.console.submitted.connect(self.engine.submit)
         self.console.cancelled.connect(self.engine.cancel)
-        self.console.write(BANNER.rstrip(), "info")
-        c = self.factory_counts or {}
-        if c.get("error"):
-            self.console.write("  " + c["error"], "info")
-        else:
-            self.console.write(
-                f"  {c.get('total', 0)} verbs   "
-                f"{c.get('patched', 0)} patched · "
-                f"{c.get('tier1', 0)} generated · "
-                f"{c.get('tier0', 0)} commands", "info")
+        self.console.write(_banner(self.factory_counts), "info")
+        if (self.factory_counts or {}).get("error"):
+            self.console.write("  " + self.factory_counts["error"], "info")
 
         self.setFeatures(
             QtWidgets.QDockWidget.DockWidgetMovable

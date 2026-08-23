@@ -4,3 +4,4 @@ __pycache__/
 *.FCStd1
 .idea/
 .vscode/
+fccli/_build.py

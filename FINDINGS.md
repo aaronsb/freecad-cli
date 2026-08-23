@@ -1,8 +1,13 @@
-# What this spike proves, and what it does not
+# Findings
 
-## Proven
+What was learned building this, mostly about FreeCAD internals that are not
+documented anywhere obvious. Each item below cost a debugging session; they
+are recorded so the next one is cheaper.
 
-Verified by `tests/test_spike.py`, offscreen, 18 checks.
+Everything here is verified by `tests/test_spike.py`, which runs offscreen
+without a FreeCAD GUI.
+
+## Verified behaviour
 
 **Bare keys reach the command line while the viewport holds focus.** An
 application-level `QObject.eventFilter` catches the first keystroke, moves
@@ -96,7 +101,7 @@ provisionally and replaced by the assembled command when the engine
 finishes it, which is what makes Up hand back a mouse-driven command as
 editable text.
 
-## Not yet answered
+## Open
 
 **Whether `follow` mode fights the Task panels.** Swallowing a `QAction`
 trigger and opening the grammar instead is the invasive part of the design:
