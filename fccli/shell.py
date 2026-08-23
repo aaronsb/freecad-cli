@@ -18,7 +18,7 @@ import FreeCAD as App
 
 from . import bus as _bus
 from .grammar import PATH, TEXT, Step, Verb, REGISTRY
-from .verbs import DIRTY, is_dirty, mark_clean
+from .dirty import dirty_documents, is_dirty, mark_clean
 
 
 def _gui():
@@ -204,6 +204,198 @@ REGISTRY.add(Verb(
 ))
 
 
+def _emit_man(v):
+    """The manual. Bare, it lists what exists; given a topic, it describes
+    one thing in full -- every step with its kind, unit and choices, the
+    inline options, and the command it maps to.
+
+    Most of that is generated from FreeCAD's own property documentation, so
+    a verb nobody hand-wrote still has a page worth reading.
+    """
+    engine = v.get("_engine")
+    if engine is None:
+        return None
+    topic = v.get("topic")
+    if not topic:
+        return _list_verbs(engine)
+    verb = REGISTRY.get(topic)
+    if verb is None:
+        raise RuntimeError(f"no manual entry for {topic}")
+    say = lambda line: engine.bus.emit(_bus.INFO, line)
+
+    say(f"NAME")
+    alias = f"  ({', '.join(verb.aliases)})" if verb.aliases else ""
+    say(f"    {verb.name}{alias} -- {verb.doc}")
+
+    say("SYNOPSIS")
+    parts = [verb.name]
+    for step in verb.steps:
+        token = f"<{step.id}>"
+        parts.append(f"[{token}]" if step.optional else token)
+        if step.repeat:
+            parts.append("...")
+    say("    " + " ".join(parts))
+
+    if verb.steps:
+        say("ARGUMENTS")
+        for i, step in enumerate(verb.steps, 1):
+            unit = f" in {step.unit}" if step.kind == "quantity" and step.unit else ""
+            flags = []
+            if step.optional:
+                flags.append("optional")
+            if step.repeat:
+                flags.append(f"repeats, min {step.min_count}")
+            tail = f"   [{', '.join(flags)}]" if flags else ""
+            say(f"    {i}. {step.id} <{step.kind}{unit}>{tail}")
+            if step.prompt and step.prompt != step.id:
+                say(f"       {step.prompt}")
+            if step.choices:
+                say(f"       one of: {', '.join(step.choices)}")
+            for opt in step.options:
+                say(f"       option {opt.name}: {opt.doc}")
+
+    if verb.gui_command:
+        say("GUI")
+        say(f"    {verb.gui_command}")
+    say("SEE ALSO")
+    say("    man     (list every command)")
+    return None
+
+
+def _list_verbs(engine):
+    """The index. Hand-written verbs first: they are the ones with grammar."""
+    from .verbs import REGISTRY as _R
+    hand, generated = [], []
+    for name in REGISTRY.names():
+        verb = REGISTRY.get(name)
+        (generated if verb.emit.__module__.endswith("factory") else hand
+         ).append(verb)
+    engine.bus.emit(_bus.INFO, f"{len(hand)} hand-written commands:")
+    for verb in hand:
+        alias = f" ({verb.aliases[0]})" if verb.aliases else ""
+        engine.bus.emit(_bus.INFO, f"  {verb.name + alias:<18} {verb.doc}")
+    if generated:
+        engine.bus.emit(
+            _bus.INFO,
+            f"and {len(generated)} generated from FreeCAD's registries. "
+            "man <name> describes any of them.")
+    return None
+
+
+ALIAS_PATH = os.path.join(os.path.expanduser("~"), ".local", "share",
+                          "FreeCAD", "fccli", "aliases")
+
+
+def load_aliases():
+    """Read the user's aliases and attach them to their verbs."""
+    try:
+        with open(ALIAS_PATH, encoding="utf-8") as fh:
+            lines = [ln.strip() for ln in fh if ln.strip()
+                     and not ln.startswith("#")]
+    except OSError:
+        return 0
+    count = 0
+    for line in lines:
+        name, _, target = line.partition("=")
+        verb = REGISTRY.get(target.strip())
+        if verb is None or not name.strip():
+            continue
+        if name.strip() not in verb.aliases:
+            verb.aliases.append(name.strip())
+            REGISTRY.add(verb)      # re-index the alias table
+            count += 1
+    return count
+
+
+def _save_aliases(pairs):
+    try:
+        os.makedirs(os.path.dirname(ALIAS_PATH), exist_ok=True)
+        with open(ALIAS_PATH, "w", encoding="utf-8") as fh:
+            fh.write("# fccli aliases -- <name>=<command>\n")
+            for name, target in sorted(pairs.items()):
+                fh.write(f"{name}={target}\n")
+    except OSError:
+        pass
+
+
+def _user_aliases():
+    """Everything in the alias file, as name -> command."""
+    pairs = {}
+    try:
+        with open(ALIAS_PATH, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                name, _, target = line.partition("=")
+                if name.strip() and target.strip():
+                    pairs[name.strip()] = target.strip()
+    except OSError:
+        pass
+    return pairs
+
+
+def _emit_alias(v):
+    """Shell-style aliases. Bare lists them; name plus target defines one.
+
+    Rhino users arrive with L, PL and C already in their fingers, and every
+    verb here is a name someone might want to spell differently.
+    """
+    engine = v.get("_engine")
+    name, target = v.get("name"), v.get("command")
+    pairs = _user_aliases()
+    if not name:
+        if engine is None:
+            return None
+        builtin = [(a, verb) for verb in
+                   (REGISTRY.get(n) for n in REGISTRY.names())
+                   for a in verb.aliases if a not in pairs]
+        engine.bus.emit(_bus.INFO, f"{len(pairs)} of your own:")
+        for k, t in sorted(pairs.items()):
+            engine.bus.emit(_bus.INFO, f"  {k:<12} {t}")
+        engine.bus.emit(_bus.INFO,
+                        f"and {len(builtin)} built in (man <name> shows them)")
+        return None
+    if not target:
+        raise RuntimeError(f"alias {name}=? -- give a command to alias to")
+    verb = REGISTRY.get(target)
+    if verb is None:
+        raise RuntimeError(f"unknown command: {target}")
+    if REGISTRY.get(name) is not None and REGISTRY.get(name).name != verb.name:
+        raise RuntimeError(f"{name} is already {REGISTRY.get(name).name}")
+    if name not in verb.aliases:
+        verb.aliases.append(name)
+        REGISTRY.add(verb)
+    pairs[name] = verb.name
+    _save_aliases(pairs)
+    _say(v, f"{name} -> {verb.name}")
+    return None
+
+
+def _emit_unalias(v):
+    name = v["name"]
+    pairs = _user_aliases()
+    if name not in pairs:
+        raise RuntimeError(f"no alias {name}")
+    verb = REGISTRY.get(pairs[name])
+    if verb is not None and name in verb.aliases:
+        verb.aliases.remove(name)
+    del pairs[name]
+    _save_aliases(pairs)
+    REGISTRY.reindex()
+    _say(v, f"removed {name}")
+    return None
+
+
+def _emit_history(v):
+    """Show the ring. clear wipes the screen; this is what survives it."""
+    engine = v.get("_engine")
+    if engine is None:
+        return None
+    engine.bus.emit(_bus.INFO, "@@history@@")
+    return None
+
+
 def _emit_quit(v):
     """Leave FreeCAD.
 
@@ -212,7 +404,146 @@ def _emit_quit(v):
     the answer to "save changes?" is given on the command line rather than
     in a modal that blocks every other key.
     """
-    dirty = [n for n in App.listDocuments() if n in DIRTY]
+    dirty = dirty_documents()
+    if dirty and not v["_flags"].get("force"):
+        raise RuntimeError(
+            "unsaved: " + ", ".join(dirty) + " -- save first, or quit! to discard")
+    for name in list(App.listDocuments()):
+        mark_clean(name=name)
+        try:
+            App.closeDocument(name)
+        except Exception:
+            pass
+    gui = _gui()
+    if gui is not None:
+        from .qt import QtWidgets
+        QtWidgets.QApplication.instance().quit()
+    return None
+
+
+ALIAS_PATH = os.path.join(os.path.expanduser("~"), ".local", "share",
+                          "FreeCAD", "fccli", "aliases")
+
+
+def load_aliases():
+    """Read the user's aliases and attach them to their verbs."""
+    try:
+        with open(ALIAS_PATH, encoding="utf-8") as fh:
+            lines = [ln.strip() for ln in fh if ln.strip()
+                     and not ln.startswith("#")]
+    except OSError:
+        return 0
+    count = 0
+    for line in lines:
+        name, _, target = line.partition("=")
+        verb = REGISTRY.get(target.strip())
+        if verb is None or not name.strip():
+            continue
+        if name.strip() not in verb.aliases:
+            verb.aliases.append(name.strip())
+            REGISTRY.add(verb)      # re-index the alias table
+            count += 1
+    return count
+
+
+def _save_aliases(pairs):
+    try:
+        os.makedirs(os.path.dirname(ALIAS_PATH), exist_ok=True)
+        with open(ALIAS_PATH, "w", encoding="utf-8") as fh:
+            fh.write("# fccli aliases -- <name>=<command>\n")
+            for name, target in sorted(pairs.items()):
+                fh.write(f"{name}={target}\n")
+    except OSError:
+        pass
+
+
+def _user_aliases():
+    """Everything in the alias file, as name -> command."""
+    pairs = {}
+    try:
+        with open(ALIAS_PATH, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                name, _, target = line.partition("=")
+                if name.strip() and target.strip():
+                    pairs[name.strip()] = target.strip()
+    except OSError:
+        pass
+    return pairs
+
+
+def _emit_alias(v):
+    """Shell-style aliases. Bare lists them; name plus target defines one.
+
+    Rhino users arrive with L, PL and C already in their fingers, and every
+    verb here is a name someone might want to spell differently.
+    """
+    engine = v.get("_engine")
+    name, target = v.get("name"), v.get("command")
+    pairs = _user_aliases()
+    if not name:
+        if engine is None:
+            return None
+        builtin = [(a, verb) for verb in
+                   (REGISTRY.get(n) for n in REGISTRY.names())
+                   for a in verb.aliases if a not in pairs]
+        engine.bus.emit(_bus.INFO, f"{len(pairs)} of your own:")
+        for k, t in sorted(pairs.items()):
+            engine.bus.emit(_bus.INFO, f"  {k:<12} {t}")
+        engine.bus.emit(_bus.INFO,
+                        f"and {len(builtin)} built in (man <name> shows them)")
+        return None
+    if not target:
+        raise RuntimeError(f"alias {name}=? -- give a command to alias to")
+    verb = REGISTRY.get(target)
+    if verb is None:
+        raise RuntimeError(f"unknown command: {target}")
+    if REGISTRY.get(name) is not None and REGISTRY.get(name).name != verb.name:
+        raise RuntimeError(f"{name} is already {REGISTRY.get(name).name}")
+    if name not in verb.aliases:
+        verb.aliases.append(name)
+        REGISTRY.add(verb)
+    pairs[name] = verb.name
+    _save_aliases(pairs)
+    _say(v, f"{name} -> {verb.name}")
+    return None
+
+
+def _emit_unalias(v):
+    name = v["name"]
+    pairs = _user_aliases()
+    if name not in pairs:
+        raise RuntimeError(f"no alias {name}")
+    verb = REGISTRY.get(pairs[name])
+    if verb is not None and name in verb.aliases:
+        verb.aliases.remove(name)
+    del pairs[name]
+    _save_aliases(pairs)
+    REGISTRY.reindex()
+    _say(v, f"removed {name}")
+    return None
+
+
+def _emit_history(v):
+    """Show the ring. clear wipes the screen; this is what survives it."""
+    engine = v.get("_engine")
+    if engine is None:
+        return None
+    engine.bus.emit(_bus.INFO, "@@history@@")
+    return None
+
+
+def _emit_quit(v):
+    """Leave FreeCAD.
+
+    Closing the application prompts once per modified document. quit lists
+    what is unsaved and refuses; quit! discards it. Same shape as close, so
+    the answer to "save changes?" is given on the command line rather than
+    in a modal that blocks every other key.
+    """
+    dirty = dirty_documents()
     if dirty and not v["_flags"].get("force"):
         raise RuntimeError(
             "unsaved: " + ", ".join(dirty) + " -- save first, or quit! to discard")
@@ -256,14 +587,36 @@ def _emit_help(v):
 
 
 REGISTRY.add(Verb(
+    name="man", aliases=["help", "?", "h"],
+    doc="List the commands, or describe one in full.",
+    steps=[Step("topic", TEXT, "Manual page", optional=True)],
+    emit=_emit_man,
+))
+
+REGISTRY.add(Verb(
+    name="alias",
+    doc="List your aliases, or define one: alias b box",
+    steps=[Step("name", TEXT, "Alias", optional=True),
+           Step("command", TEXT, "Command it stands for", optional=True)],
+    emit=_emit_alias,
+))
+
+REGISTRY.add(Verb(
+    name="unalias",
+    doc="Remove one of your aliases.",
+    steps=[Step("name", TEXT, "Alias to remove")],
+    emit=_emit_unalias,
+))
+
+REGISTRY.add(Verb(
+    name="history", aliases=["hist"],
+    doc="List recalled commands. clear wipes the screen, not this.",
+    steps=[], emit=_emit_history,
+))
+
+REGISTRY.add(Verb(
     name="quit", aliases=["exit", "qa"],
     doc="Leave FreeCAD. Refuses on unsaved work; quit! discards it.",
     steps=[], emit=_emit_quit,
 ))
 
-REGISTRY.add(Verb(
-    name="help", aliases=["?", "h"],
-    doc="List the commands, or describe one.",
-    steps=[Step("topic", TEXT, "Command to describe", optional=True)],
-    emit=_emit_help,
-))

@@ -67,6 +67,17 @@ class Registry:
             self._aliases[a.lower()] = verb.name
         return verb
 
+    def reindex(self) -> None:
+        """Rebuild the alias table from the verbs themselves.
+
+        ``add`` only ever inserts, so an alias removed from a verb keeps
+        resolving until the table is rebuilt.
+        """
+        self._aliases = {}
+        for verb in self._verbs.values():
+            for alias in verb.aliases:
+                self._aliases[alias.lower()] = verb.name
+
     def get(self, token: str) -> Optional[Verb]:
         t = token.lower()
         if t in self._verbs:

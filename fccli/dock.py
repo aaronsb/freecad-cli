@@ -77,6 +77,10 @@ class CliDock(QtWidgets.QDockWidget):
         # Hand-written verbs register first so the factory's generated ones
         # never shadow them: tier 0 only claims names nobody has taken.
         import fccli.verbs  # noqa: F401
+        from .dirty import install as install_dirty
+        install_dirty()
+        from .shell import load_aliases
+        self.alias_count = load_aliases()
         self.factory_counts = _load_factory()
         self.picker = make_picker("snap", notify=self._notify)
         self.engine = Engine(self.bus, REGISTRY, picker=self.picker)
@@ -231,7 +235,10 @@ class CliDock(QtWidgets.QDockWidget):
             self.console.write("  ! " + msg.text, "error")
         elif msg.kind == _bus.INFO:
             self.console.end_live()
-            self.console.write("  " + msg.text, "info")
+            if msg.text == "@@history@@":
+                self._show_history()
+            else:
+                self.console.write("  " + msg.text, "info")
         elif msg.kind == _bus.RESULT:
             self.console.end_live("  " + msg.text, "result")
             self.console.commit_history(msg.data.get("replay", msg.text))
@@ -252,6 +259,15 @@ class CliDock(QtWidgets.QDockWidget):
                 f"{self.engine.step_index + 1}/{len(self.engine.verb.steps)}"
             )
         self._paint_focus_state()
+
+    def _show_history(self):
+        ring = self.console._history[-40:]
+        if not ring:
+            self.console.write("  (no history yet)", "info")
+            return
+        start = len(self.console._history) - len(ring) + 1
+        for i, line in enumerate(ring, start):
+            self.console.write(f"  {i:>4}  {line}", "info")
 
     def _paint_focus_state(self):
         border = "#4ec9b0" if self.keyfilter.enabled else "#333"

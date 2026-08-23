@@ -15,38 +15,14 @@ def _doc():
     return App.ActiveDocument or App.newDocument()
 
 
-DIRTY = set()
+from .dirty import (TRACKER, dirty_documents, is_dirty,  # noqa: F401
+                    mark_clean, mark_dirty)
 
-
-def mark_dirty(doc=None):
-    doc = doc or App.ActiveDocument
-    if doc is not None:
-        DIRTY.add(doc.Name)
-
-
-def mark_clean(doc=None, name=None):
-    if name is None:
-        doc = doc or App.ActiveDocument
-        if doc is None:
-            return
-        name = doc.Name
-    DIRTY.discard(name)
-
-
-def is_dirty(doc=None):
-    """Whether this session has changed the document since it was last saved.
-
-    App.Document.isSaved() reports whether the document has a file at all --
-    it stays True after every subsequent edit -- and the GUI's modified flag
-    is not exposed to Python, so the only reliable signal is the one we keep.
-    """
-    doc = doc or App.ActiveDocument
-    return doc is not None and doc.Name in DIRTY
+DIRTY = TRACKER.names
 
 
 def _recompute(obj):
     _doc().recompute()
-    mark_dirty()
     _refresh_view()
     return obj
 

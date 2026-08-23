@@ -69,6 +69,8 @@ def main():
     live = []
     bus.subscribe(lambda m: live.append(m.text) if m.kind == LIVE else None)
     engine = Engine(bus, REGISTRY, picker=None)
+    from fccli import dirty
+    dirty.install()
 
     window = QtWidgets.QWidget()
     layout = QtWidgets.QVBoxLayout(window)
@@ -162,7 +164,7 @@ def main():
     check("reopened with its contents",
           [o.Name for o in App.ActiveDocument.Objects], ["Box"])
     errors.clear()
-    engine.submit("help polyline")
+    engine.submit("man polyline")
     check("free-text step does not trigger a restart", errors, [])
 
     engine.submit("new dirtydoc")
@@ -219,6 +221,23 @@ def main():
           [tuple(p) for p in second.Points],
           [tuple(p) for p in first.Points])
 
+    print("\n4d. dirty tracking sees changes from anywhere")
+    engine.submit("new observed")
+    check("a fresh document is clean", dirty.is_dirty(), False)
+    # A change made without the command line, as a toolbar click would be.
+    obj = App.ActiveDocument.addObject("Part::Box", "Outside")
+    obj.Length = 30
+    App.ActiveDocument.recompute()
+    check("an outside change marks it dirty", dirty.is_dirty(), True)
+    outside = os.path.join(os.environ.get("TMPDIR", "/tmp"), "fccli_outside.FCStd")
+    engine.submit(f"save {outside}")
+    check("saving clears it", dirty.is_dirty(), False)
+    obj.Width = 12
+    App.ActiveDocument.recompute()
+    check("editing again re-dirties it", dirty.is_dirty(), True)
+    engine.submit("close!")
+    os.path.exists(outside) and os.remove(outside)
+
     print("\n5c. the factory: generated and patched verbs")
     from fccli.factory import load_descriptor, register_all
     from fccli.patches import PatchSet
@@ -245,6 +264,29 @@ def main():
         # A patch must not shadow a hand-written verb.
         check("hand-written verbs survive the factory",
               REGISTRY.get("polyline").emit.__name__, "_emit_polyline")
+
+    errors.clear()
+    infos = []
+    bus.subscribe(lambda m: infos.append(m.text)
+                  if m.kind == "info" else None)
+    engine.submit("man circle")
+    check("man renders a page", any("NAME" in i for i in infos), True)
+    check("  with units on quantity steps",
+          any("quantity in mm" in i for i in infos), True)
+    check("  and the inline options",
+          any("option Diameter" in i for i in infos), True)
+    infos.clear()
+    engine.submit("help")
+    check("help is man, and bare it lists",
+          any("hand-written commands" in i for i in infos), True)
+    engine.submit("man nosuchthing")
+    check("man refuses an unknown topic", len(errors), 1)
+
+    engine.submit("alias tb box")
+    check("alias defines one", REGISTRY.get("tb").name, "box"
+          if REGISTRY.get("box") else None)
+    engine.submit("unalias tb")
+    check("unalias stops it resolving", REGISTRY.get("tb"), None)
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

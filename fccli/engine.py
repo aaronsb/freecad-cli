@@ -117,7 +117,10 @@ class Engine:
         for tok in rest:  # inline arguments, e.g. "line 0,0,0 10,0,0"
             if self.state == COLLECTING:
                 self._feed_text(tok)
-        if self.state == COLLECTING and not self.verb.steps:
+        if self.state == COLLECTING and self._only_optional_left():
+            # Nothing required remains, so the command is already complete.
+            # "save", "new" and "help" run on Enter rather than stopping to
+            # prompt for an argument the caller chose not to give.
             self._finish()
             return
         self._announce()
@@ -246,6 +249,10 @@ class Engine:
         self.bus.emit(_bus.RESULT, replay,
                       verb=verb.name, replay=replay, object=obj)
         self._announce()
+
+    def _only_optional_left(self) -> bool:
+        remaining = self.verb.steps[self.step_index:] if self.verb else []
+        return all(s.optional or s.default is not None for s in remaining)
 
     def _emit_live(self) -> None:
         self.bus.emit(_bus.LIVE, " ".join(self.replay))
