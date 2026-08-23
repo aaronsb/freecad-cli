@@ -2,32 +2,27 @@
 
 A Rhino-style command line for FreeCAD.
 
-A dockable terminal-masquerade widget that drives a declarative command
-grammar. Type a verb, then feed each step a typed coordinate, a viewport
-pick, or an option keyword — through the same door, in any order.
+![The command line docked above the 3D view](docs/images/hero.png)
 
-```
-> polyline
-Start of polyline: 0,0,0
-Next point [Close/Undo]: @100,0,0          ← typed, relative
-Next point [Close/Undo]:                   ← clicked in the viewport
-Next point [Close/Undo]: close
-= polyline 0,0,0 @100,0,0 100,73.2,0 close
-```
+Type a verb, then feed each step a typed coordinate, a viewport pick, or an
+option keyword — through the same door, in any order. Every value records its
+typed form as it lands, so a command driven half by mouse replays from
+history as text.
 
-That last line is the point: a command driven partly by mouse replays from
-history as text. It is also what an agent reads, and what a macro recorder
-would write.
+## How it feels
 
-## Status
+![A command in progress, with its options and live validation](docs/images/midcommand.png)
 
-Working, and in use. ~1200 commands: a dozen hand-written verbs with
-viewport picking, ~200 generated from FreeCAD's type registry, and every
-registered command as a launcher.
+Three things are happening in that one line:
 
-[CHANGELOG.md](CHANGELOG.md) tracks releases. [FINDINGS.md](FINDINGS.md)
-records what was learned about FreeCAD's internals along the way, including
-several things that are not documented anywhere obvious.
+- The prompt names the current getter and its inline options —
+  `Next point [Close/Undo]:`
+- The command builds up on **one** accumulating line, not one line per step
+- Input is validated as it is typed. `@0,40,` parses; `zz` does not, and
+  reddens before Enter
+
+Values echo back canonical: `3/8in` becomes `9.525mm`, and a relative point
+resolves to absolute. What you see is what replays.
 
 ## Install
 
@@ -44,56 +39,21 @@ git clone https://github.com/aaronsb/freecad-cli \
   ~/.local/share/FreeCAD/v1-1/Mod/freecad-cli
 ```
 
-A symlink works too, which is the better dev loop:
-
-```bash
-ln -s ~/src/freecad-cli ~/.local/share/FreeCAD/v1-1/Mod/freecad-cli
-```
-
 Restart FreeCAD. The command line appears as a full-width strip between the
-toolbars and the 3D view. `Ctrl+\`` toggles it, and it is listed under
+toolbars and the 3D view. `` Ctrl+` `` toggles it, and it is listed under
 **View → Panels → Command Line** like any other dock.
 
 ## Using it
 
 | | |
 |---|---|
-| `line` `polyline` `circle` `box` `move` `point` | the drawing verbs |
-| `save` `open` `new` `close` `quit` `clear` `undo` `redo` `fit` `delete` `help` | shell builtins |
-| ~200 generated verbs | `cylinder` `sphere` `torus` `pad` `pocket` … from FreeCAD's type registry |
-| ~1000 command verbs | every registered command, by its menu label |
-| `l` `pl` `ci` `bx` `mv` `pt` `w` `cls` `zf` `?` | aliases |
-| `close!` | a trailing `!` forces past a refusal |
 | `pol` + Enter | prefix-unique execution, no Tab needed |
 | Tab / Shift+Tab | cycle completions |
-| ↑ ↓ | history, in parameterized form |
+| ↑ ↓ | history, in its assembled form |
 | → | accept the ghost suggestion |
-| Ctrl+R, Ctrl+A/E/K/U/W | readline editing (off by default; Ctrl+A is Select All in FreeCAD) |
 | Enter on an empty line | finish a repeating step |
 | Esc / Ctrl+C | cancel |
-
-### Shell builtins
-
-The GUI equivalents route through modal dialogs — Save on an unnamed
-document opens a file chooser, closing a modified one asks for confirmation.
-A command line that has already been given the path should not stop to ask
-again, so these take their arguments inline:
-
-```
-> save ~/parts/bracket.FCStd     saves there, no dialog
-> save                           saves in place
-> open ~/parts/bracket.FCStd
-> new bracket
-> close                          refuses if there are unsaved changes
-> close!                         discards them
-> help                           lists the verbs
-> help polyline                  describes one
-```
-
-`close` refuses rather than prompting, because FreeCAD exposes no
-unsaved-changes flag to Python — `isSaved()` reports whether the document
-has a file at all and stays true after every later edit — so the addon
-tracks its own edits and turns the modal into a refusal you can override.
+| trailing `!` | force past a refusal — `close!` |
 
 ### Coordinates
 
@@ -106,51 +66,59 @@ r10,0,0       relative           (Rhino spelling)
 3/8in,1in,0   any unit FreeCAD's parser accepts
 ```
 
-### The control strip
+### Shell builtins
 
-- **usurp keys** — route bare printable keys to the command line. Digits
-  stay with FreeCAD while no getter is open, so `1`–`6` remain the standard
-  views.
-- **gui** — what a toolbar click does: `echo` logs it, `ghost` pre-fills the
-  input line, `follow` opens the grammar instead of the Task panel, `off`
-  disconnects.
-- **pick** — `snap` (default) takes clicks through Coin3D and resolves them
-  with `Gui.Snapper.snap()`: snapping and trackers, no UI of its own.
-  `getpoint` uses `Gui.Snapper.getPoint()`, which also brings
-  `Gui.draftToolBar` and opens Draft's Point dialog in the Tasks panel — a
-  second input surface competing with the command line. `raw` is Coin3D
-  alone, no snapping.
-- **width** — `full` spans the window; `partial` hands the corners back to
-  the left and right docks, so the row is shared and other docks can be
-  dragged in beside the command line. Qt toolbars live in their own band
-  above the dock area and cannot join the row.
+The GUI equivalents route through modal dialogs — Save on an unnamed
+document opens a file chooser, closing a modified one asks for confirmation.
+These take their arguments inline instead:
 
-Drag the dock's lower edge to resize it. The height and the width mode
-persist under `BaseApp/Preferences/Mod/fccli`.
+```
+> save ~/parts/bracket.FCStd     saves there, no dialog
+> open ~/parts/bracket.FCStd     new bracket     close     close!
+> alias b box                    unalias b       history   clear
+> undo    redo    fit    delete  quit    quit!
+```
+
+`close` and `quit` refuse when there is unsaved work rather than raising a
+modal; `!` discards. Unsaved state is tracked through
+`App.addDocumentObserver`, so it is accurate for edits made anywhere — the
+command line, a toolbar, a macro.
+
+### man
+
+![The manual page for a generated verb](docs/images/man.png)
+
+`man` lists every command; `man <name>` describes one. `help` is an alias.
+Nobody wrote that page — it is generated from FreeCAD's own property
+documentation, so every verb has one.
 
 ## Where the verbs come from
 
-Three tiers, in rising order of how much anyone had to write by hand:
+FreeCAD has no Discovery API. It has a **command registry** that knows names,
+labels and grouping but carries no parameters, and a **type registry** that
+carries typed, documented properties but says nothing about naming or
+invocation. `tools/generate_descriptor.py` harvests both into
+`fccli/descriptor.json`, and the factory turns that into three tiers:
 
 | Tier | Count | Source |
 |---|---|---|
 | 0 | ~1020 | every registered command, as a zero-step verb that runs it |
 | 1 | ~206 | every parametric type, with steps from its own properties |
-| 2 | 7 + hand-written | tier 1 after a patch: ordering, options, aliases |
-
-FreeCAD has no Discovery API. It has a **command registry** that knows
-names, labels and grouping but carries no parameters, and a **type
-registry** that carries typed, documented properties but says nothing about
-naming or invocation. `tools/generate_descriptor.py` harvests both and
-writes `fccli/descriptor.json`.
+| 2 | hand-written + patched | point-picking verbs, ordering, inline options |
 
 Linking a command to the type it builds cannot be done reliably by machine —
 name matching puts `BIM_Box` on `Part::Box`, and tracing the call graph puts
-`BIM_Tutorial` on `Part::Extrusion`. The design does not need it to: **a
-type names and parameterizes its own verb**, so tier 1 stands on the type
-registry alone. Command metadata is a garnish attached where the evidence is
-real (a hand-written override, or a type named in the command's own class
-body).
+`BIM_Tutorial` on `Part::Extrusion`. The design does not need it to: **a type
+names and parameterizes its own verb**, so tier 1 stands on the type registry
+alone. Command metadata is attached only where the evidence is real.
+
+### What it can drive
+
+![A twisted tower built from 84 typed commands](docs/images/tower.png)
+
+Eighty-four commands, 1.8 seconds, no mouse. Fourteen square levels each
+rotated 14°, a circle inscribed at each, 52 stringers connecting corners
+level to level, and a plinth dimensioned in inches.
 
 ### Patches
 
@@ -172,9 +140,8 @@ PATCH = {
 }
 ```
 
-Patches are keyed by namespace — a type module (`Part`) or an addon
-identity (`CurvedShapes`) — and are discovered from three roots, each
-overriding the last:
+Patches are keyed by namespace — a type module (`Part`) or an addon identity
+(`CurvedShapes`) — and discovered from three roots, each overriding the last:
 
 ```
 fccli/patches/*.py                     shipped here
@@ -182,32 +149,43 @@ fccli/patches/*.py                     shipped here
 ~/.local/share/FreeCAD/fccli/patches/  written by you
 ```
 
-An addon that drops an `fccli_patch.py` is picked up with no registration
-step. Its commands already work generically through tier 0; the patch
-upgrades them. Nothing in this repo changes to support a new addon.
+An addon that drops an `fccli_patch.py` is picked up with no registration.
+Its commands already work through tier 0; the patch upgrades them.
 
-### Regenerating
+### Hand-written verbs
 
-```bash
-python3 tools/generate_descriptor.py
+Some things want the viewport, not a property sheet. `line`, `polyline`,
+`circle`, `move` and `point` are written by hand so they can pick:
+
+```python
+REGISTRY.add(Verb(
+    name="polyline", aliases=["pl", "pline"],
+    steps=[
+        Step("start", POINT, "Start of polyline"),
+        Step("next", POINT, "Next point", repeat=True,
+             options=[Option("Close", "close the wire", _close),
+                      Option("Undo", "drop the last point", _undo_last)]),
+    ],
+    emit=_emit_polyline,
+))
 ```
 
-Boots FreeCAD twice — headless for types, under Xvfb for commands — scans
-every `Mod` tree for what each command builds, and prints a coverage report.
-Instantiating a type can abort FreeCAD from C++, so the type harvester
-claims each type before touching it and the driver restarts past whatever
-killed it.
+The completer, the highlighter, the prompt, `man`, and history replay all
+follow from the descriptor.
 
-## How it fits together
+## Architecture
 
 ```
-grammar registry (verb descriptors, fccli/verbs.py)
+descriptor.json  +  patches  +  hand-written verbs
         │
         ▼
-command engine  ── in-process; owns the picker, the document, the filter
+   verb registry
         │
         ▼
-typed message stream   { prompt | options | echo | result | error }
+command engine  ── in-process; owns the picker, document, key filter
+        │
+        ▼
+typed message stream   { prompt | live | result | error }
         │
    ┌────┼────────────────┬──────────────────┐
    ▼                     ▼                  ▼
@@ -215,29 +193,16 @@ Qt widget            ANSI adapter        MCP server
 (this repo)          (not built)         (not built)
 ```
 
-Verb descriptors are data, so one registry can feed the widget's contextual
-completer, a generated MCP tool schema, and a headless scripting API. The
-message stream is what makes a human and an agent share one transcript.
+The engine talks to the widget over a stream of typed messages rather than
+method calls, so the same stream can feed a socket or an agent. That is what
+would let a human and an agent share one transcript instead of talking past
+each other through write-only RPC.
 
-## Adding a verb
-
-```python
-from fccli.grammar import POINT, QUANTITY, Option, Step, Verb, REGISTRY
-
-REGISTRY.add(Verb(
-    name="cylinder", aliases=["cyl"], gui_command="Part_Cylinder",
-    steps=[
-        Step("base", POINT, "Base centre"),
-        Step("radius", QUANTITY, "Radius",
-             options=[Option("Diameter", "read as diameter", set_diameter)]),
-        Step("height", QUANTITY, "Height"),
-    ],
-    emit=make_cylinder,
-))
-```
-
-The completer, the highlighter, the prompt, and history replay all follow
-from the descriptor.
+The key filter is the load-bearing piece: 195 of FreeCAD's 940 default
+shortcuts are unmodified keys, so claiming bare printables collides on
+purpose. A focus guard keeps real editors' keys, and digits route by step —
+`1`–`6` stay the standard views while nothing is running, and become input
+once a getter is open.
 
 ## Development
 
@@ -246,17 +211,24 @@ make            # list the targets
 make install    # symlink into FreeCAD's Mod directory
 make check      # compile, version-check, test
 make descriptor # regenerate fccli/descriptor.json
+make screenshot # recapture docs/images
 make bump PART=minor
 make release    # stamp the commit, tag, push, cut a GitHub release
 ```
 
 `make check` runs offscreen and needs no FreeCAD GUI.
 
-The version prints in the banner as `0.2.0+dd069a6 (2026-08-23)` — semantic
+The version prints in the banner as `0.2.0+c4113ff (2026-08-23)` — semantic
 version, the commit it was built from, and that commit's date. Running from
-a checkout, the commit is read live from git and marked `-dirty` when the
-tree has changes; a released copy carries a stamped `fccli/_build.py`
-instead.
+a checkout the commit is read live from git and marked `-dirty` when the tree
+has changes; a released copy carries a stamped `fccli/_build.py`.
+
+## Status
+
+Working, and in use. [CHANGELOG.md](CHANGELOG.md) tracks releases.
+[FINDINGS.md](FINDINGS.md) records what was learned about FreeCAD's
+internals along the way, including several things not documented anywhere
+obvious.
 
 ## License
 
