@@ -82,6 +82,20 @@ added to the main window appears there automatically.
 **Symlinks in `Mod` work.** An earlier failure was the `<other>` content
 type, not the symlink.
 
+**Draft's grid follows the Snapper in.** Bootstrapping Draft creates its
+grid tracker, which is workbench furniture the command line never asked
+for -- and it renders as a handful of stray lines across the model when the
+user's Draft `gridSpacing` preference is `0`. The picker now turns
+`show_always` and `show_during_command` off and hides it, rather than
+rewriting the preference.
+
+**History recorded fragments, not commands.** Each typed line went into the
+ring, so a polyline built over four Enters left `polyline`, `0,0,0`,
+`30,0,0`, `close` -- none of them worth recalling. Fragments are now held
+provisionally and replaced by the assembled command when the engine
+finishes it, which is what makes Up hand back a mouse-driven command as
+editable text.
+
 ## Not yet answered
 
 **Whether `follow` mode fights the Task panels.** Swallowing a `QAction`

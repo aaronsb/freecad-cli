@@ -167,16 +167,32 @@ class Console(QtWidgets.QPlainTextEdit):
         except OSError:
             self._history = []
 
-    def append_history(self, line):
+    def append_history(self, line, persist=True):
         if not line or (self._history and self._history[-1] == line):
             return
         self._history.append(line)
+        if persist:
+            self._persist(line)
+
+    def _persist(self, line):
         try:
             os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
             with open(HISTORY_PATH, "a", encoding="utf-8") as fh:
                 fh.write(line + "\n")
         except OSError:
             pass
+
+    def commit_history(self, line):
+        """Record a finished command in its assembled form.
+
+        A multi-step command is typed as fragments -- "polyline", then a
+        point, then another -- and none of those is worth recalling on its
+        own. The provisional fragment that opened the command is dropped in
+        favour of the whole thing, which is what Up should hand back.
+        """
+        while self._history and line.startswith(self._history[-1]):
+            self._history.pop()
+        self.append_history(line)
 
     def _history_step(self, delta):
         if not self._history:
@@ -344,7 +360,10 @@ class Console(QtWidgets.QPlainTextEdit):
 
     def _submit(self):
         text = self.input_text()
-        self.append_history(text)
+        # Fragments of a command in progress are not worth recalling; the
+        # assembled command is committed when the engine finishes it.
+        if self.engine.state == "idle":
+            self.append_history(text, persist=False)
         self._hist_index = None
         self._completions = []
         self._comp_inserted = None

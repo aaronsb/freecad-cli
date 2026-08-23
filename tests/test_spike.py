@@ -194,6 +194,31 @@ def main():
     check("Tab cycles through the candidates", first != second, True)
     check("cycling reaches polyline", {first, second}, {"point", "polyline"})
 
+    print("\n5b. history replay reproduces the geometry")
+    engine.submit("new replaydoc")
+    # Drive through the console so history is written the way typing does.
+    bus.subscribe(lambda m: console.commit_history(m.data.get("replay", ""))
+                  if m.kind == RESULT else None)
+
+    def enter(text):
+        console.set_input(text)
+        console._submit()
+    enter("polyline")
+    enter("0,0,0")
+    engine.feed_point(App.Vector(30, 0, 0))
+    engine.feed_point(App.Vector(30, 40, 0))
+    enter("close")
+    first = App.ActiveDocument.Objects[-1]
+    recalled = [h for h in console._history if h.startswith("polyline")][-1]
+    check("the mouse-driven command is in history as text",
+          recalled, "polyline 0,0,0 30,0,0 30,40,0 close")
+    enter(recalled)
+    second = App.ActiveDocument.Objects[-1]
+    check("replaying it makes a second object", second.Name != first.Name, True)
+    check("with identical points",
+          [tuple(p) for p in second.Points],
+          [tuple(p) for p in first.Points])
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

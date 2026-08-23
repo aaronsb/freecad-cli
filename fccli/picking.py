@@ -37,7 +37,34 @@ def ensure_snapper():
         _SNAPPER_READY = False
         return False
     _SNAPPER_READY = hasattr(Gui, "Snapper")
+    if _SNAPPER_READY:
+        quiet_grid()
     return _SNAPPER_READY
+
+
+def quiet_grid():
+    """Keep Draft's grid out of the scene.
+
+    Bootstrapping Draft creates its grid tracker, which is Draft workbench
+    furniture the command line never asked for. It also renders as a handful
+    of stray lines when the user's Draft gridSpacing preference is 0.
+    """
+    snapper = getattr(Gui, "Snapper", None)
+    if snapper is None:
+        return
+    try:
+        snapper.setTrackers()
+    except Exception:
+        pass
+    grid = getattr(snapper, "grid", None)
+    if grid is None:
+        return
+    try:
+        grid.show_always = False
+        grid.show_during_command = False
+        grid.off()
+    except Exception:
+        pass
 
 
 def _active_view():
@@ -140,6 +167,7 @@ class SnapPicker(_ViewPicker):
             if self.notify:
                 self.notify(f"snap failed ({exc}); using the raw point")
             point = None
+        quiet_grid()
         if point is not None:
             return App.Vector(point.x, point.y, point.z)
         return super().resolve(pos)
@@ -161,6 +189,7 @@ class SnapPicker(_ViewPicker):
             Gui.Snapper.off()
         except Exception:
             pass
+        quiet_grid()
 
 
 class GetPointPicker:

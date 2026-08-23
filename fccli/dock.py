@@ -211,6 +211,7 @@ class CliDock(QtWidgets.QDockWidget):
             self.console.write("  " + msg.text, "info")
         elif msg.kind == _bus.RESULT:
             self.console.end_live("  " + msg.text, "result")
+            self.console.commit_history(msg.data.get("replay", msg.text))
             verb = REGISTRY.get(msg.data.get("verb", ""))
             if verb and verb.gui_command:
                 flash(verb.gui_command)
