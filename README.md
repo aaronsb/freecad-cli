@@ -54,7 +54,9 @@ toolbars and the 3D view. `Ctrl+\`` toggles it, and it is listed under
 | | |
 |---|---|
 | `line` `polyline` `circle` `box` `move` `point` | the drawing verbs |
-| `save` `open` `new` `close` `clear` `undo` `redo` `fit` `delete` `help` | shell builtins |
+| `save` `open` `new` `close` `quit` `clear` `undo` `redo` `fit` `delete` `help` | shell builtins |
+| ~200 generated verbs | `cylinder` `sphere` `torus` `pad` `pocket` … from FreeCAD's type registry |
+| ~1000 command verbs | every registered command, by its menu label |
 | `l` `pl` `ci` `bx` `mv` `pt` `w` `cls` `zf` `?` | aliases |
 | `close!` | a trailing `!` forces past a refusal |
 | `pol` + Enter | prefix-unique execution, no Tab needed |
@@ -120,6 +122,76 @@ r10,0,0       relative           (Rhino spelling)
 
 Drag the dock's lower edge to resize it. The height and the width mode
 persist under `BaseApp/Preferences/Mod/fccli`.
+
+## Where the verbs come from
+
+Three tiers, in rising order of how much anyone had to write by hand:
+
+| Tier | Count | Source |
+|---|---|---|
+| 0 | ~1020 | every registered command, as a zero-step verb that runs it |
+| 1 | ~206 | every parametric type, with steps from its own properties |
+| 2 | 7 + hand-written | tier 1 after a patch: ordering, options, aliases |
+
+FreeCAD has no Discovery API. It has a **command registry** that knows
+names, labels and grouping but carries no parameters, and a **type
+registry** that carries typed, documented properties but says nothing about
+naming or invocation. `tools/generate_descriptor.py` harvests both and
+writes `fccli/descriptor.json`.
+
+Linking a command to the type it builds cannot be done reliably by machine —
+name matching puts `BIM_Box` on `Part::Box`, and tracing the call graph puts
+`BIM_Tutorial` on `Part::Extrusion`. The design does not need it to: **a
+type names and parameterizes its own verb**, so tier 1 stands on the type
+registry alone. Command metadata is a garnish attached where the evidence is
+real (a hand-written override, or a type named in the command's own class
+body).
+
+### Patches
+
+A generated verb is functional and generic. A patch makes it feel like the
+tool it represents:
+
+```python
+PATCH = {
+    "key": "Part",
+    "types": {
+        "Part::Cylinder": {
+            "verb": "cylinder", "aliases": ["cyl"],
+            "steps": ["Radius", "Height"],   # order, and required
+            "options": ["Angle"],            # inline keyword
+            "hide": ["FirstAngle", "SecondAngle"],
+            "strict": True,
+        },
+    },
+}
+```
+
+Patches are keyed by namespace — a type module (`Part`) or an addon
+identity (`CurvedShapes`) — and are discovered from three roots, each
+overriding the last:
+
+```
+fccli/patches/*.py                     shipped here
+<Mod>/<addon>/fccli_patch.py           shipped by the addon itself
+~/.local/share/FreeCAD/fccli/patches/  written by you
+```
+
+An addon that drops an `fccli_patch.py` is picked up with no registration
+step. Its commands already work generically through tier 0; the patch
+upgrades them. Nothing in this repo changes to support a new addon.
+
+### Regenerating
+
+```bash
+python3 tools/generate_descriptor.py
+```
+
+Boots FreeCAD twice — headless for types, under Xvfb for commands — scans
+every `Mod` tree for what each command builds, and prints a coverage report.
+Instantiating a type can abort FreeCAD from C++, so the type harvester
+claims each type before touching it and the driver restarts past whatever
+killed it.
 
 ## How it fits together
 

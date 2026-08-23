@@ -219,6 +219,33 @@ def main():
           [tuple(p) for p in second.Points],
           [tuple(p) for p in first.Points])
 
+    print("\n5c. the factory: generated and patched verbs")
+    from fccli.factory import load_descriptor, register_all
+    from fccli.patches import PatchSet
+    from fccli.grammar import Registry as _Registry
+    desc = load_descriptor()
+    check("a descriptor is shipped", desc is not None, True)
+    if desc:
+        fresh = _Registry()
+        counts = register_all(fresh, tier0=True, patches=PatchSet())
+        check("tier 0 covers the command registry", counts["tier0"] > 900, True)
+        check("tier 1 generates from types", counts["tier1"] > 150, True)
+        check("patches applied", counts["patched"] >= 7, True)
+        box = fresh.get("box")
+        check("a patch orders the steps",
+              [s.id for s in box.steps], ["Length", "Width", "Height"])
+        cyl = fresh.get("cylinder")
+        check("a patch promotes a property to an inline option",
+              [o.name for st in cyl.steps for o in st.options], ["Angle"])
+        pad = fresh.get("pad")
+        check("an unpatched type is still a usable verb",
+              pad is not None and len(pad.steps) > 3, True)
+        check("enumerations become choices",
+              any(st.choices for st in pad.steps), True)
+        # A patch must not shadow a hand-written verb.
+        check("hand-written verbs survive the factory",
+              REGISTRY.get("polyline").emit.__name__, "_emit_polyline")
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

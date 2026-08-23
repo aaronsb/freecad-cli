@@ -50,6 +50,17 @@ def saved_height():
     except Exception:
         return DEFAULT_HEIGHT
 
+def _load_factory():
+    """Generate verbs from the descriptor, if one was shipped."""
+    try:
+        from .factory import register_all
+        return register_all(REGISTRY)
+    except Exception as exc:
+        import FreeCAD as App
+        App.Console.PrintWarning(f"[fccli] factory: {exc}\n")
+        return {"error": str(exc)}
+
+
 BANNER = (
     "FreeCAD CLI spike -- type a verb, or click in the viewport.\n"
     "  verbs: line polyline circle box move point   (Tab completes, "
@@ -63,7 +74,10 @@ class CliDock(QtWidgets.QDockWidget):
         self.setObjectName("FreeCADCliDock")
 
         self.bus = _bus.Bus()
-        import fccli.verbs  # noqa: F401  -- registers the seed verbs
+        # Hand-written verbs register first so the factory's generated ones
+        # never shadow them: tier 0 only claims names nobody has taken.
+        import fccli.verbs  # noqa: F401
+        self.factory_counts = _load_factory()
         self.picker = make_picker("snap", notify=self._notify)
         self.engine = Engine(self.bus, REGISTRY, picker=self.picker)
         self.console = Console(self.engine)
@@ -75,6 +89,15 @@ class CliDock(QtWidgets.QDockWidget):
         self.console.submitted.connect(self.engine.submit)
         self.console.cancelled.connect(self.engine.cancel)
         self.console.write(BANNER.rstrip(), "info")
+        c = self.factory_counts or {}
+        if c.get("error"):
+            self.console.write("  " + c["error"], "info")
+        else:
+            self.console.write(
+                f"  {c.get('total', 0)} verbs   "
+                f"{c.get('patched', 0)} patched · "
+                f"{c.get('tier1', 0)} generated · "
+                f"{c.get('tier0', 0)} commands", "info")
 
         self.setFeatures(
             QtWidgets.QDockWidget.DockWidgetMovable

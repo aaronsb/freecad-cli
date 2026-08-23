@@ -18,7 +18,7 @@ import FreeCAD as App
 
 from . import bus as _bus
 from .grammar import PATH, TEXT, Step, Verb, REGISTRY
-from .verbs import is_dirty, mark_clean
+from .verbs import DIRTY, is_dirty, mark_clean
 
 
 def _gui():
@@ -204,6 +204,31 @@ REGISTRY.add(Verb(
 ))
 
 
+def _emit_quit(v):
+    """Leave FreeCAD.
+
+    Closing the application prompts once per modified document. quit lists
+    what is unsaved and refuses; quit! discards it. Same shape as close, so
+    the answer to "save changes?" is given on the command line rather than
+    in a modal that blocks every other key.
+    """
+    dirty = [n for n in App.listDocuments() if n in DIRTY]
+    if dirty and not v["_flags"].get("force"):
+        raise RuntimeError(
+            "unsaved: " + ", ".join(dirty) + " -- save first, or quit! to discard")
+    for name in list(App.listDocuments()):
+        mark_clean(name=name)
+        try:
+            App.closeDocument(name)
+        except Exception:
+            pass
+    gui = _gui()
+    if gui is not None:
+        from .qt import QtWidgets
+        QtWidgets.QApplication.instance().quit()
+    return None
+
+
 def _emit_help(v):
     """List the verbs, so the command language is discoverable from itself."""
     engine = v.get("_engine")
@@ -229,6 +254,12 @@ def _emit_help(v):
         engine.bus.emit(_bus.INFO, f"  {name + alias:<18} {verb.doc}")
     return None
 
+
+REGISTRY.add(Verb(
+    name="quit", aliases=["exit", "qa"],
+    doc="Leave FreeCAD. Refuses on unsaved work; quit! discards it.",
+    steps=[], emit=_emit_quit,
+))
 
 REGISTRY.add(Verb(
     name="help", aliases=["?", "h"],
