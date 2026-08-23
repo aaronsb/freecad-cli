@@ -15,10 +15,11 @@
   <url type="bugtracker">https://github.com/aaronsb/freecad-cli/issues</url>
   <url type="readme">https://github.com/aaronsb/freecad-cli/blob/main/README.md</url>
   <content>
-    <other>
-      <name>FreeCAD CLI</name>
-      <description>Dockable command line, loaded into every workbench.</description>
+    <workbench>
+      <name>CLI</name>
+      <classname>CliWorkbench</classname>
+      <subdirectory>./</subdirectory>
       <freecadmin>1.0</freecadmin>
-    </other>
+    </workbench>
   </content>
 </package>

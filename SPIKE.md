@@ -34,6 +34,31 @@ editable text.
 the token cannot be read as input for the open step, so `c` stays the
 `Close` option inside `polyline` rather than becoming `circle`.
 
+## Found while wiring it up
+
+**`package.xml` gates whether `Init.py` and `InitGui.py` run at all.** With
+`<content><other>`, FreeCAD 1.1 adds the addon directory to `sys.path` and
+never executes either file — no error, no warning. Declaring
+`<content><workbench>` makes the loader run them. Verified by removing
+`package.xml` entirely, which also restores execution via the legacy path.
+
+**A class defined in `InitGui.py` does not survive a deferred callback.**
+FreeCAD executes that file in a namespace that is discarded, so
+`Gui.addCommand` from a `QTimer` callback fails with *name is not defined*.
+The command class lives in `fccli/command.py` for that reason.
+
+**The bottom dock area is already crowded.** Report View and the Python
+console occupy it, so a dock added there gets a narrow column against the
+right edge rather than a strip. The top area is empty, spans the full width,
+and is where Rhino puts its command line.
+
+**View → Panels needs no registration.** That menu is built from
+`QMainWindow::createPopupMenu()`, which enumerates dock widgets, so any dock
+added to the main window appears there automatically.
+
+**Symlinks in `Mod` work.** An earlier failure was the `<other>` content
+type, not the symlink.
+
 ## Not yet answered
 
 **Whether `Snapper.getPoint` drags Draft's toolbar along.** `getPoint` sets

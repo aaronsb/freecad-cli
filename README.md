@@ -31,14 +31,23 @@ FreeCAD 1.0+ (developed against 1.1.3, PySide6).
 **Addon Manager** — add this repository as a custom addon source:
 `https://github.com/aaronsb/freecad-cli`
 
-**Manually** — clone into FreeCAD's `Mod` directory:
+**Manually** — clone into FreeCAD's `Mod` directory. FreeCAD 1.1 versions
+that path:
 
 ```bash
 git clone https://github.com/aaronsb/freecad-cli \
-  ~/.local/share/FreeCAD/Mod/freecad-cli
+  ~/.local/share/FreeCAD/v1-1/Mod/freecad-cli
 ```
 
-Restart FreeCAD. The dock appears at the bottom; `Ctrl+\`` toggles it.
+A symlink works too, which is the better dev loop:
+
+```bash
+ln -s ~/src/freecad-cli ~/.local/share/FreeCAD/v1-1/Mod/freecad-cli
+```
+
+Restart FreeCAD. The command line appears as a full-width strip between the
+toolbars and the 3D view. `Ctrl+\`` toggles it, and it is listed under
+**View → Panels → Command Line** like any other dock.
 
 ## Using it
 
@@ -75,6 +84,13 @@ r10,0,0       relative           (Rhino spelling)
   disconnects.
 - **pick** — `snapper` uses `Gui.Snapper.getPoint` and gets FreeCAD's
   snapping; `raw` uses Coin3D callbacks directly and gets no Draft toolbar.
+- **width** — `full` spans the window; `partial` hands the corners back to
+  the left and right docks, so the row is shared and other docks can be
+  dragged in beside the command line. Qt toolbars live in their own band
+  above the dock area and cannot join the row.
+
+Drag the dock's lower edge to resize it. The height and the width mode
+persist under `BaseApp/Preferences/Mod/fccli`.
 
 ## How it fits together
 

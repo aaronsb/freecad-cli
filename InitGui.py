@@ -1,71 +1,36 @@
-"""GUI init: register the toggle command and open the dock once the main
-window exists."""
+"""GUI init.
+
+The dock registers itself with the main window, so FreeCAD's
+View -> Panels menu picks it up automatically -- that menu is built from
+``QMainWindow::createPopupMenu()``, which enumerates dock widgets. No custom
+menu is needed.
+"""
 
 import FreeCAD as App
 import FreeCADGui as Gui
 
 try:
-    from PySide6 import QtCore, QtGui
+    from PySide6 import QtCore
 except ImportError:  # pragma: no cover
-    from PySide import QtCore, QtGui
-
-
-class FCCLI_Toggle:
-    """Registered with FreeCAD so the shortcut is user-configurable."""
-
-    def GetResources(self):
-        return {
-            "MenuText": "Command Line",
-            "ToolTip": "Show or hide the FreeCAD CLI command line",
-            "Accel": "Ctrl+`",
-        }
-
-    def IsActive(self):
-        return True
-
-    def Activated(self):
-        toggle()
-
-
-def toggle():
-    from fccli import dock
-    d = dock.instance()
-    if d is not None and d.isVisible():
-        d.hide()
-    else:
-        dock.show()
-
-
-def _add_menu(mw):
-    menu = mw.menuBar().addMenu("CLI")
-    act = QtGui.QAction("Command Line", mw)
-    act.setObjectName("FCCLI_Toggle_Menu")
-    act.setShortcut(QtGui.QKeySequence("Ctrl+`"))
-    act.setShortcutContext(QtCore.Qt.ApplicationShortcut)
-    act.triggered.connect(toggle)
-    menu.addAction(act)
-    mw.addAction(act)   # keep the shortcut live regardless of menu focus
+    from PySide import QtCore
 
 
 def _install():
-    try:
-        Gui.addCommand("FCCLI_Toggle", FCCLI_Toggle())
-    except Exception as exc:
-        App.Console.PrintWarning(f"[fccli] command registration: {exc}\n")
-
     mw = Gui.getMainWindow()
     if mw is None:
         App.Console.PrintError("[fccli] no main window; giving up\n")
         return
     try:
-        _add_menu(mw)
+        from fccli.command import register
+        register()
     except Exception as exc:
-        App.Console.PrintWarning(f"[fccli] menu: {exc}\n")
-
+        App.Console.PrintWarning(f"[fccli] command registration: {exc}\n")
     try:
         from fccli import dock
-        dock.show()
-        App.Console.PrintMessage("[fccli] command line ready (Ctrl+`)\n")
+        d = dock.show()
+        state = "shown" if d is not None else "failed"
+        App.Console.PrintMessage(
+            f"[fccli] command line {state} -- View > Panels > Command Line\n")
     except Exception as exc:
         import traceback
         App.Console.PrintError(f"[fccli] dock failed: {exc}\n")
