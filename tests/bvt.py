@@ -330,6 +330,67 @@ def suite_check(dock, doc):
     stop()
 
 
+def suite_modals(dock):
+    """A command that rejects the request must say so, not wait for a click.
+
+    Part_Revolve on a solid puts up "Select a shape for revolution." and
+    blocks on a button nobody is there to press. Over the socket that hung
+    the caller outright, while the same instance went on answering
+    everything else, so it did not even look broken.
+    """
+    print("\n7b. a rejected request answers on the command line")
+    import FreeCADGui as Gui
+    from fccli import modals
+
+    errors = []
+    stop = dock.bus.subscribe(
+        lambda m: errors.append(m.text) if m.kind == "error" else None)
+
+    dock.engine.submit("new modals")
+    doc = App.ActiveDocument
+    slab = doc.addObject("Part::Box", "Slab")
+    slab.Length, slab.Width, slab.Height = 100, 60, 20
+    doc.recompute()
+    before = len(doc.Objects)
+
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(doc.Name, "Slab")
+    QtWidgets.QApplication.processEvents()
+
+    # A solid is not a profile, so the command refuses.
+    with modals.intercepted() as caught:
+        Gui.runCommand("Part_Revolve")
+        for _ in range(20):
+            QtWidgets.QApplication.processEvents()
+        for b in Gui.getMainWindow().findChildren(QtWidgets.QPushButton):
+            if b.isVisible() and (b.text() or "").replace("&", "").strip().lower() == "ok":
+                b.click()
+                break
+        for _ in range(25):
+            QtWidgets.QApplication.processEvents()
+
+    truthy("the refusal was caught, not left on screen", bool(caught))
+    truthy("and it carries what FreeCAD said",
+           "revolution" in (caught.fault or "").lower())
+    check("no modal is left waiting",
+          QtWidgets.QApplication.activeModalWidget(), None)
+    check("nothing was created", len(doc.Objects), before)
+
+    try:
+        Gui.Control.closeDialog()
+    except Exception:
+        pass
+    for _ in range(10):
+        QtWidgets.QApplication.processEvents()
+
+    # Unarmed, the same dialog is nobody's business but the operator's.
+    truthy("the filter is gone once the verb is done",
+           not isinstance(QtWidgets.QApplication.activeModalWidget(),
+                          QtWidgets.QDialog))
+    stop()
+    dock.engine.submit("close!")
+
+
 def suite_roundtrip(dock):
     print("\n8. save, close and reopen, with no dialogs")
     path = os.path.join(tempfile.gettempdir(), "fccli-bvt-doc.FCStd")
@@ -429,6 +490,7 @@ def run():
         suite_dock_geometry(dock)
         suite_units(dock)
         suite_check(dock, doc)
+        suite_modals(dock)
         suite_roundtrip(dock)
         suite_shutdown(dock)
     except Exception:

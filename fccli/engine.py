@@ -11,6 +11,7 @@ form, so a fully mouse-driven command can be replayed from history as text.
 from typing import Any, Dict, List, Optional
 
 from . import bus as _bus
+from . import modals
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
                       Registry, Step, Verb, order_of)
 from .parsing import format_point, format_quantity, parse_point, parse_quantity
@@ -447,10 +448,19 @@ class Engine:
             return
         doc = _open_transaction(verb, replay)
         try:
-            obj = verb.emit({**values, "_flags": flags, "_engine": self})
+            with modals.intercepted(force=flags.get("force")) as caught:
+                obj = verb.emit({**values, "_flags": flags, "_engine": self})
         except Exception as exc:
             _abort_transaction(doc)
             self.bus.emit(_bus.ERROR, f"{verb.name} failed: {exc}")
+            self._announce()
+            return
+        if caught:
+            # FreeCAD rejected the request. That is the same kind of answer
+            # as a bad quantity, and it travels the same way -- rather than
+            # waiting behind a dialog for a click nobody is there to make.
+            _abort_transaction(doc)
+            self.bus.emit(_bus.ERROR, f"{verb.name}: {caught.fault}")
             self._announce()
             return
         _commit_transaction(doc)

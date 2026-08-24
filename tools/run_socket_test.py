@@ -40,10 +40,11 @@ def socket_dir():
 
 def fccli(*args, **kw):
     kw.setdefault("stdin", subprocess.DEVNULL)
+    kw.setdefault("timeout", 60)
     if "input" in kw:
         kw.pop("stdin")
     proc = subprocess.run([sys.executable, CLIENT, *args],
-                          capture_output=True, text=True, timeout=60, **kw)
+                          capture_output=True, text=True, **kw)
     return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
 
 
@@ -163,6 +164,28 @@ def main():
         fccli("exec", "")            # let the engine settle
         subprocess.run([sys.executable, CLIENT, "exec", "--", ""],
                        capture_output=True)
+
+        print("\n4b. a command FreeCAD refuses does not hang either")
+        # PartDesign_Revolution wants an active body and says so in a modal.
+        # Nobody is sitting in front of a socket, so the dialog waited for a
+        # click that never came and the caller waited with it -- while the
+        # same instance went on answering everything else, so it did not
+        # even look wedged. 25s, not the usual 60: a regression here should
+        # report, not stall the suite.
+        try:
+            code, out, err = fccli("exec", "revolve", timeout=25)
+        except subprocess.TimeoutExpired:
+            check("a refused command answers instead of hanging",
+                  "hung", "answered")
+            code, out, err = 1, "", ""
+        else:
+            check("a refused command exits 1", code, 1)
+            truthy("FreeCAD's own words come back",
+                   "body" in err.lower() or "select" in err.lower())
+            truthy("  and it says the answer was cancelled",
+                   "cancelled" in err.lower())
+        code, out, _ = fccli("state")
+        truthy("the instance is still idle afterwards", "engine    idle" in out)
 
         print("\n5. check never mutates")
         fccli("exec", "cancel") if False else None
