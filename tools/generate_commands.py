@@ -198,9 +198,13 @@ def generate(out, force=False, quiet=False, descriptor_path=DESCRIPTOR):
                 continue
             front, old_body = cf.read(path)
             authored = cf.authored_of(front)
-            if cf.edited(front, old_body):
+            was_wiki = (front.get("generated") or {}).get("wiki_rev")
+            if cf.edited(front, old_body) or (was_wiki and not pages):
+                # A person's body stays. So does a wiki-seeded body when
+                # there is no clone to reseed it from: a tooltip is not a
+                # better body than the page was.
                 body, source = old_body, "kept"
-                page_rev = (front.get("generated") or {}).get("wiki_rev")
+                page_rev = was_wiki
         sources[source] = sources.get(source, 0) + 1
         generated = generated_for(entry, stamp, page_rev, body)
         if source == "kept":
