@@ -87,9 +87,11 @@ def main():
     # a FreeCAD someone is using -- that would be its session under test.
     code, out, _ = fccli("ls")
     if code == 0:
-        print("socket: a FreeCAD is already running. Quit it first "
-              "(fccli exec 'quit!') so the suite has a clean session.",
-              file=sys.stderr)
+        print("socket: a FreeCAD is already running, and the suite would be "
+              "testing the session someone is using. Clear it with:\n"
+              "    bin/fccli exec 'quit!'\n"
+              "An aborted run leaves one behind, so this is often its own "
+              "leftover rather than yours.", file=sys.stderr)
         print(out, file=sys.stderr)
         return 2
 
