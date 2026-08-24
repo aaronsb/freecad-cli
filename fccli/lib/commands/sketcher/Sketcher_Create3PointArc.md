@@ -10,7 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_Create3PointArc"
   wiki_rev: "0499378"
-  seed: "ecb37bf5716f"
+  seed: "268eaa1722b4"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

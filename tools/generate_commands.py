@@ -178,8 +178,8 @@ def body_for(entry, pages):
     return tooltip.rstrip(".") + ".", "tooltip"
 
 
-def generate(out, force=False, quiet=False):
-    with open(DESCRIPTOR, encoding="utf-8") as fh:
+def generate(out, force=False, quiet=False, descriptor_path=DESCRIPTOR):
+    with open(descriptor_path, encoding="utf-8") as fh:
         descriptor = json.load(fh)
     clone = docs_clone.ensure(quiet=quiet)
     pages = docs_clone.pages(clone) if clone else {}
@@ -203,6 +203,11 @@ def generate(out, force=False, quiet=False):
                 page_rev = (front.get("generated") or {}).get("wiki_rev")
         sources[source] = sources.get(source, 0) + 1
         generated = generated_for(entry, stamp, page_rev, body)
+        if source == "kept":
+            # The seed stays what the person's body departed from. Stamping
+            # the kept body's own hash would launder it into the tool's,
+            # and the next reconcile would reseed over it.
+            generated["seed"] = (front.get("generated") or {}).get("seed")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as fh:
             fh.write(cf.render(name, generated, authored, body))
@@ -217,9 +222,10 @@ def generate(out, force=False, quiet=False):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=DEFAULT_OUT)
+    ap.add_argument("--descriptor", default=DESCRIPTOR)
     ap.add_argument("--force", action="store_true")
     args = ap.parse_args()
-    generate(args.out, force=args.force)
+    generate(args.out, force=args.force, descriptor_path=args.descriptor)
     return 0
 
 

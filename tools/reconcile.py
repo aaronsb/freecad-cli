@@ -58,12 +58,12 @@ class Report:
         self.added, self.removed, self.rehomed = [], [], []
         self.changed, self.reseeded, self.conflicts = [], [], []
         self.identity, self.stamp = [], None
-        self.no_docs = False
+        self.no_docs, self.page_gone = False, []
 
     def empty(self):
         return not any((self.added, self.removed, self.rehomed, self.changed,
                         self.reseeded, self.conflicts, self.identity,
-                        self.stamp))
+                        self.page_gone, self.stamp))
 
     def text(self):
         lines = []
@@ -77,6 +77,7 @@ class Report:
                              ("changed", self.changed),
                              ("reseeded", self.reseeded),
                              ("conflict", self.conflicts),
+                             ("page gone", self.page_gone),
                              ("identity", self.identity)):
             if not items:
                 continue
@@ -136,11 +137,18 @@ def reconcile(tree, old_path, new_path, apply=False, refresh_docs=False,
         # would mean every wiki-seeded body falling back to its tooltip,
         # so bodies are left alone and the report says why.
         edited = cf.edited(front, body)
-        if clone:
+        if clone and pages:
             new_body, src = gen.body_for(entry, pages)
             page_moved = cf.seed_of(new_body) != (generated.get("seed")
                                                   or cf.seed_of(body))
             page_rev = rev if src == "wiki" else None
+            if page_moved and src != "wiki" and generated.get("wiki_rev"):
+                # The page this body came from is gone -- renamed upstream,
+                # or the clone is thin. A tooltip is not a better body
+                # than the page was, so nothing moves and the report says.
+                report.page_gone.append(f"{name}: {entry.get('wiki') or name}")
+                new_body, page_moved = body, False
+                page_rev = generated.get("wiki_rev")
         else:
             new_body, page_moved = body, False
             page_rev = generated.get("wiki_rev")
@@ -173,11 +181,14 @@ def reconcile(tree, old_path, new_path, apply=False, refresh_docs=False,
                                        else generated.get("seed"))
             text = cf.render(name, regenerated, authored, write_body)
             path = cf.path_for(tree, name, entry.get("workbench"))
-            if moved:
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                os.remove(full)
+            # Write first, then remove: a re-home that dies between the
+            # two must leave the file, not lose it -- a re-run then finds
+            # the command "added" and writes a stub with nothing authored.
+            os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "w", encoding="utf-8") as fh:
                 fh.write(text)
+            if moved and os.path.abspath(full) != os.path.abspath(path):
+                os.remove(full)
 
     for name in sorted(set(files) - set(new["commands"])):
         rel, full, front, body = files[name]

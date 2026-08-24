@@ -2018,6 +2018,13 @@ def _run():
     del _c["Std_Test1"]
     _c["Part_Box"]["label"] = "Cuboid"
     _c["Draft_Line"]["workbench"] = "BIMWorkbench"
+    # Re-homed and authored, both: everything a person wrote must move.
+    with open(os.path.join(_tree, "draft", "Draft_Line.md")) as _fh:
+        _dl = _fh.read()
+    _dl = _dl.replace("verb: null", 'verb: "dline"').replace(
+        "aliases: []", "aliases:\n- dl").replace("rank: null", 'rank: "registry"')
+    with open(os.path.join(_tree, "draft", "Draft_Line.md"), "w") as _fh:
+        _fh.write(_dl)
     _c["Std_TestConsoleOutput"]["tooltip"] = "Console output, verified"
     _c["Std_Test2"]["tooltip"] = "Test 2 moved"
     _c["Mesh_PolySegm"]["label"] = "Mesh Segment"
@@ -2025,13 +2032,17 @@ def _run():
     with open(os.path.join(_tree, "std", "Std_Test2.md"), "a") as _fh:
         _fh.write("\nA person wrote this.\n")
     _rep = _rc.reconcile(_tree, _old, _new, apply=False, quiet=True)
-    check("the report names one of each",
+    # Without the wiki clone no body is compared; the rest of the report
+    # is the same, and the suite says which world it ran in.
+    _online = not _rep.no_docs
+    check("the report names one of each" + ("" if _online else " (no clone)"),
           (_rep.stamp, _rep.added, [r.split(" ")[0] for r in _rep.removed],
            [r.split(":")[0] for r in _rep.rehomed], _rep.reseeded,
            [r.split(":")[0] for r in _rep.conflicts],
            [r.split(":")[0] for r in _rep.identity]),
           (("1.1.3", "9.9.9"), ["Acme_New"], ["Std_Test1"], ["Draft_Line"],
-           ["Std_TestConsoleOutput"], ["Std_Test2"], ["Mesh_PolySegm"]))
+           ["Std_TestConsoleOutput"] if _online else [],
+           ["Std_Test2"] if _online else [], ["Mesh_PolySegm"]))
     check("  and every changed field",
           sorted(r.split(":")[0] for r in _rep.changed),
           ["Mesh_PolySegm", "Part_Box", "Std_Test2", "Std_TestConsoleOutput"])
@@ -2044,7 +2055,8 @@ def _run():
     _front2, _body2 = _cf.read(os.path.join(_tree, "std",
                                             "Std_TestConsoleOutput.md"))
     check("  applied: the unedited body is reseeded",
-          _body2.strip(), "Console output, verified.")
+          _body2.strip(), "Console output, verified." if _online
+          else "Run test cases to verify console messages.")
     check("  applied: files moved, added, retired",
           (os.path.exists(os.path.join(_tree, "bim", "Draft_Line.md")),
            os.path.exists(os.path.join(_tree, "draft", "Draft_Line.md")),
@@ -2055,6 +2067,17 @@ def _run():
     check("  applied: generated block carries the new label and stamp",
           (_front3["generated"]["label"], _front3["generated"]["freecad"]),
           ("Cuboid", "9.9.9"))
+    _front4, _ = _cf.read(os.path.join(_tree, "bim", "Draft_Line.md"))
+    check("  applied: the re-homed file keeps everything authored",
+          (_front4.get("verb"), _front4.get("aliases"), _front4.get("rank")),
+          ("dline", ["dl"], "registry"))
+    # --force keeps a written body AND the seed it departed from, so a
+    # later reconcile still sees it as written rather than laundering it.
+    _gc.generate(_tree, force=True, quiet=True, descriptor_path=_old)
+    _front5, _body5 = _cf.read(os.path.join(_tree, "std", "Std_Test2.md"))
+    check("  --force keeps the written body and its old seed",
+          (_body5.strip().endswith("A person wrote this."),
+           _cf.edited(_front5, _body5)), (True, True))
     _n, _problems = _ld.lint(_tree, _old, os.path.join(_tmp, "dictionary.json"))
     check("  the lint holds against the descriptor it applied",
           (_n, _problems[:2]), (1111, []))
