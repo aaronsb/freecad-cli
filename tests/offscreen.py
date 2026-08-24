@@ -1463,11 +1463,14 @@ def _run():
             self.calls.append(name)
             self.commands += self.brings.get(name, [])
 
-    # Nothing inside this block may trigger a fresh module import: an
-    # import landing here binds the fake permanently, past the finally.
-    # Safe today because every fccli module binds FreeCADGui at its own
-    # module level, and _workbench_borrowed's import is function-local, so
-    # the fake reaches exactly the code under test and nothing else.
+    # Nothing inside this block may trigger a fresh module import: one
+    # landing here would bind the fake permanently, past the finally.
+    # not_yet_loaded does `from .factory import load_descriptor`, and
+    # fccli.factory is not pulled in by importing fccli.panels -- it is in
+    # sys.modules only because section 5z happened to import it seven
+    # hundred lines earlier. Import it here so the window does not depend
+    # on what ran before it.
+    import fccli.factory  # noqa: F401
     _real_gui = sys.modules.get("FreeCADGui")
     try:
         gui = _FakeGui("PartDesignWorkbench")
