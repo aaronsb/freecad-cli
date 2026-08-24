@@ -23,7 +23,8 @@ type: null
 
 The Arch Remove tools allows you to do 2 kinds of operations:
 
-- Remove a subcomponent from an Arch object, for example remove a box that has been added to a wall, like in the Arch Add example. - Subtract a shape-based object from an Arch component such as a Arch Wall or Arch Structure
+- Remove a subcomponent from an Arch object, for example remove a box that has been added to a wall, like in the Arch Add example.
+- Subtract a shape-based object from an Arch component such as a Arch Wall or Arch Structure
 
 The counterpart of this tool is the Arch Add tool.
 

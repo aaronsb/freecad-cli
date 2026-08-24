@@ -22,3 +22,7 @@ type: null
 ---
 
 Creates a FEM boundary condition for a prescribed displacement of a selected object for specified degrees of freedom.
+
+## See also
+
+- FEM_tutorial

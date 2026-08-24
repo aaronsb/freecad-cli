@@ -22,7 +22,3 @@ type: null
 ---
 
 Overwrites vacuum permitivity in Elmer electrostatic and magnetodynamic analyses with a custom value.
-
-## See also
-
-- }}

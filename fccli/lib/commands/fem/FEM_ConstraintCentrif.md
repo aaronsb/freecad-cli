@@ -22,7 +22,3 @@ type: null
 ---
 
 Defines a centrifugal body load.
-
-## See also
-
-- }}

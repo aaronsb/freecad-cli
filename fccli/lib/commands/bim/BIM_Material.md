@@ -23,5 +23,5 @@ type: null
 
 Shows the BIM material dialog. The dialog allows to quickly and easily perform material-related operations, with extra focus on efficient working with many objects and many materials.
 
-- Create new material or multimaterial
-- Attribute an existing material or multimaterial to selected object(s).
+1. Create new material or multimaterial
+2. Attribute an existing material or multimaterial to selected object(s).

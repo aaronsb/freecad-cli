@@ -23,7 +23,7 @@ type: null
 
 The tool Fixture sets the Work Offset Coordinate Fixture of the machine CNC controller.
 
-Target Work Offset Coordinates typically include: Fixtures G53 to G59. The G-code is simply the Fixture (G53, G54, etc\...). The coordinate offset fixtures represent:
+Target Work Offset Coordinates typically include: Fixtures G53 to G59. The G-code is simply the Fixture (G53, G54, etc...). The coordinate offset fixtures represent:
 
 - G53 → Machine coordinate system.
 - G54 → Scratchpad coordinate system.

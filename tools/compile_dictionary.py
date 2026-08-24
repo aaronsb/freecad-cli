@@ -13,6 +13,7 @@ import argparse
 import json
 import os
 import sys
+from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
@@ -41,11 +42,9 @@ def compile_tree(tree):
         revs.append(generated.get("wiki_rev"))
         entry = {"file": rel.replace(os.sep, "/"), "doc": body.strip()}
         for key, value in cf.authored_of(front).items():
-            if value is False or value not in (None, [], {}):
+            if value not in (None, [], {}):
                 entry[key] = value
         commands[name] = entry
-    from collections import Counter
-
     def common(values):
         # The stamp most files carry. A version sorts wrong as a string
         # (1.9 above 1.10) and a commit hash does not sort at all.
@@ -68,7 +67,11 @@ def main():
     ap.add_argument("--tree", default=DEFAULT_TREE)
     ap.add_argument("--out", default=DEFAULT_OUT)
     args = ap.parse_args()
-    data = compile_tree(args.tree)
+    try:
+        data = compile_tree(args.tree)
+    except ValueError as exc:
+        print(f"compile: {exc}", file=sys.stderr)
+        return 1
     with open(args.out, "w", encoding="utf-8") as fh:
         fh.write(dump(data))
     authored = sum(1 for c in data["commands"].values()

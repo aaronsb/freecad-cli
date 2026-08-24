@@ -23,12 +23,12 @@ type: null
 
 The Job tool creates a new Job object in the active document. The Job object contains the following information:
 
-- A list of Tool-Controller definitions, specifying the geometry, Feeds, and Speeds for the Path Operations Tools.
-- A Workflow sequential list of Path Operations.
-- A Base Body---a clone used for offset.
-- A Stock, representing the raw material that will be milled to CAM Workbench.
-- A SetupSheet, containing inputs used by the Path Operations, including static values and formulas.
-- Configuration parameters specifying the output G-Code job's destination path, file name, and extension, and the postprocessor (used to generate the appropriate dialect for the target CNC Controller, and customize Units, Tool Changes, Parking, etc.).
+1. A list of Tool-Controller definitions, specifying the geometry, Feeds, and Speeds for the Path Operations Tools.
+2. A Workflow sequential list of Path Operations.
+3. A Base Body---a clone used for offset.
+4. A Stock, representing the raw material that will be milled to CAM Workbench.
+5. A SetupSheet, containing inputs used by the Path Operations, including static values and formulas.
+6. Configuration parameters specifying the output G-Code job's destination path, file name, and extension, and the postprocessor (used to generate the appropriate dialect for the target CNC Controller, and customize Units, Tool Changes, Parking, etc.).
 
 ## See also
 

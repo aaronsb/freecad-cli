@@ -26,3 +26,15 @@ The Profile tool creates a contour operation based on selected features of the m
 All operations create objects that are made to be part of a CAM Job.
 
 These are the available operations:
+
+## Contour operation
+
+A Contour operation is the default. It creates a simple external contour cut of complex 3D Part-based objects. The entire Job Model serves as the input for the Operation, regardless of whether any Body Geometry is selected when the Contour command is invoked.
+
+## Profile Face operation
+
+A Profile Face operation creates a simple contour path from one or more selected faces of an object.
+
+## Profile Edges operation
+
+A Profile Edges operation creates a simple contour path from selected edges.

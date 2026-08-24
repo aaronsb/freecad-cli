@@ -31,6 +31,12 @@ The output shape occupies the same space as the original. But it is split where 
 
 Please visit Part Slice page for more info.
 
+## Tree structure of Slice Apart
+
+The Slice Apart command creates more than only the sliced object. In the following example a cube is sliced by a face.
+
+The slice is created and for each piece of it there is a Part CompoundFilter created, thus the same slice occurs multiple times below each CompoundFilter. All these CompoundFilters are united in a Compound.
+
 ## See also
 
 - Part_Slice

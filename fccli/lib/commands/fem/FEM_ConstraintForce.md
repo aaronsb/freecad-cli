@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-Applies a force of a given value \[N\] to the selected geometry.
+Applies a force of a given value [N] to the selected geometry.
 
 ## See also
 

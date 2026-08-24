@@ -22,7 +22,3 @@ type: null
 ---
 
 Defines a spring boundary condition to be used for mechanical analyses using the Elmer solver. The spring constraint can be used for the equations Deformation and Elasticity.
-
-## See also
-
-- }}

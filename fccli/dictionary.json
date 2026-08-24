@@ -1,7 +1,7 @@
 {
  "commands": {
   "Arch_Add": {
-   "doc": "The Add tool allows you to do 4 kinds of operations:\n\n- Add shape-based objects to an Arch component, such as a wall or structure. These objects make then part of the Arch component, and allow you to modify its shape but keeping its base properties such as width and height - Add Arch components, such as a Arch Walls or Arch Structures, to a group-based arch object such as Arch Floors. - Add Axis systems to structural objects - Add objects to section planes\n\nThe counterpart of this tool is the Arch Remove tool.\n\n## See also\n\n- Arch_Remove",
+   "doc": "The Add tool allows you to do 4 kinds of operations:\n\n- Add shape-based objects to an Arch component, such as a wall or structure. These objects make then part of the Arch component, and allow you to modify its shape but keeping its base properties such as width and height\n- Add Arch components, such as a Arch Walls or Arch Structures, to a group-based arch object such as Arch Floors.\n- Add Axis systems to structural objects\n- Add objects to section planes\n\nThe counterpart of this tool is the Arch Remove tool.\n\n## See also\n\n- Arch_Remove",
    "file": "bim/Arch_Add.md"
   },
   "Arch_Axis": {
@@ -133,7 +133,7 @@
    "file": "bim/Arch_Reference.md"
   },
   "Arch_Remove": {
-   "doc": "The Arch Remove tools allows you to do 2 kinds of operations:\n\n- Remove a subcomponent from an Arch object, for example remove a box that has been added to a wall, like in the Arch Add example. - Subtract a shape-based object from an Arch component such as a Arch Wall or Arch Structure\n\nThe counterpart of this tool is the Arch Add tool.\n\n## See also\n\n- Arch_CutPlane\n- Arch_Add",
+   "doc": "The Arch Remove tools allows you to do 2 kinds of operations:\n\n- Remove a subcomponent from an Arch object, for example remove a box that has been added to a wall, like in the Arch Add example.\n- Subtract a shape-based object from an Arch component such as a Arch Wall or Arch Structure\n\nThe counterpart of this tool is the Arch Add tool.\n\n## See also\n\n- Arch_CutPlane\n- Arch_Add",
    "file": "bim/Arch_Remove.md"
   },
   "Arch_RemoveShape": {
@@ -369,15 +369,15 @@
    "file": "bim/BIM_Diff.md"
   },
   "BIM_DimensionAligned": {
-   "doc": "The BIM DimensionAligned tool creates an aligned dimension, a Dimension object\\...",
+   "doc": "The BIM DimensionAligned tool creates an aligned dimension, a Dimension object...",
    "file": "bim/BIM_DimensionAligned.md"
   },
   "BIM_DimensionHorizontal": {
-   "doc": "The BIM DimensionHorizontal tool creates an horizontal dimension, a Dimension object\\...",
+   "doc": "The BIM DimensionHorizontal tool creates an horizontal dimension, a Dimension object...",
    "file": "bim/BIM_DimensionHorizontal.md"
   },
   "BIM_DimensionVertical": {
-   "doc": "The BIM DimensionVertical tool creates an vertical dimension, a Dimension object\\...",
+   "doc": "The BIM DimensionVertical tool creates an vertical dimension, a Dimension object...",
    "file": "bim/BIM_DimensionVertical.md"
   },
   "BIM_Door": {
@@ -425,7 +425,7 @@
    "file": "bim/BIM_IfcExplorer.md"
   },
   "BIM_IfcProperties": {
-   "doc": "The IFC properties manager allows you to edit the IFC properties of one selected object, many selected objects or all objects of the document. IFC properties are pieces of information attached to individual objects. They can only be attached to BIM objects, so any non-BIM object must first be converted to a BIM object using the Component tool before being able to hold IFC properties.\n\nIFC properties can be custom, that is, you can define your own name and value for them, or follow a preset schema defined by the IFC standard. These properties are defined in Property sets and are usually made available for the most common IFC types. For example, the Pset_BeamCommon property set is made to be attached to beams. Predefined property sets usually contains usual properties that the IFC schema has defined for a particular type. For example, the Pset_WallCommon, that should be attached to walls, contains properties that define if the wall is load-bearing or is exterior or interior.\n\nYou can create your own properties and property sets and attribute them to any object. There is no requirement in the IFC schema to add predefined Psets for common types or any restriction to add custom properties. This is a decision left to users. Usually, when working in a team, these things get decided alongside other BIM requirements, to make sure all BIM models produced meet the same requirements.",
+   "doc": "The IFC properties manager allows you to edit the IFC properties of one selected object, many selected objects or all objects of the document. IFC properties are pieces of information attached to individual objects. They can only be attached to BIM objects, so any non-BIM object must first be converted to a BIM object using the Component tool before being able to hold IFC properties.\n\nIFC properties can be custom, that is, you can define your own name and value for them, or follow a preset schema defined by the IFC standard. These properties are defined in Property sets and are usually made available for the most common IFC types. For example, the Pset_BeamCommon property set is made to be attached to beams. Predefined property sets usually contains usual properties that the IFC schema has defined for a particular type. For example, the Pset_WallCommon, that should be attached to walls, contains properties that define if the wall is load-bearing or is exterior or interior.\n\nYou can create your own properties and property sets and attribute them to any object. There is no requirement in the IFC schema to add predefined Psets for common types or any restriction to add custom properties. This is a decision left to users. Usually, when working in a team, these things get decided alongside other BIM requirements, to make sure all BIM models produced meet the same requirements.\n\n## Defining your own property sets\n\nThe available predefined property sets are stored in the FreeCAD resource directory which can be found by entering this in the Python console:\n\n```python FreeCAD.getResourceDir() ```\n\nThe predefined property sets are in /Mod/BIM/Presets/pset_definitions.csv.\n\nInside the CSV file, each line represents a different property set, beginning with the name of the set, and any number of Name;Type pairs, defining a property name and its type. For example:\n\nThis would define a property set named \"FreeCAD\" (the \"Pset\\_\" prefix is not mandatory but is a common practice) that contains two properties: one called \"Name\" which is an IfcLabel (a piece of text), and another called \"Version\" which is an IfcReal (a numeric value with decimals).\n\nYou can add a custom csv file with your own property sets. This file must be named CustomPsets.csv and be placed in $USERAPPDATA/BIM.\n\nThe $USERAPPDATA folder depends on your platform/operating system:\n\n- On Windows it is usually: %APPDATA%/FreeCAD\n- On Linux it is usually: $HOME/.FreeCAD\n- On macOS it is usually: $HOME/Library/Preferences/FreeCAD\n\nIt can also be found by entering this in the Python console:\n\n```python FreeCAD.getUserAppDataDir() ```",
    "file": "bim/BIM_IfcProperties.md"
   },
   "BIM_IfcQuantities": {
@@ -449,7 +449,7 @@
    "file": "bim/BIM_Library.md"
   },
   "BIM_Material": {
-   "doc": "Shows the BIM material dialog. The dialog allows to quickly and easily perform material-related operations, with extra focus on efficient working with many objects and many materials.\n\n- Create new material or multimaterial\n- Attribute an existing material or multimaterial to selected object(s).",
+   "doc": "Shows the BIM material dialog. The dialog allows to quickly and easily perform material-related operations, with extra focus on efficient working with many objects and many materials.\n\n1. Create new material or multimaterial\n2. Attribute an existing material or multimaterial to selected object(s).",
    "file": "bim/BIM_Material.md"
   },
   "BIM_MoveView": {
@@ -537,7 +537,7 @@
    "file": "bim/BIM_SetWPTop.md"
   },
   "BIM_Setup": {
-   "doc": "The preferences system of FreeCAD, located under menu Edit -\\> Preferences, is very complex. The BIM setup dialog offers a simplified version of it, by gathering some of the preferences settings most commonly used for BIM work under one simple screen. Changing any of the preference options there has the same effect as changing the corresponding setting under Edit -\\> Preferences.\n\nBy hovering the mouse over each setting, you will be shown a tooltip explaining what it is used for, and the location of the corresponding setting in the general FreeCAD preferences system.",
+   "doc": "The preferences system of FreeCAD, located under menu Edit -> Preferences, is very complex. The BIM setup dialog offers a simplified version of it, by gathering some of the preferences settings most commonly used for BIM work under one simple screen. Changing any of the preference options there has the same effect as changing the corresponding setting under Edit -> Preferences.\n\nBy hovering the mouse over each setting, you will be shown a tooltip explaining what it is used for, and the location of the corresponding setting in the general FreeCAD preferences system.",
    "file": "bim/BIM_Setup.md"
   },
   "BIM_Shape2DCut": {
@@ -697,7 +697,7 @@
    "file": "cam/CAM_ExportTemplate.md"
   },
   "CAM_Fixture": {
-   "doc": "The tool Fixture sets the Work Offset Coordinate Fixture of the machine CNC controller.\n\nTarget Work Offset Coordinates typically include: Fixtures G53 to G59. The G-code is simply the Fixture (G53, G54, etc\\...). The coordinate offset fixtures represent:\n\n- G53 → Machine coordinate system.\n- G54 → Scratchpad coordinate system.\n- G55 to G59.9 → Coordinate fixtures allowing work offsets, relative to Homing switches located on the CNC machine, to be used.\n\nThe G59 Fixture is used to expand available fixtures. The degree of expansion implemented is CNC machine specific, and this command allows provides for G59.1 to G59.9.",
+   "doc": "The tool Fixture sets the Work Offset Coordinate Fixture of the machine CNC controller.\n\nTarget Work Offset Coordinates typically include: Fixtures G53 to G59. The G-code is simply the Fixture (G53, G54, etc...). The coordinate offset fixtures represent:\n\n- G53 → Machine coordinate system.\n- G54 → Scratchpad coordinate system.\n- G55 to G59.9 → Coordinate fixtures allowing work offsets, relative to Homing switches located on the CNC machine, to be used.\n\nThe G59 Fixture is used to expand available fixtures. The degree of expansion implemented is CNC machine specific, and this command allows provides for G59.1 to G59.9.",
    "file": "cam/CAM_Fixture.md"
   },
   "CAM_Helix": {
@@ -709,7 +709,7 @@
    "file": "cam/CAM_Inspect.md"
   },
   "CAM_Job": {
-   "doc": "The Job tool creates a new Job object in the active document. The Job object contains the following information:\n\n- A list of Tool-Controller definitions, specifying the geometry, Feeds, and Speeds for the Path Operations Tools.\n- A Workflow sequential list of Path Operations.\n- A Base Body---a clone used for offset.\n- A Stock, representing the raw material that will be milled to CAM Workbench.\n- A SetupSheet, containing inputs used by the Path Operations, including static values and formulas.\n- Configuration parameters specifying the output G-Code job's destination path, file name, and extension, and the postprocessor (used to generate the appropriate dialect for the target CNC Controller, and customize Units, Tool Changes, Parking, etc.).\n\n## See also\n\n- CAM_Post\n- CAM_Postprocessor_Customization",
+   "doc": "The Job tool creates a new Job object in the active document. The Job object contains the following information:\n\n1. A list of Tool-Controller definitions, specifying the geometry, Feeds, and Speeds for the Path Operations Tools.\n2. A Workflow sequential list of Path Operations.\n3. A Base Body---a clone used for offset.\n4. A Stock, representing the raw material that will be milled to CAM Workbench.\n5. A SetupSheet, containing inputs used by the Path Operations, including static values and formulas.\n6. Configuration parameters specifying the output G-Code job's destination path, file name, and extension, and the postprocessor (used to generate the appropriate dialect for the target CNC Controller, and customize Units, Tool Changes, Parking, etc.).\n\n## See also\n\n- CAM_Post\n- CAM_Postprocessor_Customization",
    "file": "cam/CAM_Job.md"
   },
   "CAM_MillFace": {
@@ -737,7 +737,7 @@
    "file": "cam/CAM_Pocket_Shape.md"
   },
   "CAM_Post": {
-   "doc": "The tool Post exports the selected CAM Job to a G-code file.\n\nEach CNC Controller speaks a specific G-code dialect, requiring a Dialect-correct Postprocessor to translate the final output from the agnostic internal FreeCAD G-code dialect.",
+   "doc": "The tool Post exports the selected CAM Job to a G-code file.\n\nEach CNC Controller speaks a specific G-code dialect, requiring a Dialect-correct Postprocessor to translate the final output from the agnostic internal FreeCAD G-code dialect.\n\n## Typical functions of the Postprocessor include\n\n- Using a correct Job output G-code file extension.\n- Selecting the G-code commands. CNC controllers typically support a subset of available G-code commands. The super-set of G-code commands contains powerful and specialized commands that otherwise must be processed using multiple simpler commands. Postprocessors are written to select the best G-code for an Operation, available on the target.\n- Formatting the G-code syntax by reordering the Feed, X, Y, Z, A, and B inputs, and the precision.\n- Inserting a Pre-amble to set units, units format, Work plane, coordinate system, etc...\n- Inserting a Post-amble to park the machine, stop it, process any arguments.\n- Inserting Tool changes, or suppressing them between subsequent operations using the same tool.\n- Formatting the Feed and Speed rate information to revolutions per minute, or per second.\n- Formatting Function Call Naming and Calling.\n\n## Postprocessor Customization\n\nIf you want to write your own postprocessor, have a look at the CAM Postprocessor Customization page.\n\nNote: Several provided Postprocessors generate suitable code for many CNC controllers, or can be used as templates for modification\n\nPostprocessors contain configuration flags and are designed to be tuned by adding G-codes and M-codes to provided definitions for:\n\n- Machine initialization\n- Job finalization\n- Tool-Changes\n- Cooling on /off\n- Etc...\n\nPostprocessors use FreeCAD's internal G-code dialect in conjunction with the Postprocessor configuration definitions, to generate Dialect-Correct G-code for target machines. This allows the CAM workbench to generate correct G-code to target various CNC machine controllers by invoking different Postprocessors.\n\nCNC Machine Controller types include:\n\n- CNC mills\n- CNC lathes\n- 3D Printers\n- DragKnife Cutters\n- Laser Cutters\n- Engravers\n- Plasma Torch Cutters\n- Wire Benders\n- EDM Cutters\n- Etc...\n\nIf only one CNC machine is used, or if all CNC machines share a common Postprocesor, the CAM workbench would need to include only a single Postprocessor. If a single Postprocessor is inadequate to output G-code for all target CNC controllers, then multiple Postprocessors must be installed.",
    "file": "cam/CAM_Post.md"
   },
   "CAM_Probe": {
@@ -745,7 +745,7 @@
    "file": "cam/CAM_Probe.md"
   },
   "CAM_Profile": {
-   "doc": "The Profile tool creates a contour operation based on selected features of the model. The tool was introduced in version 0.19. It offers three operations that were handled by separate tools in previous versions.\n\nAll operations create objects that are made to be part of a CAM Job.\n\nThese are the available operations:",
+   "doc": "The Profile tool creates a contour operation based on selected features of the model. The tool was introduced in version 0.19. It offers three operations that were handled by separate tools in previous versions.\n\nAll operations create objects that are made to be part of a CAM Job.\n\nThese are the available operations:\n\n## Contour operation\n\nA Contour operation is the default. It creates a simple external contour cut of complex 3D Part-based objects. The entire Job Model serves as the input for the Operation, regardless of whether any Body Geometry is selected when the Contour command is invoked.\n\n## Profile Face operation\n\nA Profile Face operation creates a simple contour path from one or more selected faces of an object.\n\n## Profile Edges operation\n\nA Profile Edges operation creates a simple contour path from selected edges.",
    "file": "cam/CAM_Profile.md"
   },
   "CAM_PropertyBag": {
@@ -805,7 +805,7 @@
    "file": "cam/CAM_ToolBitCreate.md"
   },
   "CAM_ToolBitDock": {
-   "doc": "The ToolBit Dock is easily accessible from the main toolbar in the CAM workbench. Pressing the button will toggle the state of the dock. The dock is displayed in the right position by default but may be moved by the user.\n\nThe purpose of the dock is to display the currently selected library and allow the user to quickly add tool controllers to the CAM Job(s).\n\nDouble-clicking on a toolbit will create a single tool controller for the toolbit. Multi-selecting toolbits and pressing the 'Add to Job' button will create tool controllers for all toolbits in the library.\n\nThe user may also select multiple tools and use the 'add\\...' button at the bottom to add tool controllers for the selection.\n\n+++ | | The top of the panel shows the name of the current library (1). All tool libraries from that location are scanned and shown in the dock. The dock will remember the last selection between uses. A manager button at the top right (4) allows the user to launch the library manager. The library manager can be used to maintain the toolbits and to select a different library. | +++\n\n## See also\n\n- CAM_ToolBitLibraryOpen\n- CAM_Tools\n- CAM_ToolBit",
+   "doc": "The ToolBit Dock is easily accessible from the main toolbar in the CAM workbench. Pressing the button will toggle the state of the dock. The dock is displayed in the right position by default but may be moved by the user.\n\nThe purpose of the dock is to display the currently selected library and allow the user to quickly add tool controllers to the CAM Job(s).\n\nDouble-clicking on a toolbit will create a single tool controller for the toolbit. Multi-selecting toolbits and pressing the 'Add to Job' button will create tool controllers for all toolbits in the library.\n\nThe user may also select multiple tools and use the 'add...' button at the bottom to add tool controllers for the selection.\n\n+++ | | The top of the panel shows the name of the current library (1). All tool libraries from that location are scanned and shown in the dock. The dock will remember the last selection between uses. A manager button at the top right (4) allows the user to launch the library manager. The library manager can be used to maintain the toolbits and to select a different library. | +++\n\n## See also\n\n- CAM_ToolBitLibraryOpen\n- CAM_Tools\n- CAM_ToolBit",
    "file": "cam/CAM_ToolBitDock.md"
   },
   "CAM_ToolBitLibraryOpen": {
@@ -1189,7 +1189,7 @@
    "file": "fem/FEM_CompMechEquations.md"
   },
   "FEM_ConstantVacuumPermittivity": {
-   "doc": "Overwrites vacuum permitivity in Elmer electrostatic and magnetodynamic analyses with a custom value.\n\n## See also\n\n- }}",
+   "doc": "Overwrites vacuum permitivity in Elmer electrostatic and magnetodynamic analyses with a custom value.",
    "file": "fem/FEM_ConstantVacuumPermittivity.md"
   },
   "FEM_ConstraintBearing": {
@@ -1201,7 +1201,7 @@
    "file": "fem/FEM_ConstraintBodyHeatSource.md"
   },
   "FEM_ConstraintCentrif": {
-   "doc": "Defines a centrifugal body load.\n\n## See also\n\n- }}",
+   "doc": "Defines a centrifugal body load.",
    "file": "fem/FEM_ConstraintCentrif.md"
   },
   "FEM_ConstraintContact": {
@@ -1213,7 +1213,7 @@
    "file": "fem/FEM_ConstraintCurrentDensity.md"
   },
   "FEM_ConstraintDisplacement": {
-   "doc": "Creates a FEM boundary condition for a prescribed displacement of a selected object for specified degrees of freedom.",
+   "doc": "Creates a FEM boundary condition for a prescribed displacement of a selected object for specified degrees of freedom.\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_ConstraintDisplacement.md"
   },
   "FEM_ConstraintElectricChargeDensity": {
@@ -1237,7 +1237,7 @@
    "file": "fem/FEM_ConstraintFluidBoundary.md"
   },
   "FEM_ConstraintForce": {
-   "doc": "Applies a force of a given value \\[N\\] to the selected geometry.\n\n## See also\n\n- FEM_ConstraintPressure",
+   "doc": "Applies a force of a given value [N] to the selected geometry.\n\n## See also\n\n- FEM_ConstraintPressure",
    "file": "fem/FEM_ConstraintForce.md"
   },
   "FEM_ConstraintGear": {
@@ -1281,15 +1281,15 @@
    "file": "fem/FEM_ConstraintRigidBody.md"
   },
   "FEM_ConstraintSectionPrint": {
-   "doc": "Prints the predefined facial output variables (forces and moments) to the data file. Can also print heat flux and drag stress (the latter requires the support for 3D fluid analyses with CalculiX which has not yet been implemented).\n\n## See also\n\n- }}",
+   "doc": "Prints the predefined facial output variables (forces and moments) to the data file. Can also print heat flux and drag stress (the latter requires the support for 3D fluid analyses with CalculiX which has not yet been implemented).",
    "file": "fem/FEM_ConstraintSectionPrint.md"
   },
   "FEM_ConstraintSelfWeight": {
-   "doc": "Defines a gravity acceleration acting on the whole model in the prescribed direction. The acceleration has a fixed value of 9.81 m/s\\^2.\n\n## See also\n\n- FEM_tutorial",
+   "doc": "Defines a gravity acceleration acting on the whole model in the prescribed direction. The acceleration has a fixed value of 9.81 m/s^2.\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_ConstraintSelfWeight.md"
   },
   "FEM_ConstraintSpring": {
-   "doc": "Defines a spring boundary condition to be used for mechanical analyses using the Elmer solver. The spring constraint can be used for the equations Deformation and Elasticity.\n\n## See also\n\n- }}",
+   "doc": "Defines a spring boundary condition to be used for mechanical analyses using the Elmer solver. The spring constraint can be used for the equations Deformation and Elasticity.",
    "file": "fem/FEM_ConstraintSpring.md"
   },
   "FEM_ConstraintTemperature": {
@@ -1421,7 +1421,7 @@
    "file": "fem/FEM_MeshGmshFromShape.md"
   },
   "FEM_MeshGroup": {
-   "doc": "The FEM MeshGroup command enables the user to create groups of Vertices, Edges, Surfaces and elements. It is useful in case of using FreeCAD as a pre-processor to export an organized and labeled mesh. The mesh is then usable by external solver codes, where mesh groups can be used more readily to set boundary conditions and attribute solver related properties. It is possible to use the FreeCAD mesh group object name or the label as the group name on export of the mesh. If the label is chosen, the user has to be mindful if special characters are used. If the mesh export format does not allow special character its fallback is to use the mesh group object name.\n\nFEM MeshGroup therefore enables FreeCAD to be used with external solvers (or viewers such as ParaView) when they are not yet implemented with their own case-writing routine within FreeCAD.",
+   "doc": "The FEM MeshGroup command enables the user to create groups of Vertices, Edges, Surfaces and elements. It is useful in case of using FreeCAD as a pre-processor to export an organized and labeled mesh. The mesh is then usable by external solver codes, where mesh groups can be used more readily to set boundary conditions and attribute solver related properties. It is possible to use the FreeCAD mesh group object name or the label as the group name on export of the mesh. If the label is chosen, the user has to be mindful if special characters are used. If the mesh export format does not allow special character its fallback is to use the mesh group object name.\n\nFEM MeshGroup therefore enables FreeCAD to be used with external solvers (or viewers such as ParaView) when they are not yet implemented with their own case-writing routine within FreeCAD.\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_MeshGroup.md"
   },
   "FEM_MeshNetgenFromShape": {
@@ -1429,7 +1429,7 @@
    "file": "fem/FEM_MeshNetgenFromShape.md"
   },
   "FEM_MeshRegion": {
-   "doc": "Enables the user to set a localized set of meshing parameters by selecting a set of elements (vertex, edge, face) and applying the parameters to it. It is especially useful for refining meshes in areas of interest or areas where the solver will generate a stronger gradient of a variable. For example, it can be used to refine the mesh around stress-risers (sharp edges, holes, notches, \\...) in mechanical analysis, or at areas of contraction in a fluid flow.\n\nRefining the mesh has the advantage of enabling accurate simulation where needed, while allowing coarser mesh in the wider domain, thus drastically optimizing the computation time while maintaining meaningful solutions output.\n\n## See also\n\n- FEM_tutorial",
+   "doc": "Enables the user to set a localized set of meshing parameters by selecting a set of elements (vertex, edge, face) and applying the parameters to it. It is especially useful for refining meshes in areas of interest or areas where the solver will generate a stronger gradient of a variable. For example, it can be used to refine the mesh around stress-risers (sharp edges, holes, notches, ...) in mechanical analysis, or at areas of contraction in a fluid flow.\n\nRefining the mesh has the advantage of enabling accurate simulation where needed, while allowing coarser mesh in the wider domain, thus drastically optimizing the computation time while maintaining meaningful solutions output.\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_MeshRegion.md"
   },
   "FEM_PostApplyChanges": {
@@ -1529,7 +1529,7 @@
    "file": "fem/FEM_SolverElmer.md"
   },
   "FEM_SolverMystran": {
-   "doc": "The SolverMystran command enables usage of the MYSTRAN solver. It may be used for:\n\n- Setting analysis parameters.\n- Selecting working directory.\n- Running the MYSTRAN solver.\n\n## See also\n\n- FEM_tutorial",
+   "doc": "The SolverMystran command enables usage of the MYSTRAN solver. It may be used for:\n\n1. Setting analysis parameters.\n2. Selecting working directory.\n3. Running the MYSTRAN solver.\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_SolverMystran.md"
   },
   "FEM_SolverRun": {
@@ -1537,7 +1537,7 @@
    "file": "fem/FEM_SolverRun.md"
   },
   "FEM_SolverZ88": {
-   "doc": "The SolverZ88 command enables usage of the Z88 solver. It may be used for:\n\n- Setting analysis parameters\n- Selecting working directory\n- Running the Z88 solver\n\n## See also\n\n- FEM_tutorial",
+   "doc": "The SolverZ88 command enables usage of the Z88 solver. It may be used for:\n\n1. Setting analysis parameters\n2. Selecting working directory\n3. Running the Z88 solver\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_SolverZ88.md"
   },
   "IFC_ConvertDocument": {
@@ -1793,7 +1793,7 @@
    "file": "openscad/OpenSCAD_MeshBoolean.md"
   },
   "OpenSCAD_Minkowski": {
-   "doc": "Applies a Minkowski sum to selected shapes.",
+   "doc": "Applies a Minkowski sum to selected shapes.\n\n## Mathematical Definition\n\nAdd each element of subset A to each element of subset B to get Minkowski sum.\n\n## Geometrical Definition\n\nSweep element A along all boundaries of element B. Resulting space which is occupied by both elements is Minkowski sum.\n\nExample of Minkowski sum applied to cylinder and cube. Note: that the height of Minkowski sum is height of cylinder plus height of cube.",
    "file": "openscad/OpenSCAD_Minkowski.md"
   },
   "OpenSCAD_MirrorMeshFeature": {
@@ -2241,7 +2241,7 @@
    "file": "part/Part_Slice.md"
   },
   "Part_SliceApart": {
-   "doc": "Tool to split shapes by intersection with other shapes. For example, for a box and a plane, two solids are created.\n\n- Above: the pieces were moved apart manually afterwards, to reveal the slicing.*\n\nSlice apart is the same as Part Slice followed by Part Explode Compound. While \"Slice to compound\" is fully-parametric, and causes no trouble as the number of pieces changes, \"Slice apart\" will not update the number of objects as the number of pieces changes. They both create Slice parametric feature, that puts the sliced pieces into a compound, but \"Slice apart\" explodes the resulting compound into separate objects.\n\nThe output shape occupies the same space as the original. But it is split where it intersects with other shapes. The split pieces are individual pieces.\n\nPlease visit Part Slice page for more info.\n\n## See also\n\n- Part_Slice\n- Part_ExplodeCompound",
+   "doc": "Tool to split shapes by intersection with other shapes. For example, for a box and a plane, two solids are created.\n\n- Above: the pieces were moved apart manually afterwards, to reveal the slicing.*\n\nSlice apart is the same as Part Slice followed by Part Explode Compound. While \"Slice to compound\" is fully-parametric, and causes no trouble as the number of pieces changes, \"Slice apart\" will not update the number of objects as the number of pieces changes. They both create Slice parametric feature, that puts the sliced pieces into a compound, but \"Slice apart\" explodes the resulting compound into separate objects.\n\nThe output shape occupies the same space as the original. But it is split where it intersects with other shapes. The split pieces are individual pieces.\n\nPlease visit Part Slice page for more info.\n\n## Tree structure of Slice Apart\n\nThe Slice Apart command creates more than only the sliced object. In the following example a cube is sliced by a face.\n\nThe slice is created and for each piece of it there is a Part CompoundFilter created, thus the same slice occurs multiple times below each CompoundFilter. All these CompoundFilters are united in a Compound.\n\n## See also\n\n- Part_Slice\n- Part_ExplodeCompound",
    "file": "part/Part_SliceApart.md"
   },
   "Part_Sphere": {
@@ -3209,7 +3209,7 @@
    "file": "std/Std_FreeCADWebsite.md"
   },
   "Std_FreezeViews": {
-   "doc": "FreeCAD can store camera settings in up to 50 'frozen views'. The menu options that deal with frozen views can be found in the View → Freeze display submenu. Frozen views are not stored in the document and, if not saved with the Save views\\... menu option, will be lost when the FreeCAD application closes.\n\n## See also\n\n- Std_StoreWorkingView\n- Std_RecallWorkingView\n- Std_ViewIvIssueCamPos",
+   "doc": "FreeCAD can store camera settings in up to 50 'frozen views'. The menu options that deal with frozen views can be found in the View → Freeze display submenu. Frozen views are not stored in the document and, if not saved with the Save views... menu option, will be lost when the FreeCAD application closes.\n\n## See also\n\n- Std_StoreWorkingView\n- Std_RecallWorkingView\n- Std_ViewIvIssueCamPos",
    "file": "std/Std_FreezeViews.md"
   },
   "Std_Group": {

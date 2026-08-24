@@ -39,11 +39,13 @@ DEFLIST = re.compile(r"\s+:\s+")
 CAPTION = re.compile(r"^\*[^*]+\*$")
 TEMPLATE = re.compile(r"\{\{[^{}]*\}\}")
 QUOTES = re.compile(r"(?:\\?'){2,3}")   # wiki italics and bold, sometimes escaped
-ESCAPED = re.compile(r"\\(['\"*_])")      # the conversion escapes punctuation; prose does not
-LIST_ITEM = re.compile(r"^\s*(?:[-*]|\d+\.)\s+")
+ESCAPED = re.compile(r"\\([^\w\s\\])")   # the conversion escapes punctuation; prose does not
+LIST_ITEM = re.compile(r"^\s*(?P<mark>[-*]|\d+\.)\s+")
 REDIRECT = re.compile(r"REDIRECT\s+\[[^\]]*\]\((\w+)\.md\)")
-SECTION = re.compile(r"^#{2,3} +(.*?)\s*$", re.M)
-FIELD = re.compile(r"^\s*(\w+):\s*(.*?)\s*$", re.M)
+SECTION = re.compile(r"^(#{2,3}) +(.*?)\s*$", re.M)
+# One field per line. \s would cross the newline and let an empty field
+# swallow the next one: "Shortcut: \n SeeAlso: X" read as Shortcut = "SeeAlso: X".
+FIELD = re.compile(r"^[ \t]*(\w+):[ \t]*(.*?)[ \t]*$", re.M)
 # Sections that describe the tool, first one wins.
 DESCRIBES = ("description", "introduction")
 
@@ -67,8 +69,15 @@ def page_parts(text):
     sections = list(SECTION.finditer(text))
     description = ""
     for i, sec in enumerate(sections):
-        if sec.group(1).lower() in DESCRIBES:
-            end = sections[i + 1].start() if i + 1 < len(sections) else len(text)
+        if sec.group(2).lower() in DESCRIBES:
+            # To the next heading of the same or a higher level: a ###
+            # inside the Description is part of it.
+            level = len(sec.group(1))
+            end = len(text)
+            for later in sections[i + 1:]:
+                if len(later.group(1)) <= level:
+                    end = later.start()
+                    break
             description = text[sec.end():end]
             break
     return front, clean(description), None
@@ -93,10 +102,25 @@ def clean(md):
         if lines[0].startswith("---") or lines[0].startswith("\u23f5") \
                 or "documentation index" in lines[0]:
             continue        # the page footer, when Description is last
-        if all(LIST_ITEM.match(l) for l in lines):
-            # A list stays a list; one item per line.
-            paragraphs.append("\n".join(
-                "- " + LIST_ITEM.sub("", l) for l in lines))
+        if len(lines) == 1 and re.match(r"#{2,6} ", lines[0]):
+            # A heading inside the description, at one level: man shows
+            # a "## " paragraph as a heading.
+            paragraphs.append("## " + lines[0].lstrip("#").strip())
+            continue
+        if LIST_ITEM.match(lines[0]):
+            # A list stays a list, one item per line; a line that starts
+            # with no marker is the previous item wrapped. Numbers stay
+            # numbers.
+            items = []
+            for l in lines:
+                m = LIST_ITEM.match(l)
+                if m:
+                    mark = m.group("mark")
+                    items.append((mark if mark[0].isdigit() else "-")
+                                 + " " + l[m.end():])
+                elif items:
+                    items[-1] += " " + l
+            paragraphs.append("\n".join(items))
             continue
         joined = " ".join(lines).strip()
         if not joined or CAPTION.match(joined):

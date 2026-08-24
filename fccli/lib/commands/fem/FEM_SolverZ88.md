@@ -23,9 +23,9 @@ type: null
 
 The SolverZ88 command enables usage of the Z88 solver. It may be used for:
 
-- Setting analysis parameters
-- Selecting working directory
-- Running the Z88 solver
+1. Setting analysis parameters
+2. Selecting working directory
+3. Running the Z88 solver
 
 ## See also
 

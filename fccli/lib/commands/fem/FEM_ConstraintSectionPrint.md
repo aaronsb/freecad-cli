@@ -22,7 +22,3 @@ type: null
 ---
 
 Prints the predefined facial output variables (forces and moments) to the data file. Can also print heat flux and drag stress (the latter requires the support for 3D fluid analyses with CalculiX which has not yet been implemented).
-
-## See also
-
-- }}

@@ -1819,24 +1819,31 @@ def _run():
     import generate_commands as _gc
     _page = (
         "---\n GuiCommand:\n   Name: Acme Thing\n   Shortcut: **G** **C**\n"
-        "   SeeAlso: Acme_Other, Acme_More\n---\n\n# Acme Thing\n\n"
-        "### Description\n\nThe <img src=x.svg> [Acme Thing](Acme_Thing.md) "
+        "   Version: \n   SeeAlso: Acme_Other, Acme_More\n---\n\n# Acme Thing\n\n"
+        "## Description\n\nThe <img src=x.svg> [Acme Thing](Acme_Thing.md) "
         "tool does " + "'" * 3 + "things" + "'" * 3 + " <small>(v0.21)</small> : and "
-        "\\'\\'more\\'\\'. {{Version|1.0}}\n\n ![](images/Acme.png) \n\n*A caption*\n\n"
-        "-   First item\n-   Second [item](X.md)\n\n"
+        "\\'\\'more\\'\\'\\. {{Version|1.0}}\n\n ![](images/Acme.png) \n\n*A caption*\n\n"
+        "-   First item\n-   Second [item](X.md)\n    wrapped\n1.  Third\n\n"
+        "### Sub heading\n\nStill the description.\n\n## Usage\n\nNot.\n\n"
         "---\n⏵ [documentation index](../README.md) > Acme > Acme Thing\n")
     _front, _desc, _redir = _gc.page_parts(_page)
     check("a page's fields are read a line at a time, not as YAML",
           (_front.get("Shortcut"), _gc.see_also(_front)),
           ("**G** **C**", ["Acme_Other", "Acme_More"]))
-    check("  ### Description counts, and the prose comes out clean",
+    check("  an empty field does not swallow the next line",
+          _front.get("Version"), None)
+    check("  the prose comes out clean",
           _desc.split("\n\n")[0],
           "The Acme Thing tool does things and more.")
-    check("  a list stays a list, one item per line",
-          _desc.split("\n\n")[1], "- First item\n- Second item")
+    check("  a list stays a list; a wrapped item rejoins; numbers stay",
+          _desc.split("\n\n")[1], "- First item\n- Second item wrapped\n1. Third")
+    check("  a ### inside the Description is part of it; ## Usage ends it",
+          _desc.split("\n\n")[2:], ["## Sub heading", "Still the description."])
     check("  the image, its caption, the template and the footer are gone",
-          (len(_desc.split("\n\n")), "caption" in _desc, "{{" in _desc,
-           "index" in _desc), (2, False, False, False))
+          ("caption" in _desc, "{{" in _desc, "index" in _desc, "Not." in _desc),
+          (False, False, False, False))
+    _d3 = _gc.page_parts("### Description\n\nDeep.\n\n### Other\n\nx\n")
+    check("  ### Description counts and ends at the next ###", _d3[1], "Deep.")
     _r = _gc.page_parts("---\n GuiCommand:\n   Name: X\n---\n\n"
                         "1.  REDIRECT [Part_Common](Part_Common.md)\n")
     check("  a redirect names where to look", _r[2], "Part_Common")

@@ -23,6 +23,7 @@ to regenerate.
 import argparse
 import json
 import os
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -35,8 +36,8 @@ import compile_dictionary as cd  # noqa: E402
 DESCRIPTOR = os.path.join(ROOT, "fccli", "descriptor.json")
 
 # Descriptor field -> generated: field, compared value for value. freecad
-# is compared to the descriptor's stamp; wiki_rev and seed are the tool's
-# own and only their presence as keys is checked.
+# is compared to the descriptor's stamp. wiki_rev is the tool's own: null,
+# or the short hash of the documentation commit the body was seeded from.
 MIRRORED = ("label", "tooltip", "toolbar", "menu", "shortcut", "workbench",
             "wiki")
 
@@ -84,6 +85,11 @@ def lint(tree, descriptor_path, compiled_path):
                     f"{rel}: generated.{key} is {generated.get(key)!r}, the "
                     f"descriptor says {entry.get(key)!r} -- a change here "
                     f"belongs in an authored field (rule 2)")
+        wiki_rev = generated.get("wiki_rev")
+        if wiki_rev is not None and not (isinstance(wiki_rev, str)
+                                         and re.fullmatch(r"[0-9a-f]{7,40}", wiki_rev)):
+            problems.append(f"{rel}: generated.wiki_rev {wiki_rev!r} is not a "
+                            f"commit hash or null (rule 2)")
         if generated.get("freecad") != descriptor.get("freecad"):
             problems.append(f"{rel}: generated.freecad is "
                             f"{generated.get('freecad')!r}, the descriptor is "
