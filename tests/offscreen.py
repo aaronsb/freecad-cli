@@ -1463,13 +1463,13 @@ def _run():
             self.calls.append(name)
             self.commands += self.brings.get(name, [])
 
-    # Nothing inside this block may trigger a fresh module import: one
-    # landing here would bind the fake permanently, past the finally.
-    # not_yet_loaded does `from .factory import load_descriptor`, and
-    # fccli.factory is not pulled in by importing fccli.panels -- it is in
-    # sys.modules only because section 5z happened to import it seven
-    # hundred lines earlier. Import it here so the window does not depend
-    # on what ran before it.
+    # Nothing inside this block may EXECUTE a module: an import that runs
+    # would bind the fake permanently, past the finally. An import
+    # statement that resolves from sys.modules is fine, and there is one
+    # -- not_yet_loaded does `from .factory import load_descriptor`.
+    # Importing fccli.panels does not pull fccli.factory in, so that would
+    # be a cold import here if nothing else had loaded it. Load it now, so
+    # the window holds by construction rather than by what ran before it.
     import fccli.factory  # noqa: F401
     _real_gui = sys.modules.get("FreeCADGui")
     try:
