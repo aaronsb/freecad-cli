@@ -394,6 +394,7 @@ has changes; a released copy carries a stamped `fccli/_build.py`.
 | | |
 |---|---|
 | [docs/conventions.md](docs/conventions.md) | every rule the command line follows, in one place |
+| [docs/addons.md](docs/addons.md) | adding command-line support to an addon |
 | [docs/shell.md](docs/shell.md) | the terminal client's design |
 | [FINDINGS.md](FINDINGS.md) | what was learned about FreeCAD's internals |
 | [CHANGELOG.md](CHANGELOG.md) | releases |
