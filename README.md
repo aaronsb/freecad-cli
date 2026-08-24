@@ -235,6 +235,7 @@ invocation. `tools/generate_descriptor.py` harvests both into
 | Tier | Count | Source |
 |---|---|---|
 | 0 | ~1020 | every registered command, as a zero-step verb that runs it |
+| families | ~41 | a group FreeCAD spread apart, as one verb with a choice |
 | 1 | ~206 | every parametric type, with steps from its own properties |
 | 2 | hand-written + patched | point-picking verbs, ordering, inline options |
 
@@ -251,6 +252,35 @@ alone. Command metadata is attached only where the evidence is real.
 Eighty-four commands, 1.8 seconds, no mouse. Fourteen square levels each
 rotated 14°, a circle inscribed at each, 52 stringers connecting corners
 level to level, and a plinth dimensioned in inches.
+
+### Families
+
+FreeCAD spreads one idea across many commands with no shared name. Zooming
+is `Std_ViewFitAll`, `Std_ViewFitSelection`, `Std_ViewZoomIn`,
+`Std_ViewZoomOut` and `Std_BoxZoom`. Sketcher constraints are two dozen
+`Sketcher_Constrain*`. As bare launchers each is reachable and none is
+discoverable — nothing completes, and there is no way to ask what the
+alternatives are.
+
+The family is in the names, so it is read off the registry rather than
+listed:
+
+```
+> constrain <Tab>
+angle  block  coincident  diameter  distance  equal  parallel  perpendicular ...
+> view f<Tab>
+fit_all  fit_selection  front  fullscreen
+```
+
+`Module_CamelCaseRest` splits into a head shared by the family and a
+remainder that distinguishes its members. 41 families cover ~480 commands.
+Nothing names a command; a single-letter head from a split acronym and
+FreeCAD's own UI prefixes are excluded, and a family never takes a name a
+hand-written or generated verb already owns.
+
+Where a derived family is worse than a curated verb, write the verb — `zoom`
+is that: it gathers the five zoom commands under names a person would reach
+for, across two different name stems the splitter cannot join.
 
 ### Patches
 

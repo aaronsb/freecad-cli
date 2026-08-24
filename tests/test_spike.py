@@ -430,6 +430,33 @@ def main():
           walked[-1] if walked else None, "polyline 0,0,0 40,0,0 close")
     engine.submit("close!")
 
+    print("\n5e. families: one verb for a spread-out group")
+    from fccli.families import families as _families, split_command
+    fresh2 = _Registry()
+    counts2 = register_all(fresh2, tier0=True, patches=PatchSet())
+    check("families were registered", counts2.get("families", 0) > 20, True)
+    check("  and none displaced a name already taken",
+          counts2.get("family_shadowed", 0) > 0, True)
+
+    constrain = fresh2.get("constrain")
+    check("a family verb exists", constrain is not None, True)
+    if constrain:
+        choices = constrain.steps[0].choices
+        check("  with the members as choices",
+              all(c in choices for c in
+                  ("coincident", "parallel", "perpendicular")), True)
+
+    # Nothing here names a command: the grouping is read off the registry.
+    fam = _families(load_descriptor()["commands"])
+    check("the grouping is derived, not listed",
+          "view" in fam and "snap" in fam, True)
+    check("an acronym is not mistaken for a family", "b" in fam, False)
+    check("FreeCAD's own UI prefixes are not families",
+          "comp" in fam, False)
+    check("Module_CamelCase splits into head and rest",
+          split_command("Sketcher_ConstrainCoincident"),
+          ("Sketcher", ["Constrain", "Coincident"]))
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

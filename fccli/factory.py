@@ -23,6 +23,7 @@ import re
 from . import bus as _bus
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
                       Option, Registry, Step, Verb)
+from .families import families
 from .patches import load_patches
 
 DESCRIPTOR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -181,6 +182,39 @@ def _qualify(verb, tid, registry):
     return new_name
 
 
+# ------------------------------------------------------------ families
+
+def _emit_family(members):
+    """Run whichever member of the family was chosen."""
+    def emit(values):
+        import FreeCADGui as Gui
+        target = values.get("target")
+        entry = members.get(target)
+        if entry is None:
+            raise RuntimeError(
+                f"{target!r} is not one of: {', '.join(sorted(members))}")
+        Gui.runCommand(entry["command"])
+        return None
+    return emit
+
+
+def build_family_verb(name, members):
+    """One verb for a family FreeCAD spread across many commands.
+
+    Each member stays reachable as its own tier 0 verb; this adds the door
+    that can be asked what is behind it.
+    """
+    choices = sorted(members)
+    labels = ", ".join(members[c]["label"] for c in choices[:4])
+    return Verb(
+        name=name,
+        steps=[Step("target", CHOICE, f"{name.capitalize()} what",
+                    choices=choices)],
+        emit=_emit_family(members),
+        doc=f"{len(choices)} commands FreeCAD spreads apart: {labels}...",
+    )
+
+
 def _slug(text):
     text = re.sub(r"[&.]", "", text or "").strip().lower()
     text = re.sub(r"[^a-z0-9]+", "_", text).strip("_")
@@ -264,6 +298,17 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
         registry.add(verb)
         counts["patched"] += 1
         counts["tier1"] += 1
+
+    # Families sit between the generated verbs and the bare launchers: they
+    # make a spread-out group discoverable without displacing anything
+    # anyone wrote.
+    if tier0:
+        for name, members in families(descriptor["commands"]).items():
+            if _claimed(registry, name) or registry.get(name) is not None:
+                counts["family_shadowed"] = counts.get("family_shadowed", 0) + 1
+                continue
+            registry.add(build_family_verb(name, members))
+            counts["families"] = counts.get("families", 0) + 1
 
     # Verbs an addon declared outright win over everything generated: the
     # author knows what their FeaturePython object is, and FreeCAD's type
