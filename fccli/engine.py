@@ -118,6 +118,9 @@ class Engine:
         self.step_index = 0
         self.done: set = set()
         self.values: Dict[str, Any] = {}
+        # The text each answer arrived as, by step id, so a script can put
+        # an argument into a line exactly as it was typed.
+        self.typed: Dict[str, Any] = {}
         # Steps for this invocation, when the verb only learned them by
         # starting. None means the verb's own declared steps stand.
         self.steps: Optional[List[Step]] = None
@@ -127,7 +130,7 @@ class Engine:
         # idle. Anything asking "did the command line cause this?" -- the
         # test suite's dialog watchdog, the socket's busy check -- wants
         # this rather than state.
-        self.driving = False
+        self.driving = 0
         self.replay: List[str] = []
         # Which replay tokens came from the viewport rather than the
         # keyboard. A command driven half by mouse can then hand back the
@@ -136,6 +139,11 @@ class Engine:
         # What Enter on an empty prompt would repeat.
         self.repeat_hint: Optional[str] = None
         self.flags: Dict[str, Any] = {}
+        # Above zero while a script runs its lines: the call is the one
+        # history line, the lines inside are not recorded. script_depth
+        # counts scripts inside scripts, so one that runs itself stops.
+        self.suppress_record = 0
+        self.script_depth = 0
 
     # ---------------------------------------------------------------- query
 
@@ -248,6 +256,11 @@ class Engine:
         if force:
             token = token[:-1]
         hits = self.registry.resolve_prefix(token)
+        if not hits and ("/" in token or token.startswith(".")):
+            # A path is a script to run: ./tower 20, plinth/tower 20.
+            hits = self.registry.resolve_prefix("run")
+            rest = [token] + rest
+            token = "run"
         if not hits:
             self.bus.emit(_bus.ERROR, f"unknown command: {token}")
             return
@@ -260,6 +273,7 @@ class Engine:
         self.step_index = 0
         self.done = set()
         self.values = {}
+        self.typed = {}
         self.steps = None
         self.flags = {"force": force}
         self.replay = [self.verb.name + ("!" if force else "")]
@@ -280,18 +294,17 @@ class Engine:
                 # refuses the request says so -- and a modal raised with
                 # nothing armed waits for a click nobody is there to make,
                 # which is the whole of what modals.py exists to stop.
-                self.driving = True
+                self.driving += 1
                 with modals.intercepted(force=force) as caught:
                     found = self.verb.open(self)
             except Exception as exc:
-                self.driving = False
                 self._abort_verb()
                 self._reset()
                 self.bus.emit(_bus.ERROR, f"{name}: {exc}")
                 self._announce()
                 return
             finally:
-                self.driving = False
+                self.driving -= 1
             if caught:
                 self._abort_verb()
                 self._reset()
@@ -455,8 +468,10 @@ class Engine:
             self.picked.append(len(self.replay))
         if step.repeat:
             self.values.setdefault(step.id, []).append(value)
+            self.typed.setdefault(step.id, []).append(typed)
         else:
             self.values[step.id] = value
+            self.typed[step.id] = typed
             self.done.add(step.id)
         self.replay.append(typed)
         if step.on_accept is not None and not self.dry:
@@ -528,6 +543,7 @@ class Engine:
 
     def _finish(self) -> None:
         verb, values, flags = self.verb, self.values, dict(self.flags)
+        typed_by_step = dict(self.typed)
         replay = " ".join(self.replay)
         # Capture provenance before the reset clears it.
         picked = list(self.picked)
@@ -546,9 +562,12 @@ class Engine:
             return
         doc = _open_transaction(verb, replay, panel=flags.get("panel"))
         try:
-            self.driving = True
+            # A counter: a script's emit runs other lines through here,
+            # and each of those must not reset it for the outer one.
+            self.driving += 1
             with modals.intercepted(force=flags.get("force")) as caught:
-                obj = verb.emit({**values, "_flags": flags, "_engine": self})
+                obj = verb.emit({**values, "_flags": flags, "_engine": self,
+                                 "_typed": typed_by_step})
         except Exception as exc:
             _abort_transaction(doc)
             # _reset already cleared self.verb, so the verb has to be told
@@ -559,7 +578,7 @@ class Engine:
             self._announce()
             return
         finally:
-            self.driving = False
+            self.driving -= 1
         if caught:
             # FreeCAD rejected the request. That is the same kind of answer
             # as a bad quantity, and it travels the same way -- rather than
@@ -575,7 +594,7 @@ class Engine:
             self.bus.emit(_bus.INFO, notice)
         self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
                       object=obj, picked=picked, typed=typed,
-                      record=verb.record)
+                      record=verb.record and not self.suppress_record)
         self._announce()
 
     def _only_optional_left(self) -> bool:
@@ -621,6 +640,7 @@ class Engine:
         self.step_index = 0
         self.done = set()
         self.values = {}
+        self.typed = {}
         self.steps = None
         self.replay = []
         self.picked = []

@@ -50,7 +50,9 @@ said once. Nothing is written to FreeCAD's directories.
 a later session, and Up does not recall them.
 
 *Amended 2026-08-24 on building it: `lib` is a directory of links, not
-one link; the four navigation verbs stay out of history.*
+one link; the four navigation verbs stay out of history; a script run by
+path takes its arguments inline rather than prompting; `rehash` re-reads
+`bin/`.*
 
 **The working directory is session state.** One session, one cwd; `cd`
 in the dock moves the socket client too, in lockstep, the same way `use`

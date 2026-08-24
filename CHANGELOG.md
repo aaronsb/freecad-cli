@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- **A value under a step in inches replayed as inches of millimetres.**
+  `parse_quantity` hands back FreeCAD's internal value -- millimetres for
+  any length -- and `format_quantity` built a Quantity in the step's unit
+  from it, so `3in` echoed and replayed as `76.2in`. Every hand-written
+  step is in millimetres, which is why nobody saw it until a script
+  declared a step in inches. A stored length is rendered as millimetres,
+  and a stored angle as degrees, whatever unit the step names.
 - **239 commands get their workbench.** The harvest snapshots
   `listCommands()` before activating anything, so whatever the startup
   workbench had already loaded -- Sketcher, Part and Part Design on a
@@ -87,7 +94,16 @@
   session has a working directory, moved by `cd` from either terminal and
   shown in both prompts; `ls`, `pwd` and `cat` read the tree; Tab on a path
   offers what is there. The root is a jail: `cd ..` at `/` stays at `/`.
-  ADR-601. Scripts come next.
+  ADR-601.
+- **Scripts.** A `.fccli` file is YAML frontmatter -- `doc`, `steps` in the
+  step syntax patches use -- and a body of command lines with `$id` for
+  each argument. One in `bin/` is a verb by file name: it completes,
+  prompts, and replays. Elsewhere `run plinth/tower 20` or `./tower 20`
+  runs it with the arguments inline. The first error or unanswered prompt
+  stops it; the call is one history line and the lines inside are not
+  recorded; each line is its own undo step. `rehash` reads `bin/` again;
+  `man` on a script shows the `.md` beside it. A `.FCMacro` runs through
+  FreeCAD's Python console. The format is experimental, as ADR-601 says.
 - **One file per command.** `fccli/lib/commands/<workbench>/<Command>.md`
   for all 1111 -- Markdown with YAML frontmatter, a `generated:` block the
   tool owns and authored fields (`verb`, `aliases`, `requires`, `panel`,

@@ -129,6 +129,8 @@ class Verb:
     # with the prompt-context work.
     requires: List[str] = field(default_factory=list)
     panel: Optional[str] = None
+    # The .fccli file this verb runs, when it is a script (ADR-601).
+    script: Optional[str] = None
 
 
 class Registry:
@@ -152,6 +154,14 @@ class Registry:
         for verb in self._verbs.values():
             for alias in verb.aliases:
                 self._aliases[alias.lower()] = verb.name
+
+    def remove(self, name: str) -> Optional[Verb]:
+        verb = self._verbs.pop(name, None)
+        if verb is not None:
+            for a in verb.aliases:
+                if self._aliases.get(a.lower()) == name:
+                    del self._aliases[a.lower()]
+        return verb
 
     def get(self, token: str) -> Optional[Verb]:
         t = token.lower()
