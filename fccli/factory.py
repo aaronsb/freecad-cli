@@ -18,6 +18,7 @@ command to a type cannot be done reliably by machine, and the reframe that
 makes this work is that tier 1 never needed it.
 """
 
+import html
 import json
 import os
 import re
@@ -188,8 +189,11 @@ def _plain(text, mnemonic=False):
 
     Menu text carries a Qt mnemonic marker, and Qt spells a literal
     ampersand there as &&; a tooltip is prose and keeps its &.
+
+    One departure from clean(): a tag becomes a space, not nothing. The
+    harvest's tooltips were plain and needed unglue() for the rich-text
+    fallback; an addon's toolTip is the rich-text case from the start.
     """
-    import html
     text = html.unescape(_TAG.sub(" ", text or ""))
     if mnemonic:
         text = text.replace("&&", "\0").replace("&", "").replace("\0", "&")
@@ -235,8 +239,7 @@ def runtime_commands(known):
         if not tooltip:
             # Never the command name: nothing should hand a reader
             # documentation that ends in the thing it documents.
-            tooltip = (label if label != name
-                       else name.replace("_", " ")) + ""
+            tooltip = label if label != name else name.replace("_", " ")
         out.append({"name": name, "label": label, "tooltip": tooltip,
                     "toolbar": None, "menu": None})
     return out
@@ -531,6 +534,14 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
     # author knows what their FeaturePython object is, and FreeCAD's type
     # registry does not.
     for verb in patches.build_declared():
+        sitting = registry.get(verb.name)
+        if sitting is not None and sitting is not verb:
+            # Re-home whatever generated verb held the name rather than
+            # erase it -- a launcher for the very command the addon
+            # declared a better verb for is the usual case.
+            command = getattr(sitting, "gui_command", None)
+            if getattr(sitting, "generated", False) and command:
+                _qualify_command(sitting, command, registry)
         registry.add(verb)
         counts["declared"] = counts.get("declared", 0) + 1
 

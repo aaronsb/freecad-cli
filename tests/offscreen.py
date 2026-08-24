@@ -1760,6 +1760,25 @@ def _run():
             sys.modules.pop("FreeCADGui", None)
         else:
             sys.modules["FreeCADGui"] = _real_gui
+    # An addon that declares a verb and registers a command of the same
+    # name: the declared verb wins the name and the launcher is re-homed,
+    # the way a displaced tier-1 verb is, rather than erased.
+    from fccli.patches import PatchSet as _PS
+    _decl = _PS([("addon", "<test>", {"key": "Acme", "verbs": {
+        "widget_thing": {"doc": "Declared.", "emit": lambda v: None}}})])
+    try:
+        sys.modules["FreeCADGui"] = _RuntimeGui(["Acme_Widget"])
+        _rt4 = _Registry()
+        register_all(_rt4, tier0=True, patches=_decl)
+        _w4 = _rt4.by_gui_command("Acme_Widget")
+        check("  a declared verb re-homes the launcher it displaces",
+              (_rt4.get("widget_thing").doc, _w4.name if _w4 else None),
+              ("Declared.", "acme_widget_thing"))
+    finally:
+        if _real_gui is None:
+            sys.modules.pop("FreeCADGui", None)
+        else:
+            sys.modules["FreeCADGui"] = _real_gui
     # Nothing to read: a FreeCADGui with no listCommands, which is what
     # the offscreen suite has, registers nothing and raises nothing.
     _rt2 = _Registry()
