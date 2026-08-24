@@ -28,6 +28,14 @@ One filter for the process, refcounted, answering the innermost armed
 block. Installing one per block let a nested arm claim a dialog its outer
 neighbour raised, and the outer one then committed a command it should
 have failed.
+
+Armed for the dock as much as for the socket, decided rather than
+overlooked. A verb that spins the event loop leaves a window in which the
+operator can raise a dialog of their own -- File > Open, during a task
+panel -- and it would be caught and blamed on the verb they typed. The
+answer to a command typed on the command line belongs on the command
+line, at both ends of it; the narrow case where somebody interjects is
+worth that. Whoever narrows this later should know it was weighed.
 """
 
 import contextlib

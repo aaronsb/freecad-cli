@@ -21,12 +21,14 @@ DEFAULT_HEIGHT = 140
 # separately: dragging a floating window tall should not leave a 600px strip
 # across the top of FreeCAD the next time it is docked.
 DEFAULT_FLOAT = (760, 340)
-# Both saving and restoring clamp to this, so a hand-edited or pre-floor
-# value cannot produce a window nobody can find. minimumSizeHint allows a
-# drag below it, which means such a drag does not survive a re-float --
-# noted rather than changed: which of the two should give is a decision
-# about what the operator meant, not a bug with one right answer.
+# Where a floating dock starts, not a floor on where it is kept.
+# minimumSizeHint deliberately lets one be dragged genuinely small so it
+# can be tucked into a corner, and clamping save and restore to MIN_FLOAT
+# meant that drag did not survive a re-float: 200px snapped back to 320.
 MIN_FLOAT = (320, 120)
+# Small enough to be a corner, big enough to grab. Only so that a
+# hand-edited or pre-floor zero cannot leave a window nobody can find.
+FLOOR_FLOAT = (60, 40)
 
 FULL = "full"
 PARTIAL = "partial"
@@ -66,9 +68,12 @@ def saved_height():
 
 
 def saved_float_size():
+    """What it was last dragged to, honoured."""
     try:
-        return (max(MIN_FLOAT[0], params().GetInt("FloatWidth", DEFAULT_FLOAT[0])),
-                max(MIN_FLOAT[1], params().GetInt("FloatHeight", DEFAULT_FLOAT[1])))
+        return (max(FLOOR_FLOAT[0],
+                    params().GetInt("FloatWidth", DEFAULT_FLOAT[0])),
+                max(FLOOR_FLOAT[1],
+                    params().GetInt("FloatHeight", DEFAULT_FLOAT[1])))
     except Exception:
         return DEFAULT_FLOAT
 
@@ -418,8 +423,8 @@ class CliDock(QtWidgets.QDockWidget):
             return
         try:
             if self.isFloating():
-                params().SetInt("FloatWidth", max(MIN_FLOAT[0], self.width()))
-                params().SetInt("FloatHeight", max(MIN_FLOAT[1], self.height()))
+                params().SetInt("FloatWidth", max(FLOOR_FLOAT[0], self.width()))
+                params().SetInt("FloatHeight", max(FLOOR_FLOAT[1], self.height()))
             else:
                 params().SetInt("DockHeight", max(70, self.height()))
         except Exception:
