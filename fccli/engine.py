@@ -302,6 +302,12 @@ class Engine:
             # "circle 0,0,0 20" and "circle 20 0,0,0" both work and a
             # remembered line replays whatever order it was typed in.
             self._feed_text(token, step=self._step_for_token(token))
+        if (self.state == COLLECTING and self.steps is not None
+                and self.values):
+            # A line that named its parameters is a whole command, the way
+            # `circle 0,0,0 5` is. Given none, it prompts.
+            self._finish()
+            return
         if (self.state == COLLECTING and self.steps is None
                 and self._only_optional_left()):
             # Nothing required remains, so the command is already complete.
@@ -351,7 +357,8 @@ class Engine:
             return
         for opt in step.options:
             if opt.name.lower().startswith(text.lower()):
-                self.replay.append(opt.name.lower())
+                if opt.record:
+                    self.replay.append(opt.name.lower())
                 done = opt.action(self) if opt.action else False
                 self._emit_live()
                 if done:

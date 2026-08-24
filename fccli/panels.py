@@ -35,6 +35,8 @@ PySide as a bare `QAbstractSpinBox` with no `setValue`, so the text is the
 only door as well as the better one.
 """
 
+import re
+
 from . import bus as _bus
 from .grammar import CHOICE, QUANTITY, TEXT, Option, Step
 from .qt import QtCore, QtWidgets
@@ -162,9 +164,14 @@ class Field:
         w = self.widget
         try:
             if isinstance(w, QtWidgets.QAbstractSpinBox):
+                # setText is what drives it: textChanged reaches
+                # QuantitySpinBox::userInput and the panel applies. Taking
+                # focus first was a segfault waiting for the panel to
+                # close -- the focus-out ran validateInput against a
+                # TaskTransform whose dragger had already gone, in
+                # ViewProviderDragger::getDraggerPlacement. Nothing here
+                # needs the focus, and the operator is typing elsewhere.
                 line = w.lineEdit()
-                line.setFocus()
-                line.selectAll()
                 line.setText(str(value))
                 line.editingFinished.emit()
             elif isinstance(w, QtWidgets.QComboBox):
@@ -172,6 +179,12 @@ class Field:
                 if index < 0:
                     return f"{value!r} is not one of: {', '.join(self.choices)}"
                 w.setCurrentIndex(index)
+                # activated is the user-only signal, and it is the one a
+                # dialog hangs its page switch on. setCurrentIndex fires
+                # currentIndexChanged and not that, so Part_Primitives read
+                # Cylinder in its combo while still showing the plane page
+                # -- and built a plane.
+                w.activated.emit(index)
             elif isinstance(w, QtWidgets.QCheckBox):
                 w.setChecked(_truthy(value))
             else:
@@ -341,64 +354,122 @@ def _done(engine):
     return True         # the verb is finished
 
 
-DONE = Option("done", "apply what is set and close the panel", _done)
+# Not recorded: a line that named its parameters is already complete,
+# and `done` inside one was read back as part of the last value --
+# "xposition=25 mm done" reached FreeCAD's parser as one length.
+DONE = Option("done", "apply what is set and close the panel", _done,
+              record=False)
 
 
-def _writer(name):
-    """Put the answer into the panel as soon as it is given.
+def key_for(name):
+    """The word a person types to name this field. `xPositionSpinBox` -> `xposition`."""
+    return prompt_for(name).replace(" ", "")
 
-    A panel applies as each field is written -- the model moves before any
-    button is pressed -- and that is what makes cancelling it mean
-    something. Holding the answers until the end would give up both.
 
-    Looked up by name at the time rather than captured: a combo box swaps
-    a whole page of fields, and the widget found when the command started
-    may no longer be the one on show.
+def resolve(token, found):
+    """Which field a typed name means, by unique prefix.
+
+    The same rule verbs already follow, so `xpos` reaches x position and
+    `x` says what it is torn between rather than guessing.
     """
-    def write(engine, step, value, typed=None):
-        for field in fields():
-            if field.name == name:
-                # What was typed, not what it parsed to. The panel's own
-                # parser is the one that should read it -- that is why
-                # "3/4 in" works without this module knowing about inches.
-                return field.write(typed if typed is not None else value)
-        return f"{prompt_for(name)} is no longer on the panel"
-    return write
+    wanted = token.strip().lower()
+    if not wanted:
+        return None, "give a name to set"
+    exact = [f for f in found if key_for(f.name).lower() == wanted
+             or f.name.lower() == wanted]
+    if exact:
+        return exact[0], None
+    hits = [f for f in found if key_for(f.name).lower().startswith(wanted)]
+    if len(hits) == 1:
+        return hits[0], None
+    if not hits:
+        return None, (f"{token!r} is not on this panel -- "
+                      f"{', '.join(sorted(key_for(f.name) for f in found)[:6])}...")
+    return None, (f"{token!r} could be "
+                  f"{', '.join(sorted(key_for(f.name) for f in hits))}")
+
+
+ASSIGNMENT = re.compile(r"(?:^|\s)([A-Za-z_][A-Za-z0-9_]*)\s*=")
+
+
+def split_assignments(text):
+    """`xposition=25 mm zposition=3/4 in` -> two pairs.
+
+    A value can contain spaces -- `3/4 in`, `Center of mass / centroid` --
+    so a name=value line cannot be read a whitespace token at a time. Each
+    value runs to the next name= or to the end of the line. Splitting on
+    whitespace dropped the unit and put 0.75mm where 19.05 belonged, which
+    parses, which is the kind that does not announce itself.
+    """
+    marks = list(ASSIGNMENT.finditer(text or ""))
+    if not marks:
+        return [], (text or "").strip()
+    pairs, leading = [], text[:marks[0].start()].strip()
+    for i, mark in enumerate(marks):
+        end = marks[i + 1].start() if i + 1 < len(marks) else len(text)
+        pairs.append((mark.group(1), text[mark.end():end].strip()))
+    return pairs, leading
+
+
+def _assign(engine, step, value, typed=None):
+    """Every `name=value` on the line, written where each belongs.
+
+    The value goes in as it was typed. The panel's own parser is the one
+    that should read it, which is why `3/4 in` needs nothing from here.
+    """
+    text = str((typed if typed is not None else value) or "")
+    pairs, leftover = split_assignments(text)
+    if not pairs:
+        return (f"{text.strip()!r} is not an assignment -- "
+                "name=value, or `done` to apply")
+    if leftover:
+        return (f"{leftover!r} is not an assignment -- "
+                "name=value, or `done` to apply")
+    found = fields()
+    for name, wanted in pairs:
+        field, complaint = resolve(name, found)
+        if complaint:
+            return complaint
+        complaint = field.write(wanted)
+        if complaint:
+            return complaint
+        found = fields()      # a choice can swap the page under the rest
+    return None
+
+
+def offered(found):
+    """The names this panel answers to, as one wide line per row."""
+    keys = sorted(key_for(f.name) for f in found)
+    width = max((len(k) for k in keys), default=0) + 2
+    per_row = max(1, 76 // width)
+    rows = []
+    for i in range(0, len(keys), per_row):
+        rows.append("".join(k.ljust(width) for k in keys[i:i + per_row]).rstrip())
+    return rows
 
 
 def steps_from(found):
-    """One step per field the panel is showing, in reading order.
+    """One step, taken as many times as the operator has answers for.
 
-    Every one optional: a panel offers ten parameters and a command
-    usually means two, so bare Enter passes over a field and leaves the
-    panel's own value standing. `done` stops asking and commits.
+    A panel offers ten parameters and a command usually means two, so
+    asking for each in turn meant four blank Enters to reach the fifth.
+    Naming the field instead is shorter, order-independent, and -- the
+    part that matters -- replays: `transform xposition=25mm` is a line
+    history can hold and Up can recall, where a run of skipped prompts
+    recorded a bare value that replayed into whichever field came first.
     """
-    steps = []
-    for index, field in enumerate(found):
-        kind, choices = QUANTITY, []
-        if field.kind == "choice":
-            kind, choices = CHOICE, list(field.choices)
-        elif field.kind == "flag":
-            kind, choices = CHOICE, ["yes", "no"]
-        elif field.kind == "text":
-            kind = TEXT
-        current = field.read()
-        shown = "yes" if current is True else "no" if current is False else current
-        steps.append(Step(
-            id=field.name,
-            kind=kind,
-            prompt=f"{prompt_for(field.name)} [{shown}]",
-            choices=choices,
-            options=[DONE],
-            optional=True,
-            prompt_order=index,
-            unit=field.unit() if kind == QUANTITY else "",
-            on_accept=_writer(field.name),
-        ))
-    return steps
+    return [Step(
+        id="set",
+        kind=TEXT,
+        prompt="name=value",
+        repeat=True,
+        min_count=0,
+        options=[DONE],
+        # The whole line, not a token at a time: a value can hold spaces.
+        raw=True,
+        on_accept=_assign,
+    )]
 
-
-# ------------------------------------------------------- a panel, driven
 
 def wait_for_panel(rounds=40):
     """Give the panel time to appear, and stop as soon as it has.
@@ -436,6 +507,15 @@ def _open_panel(command):
                             "-- it is open for the mouse")
             return None
         engine.flags["panel"] = True
+        # What it answers to, listed once, the way completion lists verbs.
+        # Ten prompts in a row was the alternative, and four of them were
+        # blank Enters on the way to the fifth.
+        engine.bus.emit(_bus.INFO, f"{len(found)} to set:", role="head")
+        for row in offered(found):
+            engine.bus.emit(_bus.INFO, f"  {row}", role="quiet")
+        engine.bus.emit(_bus.INFO,
+                        "name=value sets one · done applies · cancel abandons",
+                        role="quiet")
         return steps_from(found)
     return start
 

@@ -482,12 +482,11 @@ def suite_modals(dock):
 
 
 def suite_panel(dock):
-    """A task panel, offered as steps and finished from the command line.
+    """A task panel, answered by naming its fields.
 
-    Tier 0 runs Std_TransformManip and leaves the panel to a mouse. This
-    reads what it is asking for, offers it as prompts, writes the answers
-    back and presses the panel's own button. Nothing is written per
-    command: the panel names its own fields.
+    Tier 0 ran Std_TransformManip and left the panel to a mouse. This
+    reads what it is asking for, lists it, takes name=value, and presses
+    the panel's own button.
     """
     print("\n7c. a task panel answers on the command line")
     from fccli import panels
@@ -498,24 +497,18 @@ def suite_panel(dock):
     slab.Length, slab.Width, slab.Height = 100, 60, 20
     doc.recompute()
 
-    def select():
-        Gui.Selection.clearSelection()
-        Gui.Selection.addSelection(doc.Name, "Slab")
-        for _ in range(6):
-            QtWidgets.QApplication.processEvents()
-
     def settle(n=25):
         for _ in range(n):
             QtWidgets.QApplication.processEvents()
 
-    def skip_to(target):
-        for _ in range(14):
-            step = dock.engine.current_step()
-            if step is None or step.id == target:
-                return step
-            dock.engine.submit("")
-            settle(4)
-        return dock.engine.current_step()
+    def select():
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, "Slab")
+        settle(6)
+
+    said = []
+    stop = dock.bus.subscribe(
+        lambda m: said.append(m.text) if m.kind in ("info", "error") else None)
 
     select()
     dock.engine.submit("transform")
@@ -523,61 +516,101 @@ def suite_panel(dock):
 
     truthy("the panel opened", panels.is_open())
     check("and the engine is collecting", dock.engine.state, "collecting")
-    ids = [s.id for s in dock.engine.prompt_sequence()]
-    truthy("its fields became steps", len(ids) >= 8)
-    truthy("  named as the panel names them", "xPositionSpinBox" in ids)
-    truthy("  read in the order it reads",
-           ids.index("xPositionSpinBox") < ids.index("zRotationSpinBox"))
+    truthy("it says what it will answer to",
+           any("to set:" in ln for ln in said))
+    truthy("  listing the names, not the widgets",
+           any("xposition" in ln for ln in said))
+    truthy("  and how to use them",
+           any("name=value" in ln for ln in said))
     step = dock.engine.current_step()
-    truthy("a prompt carries the panel's own value",
-           step is not None and "[" in step.prompt)
+    truthy("one step, taken as often as there are answers",
+           step is not None and step.repeat)
 
-    # Answering is typing into the panel, so FreeCAD's parser runs -- which
-    # is why a fraction of an inch needs nothing from this module.
-    skip_to("xPositionSpinBox")
-    dock.engine.submit("25 mm")
-    settle(8)
-    skip_to("zPositionSpinBox")
-    dock.engine.submit("3/4 in")
-    settle(8)
+    # Named, so order does not matter and nothing is skipped past.
+    dock.engine.submit("zposition=3/4 in")
+    settle(10)
+    dock.engine.submit("xposition=25 mm")
+    settle(10)
+    truthy("a panel applies as it is written, before any commit",
+           [round(v, 3) for v in slab.Placement.Base] == [25.0, 0.0, 19.05])
     dock.engine.submit("done")
     settle(30)
 
-    check("what was typed is what moved",
+    check("what was named is what moved",
           [round(v, 3) for v in slab.Placement.Base], [25.0, 0.0, 19.05])
     check("the panel closed itself", panels.is_open(), False)
     check("and the engine is idle", dock.engine.state, "idle")
     no_dialog("nothing is waiting for a click")
 
-    # Cancelling cancels the panel, and FreeCAD puts back what it applied.
-    was = [round(v, 3) for v in slab.Placement.Base]
+    # The line it recorded has to mean the same thing typed again -- the
+    # premise the whole project rests on. A run of skipped prompts used to
+    # record a bare value that replayed into whichever field came first.
+    line = dock.console._history[-1] if dock.console._history else ""
+    truthy("history records the names it was given", "xposition=" in line)
+    truthy("  and the other one", "zposition=" in line)
+
+    slab.Placement.Base = App.Vector(0, 0, 0)
+    doc.recompute()
+    select()
+    dock.engine.submit(line)
+    settle(35)
+    check("replaying it lands in the same place",
+          [round(v, 3) for v in slab.Placement.Base], [25.0, 0.0, 19.05])
+    check("  and closes behind itself", panels.is_open(), False)
+
+    # A whole command on one line, the way `circle 0,0,0 5` is.
+    slab.Placement.Base = App.Vector(0, 0, 0)
+    doc.recompute()
+    select()
+    dock.engine.submit("transform yposition=40 mm")
+    settle(35)
+    check("a line that named its parameters needs no done",
+          [round(v, 3) for v in slab.Placement.Base], [0.0, 40.0, 0.0])
+    check("  and left nothing open", panels.is_open(), False)
+
+    # An angle is not a length. Every panel quantity used to take Step's
+    # default unit of mm, so a bare number at a rotation prompt was read
+    # as a distance.
+    select()
+    dock.engine.submit("transform zrotation=30")
+    settle(35)
+    truthy("a bare number at a rotation is degrees",
+           abs(slab.Placement.Rotation.Angle - 0.5236) < 0.01)
+
+    # Names resolve the way verb names do. Placement reset first: the
+    # rotation above turns the panel's local axes, so x stops being x.
+    slab.Placement = App.Placement()
+    doc.recompute()
+    said.clear()
     select()
     dock.engine.submit("transform")
     settle()
-    truthy("it opens again", panels.is_open())
-    skip_to("yPositionSpinBox")
-    dock.engine.submit("40 mm")
+    dock.engine.submit("xpos=5 mm")
     settle(10)
-    truthy("a panel applies as it is written, before any commit",
-           round(slab.Placement.Base.y, 3) == 40.0)
+    truthy("a unique prefix reaches its field",
+           abs(slab.Placement.Base.x - 5.0) < 0.001)
+    dock.engine.submit("x=1 mm")
+    settle(8)
+    truthy("an ambiguous one says what it is torn between",
+           any("could be" in ln and "xposition" in ln for ln in said))
+    dock.engine.submit("nosuch=1")
+    settle(8)
+    truthy("  and an unknown one says so",
+           any("not on this panel" in ln for ln in said))
+    dock.engine.submit("justawordâ€¦" if False else "justaword")
+    settle(8)
+    truthy("something that is not an assignment says that",
+           any("is not an assignment" in ln for ln in said))
     dock.engine.cancel()
-    settle(30)
-    check("cancelling puts it back",
-          [round(v, 3) for v in slab.Placement.Base], was)
-    check("  and takes the panel with it", panels.is_open(), False)
-    check("  leaving the engine idle", dock.engine.state, "idle")
+    settle(25)
+    check("cancelling closes the panel", panels.is_open(), False)
 
-    # `check` runs nothing. open() is where a command runs now, so without
-    # a guard `check transform` moved the object, printed "nothing was
-    # run", and left a task dialog registered -- which blocks every panel
+    # check runs nothing. open() is where a command runs now, so without a
+    # guard `check transform` moved the object, printed "nothing was run",
+    # and left a task dialog registered -- which blocks every panel
     # command after it.
     was = [round(v, 3) for v in slab.Placement.Base]
-    said = []
-    stop2 = dock.bus.subscribe(
-        lambda m: said.append(m.text) if m.kind == "info" else None)
-    Gui.Selection.clearSelection()
-    Gui.Selection.addSelection(doc.Name, "Slab")
-    settle(6)
+    select()
     dock.engine.submit("check transform")
     settle(25)
     check("check opens no panel", panels.is_open(), False)
@@ -586,8 +619,8 @@ def suite_panel(dock):
     check("  and moves nothing",
           [round(v, 3) for v in slab.Placement.Base], was)
     check("  and the engine is idle after it", dock.engine.state, "idle")
-    stop2()
 
+    stop()
     dock.engine.submit("close!")
 
 
@@ -617,50 +650,30 @@ def suite_panels_generic(dock):
             Gui.Selection.addSelection(doc.Name, n)
         settle(6)
 
-    def answer(pairs):
-        """Skip to each field by name, answer it, then finish."""
-        for target, value in pairs:
-            for _ in range(18):
-                step = dock.engine.current_step()
-                if step is None or step.id == target:
-                    break
-                dock.engine.submit("")
-                settle(4)
-            step = dock.engine.current_step()
-            if step is None or step.id != target:
-                return f"never reached {target}"
-            dock.engine.submit(value)
-            settle(8)
-        dock.engine.submit("done")
-        settle(35)
-        return None
-
     # Std_Placement -- fourteen fields, and a quantity that has to survive
     # the trip through FreeCAD's parser to mean anything.
     select("Slab")
     dock.engine.submit("placement")
     settle()
     truthy("placement opens a panel", panels.is_open())
-    truthy("  offering more fields than transform does",
-           len(dock.engine.prompt_sequence()) >= 12)
-    check("answering it", answer([("xPos", "30 mm"), ("zPos", "3/4 in")]), None)
-    check("  moves the object it was aimed at",
+    names = {panels.key_for(f.name) for f in panels.fields()}
+    truthy("  offering more fields than transform does", len(names) >= 12)
+    truthy("  named the same way", "xpos" in names or "xposition" in names)
+    dock.engine.submit("xpos=30 mm zpos=3/4 in")
+    settle(12)
+    dock.engine.submit("done")
+    settle(35)
+    check("both landed, from one line",
           [round(v, 3) for v in slab.Placement.Base], [30.0, 0.0, 19.05])
-    check("  and closes", panels.is_open(), False)
+    check("  and it closed", panels.is_open(), False)
 
-    # A choice among the steps, answered as a choice. Std_Placement's
-    # rotation input switches between an axis-and-angle and Euler angles,
-    # and swaps the fields under it either way.
-    kinds = {st.kind for st in dock.engine.prompt_sequence()}
+    # A combo is set by naming it, and its choices are what it offers.
     select("Slab")
     dock.engine.submit("placement")
     settle()
-    kinds = {st.kind for st in dock.engine.prompt_sequence()}
-    truthy("a panel's combo box becomes a choice step", "choice" in kinds)
-    combo = next((st for st in dock.engine.prompt_sequence()
-                  if st.kind == "choice"), None)
-    truthy("  offering what the combo offers",
-           combo is not None and len(combo.choices) >= 2)
+    combos = [f for f in panels.fields() if f.kind == "choice"]
+    truthy("a panel's combo boxes are readable", bool(combos))
+    truthy("  offering what the combo offers", len(combos[0].choices) >= 2)
     dock.engine.cancel()
     settle(20)
     check("cancelling closes it", panels.is_open(), False)
@@ -671,23 +684,26 @@ def suite_panels_generic(dock):
     check("FreeCAD agrees no dialog is left registered",
           bool(Gui.Control.activeDialog()), False)
 
-    Gui.activateWorkbench("PartWorkbench")
-    settle(8)
-    before = {o.Name for o in doc.Objects}
-
     # Part_Primitives -- the one that matters. Its combo swaps a whole
     # QStackedWidget page, so the fields after it are not the fields
     # before it. A step that held its widget would write into a page
     # nobody is looking at.
+    Gui.activateWorkbench("PartWorkbench")
+    settle(8)
     before = {o.Name for o in doc.Objects}
     Gui.Selection.clearSelection()
     dock.engine.submit("primitive")
     settle()
     truthy("primitive opens a panel", panels.is_open())
-    first = [f.name for f in panels.fields()]
-    truthy("  showing the plane page to begin with", "planeLength" in first)
-    check("choosing a different primitive",
-          answer([("PrimitiveTypeCB", "Cylinder")]), None)
+    first = {panels.key_for(f.name) for f in panels.fields()}
+    truthy("  showing the plane page to begin with", "planelength" in first)
+    dock.engine.submit("primitivetype=Cylinder")
+    settle(20)
+    after_choice = {panels.key_for(f.name) for f in panels.fields()}
+    truthy("  and the page under it swaps to match",
+           any(k.startswith("cylinder") for k in after_choice))
+    dock.engine.submit("done")
+    settle(35)
     made = sorted({o.Name for o in doc.Objects} - before)
     check("  builds the one that was chosen", made, ["Cylinder"])
     check("  and closes", panels.is_open(), False)

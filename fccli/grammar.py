@@ -28,6 +28,11 @@ class Option:
     doc: str = ""
     # Mutates engine state; returns True if the step is finished.
     action: Optional[Callable[[Any], bool]] = None
+    # Whether typing it belongs in the line history recalls. False for one
+    # that only says "that is all" -- a line naming its own parameters is
+    # already complete, and `done` recorded into it was read back as part
+    # of the last value.
+    record: bool = True
 
 
 @dataclass
