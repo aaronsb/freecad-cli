@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Qt import shim.
 
 FreeCAD 1.x ships PySide6. Older builds and some distro packages expose the

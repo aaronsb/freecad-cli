@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Verb descriptors, as data.
 
 One registry feeds three frontends: the dock widget's contextual completer,

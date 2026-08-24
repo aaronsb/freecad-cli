@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Assembly: dock widget, wiring, and the spike's control strip."""
 
 from . import bus as _bus
@@ -13,6 +15,13 @@ _INSTANCE = None
 
 PARAM_PATH = "User parameter:BaseApp/Preferences/Mod/fccli"
 DEFAULT_HEIGHT = 140
+
+# Floating, the dock is a window and both axes are the user's to set. Docked,
+# only height is -- width belongs to the dock row. The two are remembered
+# separately: dragging a floating window tall should not leave a 600px strip
+# across the top of FreeCAD the next time it is docked.
+DEFAULT_FLOAT = (760, 340)
+MIN_FLOAT = (320, 120)
 
 FULL = "full"
 PARTIAL = "partial"
@@ -50,6 +59,14 @@ def saved_height():
     except Exception:
         return DEFAULT_HEIGHT
 
+
+def saved_float_size():
+    try:
+        return (max(MIN_FLOAT[0], params().GetInt("FloatWidth", DEFAULT_FLOAT[0])),
+                max(MIN_FLOAT[1], params().GetInt("FloatHeight", DEFAULT_FLOAT[1])))
+    except Exception:
+        return DEFAULT_FLOAT
+
 def _load_factory():
     """Generate verbs from the descriptor, if one was shipped."""
     try:
@@ -68,6 +85,21 @@ def _banner(counts):
             "Type man for the list, or click in the viewport.")
 
 
+
+
+class _Squeezable(QtWidgets.QWidget):
+    """A widget that reports no minimum width of its own.
+
+    A layout makes its widget at least as wide as the sum of its children,
+    and Qt reads that back through minimumSizeHint no matter what
+    constraint the layout is set to. That floor propagates to the dock, so
+    the row of combo boxes decides how narrow a floating command line may
+    be. Reporting zero hands the decision back to the dock, which clips the
+    row rather than refusing to shrink.
+    """
+
+    def minimumSizeHint(self):
+        return QtCore.QSize(0, super().minimumSizeHint().height())
 
 
 class CliDock(QtWidgets.QDockWidget):
@@ -108,15 +140,17 @@ class CliDock(QtWidgets.QDockWidget):
             | QtWidgets.QDockWidget.DockWidgetFloatable
             | QtWidgets.QDockWidget.DockWidgetClosable
         )
+        self.persist = True             # write geometry back to preferences
         self._save_timer = QtCore.QTimer(self)
         self._save_timer.setSingleShot(True)
         self._save_timer.setInterval(400)
-        self._save_timer.timeout.connect(self._save_height)
+        self._save_timer.timeout.connect(self._save_geometry)
+        self.topLevelChanged.connect(self._on_float_changed)
 
     # --------------------------------------------------------------- build
 
     def _build(self, console):
-        body = QtWidgets.QWidget(self)
+        body = _Squeezable(self)
         lay = QtWidgets.QVBoxLayout(body)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(0)
@@ -130,6 +164,13 @@ class CliDock(QtWidgets.QDockWidget):
         strip.setSizePolicy(QtWidgets.QSizePolicy.Preferred,
                             QtWidgets.QSizePolicy.Fixed)
 
+        # Without this the row of combo boxes sets a floor for the whole
+        # dock, and a floating window cannot be dragged narrower than the
+        # strip is wide. Clipping the strip is the better trade: the
+        # scrollback is what somebody is resizing to see.
+        lay.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
+        strip.setMinimumWidth(0)
+
         lay.addWidget(console, 1)
         lay.addWidget(strip, 0)
         body.setMinimumHeight(70)
@@ -139,9 +180,16 @@ class CliDock(QtWidgets.QDockWidget):
         return body
 
     def _strip(self, parent):
-        strip = QtWidgets.QWidget(parent)
+        strip = _Squeezable(parent)
         row = QtWidgets.QHBoxLayout(strip)
         row.setContentsMargins(6, 2, 6, 2)
+        # A layout normally makes its widget at least as wide as the sum of
+        # its children, and that floor propagates all the way up to the
+        # dock: a floating command line could not be dragged narrower than
+        # this row of combo boxes. Releasing it lets the row clip from the
+        # right -- the stretch goes first, then the status label -- while
+        # the scrollback keeps whatever width is left.
+        row.setSizeConstraint(QtWidgets.QLayout.SetNoConstraint)
 
         self.usurp_box = QtWidgets.QCheckBox("usurp keys", strip)
         self.usurp_box.setChecked(True)
@@ -353,15 +401,61 @@ class CliDock(QtWidgets.QDockWidget):
         if getattr(self, "_save_timer", None) is not None:
             self._save_timer.start()
 
-    def _save_height(self):
+    def _save_geometry(self):
+        """Remember the size, under the key for the state it was set in.
+
+        `persist` is the off switch. A test run shows a real dock in a
+        window whose shape it did not choose, and saving that would replace
+        a height somebody had dragged to. Stopping the debounce timer is
+        not enough -- a later relayout restarts it.
+        """
+        if not self.persist:
+            return
         try:
-            params().SetInt("DockHeight", max(70, self.height()))
+            if self.isFloating():
+                params().SetInt("FloatWidth", max(MIN_FLOAT[0], self.width()))
+                params().SetInt("FloatHeight", max(MIN_FLOAT[1], self.height()))
+            else:
+                params().SetInt("DockHeight", max(70, self.height()))
         except Exception:
             pass
 
+    def _on_float_changed(self, floating):
+        """Restore whichever size belongs to the state just entered.
+
+        Qt hands a newly floated dock whatever size it had in the row, which
+        for a full-width strip is the width of the window and 140 pixels of
+        height -- a shape nobody wants as a window. Re-docking has the
+        mirror problem.
+        """
+        if floating:
+            width, height = saved_float_size()
+            self.resize(width, height)
+            return
+        import FreeCADGui as Gui
+        mw = Gui.getMainWindow()
+        if mw is not None:
+            QtCore.QTimer.singleShot(0, lambda: _resize(mw, self))
+
     def sizeHint(self):
         base = super().sizeHint()
+        if self.isFloating():
+            return QtCore.QSize(*saved_float_size())
         return QtCore.QSize(base.width(), saved_height())
+
+    def minimumSizeHint(self):
+        """Let a floating window be dragged genuinely small.
+
+        The control strip is a row of labelled combo boxes, and its own
+        minimum would otherwise be the floor for the whole dock -- wide
+        enough that a floating command line could not be tucked into a
+        corner of the screen.
+        """
+        base = super().minimumSizeHint()
+        if self.isFloating():
+            return QtCore.QSize(min(base.width(), MIN_FLOAT[0]),
+                                min(base.height(), MIN_FLOAT[1]))
+        return base
 
     # ------------------------------------------------------------ lifecycle
 

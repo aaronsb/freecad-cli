@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """What a FreeCAD process holds: one engine, one history, one floor.
 
 The dock used to own history, which made `fccli history` impossible to
@@ -13,11 +15,12 @@ being refused all day.
 """
 
 import os
+import time
 
 from . import bus as _bus
+from . import paths as _paths
 
-HISTORY_PATH = os.path.join(
-    os.path.expanduser("~"), ".local", "share", "FreeCAD", "fccli", "history")
+HISTORY_PATH = _paths.state("history")
 
 DOCK = "dock"
 
@@ -39,22 +42,61 @@ class History:
         # Keyed by the full line, so the ring itself stays a list of strings
         # and everything that reads it keeps working.
         self.typed = {}
+        # When each distinct line was last run. Kept beside the ring rather
+        # than in it, so `entries` stays a list of strings and everything
+        # that reads it is unaffected.
+        self.stamps = {}
+        # Bumped on every mutation. Readers that cache a derivation of the
+        # ring -- the frecency tally -- key on this. Length cannot serve:
+        # once the ring is at its limit an add trims an entry as it appends
+        # one, so the count stops changing while the contents do not.
+        self.revision = 0
         self.load()
 
+    @staticmethod
+    def _parse(raw):
+        """One stored line -> (command, epoch).
+
+        Lines written before timestamps existed have no tab and are read
+        with an epoch of 0, which frecency treats as frequency-only rather
+        than discarding.
+        """
+        when, tab, rest = raw.partition("\t")
+        if tab and when.isdigit():
+            return rest, int(when)
+        return raw, 0
+
     def load(self):
+        self.entries, self.stamps = [], {}
+        self.revision = getattr(self, "revision", 0) + 1
         try:
-            with open(self.path, encoding="utf-8") as fh:
-                self.entries = [ln.rstrip("\n") for ln in fh
-                                if ln.strip()][-self.limit:]
+            with open(_paths.readable(self.path, "history"),
+                      encoding="utf-8") as fh:
+                rows = [self._parse(ln.rstrip("\n")) for ln in fh if ln.strip()]
         except OSError:
-            self.entries = []
+            return 0
+        for line, when in rows[-self.limit:]:
+            self.entries.append(line)
+            if when > self.stamps.get(line, 0):
+                self.stamps[line] = when
         return len(self.entries)
 
-    def add(self, line, persist=True):
+    def usage(self):
+        """(line, last-seen) per entry, for frecency to tally."""
+        return [(line, self.stamps.get(line, 0)) for line in self.entries]
+
+    def add(self, line, persist=True, when=None):
         if not line or (self.entries and self.entries[-1] == line):
             return False
         self.entries.append(line)
-        del self.entries[:-self.limit]
+        self.stamps[line] = when if when is not None else int(time.time())
+        if len(self.entries) > self.limit:
+            del self.entries[:-self.limit]
+            # Drop timestamps for lines that fell off the end, so the map
+            # does not grow for the life of the process.
+            live = set(self.entries)
+            self.stamps = {k: v for k, v in self.stamps.items() if k in live}
+        self.revision += 1
         if persist:
             self._write(line)
         return True
@@ -80,6 +122,8 @@ class History:
         """Empty the ring, and the file behind it."""
         self.entries = []
         self.typed = {}
+        self.stamps = {}
+        self.revision += 1
         try:
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
             open(self.path, "w", encoding="utf-8").close()
@@ -91,6 +135,7 @@ class History:
         for i in range(len(self.entries) - 1, -1, -1):
             if self.entries[i] == line:
                 del self.entries[i]
+                self.revision += 1
                 return True
         return False
 
@@ -107,10 +152,11 @@ class History:
         return None
 
     def _write(self, line):
+        if not _paths.ensure(self.path):
+            return
         try:
-            os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, "a", encoding="utf-8") as fh:
-                fh.write(line + "\n")
+                fh.write(f"{self.stamps.get(line, 0)}\t{line}\n")
         except OSError:
             pass
 

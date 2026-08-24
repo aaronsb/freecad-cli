@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Pass A: the type registry. Runs headless under freecadcmd.
 
 Probing a type means instantiating it, and some types abort the process from

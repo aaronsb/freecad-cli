@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """The command engine.
 
 A verb is a sequence of getters. Each getter accepts a typed value, a

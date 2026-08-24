@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Build verbs from the generated descriptor.
 
 Three tiers, in rising order of how much someone had to write by hand:
@@ -19,10 +21,12 @@ makes this work is that tier 1 never needed it.
 import json
 import os
 import re
+import unicodedata
 
 from . import bus as _bus
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
                       Option, Registry, Step, Verb)
+from . import curation
 from .families import families
 from .patches import load_patches
 
@@ -198,6 +202,16 @@ def _emit_family(members):
     return emit
 
 
+def _label(text):
+    """A label as a person reads it.
+
+    FreeCAD's menu text carries Qt mnemonic markers -- "&Box Zoom", "&5
+    Bottom" -- which mean something to a menu and nothing on a command
+    line.
+    """
+    return (text or "").replace("&", "").strip()
+
+
 def build_family_verb(name, members):
     """One verb for a family FreeCAD spread across many commands.
 
@@ -205,7 +219,7 @@ def build_family_verb(name, members):
     that can be asked what is behind it.
     """
     choices = sorted(members)
-    labels = ", ".join(members[c]["label"] for c in choices[:4])
+    labels = ", ".join(_label(members[c]["label"]) for c in choices[:4])
     return Verb(
         name=name,
         steps=[Step("target", CHOICE, f"{name.capitalize()} what",
@@ -216,7 +230,12 @@ def build_family_verb(name, members):
 
 
 def _slug(text):
-    text = re.sub(r"[&.]", "", text or "").strip().lower()
+    # Fold accents to their base letter first. Stripping them instead left
+    # FreeCAD's "Bezier Curve" verb named b_zier_curve, which is not a name
+    # anyone would guess or type.
+    text = unicodedata.normalize("NFKD", text or "")
+    text = text.encode("ascii", "ignore").decode("ascii")
+    text = re.sub(r"[&.]", "", text).strip().lower()
     text = re.sub(r"[^a-z0-9]+", "_", text).strip("_")
     return text or "unnamed"
 
@@ -233,6 +252,10 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
     descriptor = descriptor if descriptor is not None else load_descriptor()
     if descriptor is None:
         return {"error": "no descriptor; run tools/generate_descriptor.py"}
+
+    # What FreeCAD promotes and what it groups, for completion to order by
+    # and for `man` to cite. Read from the same descriptor the verbs are.
+    curation.load(descriptor)
 
     patches = patches if patches is not None else load_patches()
     counts = {"tier0": 0, "tier1": 0, "patched": 0, "skipped": 0}

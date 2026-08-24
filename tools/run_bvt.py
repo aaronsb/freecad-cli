@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LGPL-2.1-or-later
 """Run the GUI build verification test and turn its result into an exit code.
 
 A FreeCAD macro cannot set the process exit code, so the test writes JSON and
@@ -25,7 +26,15 @@ def main():
     if not os.environ.get("DISPLAY") and shutil.which("xvfb-run"):
         runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"]
     cmd = runner + ["freecad", os.path.join(ROOT, "tests", "bvt.py")]
-    env = dict(os.environ, FCCLI_BVT_RESULT=RESULT)
+    # A scratch state directory, so a run does not append its commands to
+    # the operator's history -- which now feeds completion ranking.
+    #
+    # XDG_STATE_HOME only. XDG_DATA_HOME is where FreeCAD looks for its own
+    # Mod directory, so repointing it hides the installed addon and the
+    # test dies with "No module named 'fccli'" before it reaches a check.
+    scratch = tempfile.mkdtemp(prefix="fccli-bvt-")
+    env = dict(os.environ, FCCLI_BVT_RESULT=RESULT,
+               XDG_STATE_HOME=os.path.join(scratch, "state"))
     try:
         proc = subprocess.run(cmd, env=env, timeout=TIMEOUT,
                               capture_output=True, text=True)

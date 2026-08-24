@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Shell builtins.
 
 Document and application verbs that a terminal user reaches for without
@@ -17,6 +19,8 @@ import os
 import FreeCAD as App
 
 from . import bus as _bus
+from . import curation as _curation
+from . import paths as _paths
 from .grammar import (CHOICE, PATH, QUANTITY, TEXT, Option, Step, Verb,
                       REGISTRY)
 from .dirty import dirty_documents, is_dirty, mark_clean
@@ -575,16 +579,76 @@ def _emit_man(v):
             if step.prompt and step.prompt != step.id:
                 say(f"       {step.prompt}")
             if step.choices:
-                say(f"       one of: {', '.join(step.choices)}")
+                say("       one of:")
+                groups = _curation.current().choice_groups(verb.name)
+                if groups:
+                    for heading, names in groups:
+                        say(f"         {heading or 'ungrouped'}", "head")
+                        for row in _columns(names, width=64):
+                            say(f"           {row}", "quiet")
+                else:
+                    for row in _columns(step.choices):
+                        say(f"       {row}", "quiet")
             for opt in step.options:
                 say(f"       option {opt.name}: {opt.doc}")
 
+    curated = _curation.current()
     if verb.gui_command:
         say("GUI", "head")
         say(f"    {verb.gui_command}")
+        toolbar, menu = curated.placement(verb.gui_command)
+        if toolbar:
+            say(f"    toolbar   {toolbar}", "quiet")
+        if menu:
+            say(f"    menu      {menu}", "quiet")
+
     say("SEE ALSO", "head")
+    # What FreeCAD put beside this one. A toolbar is somebody's answer to
+    # "what goes with what", and it is a better answer than a guess from
+    # the names would be.
+    near = curated.neighbours(REGISTRY, verb)
+    if near:
+        say(f"    {', '.join(near)}", "ok")
     say("    man     (list every command)")
     return None
+
+
+def _columns(items, width=72, gap=2):
+    """Lay a list out down columns that fit the width.
+
+    A family can have forty members, and forty names joined by commas is one
+    line nobody reads -- least of all in a dock somebody has dragged to six
+    lines tall.
+    """
+    items = [str(i) for i in items]
+    if not items:
+        return []
+
+    def fits(columns):
+        """Column widths for a candidate count, or None if too wide."""
+        height = -(-len(items) // columns)          # ceiling division
+        widths = []
+        for start in range(0, len(items), height):
+            column = items[start:start + height]
+            widths.append(max(len(i) for i in column) + gap)
+        return widths if sum(widths) - gap <= width else None
+
+    # Widest layout that still fits. One column always does.
+    for columns in range(min(len(items), width // 2), 1, -1):
+        widths = fits(columns)
+        if widths:
+            break
+    else:
+        return items
+
+    height = -(-len(items) // len(widths))
+    grid = [items[i:i + height] for i in range(0, len(items), height)]
+    rows = []
+    for r in range(height):
+        cells = [column[r].ljust(widths[c])
+                 for c, column in enumerate(grid) if r < len(column)]
+        rows.append("".join(cells).rstrip())
+    return rows
 
 
 def _list_verbs(engine):
@@ -607,14 +671,14 @@ def _list_verbs(engine):
     return None
 
 
-ALIAS_PATH = os.path.join(os.path.expanduser("~"), ".local", "share",
-                          "FreeCAD", "fccli", "aliases")
+ALIAS_PATH = _paths.data("aliases")
 
 
 def load_aliases():
     """Read the user's aliases and attach them to their verbs."""
     try:
-        with open(ALIAS_PATH, encoding="utf-8") as fh:
+        with open(_paths.readable(ALIAS_PATH, "aliases"),
+                  encoding="utf-8") as fh:
             lines = [ln.strip() for ln in fh if ln.strip()
                      and not ln.startswith("#")]
     except OSError:
@@ -634,7 +698,7 @@ def load_aliases():
 
 def _save_aliases(pairs):
     try:
-        os.makedirs(os.path.dirname(ALIAS_PATH), exist_ok=True)
+        _paths.ensure(ALIAS_PATH)
         with open(ALIAS_PATH, "w", encoding="utf-8") as fh:
             fh.write("# fccli aliases -- <name>=<command>\n")
             for name, target in sorted(pairs.items()):
@@ -647,164 +711,8 @@ def _user_aliases():
     """Everything in the alias file, as name -> command."""
     pairs = {}
     try:
-        with open(ALIAS_PATH, encoding="utf-8") as fh:
-            for line in fh:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                name, _, target = line.partition("=")
-                if name.strip() and target.strip():
-                    pairs[name.strip()] = target.strip()
-    except OSError:
-        pass
-    return pairs
-
-
-def _emit_alias(v):
-    """Shell-style aliases. Bare lists them; name plus target defines one.
-
-    Everyone arrives with some other tool's abbreviations in their fingers,
-    and every verb here is a name someone might want to spell differently.
-    """
-    engine = v.get("_engine")
-    name, target = v.get("name"), v.get("command")
-    pairs = _user_aliases()
-    if not name:
-        if engine is None:
-            return None
-        builtin = [(a, verb) for verb in
-                   (REGISTRY.get(n) for n in REGISTRY.names())
-                   for a in verb.aliases if a not in pairs]
-        engine.bus.emit(_bus.INFO, f"{len(pairs)} of your own:")
-        for k, t in sorted(pairs.items()):
-            engine.bus.emit(_bus.INFO, f"  {k:<12} {t}")
-        engine.bus.emit(_bus.INFO,
-                        f"and {len(builtin)} built in (man <name> shows them)")
-        return None
-    if not target:
-        raise RuntimeError(f"alias {name}=? -- give a command to alias to")
-    verb = REGISTRY.get(target)
-    if verb is None:
-        raise RuntimeError(f"unknown command: {target}")
-    if REGISTRY.get(name) is not None and REGISTRY.get(name).name != verb.name:
-        raise RuntimeError(f"{name} is already {REGISTRY.get(name).name}")
-    if name not in verb.aliases:
-        verb.aliases.append(name)
-        REGISTRY.add(verb)
-    pairs[name] = verb.name
-    _save_aliases(pairs)
-    _say(v, f"{name} -> {verb.name}")
-    return None
-
-
-def _emit_unalias(v):
-    name = v["name"]
-    pairs = _user_aliases()
-    if name not in pairs:
-        raise RuntimeError(f"no alias {name}")
-    verb = REGISTRY.get(pairs[name])
-    if verb is not None and name in verb.aliases:
-        verb.aliases.remove(name)
-    del pairs[name]
-    _save_aliases(pairs)
-    REGISTRY.reindex()
-    _say(v, f"removed {name}")
-    return None
-
-
-def _emit_history(v):
-    """Show the ring, trim it, or empty it.
-
-    clear wipes the screen; this is what survives that. The two are
-    different enough to be different words.
-    """
-    engine = v.get("_engine")
-    if engine is None:
-        return None
-    session = getattr(engine, "session", None)
-    arg = (v.get("what") or "").strip().lower()
-
-    if arg in ("clear", "wipe", "forget"):
-        if session is not None:
-            session.history.forget()
-        _say(v, "history forgotten")
-        return None
-
-    limit = None
-    if arg:
-        if not arg.isdigit():
-            raise RuntimeError("history takes a count, or the word clear")
-        limit = int(arg)
-    engine.bus.emit(_bus.INFO, f"@@history@@{limit or ''}")
-    return None
-
-
-def _emit_quit(v):
-    """Leave FreeCAD.
-
-    Closing the application prompts once per modified document. quit lists
-    what is unsaved and refuses; quit! discards it. Same shape as close, so
-    the answer to "save changes?" is given on the command line rather than
-    in a modal that blocks every other key.
-    """
-    dirty = dirty_documents()
-    if dirty and not v["_flags"].get("force"):
-        raise RuntimeError(
-            "unsaved: " + ", ".join(dirty) + " -- save first, or quit! to discard")
-    for name in list(App.listDocuments()):
-        mark_clean(name=name)
-        try:
-            App.closeDocument(name)
-        except Exception:
-            pass
-    gui = _gui()
-    if gui is not None:
-        from .qt import QtWidgets
-        QtWidgets.QApplication.instance().quit()
-    return None
-
-
-ALIAS_PATH = os.path.join(os.path.expanduser("~"), ".local", "share",
-                          "FreeCAD", "fccli", "aliases")
-
-
-def load_aliases():
-    """Read the user's aliases and attach them to their verbs."""
-    try:
-        with open(ALIAS_PATH, encoding="utf-8") as fh:
-            lines = [ln.strip() for ln in fh if ln.strip()
-                     and not ln.startswith("#")]
-    except OSError:
-        return 0
-    count = 0
-    for line in lines:
-        name, _, target = line.partition("=")
-        verb = REGISTRY.get(target.strip())
-        if verb is None or not name.strip():
-            continue
-        if name.strip() not in verb.aliases:
-            verb.aliases.append(name.strip())
-            REGISTRY.add(verb)      # re-index the alias table
-            count += 1
-    return count
-
-
-def _save_aliases(pairs):
-    try:
-        os.makedirs(os.path.dirname(ALIAS_PATH), exist_ok=True)
-        with open(ALIAS_PATH, "w", encoding="utf-8") as fh:
-            fh.write("# fccli aliases -- <name>=<command>\n")
-            for name, target in sorted(pairs.items()):
-                fh.write(f"{name}={target}\n")
-    except OSError:
-        pass
-
-
-def _user_aliases():
-    """Everything in the alias file, as name -> command."""
-    pairs = {}
-    try:
-        with open(ALIAS_PATH, encoding="utf-8") as fh:
+        with open(_paths.readable(ALIAS_PATH, "aliases"),
+                  encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
                 if not line or line.startswith("#"):

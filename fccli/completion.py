@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """What completes here, computed once.
 
 The widget used to work this out for itself, which meant a terminal client
@@ -5,6 +7,10 @@ would have needed its own copy that drifted. It lives here so the dock and
 the socket give the same answer, from the same live engine state.
 """
 
+import time
+
+from . import curation
+from . import frecency
 from .grammar import CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT
 
 
@@ -65,7 +71,8 @@ def candidates(engine, text, history=None, scope=None):
         recent = recent_commands(history)
         if recent:
             return head, tail, recent
-        return head, tail, sorted(_starter_verbs(engine))
+        return head, tail, curation.current().order(
+            engine.registry, _starter_verbs(engine))
 
     # The first token is a verb; everything after a space is an argument.
     # So verb names complete only at the start of a line, or at a step that
@@ -88,6 +95,16 @@ def candidates(engine, text, history=None, scope=None):
         narrowed = [c for c in hits if in_scope(engine.registry, c, scope)]
         hits = narrowed or hits
 
+    # Completing a verb name means choosing among up to 1250 of them, and
+    # they are not equals. Two orderings compose here, weakest first:
+    # FreeCAD's own -- a toolbar button outranks something reachable only
+    # from code -- and then this operator's, which overrides it wherever
+    # they have a habit. Nothing is removed by either. A launcher nobody
+    # promotes and nobody has run still completes; it is simply last.
+    if not head:
+        hits = curation.current().order(engine.registry, hits)
+        hits = _by_habit(hits, history)
+
     # The grammar has nothing left to offer, but a command run before may
     # know what came next here. Hand back one argument at a time, so Tab
     # walks the remembered command out rather than dumping the whole line.
@@ -104,6 +121,30 @@ def candidates(engine, text, history=None, scope=None):
 
 
 RECENT_LIMIT = 12
+
+
+_TALLY = {"key": None, "stats": {}}
+
+
+def _by_habit(names, history, now=None):
+    """Float what this operator actually runs above the general ordering.
+
+    The tally is rebuilt only when the ring has changed, because ghosting
+    asks for candidates on every keystroke and there is no reason to count
+    two thousand lines again between two of them. The ring's revision
+    counter is what says it changed -- its length stops moving once the
+    ring is full, which would freeze the ranking there.
+    """
+    if history is None or not getattr(history, "entries", None):
+        return names
+    key = (id(history), getattr(history, "revision", len(history.entries)))
+    if _TALLY["key"] != key:
+        _TALLY["key"] = key
+        _TALLY["stats"] = frecency.tally(history.usage())
+    stats = _TALLY["stats"]
+    return frecency.partition(
+        names, lambda n: stats.get(n, (0, 0)),
+        now if now is not None else int(time.time()))
 
 
 def recent_commands(history, limit=RECENT_LIMIT):

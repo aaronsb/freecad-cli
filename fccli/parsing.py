@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Token parsing and per-character validation.
 
 Both the engine and the syntax highlighter call in here. The highlighter

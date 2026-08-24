@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Part primitives.
 
 The generated verbs are alphabetical and every property is optional, so

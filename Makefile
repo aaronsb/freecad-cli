@@ -30,7 +30,7 @@ version-check:  ## Fail if package.xml disagrees with fccli/__init__.py
 
 .PHONY: test
 test:  ## Run the test suite (offscreen, no FreeCAD GUI needed)
-	@QT_QPA_PLATFORM=offscreen python3 tests/test_spike.py
+	@QT_QPA_PLATFORM=offscreen python3 tests/offscreen.py
 
 .PHONY: lint
 lint:  ## Byte-compile everything

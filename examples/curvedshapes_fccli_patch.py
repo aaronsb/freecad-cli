@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Example: command-line support for a third-party addon.
 
 CurvedShapes is a real installed addon and a good worked example, because it

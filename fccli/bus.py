@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """The typed message stream.
 
 Everything the engine wants to say goes through here as a ``Message``. The

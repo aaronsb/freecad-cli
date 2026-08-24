@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Unit display, driven by FreeCAD's own schema and converter.
 
 FreeCAD already knows how to render 9.525mm as 3/8" -- that is the

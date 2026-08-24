@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Live validation, rendered as colour.
 
 The highlighter holds a reference to the engine because what counts as a

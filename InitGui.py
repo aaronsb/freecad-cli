@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """GUI init.
 
 The dock registers itself with the main window, so FreeCAD's

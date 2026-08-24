@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LGPL-2.1-or-later
 """Talk to a running FreeCAD's command line.
 
 Nothing here imports FreeCAD. The client speaks a unix socket and the

@@ -148,6 +148,90 @@ One session has one line being typed, the same as it has one prompt.
   common prefix, which for `c` against chamfer/check/circle/clear is `c`.
 - **Completions are computed once**, in `fccli/completion.py`, and the socket
   serves them. There is no second implementation to drift.
+- **Verb names are offered in rank order**, promoted first. See Curation.
+
+## Curation
+
+FreeCAD's command registry is flat: `Part_Box` and `Std_TestQuestion` are
+peers in it. Its toolbars and menus are not, and that difference is the
+project's own answer to which commands matter and which belong together.
+`tools/harvest_commands.py` records the placement by activating every
+workbench and reading it off the QAction; `fccli/curation.py` is what reads
+it back.
+
+| Rank | Meaning | Commands |
+|---|---|---|
+| `promoted` | in a default toolbar | 510 |
+| `menu` | reachable from a menu, no button | 399 |
+| `registry` | neither — internals, test hooks, context-menu-only | 215 |
+
+- **Rank orders; it never hides.** Every verb stays reachable by typing its
+  name. Finding out the program does something you did not know it did is
+  most of what a command line is for, and a registry-rank verb that sorts
+  last is still there when you type it.
+- **A hand-written or patched verb ranks promoted.** It exists because
+  somebody decided the command line needed it.
+- **A family ranks as its best member.** `view` runs no command of its own,
+  so it has no placement to read; what it gathers does.
+- **Adjacency is the rest of the toolbar.** `man box` cites cone, cylinder,
+  sphere, torus and tube because FreeCAD put them on one toolbar. Nothing
+  here is a list somebody maintains — deleting `curation.py` loses the
+  ordering, not any data.
+
+## Habit
+
+Curation is the same answer for everyone. `fccli/frecency.py` is the layer
+that makes it personal, and it composes on top rather than replacing: verb
+names are ordered by curation, then names with a history are lifted above
+the rest. Somebody who draws walls all day stops being offered `box` first
+because Part's toolbar is bigger than BIM's.
+
+The weights are Mozilla's frecency buckets by way of
+[clicue](https://github.com/aaronsb/clicue) — count times a bucketed age
+multiplier, integer arithmetic, no curve.
+
+- **A partition, not a sort.** An unused name is not competing on a score of
+  zero; it is behind the used ones, in the order curation already put it.
+  Alphabetical there would throw curation away.
+- **`now` is a parameter.** Nothing in `frecency.py` reads a clock, so an
+  ordering is reproducible in a test rather than drifting with the calendar.
+- **A missing timestamp weighs 1**, degrading that entry to plain frequency.
+  History written before timestamps existed still counts.
+- **Clicking counts.** A toolbar click reaches the ring as a command like
+  any other, so the ranking learns from the mouse as well as the keyboard.
+- **The click cue fades.** Clicking an unfamiliar command names its
+  neighbours; after `ActionBridge.CUE_UNTIL` uses it goes quiet. A cue that
+  never goes away is furniture.
+
+## Geometry
+
+- **Docked, the user sets height; floating, both axes.** The two sizes are
+  remembered under separate keys, so neither state inherits the other's
+  shape.
+- **The control strip clips rather than setting a floor.** A layout makes
+  its widget as wide as its children and Qt reads that back through
+  `minimumSizeHint` whatever the layout's constraint says, so the strip and
+  the body are `_Squeezable` — they report no minimum width. The scrollback
+  is what somebody resizes to see.
+- **`CliDock.persist` turns geometry saving off.** A test shows a real dock
+  in a window whose shape it did not choose; saving that would replace a
+  real setting. Stopping the debounce timer is not enough, because a later
+  relayout restarts it.
+
+## Files
+
+`fccli/paths.py` is the only module that names a directory.
+
+| | |
+|---|---|
+| `$XDG_STATE_HOME/fccli/history` | what accumulates by use — the spec names history as the example |
+| `$XDG_DATA_HOME/fccli/aliases` | what the user wrote down on purpose |
+
+- **Reads fall back to the pre-XDG location**, `~/.local/share/FreeCAD/fccli/`.
+  Writes only go to the new path, and nothing is moved or deleted — the
+  fallback stops applying by itself once the new file exists.
+- **History lines are `<epoch>\t<command>`.** A line with no tab is read as
+  epoch 0 rather than skipped.
 
 ## Verbs
 

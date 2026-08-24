@@ -1,17 +1,24 @@
-"""Spike verification. Runs offscreen, no FreeCAD GUI required.
+# SPDX-License-Identifier: LGPL-2.1-or-later
 
-    QT_QPA_PLATFORM=offscreen python3 tests/test_spike.py
+"""Everything checkable without a FreeCAD GUI.
 
-Proves the four things the design rests on:
-  1. bare keys reach the command line while another widget holds focus
-  2. real editors keep their keys (focus guard)
-  3. digits route by step, not by policy
-  4. typed values and simulated picks land in one state machine, and the
-     result replays as text
+    QT_QPA_PLATFORM=offscreen python3 tests/offscreen.py
+
+The grammar, the engine, the factory, completion, units, colouring,
+curation and the history ring, with a real Qt application but no main
+window. What needs a window is in bvt.py; what needs a second process is
+in socket_host.py.
+
+It was called test_spike.py while there was a spike. The sections are
+numbered in the order they were written rather than renumbered each time,
+so a failure keeps the same name from run to run.
 """
 
 import os
+import subprocess as _sh
 import sys
+import tempfile
+import time
 
 sys.path[:0] = [
     "/usr/lib/freecad/lib",
@@ -20,12 +27,24 @@ sys.path[:0] = [
 ]
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+# Run against a scratch XDG root. The suite builds a real Session, which
+# means a real History at the real path, and one of the checks below is
+# "history clear empties the ring" -- so without this, running the tests
+# truncated the operator's own command history. Set before fccli is
+# imported: the paths are module-level constants.
+_XDG = tempfile.mkdtemp(prefix="fccli-tests-")
+os.environ["XDG_STATE_HOME"] = os.path.join(_XDG, "state")
+os.environ["XDG_DATA_HOME"] = os.path.join(_XDG, "data")
+
 import FreeCAD as App  # noqa: E402
 from PySide6 import QtCore, QtGui, QtWidgets  # noqa: E402
 
 from fccli.bus import Bus, ERROR, LIVE, RESULT  # noqa: E402
 from fccli.engine import Engine  # noqa: E402
+from fccli.completion import candidates as _complete  # noqa: E402
+from fccli import __version__ as _fccli_version  # noqa: E402
 from fccli.grammar import REGISTRY  # noqa: E402
+from fccli.session import History as _History  # noqa: E402
 from fccli.keyfilter import KeyFilter  # noqa: E402
 from fccli.widget import Console  # noqa: E402
 import fccli.verbs  # noqa: E402,F401
@@ -611,6 +630,236 @@ def main():
     engine.submit("history clear")
     check("history clear empties the ring", session.history.entries, [])
     engine.submit("close!")
+
+    print("\n5l. curation -- FreeCAD's own ranking")
+    from fccli import curation as _cur
+    from fccli.factory import load_descriptor as _load_desc
+    _desc = _load_desc()
+    curated = _cur.load(_desc)
+    census = curated.census()
+    check("every command lands in exactly one rank",
+          sum(census.values()), len(_desc["commands"]))
+    check("a toolbar command outranks a registry-only one",
+          curated.rank("Part_Box") < curated.rank("Std_TestQuestion"), True)
+    check("placement is read off the descriptor",
+          curated.placement("Part_Box")[0], "Solids")
+    check("adjacency is the rest of the toolbar",
+          sorted(curated.adjacent("Part_Box")),
+          ["Part_Cone", "Part_Cylinder", "Part_Sphere", "Part_Torus",
+           "Part_Tube"])
+    check("a command is never adjacent to itself",
+          "Part_Box" in curated.adjacent("Part_Box"), False)
+
+    _ranked = curated.order(REGISTRY, ["sketcher_bsplinedegree", "box"])
+    check("order puts the promoted verb first", _ranked[0], "box")
+    check("order keeps everything reachable", len(_ranked), 2)
+    check("a hand-written verb outranks anything generated",
+          curated.rank_of(REGISTRY.get("box"))
+          < curated.rank_of(REGISTRY.get("sketcher_bsplinedegree")), True)
+    check("a family ranks as its best member",
+          curated.rank_of(REGISTRY.get("view")), _cur.PROMOTED)
+    check("an accented label slugs to a typeable name",
+          REGISTRY.get("bezier_curve") is not None, True)
+
+    _groups = curated.choice_groups("view")
+    check("a family's choices group by FreeCAD's own menus",
+          len(_groups) > 4, True)
+    check("  the biggest group leads",
+          _groups[0][0], "Standard Views")
+    check("  what FreeCAD filed nowhere comes last",
+          _groups[-1][0], None)
+    check("  and every member lands in exactly one group",
+          sum(len(g[1]) for g in _groups),
+          len(REGISTRY.get("view").steps[0].choices))
+    check("a family whose members fill their toolbar falls back to siblings",
+          bool(curated.neighbours(REGISTRY, REGISTRY.get("view"))), True)
+    check("a two-member step is not worth grouping",
+          curated.choice_groups("nonexistent_family"), [])
+
+    print("\n5m. paths follow XDG, and still find the old files")
+    from fccli import paths as _paths
+    _saved = {k: os.environ.get(k) for k in ("XDG_STATE_HOME", "XDG_DATA_HOME")}
+    os.environ["XDG_STATE_HOME"] = "/tmp/fccli-state"
+    os.environ["XDG_DATA_HOME"] = "/tmp/fccli-data"
+    check("history is state, not data",
+          _paths.state("history"), "/tmp/fccli-state/fccli/history")
+    check("aliases are data", _paths.data("aliases"),
+          "/tmp/fccli-data/fccli/aliases")
+    for k, v in _saved.items():
+        os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
+    _fresh = os.path.join(tempfile.mkdtemp(), "history")
+    check("an absent new path falls back to the old one",
+          _paths.readable(_fresh, "history"), _paths.legacy("history")
+          if os.path.exists(_paths.legacy("history")) else _fresh)
+
+    print("\n5n. frecency -- ranking by what somebody does")
+    from fccli import frecency as _frec
+    _now = 1_700_000_000
+    check("today weighs most", _frec.recency_weight(_now, _now), 16)
+    check("a year ago weighs least",
+          _frec.recency_weight(_now, _now - 400 * 86400), 1)
+    check("no timestamp degrades to frequency, not to zero",
+          _frec.score(5, 0, _now), 5)
+    check("recent beats frequent-but-stale",
+          _frec.score(2, _now, _now) > _frec.score(6, _now - 90 * 86400, _now),
+          True)
+    _stats = {"wall": (6, _now)}
+    check("an unused name keeps the order it arrived in",
+          _frec.partition(["zoom", "wall", "box"],
+                          lambda n: _stats.get(n, (0, 0)), _now),
+          ["wall", "zoom", "box"])
+    check("nothing is dropped by ranking",
+          len(_frec.partition(["a", "b"], lambda n: (0, 0), _now)), 2)
+
+    print("\n5o. history persists with timestamps")
+    _hp = os.path.join(tempfile.mkdtemp(), "history")
+    _h = _History(path=_hp)
+    _h.add("box 0,0,0 10mm", when=_now)
+    check("it round-trips through the file",
+          _History(path=_hp).entries, ["box 0,0,0 10mm"])
+    check("  keeping when it happened",
+          _History(path=_hp).stamps.get("box 0,0,0 10mm"), _now)
+    _old = os.path.join(tempfile.mkdtemp(), "history")
+    with open(_old, "w", encoding="utf-8") as fh:
+        fh.write("circle 0,0,0 5mm\n")
+    check("a file written before timestamps still reads",
+          _History(path=_old).entries, ["circle 0,0,0 5mm"])
+    check("  with an epoch frecency treats as unknown",
+          _History(path=_old).usage(), [("circle 0,0,0 5mm", 0)])
+
+    print("\n5p. a habit outranks FreeCAD's own ordering")
+    _hab = _History(path=os.path.join(tempfile.mkdtemp(), "history"))
+    _cold = _complete(engine, "b", history=None)[2]
+    check("cold, equal ranks fall back to alphabetical",
+          _cold.index("b_spline") < _cold.index("box"), True)
+    for _ in range(6):
+        _hab.add("boolean 1,1,1", when=int(time.time()))
+        _hab.add("box 0,0,0 1mm", when=int(time.time()))
+    _warm = _complete(engine, "b", history=_hab)[2]
+    check("a used verb overtakes an unused one that outsorts it",
+          _warm.index("box") < _warm.index("b_spline"), True)
+    check("  and both are still offered",
+          {"box", "b_spline"} <= set(_warm), True)
+    check("the two used verbs take the front",
+          set(_warm[:2]), {"box", "boolean"})
+
+    print("\n5q. the click cue fades as the habit forms")
+    from fccli.actions import ActionBridge
+
+    class _Cue:
+        session = type("S", (), {"history": _History(
+            path=os.path.join(tempfile.mkdtemp(), "history"))})()
+        def __init__(self): self.lines = []
+        def write(self, text, role=None): self.lines.append(text)
+        def set_input(self, text): pass
+
+    _con = _Cue()
+    _bridge = ActionBridge(engine, _con, REGISTRY)
+    _bridge._suggest(REGISTRY.get("box"))
+    check("an unfamiliar verb names its neighbours",
+          any("cylinder" in ln for ln in _con.lines), True)
+    for _ in range(6):
+        _Cue.session.history.add(f"box 0,0,{_} 1mm", when=int(time.time()))
+    _con.lines.clear()
+    _bridge._suggest(REGISTRY.get("box"))
+    check("a familiar one says nothing", _con.lines, [])
+    _bridge.cue = False
+    _con2 = _Cue()
+    _bridge.console = _con2
+    _bridge._suggest(REGISTRY.get("box"))
+    check("the cue can be turned off outright", _con2.lines, [])
+
+    print("\n5q2. a full ring keeps learning")
+    _ring = _History(path=os.path.join(tempfile.mkdtemp(), "history"), limit=5)
+    for i in range(5):
+        _ring.add(f"box 0,0,{i} 1mm", when=_now)
+    _full = _ring.revision
+    check("the ring is at its limit", len(_ring.entries), 5)
+    _ring.add("circle 0,0,0 2mm", when=_now)
+    check("  adding past it does not change the length",
+          len(_ring.entries), 5)
+    check("  but the revision moves, so a cache keyed on it rebuilds",
+          _ring.revision > _full, True)
+    check("  the oldest line is gone", "box 0,0,0 1mm" in _ring.entries, False)
+    check("  and its timestamp went with it",
+          "box 0,0,0 1mm" in _ring.stamps, False)
+    check("  the tally reflects what is left",
+          _frec.tally(_ring.usage()).get("circle"), (1, _now))
+
+    print("\n5r. the version banner reports where the code came from")
+    from fccli import build_info as _bi
+    _bi._CACHE = None
+    check("in a checkout, live git wins over a release stamp",
+          _bi.info().get("source"), "git")
+    check("  and the commit is this one",
+          _bi.info().get("commit", "").split("-")[0],
+          _sh.check_output(["git", "rev-parse", "--short", "HEAD"],
+                           text=True).strip())
+    check("describe carries version, commit and date",
+          _bi.describe().startswith(_fccli_version + "+"), True)
+    _bi._CACHE = None
+
+    print("\n5s. edges the happy path does not reach")
+    from fccli.factory import _label as _factory_label
+    from fccli.shell import _columns as _cols
+    # Frecency bucket boundaries: each edge belongs to the bucket below it.
+    for _days, _want in ((0, 16), (7, 8), (8, 4), (30, 4),
+                         (31, 2), (180, 2), (181, 1)):
+        check(f"  {_days}d weighs {_want}",
+              _frec.recency_weight(_now, _now - _days * 86400), _want)
+    check("a timestamp in the future is not trusted",
+          _frec.recency_weight(_now, _now + 86400), 1)
+    check("a zero count scores zero however recent",
+          _frec.score(0, _now, _now), 0)
+    check("partition of nothing is nothing", _frec.partition([], dict, _now), [])
+    check("all-unused keeps the incoming order exactly",
+          _frec.partition(["c", "a", "b"], lambda n: (0, 0), _now),
+          ["c", "a", "b"])
+
+    # Curation with nothing to read -- the state before a descriptor loads.
+    _bare = _cur.Curation({})
+    check("an empty curation ranks everything registry",
+          _bare.rank("Part_Box"), _cur.REGISTRY)
+    check("  and offers no neighbours", _bare.adjacent("Part_Box"), [])
+    check("  and orders without dropping anything",
+          _bare.order(REGISTRY, ["box", "circle"]), ["box", "circle"])
+    check("an unknown command has no placement",
+          curated.placement("No_Such_Command"), (None, None))
+
+    # Column layout.
+    check("no items, no rows", _cols([]), [])
+    check("one item is one row", _cols(["only"]), ["only"])
+    check("an item wider than the width still gets a row",
+          len(_cols(["x" * 200])), 1)
+
+    # The XDG fallback must stop applying once the new file exists.
+    _dir = tempfile.mkdtemp()
+    _new = os.path.join(_dir, "history")
+    check("with nothing at the new path, the old one answers",
+          _paths.readable(_new, "history") != _new,
+          os.path.exists(_paths.legacy("history")))
+    open(_new, "w", encoding="utf-8").close()
+    check("once the new path exists it wins, empty or not",
+          _paths.readable(_new, "history"), _new)
+
+    # A history file with both formats in it.
+    _mixed = os.path.join(tempfile.mkdtemp(), "history")
+    with open(_mixed, "w", encoding="utf-8") as fh:
+        fh.write("box 1,1,1\n%d\tcircle 0,0,0 5mm\n" % _now)
+    _mh = _History(path=_mixed)
+    check("old and new format lines read together",
+          _mh.entries, ["box 1,1,1", "circle 0,0,0 5mm"])
+    check("  each keeping its own epoch",
+          [w for _, w in _mh.usage()], [0, _now])
+    check("a repeated line counts twice but stamps once",
+          (lambda h: (h.add("a", when=_now), h.add("b", when=_now),
+                      h.add("a", when=_now + 5),
+                      _frec.tally(h.usage())["a"]))(
+              _History(path=os.path.join(tempfile.mkdtemp(), "h")))[-1],
+          (2, _now + 5))
+
+    check("mnemonic markers are stripped from a label",
+          _factory_label("&Box Zoom"), "Box Zoom")
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
