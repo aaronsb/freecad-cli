@@ -142,6 +142,12 @@ def build_command_verb(command):
                 gui_command=name)
 
 
+def _claimed(registry, name):
+    """Whether a verb somebody wrote by hand already owns this name."""
+    sitting = registry.get(name)
+    return sitting is not None and not sitting.emit.__module__.endswith("factory")
+
+
 def _qualify(verb, tid, registry):
     """Re-home a generated verb whose name a patch is taking."""
     if not tid:
@@ -209,12 +215,27 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
 
     origins = {}
     for verb, entry, _patch, tid in plain:
+        if _claimed(registry, verb.name):
+            # A hand-written verb already owns this name, and it is the
+            # better one: it can pick points. Keep the generated version
+            # reachable under a qualified name.
+            if _qualify(verb, tid, registry):
+                counts["shadowed"] = counts.get("shadowed", 0) + 1
+            else:
+                counts["skipped"] += 1
+            continue
         registry.add(verb)
         origins[verb.name] = tid
         counts["tier1"] += 1
 
     for verb, entry, patch, tid in patched:
         verb = patches.apply(verb, entry, patch)
+        if _claimed(registry, verb.name):
+            if _qualify(verb, tid, registry):
+                counts["shadowed"] = counts.get("shadowed", 0) + 1
+            else:
+                counts["skipped"] += 1
+            continue
         sitting = registry.get(verb.name)
         if sitting is not None and sitting is not verb:
             if _qualify(sitting, origins.get(sitting.name), registry):
@@ -222,6 +243,13 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
         registry.add(verb)
         counts["patched"] += 1
         counts["tier1"] += 1
+
+    # Verbs an addon declared outright win over everything generated: the
+    # author knows what their FeaturePython object is, and FreeCAD's type
+    # registry does not.
+    for verb in patches.build_declared():
+        registry.add(verb)
+        counts["declared"] = counts.get("declared", 0) + 1
 
     counts["total"] = len(registry.names())
     if report is not None:

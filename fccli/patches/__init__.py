@@ -18,6 +18,11 @@ registration step, so a third-party workbench gets generic command-line
 support from the factory and a hand-tuned grammar the moment someone writes
 one for it. Nothing has to change here for that to happen.
 
+A patch has two halves. ``types`` retunes verbs the factory generated;
+``verbs`` declares ones it could not, which is the case for any addon whose
+objects are ``Part::FeaturePython`` with a Python proxy -- FreeCAD's type
+registry never sees those, so there is nothing to generate from.
+
 A patch module exports ``PATCH``::
 
     PATCH = {
@@ -32,6 +37,18 @@ A patch module exports ``PATCH``::
                 "hide": ["FirstAngle", "SecondAngle"],
             },
         },
+        "verbs": {
+            "curved_array": {
+                "doc": "Array a shape along hull curves.",
+                "gui_command": "CurvedArray",
+                "steps": [
+                    {"id": "base", "kind": "selection", "prompt": "Base shape"},
+                    {"id": "items", "kind": "quantity", "prompt": "Items",
+                     "unit": ""},
+                ],
+                "emit": make_curved_array,   # a callable you supply
+            },
+        },
     }
 """
 
@@ -39,7 +56,11 @@ import glob
 import importlib.util
 import os
 
-from ..grammar import POINT, Option, Step
+from ..grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
+                       Option, Step, Verb)
+
+KINDS = {"point": POINT, "quantity": QUANTITY, "choice": CHOICE,
+         "selection": SELECTION, "text": TEXT, "path": PATH}
 
 BUILTIN_DIR = os.path.dirname(os.path.abspath(__file__))
 USER_DIR = os.path.expanduser("~/.local/share/FreeCAD/fccli/patches")
@@ -88,10 +109,16 @@ class PatchSet:
     def __init__(self, patches=None):
         self.sources = patches if patches is not None else discover()
         self.by_type = {}
+        self.declared = {}
         self.keys = []
         for origin, path, patch in self.sources:
             key = patch.get("key", "?")
             self.keys.append((origin, key, path))
+            for name, spec in (patch.get("verbs") or {}).items():
+                merged = dict(self.declared.get(name, {}))
+                merged.update(spec)
+                merged.setdefault("key", key)
+                self.declared[name] = merged
             for tid, spec in (patch.get("types") or {}).items():
                 # Later roots override earlier ones, key by key rather than
                 # wholesale, so a user patch can retune one field without
@@ -108,7 +135,27 @@ class PatchSet:
         for origin, key, _ in self.keys:
             by_origin.setdefault(origin, []).append(key)
         return {"patches": len(self.keys), "types": len(self.by_type),
-                "by_origin": by_origin}
+                "declared": len(self.declared), "by_origin": by_origin}
+
+    # ------------------------------------------------------------ declare
+
+    def build_declared(self):
+        """Verbs an addon wrote out in full, because nothing generated them."""
+        out = []
+        for name, spec in self.declared.items():
+            emit = spec.get("emit")
+            if not callable(emit):
+                continue
+            steps = [_build_step(raw) for raw in spec.get("steps", [])]
+            out.append(Verb(
+                name=spec.get("verb", name),
+                steps=[s for s in steps if s is not None],
+                emit=emit,
+                aliases=list(spec.get("aliases", [])),
+                doc=spec.get("doc", ""),
+                gui_command=spec.get("gui_command"),
+            ))
+        return out
 
     # ------------------------------------------------------------- apply
 
@@ -158,6 +205,37 @@ class PatchSet:
         if callable(spec.get("emit")):
             verb.emit = spec["emit"]
         return verb
+
+
+def _build_step(raw):
+    """One step, from a plain dict an addon author can write by hand."""
+    if isinstance(raw, Step):
+        return raw
+    kind = KINDS.get(raw.get("kind", "text"))
+    if kind is None:
+        return None
+    step = Step(
+        raw["id"], kind, raw.get("prompt", raw["id"]),
+        repeat=raw.get("repeat", False),
+        min_count=raw.get("min_count", 1),
+        optional=raw.get("optional", False),
+        unit=raw.get("unit", "mm"),
+        choices=list(raw.get("choices", [])),
+        default=raw.get("default"),
+    )
+    step.options = [
+        Option(o["name"], o.get("doc", ""), _flag(o["name"]))
+        if isinstance(o, dict) else Option(o, "", _flag(o))
+        for o in raw.get("options", [])
+    ]
+    return step
+
+
+def _flag(name):
+    def action(engine):
+        engine.flags[name] = True
+        return False
+    return action
 
 
 def _setter(name):

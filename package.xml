@@ -2,8 +2,8 @@
 <package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
   <name>FreeCAD CLI</name>
   <description>
-    A Rhino-style command line for FreeCAD. A dockable terminal widget
-    driving a command grammar generated from FreeCAD's own registries:
+    A command line for FreeCAD. A dockable terminal widget driving a
+    command grammar generated from FreeCAD's own registries:
     typed coordinates, viewport picks and inline option keywords all feed
     one state machine, and every value records its typed form so a
     mouse-driven command replays from history as text.

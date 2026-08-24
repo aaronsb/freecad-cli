@@ -17,6 +17,48 @@ IDLE = "idle"
 COLLECTING = "collecting"
 
 
+def _open_transaction(verb, label):
+    """One typed line, one undo step.
+
+    Objects created outside a transaction never reach the undo stack, and
+    UndoMode is off by default on a document nobody has told otherwise, so
+    both are set here rather than left to each emitter.
+    """
+    if not verb.transactional:
+        return None
+    import FreeCAD as App
+    doc = App.ActiveDocument
+    if doc is None:
+        return None
+    try:
+        doc.UndoMode = 1
+        doc.openTransaction(label[:120])
+    except Exception:
+        return None
+    return doc
+
+
+def _commit_transaction(doc):
+    import FreeCAD as App
+    # A verb may have switched or closed the document under us.
+    if doc is None or doc is not App.ActiveDocument:
+        return
+    try:
+        doc.commitTransaction()
+    except Exception:
+        pass
+
+
+def _abort_transaction(doc):
+    import FreeCAD as App
+    if doc is None or doc is not App.ActiveDocument:
+        return
+    try:
+        doc.abortTransaction()
+    except Exception:
+        pass
+
+
 class Engine:
     def __init__(self, bus: _bus.Bus, registry: Registry, picker=None) -> None:
         self.bus = bus
@@ -240,12 +282,15 @@ class Engine:
         replay = " ".join(self.replay)
         self._stop_picking()
         self._reset()
+        doc = _open_transaction(verb, replay)
         try:
             obj = verb.emit({**values, "_flags": flags, "_engine": self})
         except Exception as exc:
+            _abort_transaction(doc)
             self.bus.emit(_bus.ERROR, f"{verb.name} failed: {exc}")
             self._announce()
             return
+        _commit_transaction(doc)
         self.bus.emit(_bus.RESULT, replay,
                       verb=verb.name, replay=replay, object=obj)
         self._announce()

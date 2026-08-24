@@ -1,6 +1,6 @@
 # FreeCAD CLI
 
-A Rhino-style command line for FreeCAD.
+A command line for FreeCAD.
 
 ![The command line docked above the 3D view](docs/images/hero.png)
 
@@ -61,7 +61,7 @@ toolbars and the 3D view. `` Ctrl+` `` toggles it, and it is listed under
 10,20,30      absolute
 10,20         z from the previous point
 @10,0,0       relative           (AutoCAD spelling)
-r10,0,0       relative           (Rhino spelling)
+r10,0,0       relative, alternate spelling
 100<45        polar, in the XY plane
 3/8in,1in,0   any unit FreeCAD's parser accepts
 ```

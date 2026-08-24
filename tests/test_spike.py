@@ -69,8 +69,9 @@ def main():
     live = []
     bus.subscribe(lambda m: live.append(m.text) if m.kind == LIVE else None)
     engine = Engine(bus, REGISTRY, picker=None)
-    from fccli import dirty
+    from fccli import dirty, units as _units
     dirty.install()
+    _units.set_schema("Internal")   # rendering assertions depend on it
 
     window = QtWidgets.QWidget()
     layout = QtWidgets.QVBoxLayout(window)
@@ -147,7 +148,7 @@ def main():
     for line in ["box", "0,0,0", "10", "3/8in", "2.5cm"]:
         engine.submit(line)
     check("units normalized on input", results[-1],
-          "box 0,0,0 10mm 9.525mm 25mm")
+          "box 0,0,0 10.00mm 9.525mm 25.40mm")
 
     print("\n4c. shell builtins run without dialogs")
     import os
@@ -238,6 +239,51 @@ def main():
     engine.submit("close!")
     os.path.exists(outside) and os.remove(outside)
 
+    print("\n4e. undo is one step per typed line")
+    engine.submit("new undodoc")
+    doc = App.ActiveDocument
+    engine.submit("box 0,0,0 10 10 10")
+    engine.submit("circle 0,0,0 5")
+    check("both objects exist", len(doc.Objects), 2)
+    check("the undo stack is labelled with the command",
+          doc.UndoNames[0].startswith("circle"), True)
+    engine.submit("undo")
+    check("undo removes one command's worth", len(doc.Objects), 1)
+    engine.submit("redo")
+    check("redo puts it back", len(doc.Objects), 2)
+    engine.submit("close!")
+
+    print("\n4f. units follow FreeCAD's schema")
+    from fccli import units as U
+    before = U.current_name()
+    engine.submit("new unitdoc")
+    results.clear()
+    U.set_schema("Internal")
+    engine.submit("circle 0,0,0 9.525")
+    check("internal renders mm", results[-1], "circle 0,0,0 9.525mm")
+    check("a bare number means mm", U.preferred(), "mm")
+    U.set_schema("ImperialBuilding")
+    engine.submit("circle 0,0,0 9.525")
+    check("imperial building renders fractions",
+          results[-1], 'circle 0,0,0 3/8"')
+    check("a bare number now means in", U.preferred(), "in")
+    engine.submit("box 0,0,0 3/8in 1ft 25.4")
+    check("mixed input unifies on output",
+          results[-1], 'box 0,0,0 3/8" 1\' 1"')
+    # Every rendering must survive being read back, since the echo is what
+    # Up recalls.
+    from FreeCAD import Units as _U
+    lossy = []
+    for token, want in (('3/8"', 9.525), ("1'", 304.8), ('1"', 25.4)):
+        try:
+            if abs(_U.Quantity(token).Value - want) > 1e-7:
+                lossy.append(token)
+        except Exception:
+            lossy.append(token)
+    check("every rendered token round-trips exactly", lossy, [])
+    engine.submit("close!")
+    U.set_schema(before)
+
     print("\n5c. the factory: generated and patched verbs")
     from fccli.factory import load_descriptor, register_all
     from fccli.patches import PatchSet
@@ -264,6 +310,14 @@ def main():
         # A patch must not shadow a hand-written verb.
         check("hand-written verbs survive the factory",
               REGISTRY.get("polyline").emit.__name__, "_emit_polyline")
+        # box is the sharp case: the factory generates one from Part::Box.
+        import fccli.verbs as _v
+        register_all(REGISTRY, tier0=False)
+        check("  including where a generated verb wants the same name",
+              [st.id for st in REGISTRY.get("box").steps],
+              ["corner", "length", "width", "height"])
+        check("  and the generated one stays reachable",
+              REGISTRY.get("part_box") is not None, True)
 
     errors.clear()
     infos = []

@@ -157,12 +157,10 @@ def format_point(v: Vector) -> str:
 
 
 def format_quantity(value: float, unit: str = "mm") -> str:
-    """Serialize a scalar back to typed form.
+    """Serialize a scalar back to typed form, in the configured schema.
 
     No space before the unit: the replay line is split on whitespace, so
     "10 mm" would arrive as two tokens. FreeCAD's parser accepts "10mm".
     """
-    def n(x: float) -> str:
-        s = f"{x:.6g}"
-        return "0" if s in ("-0", "-0.0") else s
-    return f"{n(value)}{unit}" if unit else n(value)
+    from .units import format_quantity as _format
+    return _format(value, unit)

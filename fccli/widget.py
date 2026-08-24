@@ -211,7 +211,12 @@ class Console(QtWidgets.QPlainTextEdit):
     def _candidates(self):
         text = self.input_text()
         head, _, tail = text.rpartition(" ")
-        step = self.engine.current_step()
+        step = self.engine.current_step() or self._step_ahead(head)
+        if step is not None and step.kind == "quantity" and _is_bare(tail):
+            # "cylinder 5" + Tab -> "cylinder 5mm", in whatever the schema says.
+            from .units import preferred
+            return head, tail, [tail + preferred(
+                "angle" if step.unit == "deg" else "length")]
         if step is None and not head:
             pool = self.engine.registry.names()
         elif step is not None:
@@ -222,6 +227,26 @@ class Console(QtWidgets.QPlainTextEdit):
         else:
             pool = self.engine.registry.names()
         return head, tail, [c for c in pool if c.lower().startswith(tail.lower())]
+
+    def _step_ahead(self, head):
+        """Which getter the token being typed would land in.
+
+        A whole command typed on one line -- "cylinder 5" -- never reaches
+        the engine until Enter, so there is no current step to consult.
+        Resolve the verb from the first token and count the arguments
+        already given.
+        """
+        tokens = head.split()
+        if not tokens:
+            return None
+        hits = self.engine.registry.resolve_prefix(tokens[0])
+        if len(hits) != 1:
+            return None
+        verb = self.engine.registry.get(hits[0])
+        index = len(tokens) - 1
+        if verb is None or index >= len(verb.steps):
+            return None
+        return verb.steps[index]
 
     def _complete(self, backwards=False):
         """Tab cycles. The stem is remembered, so the second Tab does not
@@ -370,6 +395,17 @@ class Console(QtWidgets.QPlainTextEdit):
         self._suggestion = ""
         self.set_input("")
         self.submitted.emit(text)
+
+
+def _is_bare(token):
+    """A number with no unit on it yet."""
+    if not token:
+        return False
+    try:
+        float(token)
+    except ValueError:
+        return False
+    return True
 
 
 def _document_labels():

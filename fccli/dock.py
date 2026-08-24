@@ -309,7 +309,7 @@ def show(area=None):
     """Create the dock, or raise it if it already exists.
 
     Default home is the top dock area: a full-width strip between the
-    toolbars and the 3D view, which is where Rhino puts its command line.
+    toolbars and the 3D view.
     The bottom area is shared with the Report View and the Python console,
     so a dock added there gets a narrow column rather than a strip.
     """

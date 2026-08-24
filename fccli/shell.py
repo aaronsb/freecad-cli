@@ -146,7 +146,7 @@ def _emit_delete(v):
 # -------------------------------------------------------------------- verbs
 
 REGISTRY.add(Verb(
-    name="save", aliases=["w"], gui_command="Std_Save",
+    name="save", transactional=False, aliases=["w"], gui_command="Std_Save",
     doc="Save the active document. With a path, save there without asking.",
     steps=[Step("path", PATH, "Save as (Enter for the current file)",
                 optional=True)],
@@ -154,45 +154,45 @@ REGISTRY.add(Verb(
 ))
 
 REGISTRY.add(Verb(
-    name="open", aliases=["e"], gui_command="Std_Open",
+    name="open", transactional=False, aliases=["e"], gui_command="Std_Open",
     doc="Open a document by path.",
     steps=[Step("path", PATH, "File to open")],
     emit=_emit_open,
 ))
 
 REGISTRY.add(Verb(
-    name="new", gui_command="Std_New",
+    name="new", transactional=False, gui_command="Std_New",
     doc="Create a document.",
     steps=[Step("name", TEXT, "Document name", optional=True)],
     emit=_emit_new,
 ))
 
 REGISTRY.add(Verb(
-    name="close", aliases=["q"], gui_command="Std_CloseActiveWindow",
+    name="close", transactional=False, aliases=["q"], gui_command="Std_CloseActiveWindow",
     doc="Close the active document. Refuses if unsaved; close! discards.",
     steps=[], emit=_emit_close,
 ))
 
 REGISTRY.add(Verb(
-    name="clear", aliases=["cls"],
+    name="clear", transactional=False, aliases=["cls"],
     doc="Wipe the command line scrollback.",
     steps=[], emit=_emit_clear,
 ))
 
 REGISTRY.add(Verb(
-    name="undo", aliases=["u"], gui_command="Std_Undo",
+    name="undo", transactional=False, aliases=["u"], gui_command="Std_Undo",
     doc="Undo the last document transaction.",
     steps=[], emit=_emit_undo,
 ))
 
 REGISTRY.add(Verb(
-    name="redo", gui_command="Std_Redo",
+    name="redo", transactional=False, gui_command="Std_Redo",
     doc="Redo the last undone transaction.",
     steps=[], emit=_emit_redo,
 ))
 
 REGISTRY.add(Verb(
-    name="fit", aliases=["zoom", "zf"], gui_command="Std_ViewFitAll",
+    name="fit", transactional=False, aliases=["zoom", "zf"], gui_command="Std_ViewFitAll",
     doc="Zoom to fit everything in the view.",
     steps=[], emit=_emit_fit,
 ))
@@ -202,6 +202,31 @@ REGISTRY.add(Verb(
     doc="Delete the selected objects.",
     steps=[], emit=_emit_delete,
 ))
+
+
+def _emit_units(v):
+    """Show or set the unit schema.
+
+    This is FreeCAD's own setting, not a second one -- switching here moves
+    the whole application, so the command line and the property editor agree
+    on what 3/8" means.
+    """
+    from . import units as U
+    engine = v.get("_engine")
+    wanted = v.get("schema")
+    if not wanted:
+        if engine is None:
+            return None
+        current = U.current_name()
+        engine.bus.emit(_bus.INFO,
+                        f"{current} -- a bare number means {U.preferred()}")
+        for name in U.schemas():
+            mark = "*" if name == current else " "
+            engine.bus.emit(_bus.INFO, f"  {mark} {name}")
+        return None
+    name = U.set_schema(wanted)
+    _say(v, f"{name} -- a bare number now means {U.preferred()}")
+    return None
 
 
 def _emit_man(v):
@@ -338,8 +363,8 @@ def _user_aliases():
 def _emit_alias(v):
     """Shell-style aliases. Bare lists them; name plus target defines one.
 
-    Rhino users arrive with L, PL and C already in their fingers, and every
-    verb here is a name someone might want to spell differently.
+    Everyone arrives with some other tool's abbreviations in their fingers,
+    and every verb here is a name someone might want to spell differently.
     """
     engine = v.get("_engine")
     name, target = v.get("name"), v.get("command")
@@ -477,8 +502,8 @@ def _user_aliases():
 def _emit_alias(v):
     """Shell-style aliases. Bare lists them; name plus target defines one.
 
-    Rhino users arrive with L, PL and C already in their fingers, and every
-    verb here is a name someone might want to spell differently.
+    Everyone arrives with some other tool's abbreviations in their fingers,
+    and every verb here is a name someone might want to spell differently.
     """
     engine = v.get("_engine")
     name, target = v.get("name"), v.get("command")
@@ -587,14 +612,21 @@ def _emit_help(v):
 
 
 REGISTRY.add(Verb(
-    name="man", aliases=["help", "?", "h"],
+    name="units", transactional=False,
+    doc="Show or set the unit schema, e.g. units imperialbuilding",
+    steps=[Step("schema", TEXT, "Unit schema", optional=True)],
+    emit=_emit_units,
+))
+
+REGISTRY.add(Verb(
+    name="man", transactional=False, aliases=["help", "?", "h"],
     doc="List the commands, or describe one in full.",
     steps=[Step("topic", TEXT, "Manual page", optional=True)],
     emit=_emit_man,
 ))
 
 REGISTRY.add(Verb(
-    name="alias",
+    name="alias", transactional=False,
     doc="List your aliases, or define one: alias b box",
     steps=[Step("name", TEXT, "Alias", optional=True),
            Step("command", TEXT, "Command it stands for", optional=True)],
@@ -602,20 +634,20 @@ REGISTRY.add(Verb(
 ))
 
 REGISTRY.add(Verb(
-    name="unalias",
+    name="unalias", transactional=False,
     doc="Remove one of your aliases.",
     steps=[Step("name", TEXT, "Alias to remove")],
     emit=_emit_unalias,
 ))
 
 REGISTRY.add(Verb(
-    name="history", aliases=["hist"],
+    name="history", transactional=False, aliases=["hist"],
     doc="List recalled commands. clear wipes the screen, not this.",
     steps=[], emit=_emit_history,
 ))
 
 REGISTRY.add(Verb(
-    name="quit", aliases=["exit", "qa"],
+    name="quit", transactional=False, aliases=["exit", "qa"],
     doc="Leave FreeCAD. Refuses on unsaved work; quit! discards it.",
     steps=[], emit=_emit_quit,
 ))

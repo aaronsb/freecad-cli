@@ -54,6 +54,9 @@ class Verb:
     aliases: List[str] = field(default_factory=list)
     doc: str = ""
     gui_command: Optional[str] = None  # the QAction this verb usurps, if any
+    # Wrap the command in a document transaction, so one typed line is one
+    # undo step. False for verbs that manage documents rather than edit them.
+    transactional: bool = True
 
 
 class Registry:
@@ -90,7 +93,7 @@ class Registry:
         return sorted(self._verbs)
 
     def resolve_prefix(self, token: str) -> List[str]:
-        """Rhino's daily path: type a unique prefix, press Enter, it runs.
+        """Type a unique prefix, press Enter, it runs.
 
         Exact names and aliases win outright over prefix matches.
         """

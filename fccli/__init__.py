@@ -1,4 +1,4 @@
-"""FreeCAD CLI -- a Rhino-style command line for FreeCAD.
+"""FreeCAD CLI -- a command line for FreeCAD.
 
 The version here is the single source of truth. package.xml carries a copy
 because FreeCAD's Addon Manager reads it there; ``make version-check`` keeps
