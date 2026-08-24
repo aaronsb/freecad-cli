@@ -54,6 +54,7 @@ toolbars and the 3D view. `` Ctrl+` `` toggles it, and it is listed under
 | Enter on an empty line | finish a repeating step |
 | Esc / Ctrl+C | cancel |
 | trailing `!` | force past a refusal — `close!` |
+| `check <command>` | validate it without running it (`whatif`, `ck`) |
 
 ### Coordinates
 
@@ -77,6 +78,28 @@ These take their arguments inline instead:
 > open ~/parts/bracket.FCStd     new bracket     close     close!
 > alias b box                    unalias b       history   clear
 > undo    redo    fit    delete  quit    quit!
+> units imperialbuilding         switch schema; 9.525mm reads as 3/8"
+> check box 0,0,0 40 30 20       validate without running
+```
+
+`check` resolves and parses a command through the same code path the engine
+uses, then stops before emitting — so what it accepts is what would actually
+run, rather than a second implementation that can drift:
+
+```
+> check box 0,0,0 40 zz 20
+  box -- Create a box from a corner and three dimensions.
+    rejected: 'zz' is not a number or quantity
+
+> check cylinder 12
+  cylinder -- Create a cylinder from a radius and a height.
+    incomplete -- still wants: The height of the cylinder
+    valid so far, nothing was run.
+
+> check cylinder 12 40
+    would run:  cylinder 12.00mm 40.00mm
+    would create: Part::Cylinder
+    nothing was run.
 ```
 
 `close` and `quit` refuse when there is unsaved work rather than raising a

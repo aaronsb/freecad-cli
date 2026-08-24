@@ -41,6 +41,9 @@ class Step:
     default: Any = None
     unit: str = "mm"          # how a QUANTITY value is echoed back
     optional: bool = False    # bare Enter skips it, leaving the value None
+    # Consume the rest of the line verbatim rather than one whitespace token.
+    # For steps whose value is itself a command, a path, or a sentence.
+    raw: bool = False
 
     def option_names(self) -> List[str]:
         return [o.name for o in self.options]
@@ -54,6 +57,7 @@ class Verb:
     aliases: List[str] = field(default_factory=list)
     doc: str = ""
     gui_command: Optional[str] = None  # the QAction this verb usurps, if any
+    creates: Optional[str] = None      # the document type it produces, if any
     # Wrap the command in a document transaction, so one typed line is one
     # undo step. False for verbs that manage documents rather than edit them.
     transactional: bool = True

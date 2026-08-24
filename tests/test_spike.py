@@ -285,6 +285,42 @@ def main():
     engine.submit("close!")
     U.set_schema(entry_schema)
 
+    print("\n4g. check validates without running")
+    _units.set_schema("Internal")
+    engine.submit("new checkdoc")
+    infos_c = []
+    stop = bus.subscribe(lambda m: infos_c.append(m.text)
+                         if m.kind == "info" else None)
+    before_count = len(App.ActiveDocument.Objects)
+
+    engine.submit("check box 0,0,0 40 30 20")
+    joined = " | ".join(infos_c)
+    check("a valid command reports what would run",
+          "would run:  box 0,0,0 40.00mm 30.00mm 20.00mm" in joined, True)
+    check("  and what it would create", "Part::Box" in joined, True)
+    check("  without creating anything",
+          len(App.ActiveDocument.Objects), before_count)
+
+    infos_c.clear()
+    engine.submit("check box 0,0,0 40 zz 20")
+    check("a bad token is named",
+          any("'zz' is not a number" in i for i in infos_c), True)
+
+    infos_c.clear()
+    engine.submit("check polylne 0,0,0")
+    check("a typo suggests its fix",
+          any("did you mean" in i and "polyline" in i for i in infos_c), True)
+
+    infos_c.clear()
+    engine.submit("check box 0,0,0 40 30")
+    check("an incomplete command says what is missing",
+          any("still wants" in i for i in infos_c), True)
+
+    check("check never touched the document",
+          len(App.ActiveDocument.Objects), before_count)
+    stop()
+    engine.submit("close!")
+
     print("\n5c. the factory: generated and patched verbs")
     from fccli.factory import load_descriptor, register_all
     from fccli.patches import PatchSet

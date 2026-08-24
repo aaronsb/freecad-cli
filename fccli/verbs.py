@@ -108,7 +108,7 @@ def _diameter(engine):
 # ------------------------------------------------------------------- verbs
 
 REGISTRY.add(Verb(
-    name="line", aliases=["l"], gui_command="Draft_Line",
+    name="line", creates="Part::Part2DObjectPython", aliases=["l"], gui_command="Draft_Line",
     doc="Draw a line between two points.",
     steps=[
         Step("start", POINT, "Start of line"),
@@ -118,7 +118,7 @@ REGISTRY.add(Verb(
 ))
 
 REGISTRY.add(Verb(
-    name="polyline", aliases=["pl", "pline", "wire"], gui_command="Draft_Wire",
+    name="polyline", creates="Part::Part2DObjectPython", aliases=["pl", "pline", "wire"], gui_command="Draft_Wire",
     doc="Draw a connected sequence of segments. Enter finishes.",
     steps=[
         Step("start", POINT, "Start of polyline"),
@@ -133,7 +133,7 @@ REGISTRY.add(Verb(
 ))
 
 REGISTRY.add(Verb(
-    name="circle", aliases=["ci", "c"], gui_command="Draft_Circle",
+    name="circle", creates="Part::Part2DObjectPython", aliases=["ci", "c"], gui_command="Draft_Circle",
     doc="Draw a circle from a centre and a radius.",
     steps=[
         Step("center", POINT, "Centre of circle"),
@@ -144,7 +144,7 @@ REGISTRY.add(Verb(
 ))
 
 REGISTRY.add(Verb(
-    name="box", aliases=["bx"], gui_command="Part_Box",
+    name="box", creates="Part::Box", aliases=["bx"], gui_command="Part_Box",
     doc="Create a box from a corner and three dimensions.",
     steps=[
         Step("corner", POINT, "Corner of box"),
@@ -167,7 +167,7 @@ REGISTRY.add(Verb(
 ))
 
 REGISTRY.add(Verb(
-    name="point", aliases=["pt"], gui_command="Draft_Point",
+    name="point", creates="Part::FeaturePython", aliases=["pt"], gui_command="Draft_Point",
     doc="Place a single point.",
     steps=[Step("at", POINT, "Point location")],
     emit=_emit_point,

@@ -107,6 +107,26 @@ def _emit_type(tid, params):
     return emit
 
 
+def _clean_doc(meta, tid):
+    """FreeCAD's tooltip, minus the label and command name stuck to it.
+
+    The harvested tooltip runs the menu label into the tooltip text and the
+    command name onto the end -- "PadExtrudes the selected sketch ... to the
+    bodyPartDesign_Pad" -- because the QAction concatenates them.
+    """
+    text = (meta or {}).get("tooltip") or ""
+    label = (meta or {}).get("label") or ""
+    command = (meta or {}).get("name") or ""
+    if command and text.endswith(command):
+        text = text[: -len(command)]
+    if label and text.startswith(label):
+        text = text[len(label):]
+    text = text.strip(" -\u2014.")
+    if not text:
+        return f"Create a {tid}."
+    return text[0].upper() + text[1:] + ("" if text.endswith(".") else ".")
+
+
 def build_type_verb(name, entry, meta=None):
     params = entry["params"]
     steps = [s for s in (_step_from_param(p) for p in params) if s is not None]
@@ -120,8 +140,9 @@ def build_type_verb(name, entry, meta=None):
         name=name,
         steps=steps,
         emit=_emit_type(entry["type"], params),
-        doc=meta.get("tooltip") or f"Create a {entry['type']}.",
+        doc=_clean_doc(meta, entry["type"]),
         gui_command=meta.get("name"),
+        creates=entry["type"],
     )
 
 

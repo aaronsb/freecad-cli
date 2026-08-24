@@ -60,10 +60,15 @@ def _abort_transaction(doc):
 
 
 class Engine:
-    def __init__(self, bus: _bus.Bus, registry: Registry, picker=None) -> None:
+    def __init__(self, bus: _bus.Bus, registry: Registry, picker=None,
+                 dry: bool = False) -> None:
         self.bus = bus
         self.registry = registry
         self.picker = picker
+        # A dry engine resolves, parses and validates exactly as the live one
+        # does, then stops instead of emitting. Same code path, so what it
+        # accepts is what the live engine would accept.
+        self.dry = dry
         self.state = IDLE
         self.verb: Optional[Verb] = None
         self.step_index = 0
@@ -156,9 +161,13 @@ class Engine:
         self.flags = {"force": force}
         self.replay = [self.verb.name + ("!" if force else "")]
         self._emit_live()
-        for tok in rest:  # inline arguments, e.g. "line 0,0,0 10,0,0"
-            if self.state == COLLECTING:
-                self._feed_text(tok)
+        while rest and self.state == COLLECTING:
+            step = self.current_step()
+            if step is not None and step.raw:
+                # The rest of the line is one value, not a token each.
+                self._feed_text(" ".join(rest))
+                break
+            self._feed_text(rest.pop(0))
         if self.state == COLLECTING and self._only_optional_left():
             # Nothing required remains, so the command is already complete.
             # "save", "new" and "help" run on Enter rather than stopping to
@@ -214,7 +223,7 @@ class Engine:
         "c" stays the Close option inside polyline rather than becoming
         the circle verb.
         """
-        if step.kind in (TEXT, PATH):
+        if step.raw or step.kind in (TEXT, PATH):
             return False        # these steps accept arbitrary text by design
         token = text.split()[0].lower()
         if any(o.name.lower().startswith(token) for o in step.options):
@@ -282,6 +291,12 @@ class Engine:
         replay = " ".join(self.replay)
         self._stop_picking()
         self._reset()
+        if self.dry:
+            self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
+                          object=None, dry=True, creates=verb.creates,
+                          values=values, flags=flags)
+            self._announce()
+            return
         doc = _open_transaction(verb, replay)
         try:
             obj = verb.emit({**values, "_flags": flags, "_engine": self})

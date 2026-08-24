@@ -41,11 +41,12 @@ def parse_quantity(text: str, unit_hint: str = "mm") -> ParseResult:
         return ParseResult(ok=False, error="empty")
     try:
         q = Units.Quantity(t)
-    except (ValueError, TypeError) as exc:
+    except (ValueError, TypeError):
+        # FreeCAD says "syntax error" and nothing about where.
         return ParseResult(
             ok=False,
             spans=[Span(0, len(text), "bad", False)],
-            error=str(exc) or "not a number",
+            error=f"{t!r} is not a number or quantity",
         )
     return ParseResult(ok=True, value=q.Value, spans=[Span(0, len(text), "number")])
 
@@ -136,8 +137,11 @@ def parse_point(text: str, last: Optional[Vector] = None) -> ParseResult:
             vals.append(0.0)
 
     if not all_ok:
-        return ParseResult(ok=False, spans=spans, relative=relative,
-                           error="bad coordinate component")
+        bad = [comp.strip() for _, comp in comps
+               if not parse_quantity(comp).ok]
+        return ParseResult(
+            ok=False, spans=spans, relative=relative,
+            error="bad coordinate: " + ", ".join(repr(b) for b in bad))
 
     if len(vals) == 2:
         vals.append(last.z if (last is not None and not relative) else 0.0)

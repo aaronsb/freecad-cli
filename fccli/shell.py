@@ -204,6 +204,113 @@ REGISTRY.add(Verb(
 ))
 
 
+def _emit_check(v):
+    """Resolve and validate a command without running it.
+
+    A shadow engine over the same registry parses the line through exactly
+    the code path the live one uses, then stops before emitting. So what
+    check accepts is what would actually run -- it is the same grammar, not
+    a second implementation of it that can drift.
+
+    Nothing is created, no transaction opens, and no document is required.
+    """
+    from . import bus as _b
+    from .engine import Engine
+
+    engine = v.get("_engine")
+    # The step repeats, so the rest of the line arrives as tokens.
+    line = str(v.get("line") or "").strip()
+    if engine is None:
+        return None
+    if not line:
+        raise RuntimeError("check what?")
+
+    say = lambda text: engine.bus.emit(_b.INFO, text)
+    seen = {"errors": [], "result": None, "prompt": None}
+    shadow_bus = _b.Bus()
+
+    def collect(msg):
+        if msg.kind == _b.ERROR:
+            seen["errors"].append(msg.text)
+        elif msg.kind == _b.RESULT:
+            seen["result"] = msg
+        elif msg.kind == _b.PROMPT and not msg.data.get("idle"):
+            seen["prompt"] = msg
+
+    shadow_bus.subscribe(collect)
+    shadow = Engine(shadow_bus, engine.registry, picker=None, dry=True)
+    shadow.submit(line)
+
+    token = line.split()[0]
+    hits = engine.registry.resolve_prefix(token.rstrip("!"))
+    if not hits:
+        near = _did_you_mean(engine.registry, token)
+        say(f"unknown command: {token}")
+        if near:
+            say("  did you mean: " + ", ".join(near))
+        return None
+    if len(hits) > 1:
+        say(f"ambiguous: {token} matches " + ", ".join(hits))
+        return None
+
+    verb = engine.registry.get(hits[0])
+    say(f"{verb.name} -- {verb.doc}")
+
+    result = seen["result"]
+    if result is not None:
+        # An argument can be rejected and the command still complete, when
+        # what it was rejected for was optional. Say so rather than
+        # reporting a clean run.
+        for text in seen["errors"]:
+            say(f"  ignored: {text}")
+        say(f"  would run:  {result.data['replay']}")
+        values = result.data.get("values") or {}
+        for step in verb.steps:
+            if step.id in values:
+                say(f"    {step.id:<12} {_show(values[step.id])}")
+        flags = [k for k, on in (result.data.get("flags") or {}).items()
+                 if on and k != "force"]
+        if flags:
+            say("    options      " + ", ".join(flags))
+        if verb.creates:
+            say(f"  would create: {verb.creates}")
+        say("  nothing was run.")
+        return None
+
+    if seen["errors"]:
+        for text in seen["errors"]:
+            say(f"  rejected: {text}")
+        return None
+
+    prompt = seen["prompt"]
+    if prompt is not None:
+        remaining = [st.id for st in shadow.verb.steps[shadow.step_index:]] \
+            if shadow.verb else []
+        say(f"  incomplete -- still wants: {prompt.text}")
+        if len(remaining) > 1:
+            say("    then: " + ", ".join(remaining[1:]))
+        say("  valid so far, nothing was run.")
+    return None
+
+
+def _show(value):
+    if isinstance(value, list):
+        return ", ".join(_show(v) for v in value)
+    if hasattr(value, "x"):
+        from .parsing import format_point
+        return format_point(value)
+    if isinstance(value, float):
+        return f"{value:.6g}"
+    return str(value)
+
+
+def _did_you_mean(registry, token, limit=4):
+    """Closest verb names, so a typo suggests its fix."""
+    import difflib
+    return difflib.get_close_matches(token.lower(), registry.names(),
+                                     n=limit, cutoff=0.6)
+
+
 def _emit_units(v):
     """Show or set the unit schema.
 
@@ -610,6 +717,13 @@ def _emit_help(v):
         engine.bus.emit(_bus.INFO, f"  {name + alias:<18} {verb.doc}")
     return None
 
+
+REGISTRY.add(Verb(
+    name="check", transactional=False, aliases=["whatif", "dry", "ck"],
+    doc="Validate a command without running it.",
+    steps=[Step("line", TEXT, "Command to check", raw=True)],
+    emit=_emit_check,
+))
 
 REGISTRY.add(Verb(
     name="units", transactional=False,
