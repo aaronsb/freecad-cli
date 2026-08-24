@@ -2470,6 +2470,14 @@ def _run():
         check("  and leaves the order alone without a workbench",
               _cur3.current().order(REGISTRY, ["cube", "circle_from_center"]),
               _cur3.current().order(REGISTRY, ["cube", "circle_from_center"], workbench=None))
+        # Part active: a Part command first, PartDesign's not counted as
+        # Part's, and a hand-written verb keeps its promoted place.
+        _po = _cur3.current().order(REGISTRY, ["partdesign_box", "box"], workbench="part")
+        check("  a PartDesign command is not Part's by prefix",
+              _po, ["box", "partdesign_box"])
+        check("  a verb with no command keeps its place, not pushed behind",
+              _cur3.current().order(REGISTRY, ["save", "box"], workbench="part"),
+              _cur3.current().order(REGISTRY, ["save", "box"]))
         # Refusal: FreeCAD says no, the file says why.
         from fccli import panels as _pn
         _CtxGui.Command.registry["Sketcher_CreateCircle"] = _Cmd(False)

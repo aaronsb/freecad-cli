@@ -345,12 +345,11 @@ class CliDock(QtWidgets.QDockWidget):
 
     def _on_prompt(self, msg):
         if msg.data.get("idle"):
-            # _on_state owns the idle prompt. The session emits STATE while
-            # handling this same idle PROMPT, and the bus delivers it here
-            # first, so the segment is already set; touching the prompt now
-            # would overwrite it with a bare >.
+            # _on_state owns the idle prompt's text; here the strip returns
+            # to idle and the border is repainted. Not set_prompt: the
+            # STATE that set the segment was delivered just before this.
+            self._paint_focus_state()
             return
-            self.status.setText("idle")
         else:
             opts = msg.data.get("options") or []
             tail = f" [{'/'.join(opts)}]" if opts else ""
@@ -556,11 +555,17 @@ class CliDock(QtWidgets.QDockWidget):
             import FreeCADGui as Gui
             dock = self
 
+            def _tell(*a):
+                try:
+                    dock.session.announce_context()
+                except Exception:
+                    pass
+
             class _Observer:
-                def addSelection(self, *a): dock.session.announce_context()
-                def removeSelection(self, *a): dock.session.announce_context()
-                def setSelection(self, *a): dock.session.announce_context()
-                def clearSelection(self, *a): dock.session.announce_context()
+                addSelection = staticmethod(_tell)
+                removeSelection = staticmethod(_tell)
+                setSelection = staticmethod(_tell)
+                clearSelection = staticmethod(_tell)
             self._selection_observer = _Observer()
             Gui.Selection.addObserver(self._selection_observer)
         except Exception:

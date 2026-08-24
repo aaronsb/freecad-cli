@@ -253,13 +253,21 @@ class Curation:
         """
         wb = (workbench or "").lower()
 
+        def _short(name):
+            for suffix in ("workbench", "wb"):
+                if name.endswith(suffix) and len(name) > len(suffix):
+                    return name[: -len(suffix)]
+            return name
+
         def home(name):
-            if not wb:
-                return 0
             command = getattr(registry.get(name), "gui_command", None)
-            meta = self.commands.get(command or "") or {}
-            owner = (meta.get("workbench") or "").lower()
-            return 0 if owner.startswith(wb) else 1
+            if not wb or not command:
+                # A verb somebody wrote runs no one workbench's command;
+                # it keeps its place rather than being pushed behind this
+                # workbench's launchers.
+                return 0
+            owner = (self.commands.get(command) or {}).get("workbench") or ""
+            return 0 if _short(owner.lower()) == wb else 1
 
         def key(name):
             return (self.rank_of(registry.get(name)), home(name), name)
