@@ -27,7 +27,7 @@ _How it is presented and reached — dock, prompt, colour, completion, message b
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [ADR-300](./surface/ADR-300-the-prompt-shows-where-the-session-is.md) | The prompt shows where the session is | Proposed |
+| [ADR-300](./surface/ADR-300-the-prompt-shows-where-the-session-is.md) | The prompt shows where the session is | Accepted |
 
 ## Practice
 _How the project is built and checked — test tiers, review, release, reconcile, records_
