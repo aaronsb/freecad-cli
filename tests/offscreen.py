@@ -1881,6 +1881,82 @@ def _run():
     check("  the tree in the repository is clean", (_n, _problems[:3]),
           (len(_cmds), []))
 
+    print("\n5ad. the command tree is read, and what it says changes the verbs")
+    # ADR-100. fccli/dictionary.json is the compiled tree. A file's verb,
+    # aliases, rank, family/choice and body reach the registry through
+    # register_all; measured against a run with no dictionary at all, so
+    # each check is the difference the tree makes.
+    from fccli.factory import load_dictionary
+    from fccli import families as _fam, curation as _curation
+    from fccli.bus import INFO as _INFO
+    _dict = load_dictionary()
+    check("the compiled dictionary is shipped", bool(_dict), True)
+    _bare = _Registry()
+    register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
+    _with = _Registry()
+    _wc = register_all(_with, tier0=True, patches=PatchSet())
+    check("  and register_all counts the authored files",
+          _wc.get("authored"), sum(1 for e in _dict["commands"].values()
+                                  if set(e) - {"file", "doc"}))
+    # The first two entries: generic words for workbench-specific tools.
+    check("  Mesh_PolySegm is `segment` with no tree and mesh_segment with it",
+          (_bare.by_gui_command("Mesh_PolySegm").name,
+           _with.by_gui_command("Mesh_PolySegm").name),
+          ("segment", "mesh_segment"))
+    check("  Draft_Split likewise",
+          (_bare.by_gui_command("Draft_Split").name,
+           _with.by_gui_command("Draft_Split").name),
+          ("split", "draft_split"))
+    # The page reaches the verb; the one-liner stays the tooltip.
+    _cc = _with.by_gui_command("Sketcher_CreateCircle")
+    check("  a command's page is its manual",
+          _cc.manual.startswith("The Sketcher CreateCircle tool"), True)
+    check("  and its one-line doc is still the tooltip",
+          _cc.doc, _cmds["Sketcher_CreateCircle"]["tooltip"])
+    check("  a verb with no tree has no manual",
+          _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
+    # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the
+    # same list, so the shipped tree and a bare run agree today.
+    check("  the family exclusions come from the tree",
+          sorted(_dict.get("families", {}).get("exclude", [])),
+          sorted(_fam.NOT_ACTIONS))
+    # A dictionary handed in directly: rank, family, aliases, requires.
+    _custom = {"commands": {
+        "Std_ViewFitAll": {"rank": "registry", "aliases": ["fa"],
+                           "requires": ["document"]},
+        "Std_ViewFront": {"family": "look", "choice": "front"},
+        "Std_ViewTop": {"family": "look", "choice": "top"},
+        "Std_ViewRear": {"family": "look", "choice": "back"},
+    }}
+    _cr = _Registry()
+    register_all(_cr, tier0=True, patches=PatchSet(), dictionary=_custom)
+    # The launcher, not a hand-written verb that shares its gui_command.
+    _fa = next(v for v in (_cr.get(n) for n in _cr.names())
+               if v.gui_command == "Std_ViewFitAll" and v.open is not None)
+    check("  rank: registry demotes a toolbar command",
+          _curation.current().rank_of(_fa), _curation.REGISTRY)
+    check("  aliases and requires ride along",
+          (_cr.get("fa") is _fa, _fa.requires), (True, ["document"]))
+    _look = _cr.get("look")
+    check("  three files with family: look make a family verb",
+          sorted(_look.steps[0].choices) if _look else None,
+          ["back", "front", "top"])
+    check("  and the derived `view` family lost those three",
+          [c for c in _cr.get("view").steps[0].choices
+           if c in ("front", "top", "rear")], [])
+    # man shows the page.
+    # man reads the shell's own registry, which register_all filled from
+    # the shipped tree earlier in this suite.
+    _seen_man = []
+    _man_bus = Bus()
+    _man_bus.subscribe(_seen_man.append)
+    _eng = Engine(_man_bus, REGISTRY)
+    _eng.submit("man mesh_segment")
+    _texts = [m.text for m in _seen_man if m.kind == _INFO]
+    check("  man prints DESCRIPTION from the page",
+          any(t == "DESCRIPTION" for t in _texts)
+          and any("segment" in t.lower() for t in _texts), True)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

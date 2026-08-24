@@ -1,0 +1,27 @@
+# Leading words that name a module, a workbench, or FreeCAD's own UI
+# machinery rather than an action a person would type. A command whose
+# name starts with one of these joins no family by its name. Moved here
+# from families.NOT_ACTIONS (ADR-100); the code keeps a copy only as the
+# fallback for a run with no dictionary.
+exclude:
+- arch
+- assembly
+- bim
+- cam
+- comp
+- draft
+- extension
+- fem
+- help
+- material
+- mesh
+- part
+- points
+- sketcher
+- spreadsheet
+- start
+- std
+- surface
+- techdraw
+- test
+- web

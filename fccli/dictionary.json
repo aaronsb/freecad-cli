@@ -1118,7 +1118,8 @@
   },
   "Draft_Split": {
    "doc": "The Draft Split command splits a Draft Line or Draft Wire at a specified point or edge. This command is the counterpart of the Draft Join command.\n\n## See also\n\n- Draft_Join",
-   "file": "draft/Draft_Split.md"
+   "file": "draft/Draft_Split.md",
+   "verb": "draft_split"
   },
   "Draft_Stretch": {
    "doc": "The Draft Stretch command stretches objects by moving selected points.",
@@ -1702,7 +1703,8 @@
   },
   "Mesh_PolySegm": {
    "doc": "Creates a mesh segment.",
-   "file": "mesh/Mesh_PolySegm.md"
+   "file": "mesh/Mesh_PolySegm.md",
+   "verb": "mesh_segment"
   },
   "Mesh_PolySplit": {
    "doc": "Splits a mesh into 2 meshes.",
@@ -4444,6 +4446,31 @@
    "doc": "Test the switching of workbenches in FreeCAD.",
    "file": "test/Test_TestWork.md"
   }
+ },
+ "families": {
+  "exclude": [
+   "arch",
+   "assembly",
+   "bim",
+   "cam",
+   "comp",
+   "draft",
+   "extension",
+   "fem",
+   "help",
+   "material",
+   "mesh",
+   "part",
+   "points",
+   "sketcher",
+   "spreadsheet",
+   "start",
+   "std",
+   "surface",
+   "techdraw",
+   "test",
+   "web"
+  ]
  },
  "freecad": "1.1.3",
  "generated_by": "tools/compile_dictionary.py",

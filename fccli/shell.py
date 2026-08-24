@@ -715,6 +715,11 @@ def _emit_units(v):
     return None
 
 
+def _wrap(text, width):
+    import textwrap
+    return textwrap.wrap(text, width) or [""]
+
+
 def _emit_man(v):
     """The manual. Bare, it lists what exists; given a topic, it describes
     one thing in full -- every step with its kind, unit and choices, the
@@ -774,6 +779,18 @@ def _emit_man(v):
                         say(f"       {row}", "quiet")
             for opt in step.options:
                 say(f"       option {opt.name}: {opt.doc}")
+
+    if getattr(verb, "manual", ""):
+        say("DESCRIPTION", "head")
+        for para in verb.manual.split("\n\n"):
+            if para.startswith("## "):
+                say(para[3:].upper(), "head")
+                continue
+            for row in _wrap(para, 72):
+                say(f"    {row}")
+    if getattr(verb, "requires", None):
+        say("REQUIRES", "head")
+        say("    " + ", ".join(verb.requires))
 
     curated = _curation.current()
     if verb.gui_command:

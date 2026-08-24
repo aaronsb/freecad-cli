@@ -56,19 +56,38 @@ def split_command(name):
     return module, words(rest)
 
 
-def families(commands, min_members=MIN_MEMBERS):
+def families(commands, min_members=MIN_MEMBERS, overrides=None,
+             exclude=None):
     """Group commands by the action word they share.
 
     ``commands`` maps a command name to its harvested metadata. Returns
     ``{verb_name: {choice: {command, label}}}``.
+
+    ``overrides`` maps a command to ``(family, choice)`` from its command
+    file (ADR-100): it goes there instead of where its name would put it,
+    and ``(None, None)`` keeps it out of any family. ``exclude`` is the set
+    of leading words that are not actions; the shipped list lives in
+    ``lib/commands/std/_families.yaml`` and NOT_ACTIONS is the fallback
+    when no dictionary was loaded.
     """
+    overrides = overrides or {}
+    exclude = NOT_ACTIONS if exclude is None else {e.lower() for e in exclude}
     groups = {}
     for name, meta in commands.items():
+        if name in overrides:
+            family, choice = overrides[name]
+            if family and choice:
+                groups.setdefault(slug([family]), {})[slug([choice])] = {
+                    "command": name,
+                    "label": (meta or {}).get("label") or name,
+                    "module": name.partition("_")[0] if "_" in name else "",
+                }
+            continue
         module, parts = split_command(name)
         if len(parts) < 2:
             continue
         head, tail = parts[0], parts[1:]
-        if len(head) < MIN_HEAD or head.lower() in NOT_ACTIONS or not tail:
+        if len(head) < MIN_HEAD or head.lower() in exclude or not tail:
             continue
         groups.setdefault(slug([head]), {})[slug(tail)] = {
             "command": name,
@@ -77,6 +96,19 @@ def families(commands, min_members=MIN_MEMBERS):
         }
     return {verb: members for verb, members in groups.items()
             if len(members) >= min_members}
+
+
+def overrides_of(dictionary):
+    """(overrides, exclude) as families() wants them, from a compiled
+    dictionary. Both None when there is none."""
+    if not dictionary:
+        return None, None
+    over = {}
+    for name, entry in dictionary.get("commands", {}).items():
+        if "family" in entry or "choice" in entry:
+            over[name] = (entry.get("family"), entry.get("choice"))
+    exclude = (dictionary.get("families") or {}).get("exclude")
+    return over, exclude
 
 
 def report(commands, limit=12):

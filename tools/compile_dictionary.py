@@ -45,6 +45,14 @@ def compile_tree(tree):
             if value not in (None, [], {}):
                 entry[key] = value
         commands[name] = entry
+    families = {}
+    extra = os.path.join(tree, "std", "_families.yaml")
+    if os.path.exists(extra):
+        import yaml
+        with open(extra, encoding="utf-8") as fh:
+            families = yaml.safe_load(fh) or {}
+        if not isinstance(families.get("exclude", []), list):
+            raise ValueError("std/_families.yaml: exclude must be a list")
     def common(values):
         # The stamp most files carry. A version sorts wrong as a string
         # (1.9 above 1.10) and a commit hash does not sort at all.
@@ -52,6 +60,7 @@ def compile_tree(tree):
         return counted.most_common(1)[0][0] if counted else None
     return {
         "generated_by": "tools/compile_dictionary.py",
+        "families": families,
         "freecad": common(stamps),
         "wiki_rev": common(revs),
         "commands": commands,

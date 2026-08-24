@@ -11,7 +11,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   wiki: "Mesh_PolySegm"
   wiki_rev: null
 # authored from here down; the tool never rewrites these
-verb: null
+verb: "mesh_segment"
 aliases: []
 requires: []
 panel: null

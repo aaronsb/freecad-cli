@@ -121,6 +121,14 @@ class Verb:
     # than finished. A panel left on screen with half a command in it is
     # worse than one that was never opened.
     abort: Optional[Callable[[Any], None]] = None
+    # The command's own page, from fccli/lib/commands (ADR-100): what `man`
+    # shows below the one-line doc. Empty for a verb with no file.
+    manual: str = ""
+    # Declared preconditions and panel handling from the same file. Read
+    # by nothing yet; the engine's refusal and the panel decision come
+    # with the prompt-context work.
+    requires: List[str] = field(default_factory=list)
+    panel: Optional[str] = None
 
 
 class Registry:

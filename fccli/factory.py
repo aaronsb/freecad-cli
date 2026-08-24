@@ -33,6 +33,10 @@ from .patches import load_patches
 
 DESCRIPTOR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                           "descriptor.json")
+# The command tree, compiled (ADR-100). fccli/lib/commands is the source;
+# tools/compile_dictionary.py writes this and the lint keeps them equal.
+DICTIONARY = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                          "dictionary.json")
 
 KIND_MAP = {
     "quantity": QUANTITY, "point": POINT, "choice": CHOICE,
@@ -45,6 +49,13 @@ NOISE_TYPES = re.compile(r"^(App::FeatureTest|Test::|App::Origin|"
 
 
 def load_descriptor(path=DESCRIPTOR):
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as fh:
+        return json.load(fh)
+
+
+def load_dictionary(path=DICTIONARY):
     if not os.path.exists(path):
         return None
     with open(path, encoding="utf-8") as fh:
@@ -154,8 +165,14 @@ def build_type_verb(name, entry, meta=None):
 
 # ---------------------------------------------------------------- tier 0
 
-def build_command_verb(command):
+def build_command_verb(command, entry=None):
     """Every registered command, as a verb.
+
+    ``entry`` is the command's compiled file (ADR-100): the authored
+    fields a person set, and the page `man` shows. The verb's name is the
+    file's `verb` when it has one and the slugged label otherwise; the
+    one-line doc stays the harvested tooltip, which is what a one-liner
+    is for, and the body becomes the manual.
 
     It runs the command, and if a task panel opens it reads that panel and
     offers its parameters as prompts rather than leaving them to a mouse.
@@ -169,12 +186,17 @@ def build_command_verb(command):
     """
     name = command["name"]
     label = command.get("label") or name
+    entry = entry or {}
     from .panels import _abort_panel, _emit_panel, _open_panel
-    return Verb(name=_slug(label), steps=[],
+    return Verb(name=entry.get("verb") or _slug(label), steps=[],
                 open=_open_panel(name),
                 emit=_emit_panel,
                 abort=_abort_panel,
                 doc=command.get("tooltip") or label,
+                aliases=list(entry.get("aliases") or []),
+                manual=entry.get("doc") or "",
+                requires=list(entry.get("requires") or []),
+                panel=entry.get("panel"),
                 gui_command=name, generated=True)
 
 
@@ -427,19 +449,26 @@ def _slug(text):
 # -------------------------------------------------------------- assembly
 
 def register_all(registry: Registry, descriptor=None, tier0=True,
-                 patches=None, report=None):
+                 patches=None, report=None, dictionary=None):
     """Compose every tier into one registry.
 
     Later tiers win: a patched verb replaces the generated one, which
     replaces the bare command launcher.
+
+    ``dictionary`` is the compiled command tree (ADR-100); None loads the
+    shipped one, and {} runs without any, which the tests use to measure
+    what the tree changes.
     """
     descriptor = descriptor if descriptor is not None else load_descriptor()
     if descriptor is None:
         return {"error": "no descriptor; run tools/generate_descriptor.py"}
+    dictionary = dictionary if dictionary is not None else (load_dictionary() or {})
+    entries = dictionary.get("commands", {})
 
     # What FreeCAD promotes and what it groups, for completion to order by
-    # and for `man` to cite. Read from the same descriptor the verbs are.
-    curation.load(descriptor)
+    # and for `man` to cite. Read from the same descriptor the verbs are,
+    # and demoted where a command file says rank: registry.
+    curation.load(descriptor, dictionary)
 
     patches = patches if patches is not None else load_patches()
     counts = {"tier0": 0, "tier1": 0, "patched": 0, "skipped": 0}
@@ -448,7 +477,7 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
 
     if tier0:
         for command in _by_prominence(descriptor["commands"].values()):
-            verb = build_command_verb(command)
+            verb = build_command_verb(command, entries.get(command["name"]))
             if registry.get(verb.name) is None:
                 registry.add(verb)
                 counts["tier0"] += 1
@@ -523,7 +552,10 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
     # make a spread-out group discoverable without displacing anything
     # anyone wrote.
     if tier0:
-        for name, members in families(descriptor["commands"]).items():
+        from .families import overrides_of
+        over, exclude = overrides_of(dictionary)
+        for name, members in families(descriptor["commands"], overrides=over,
+                                      exclude=exclude).items():
             if _claimed(registry, name) or registry.get(name) is not None:
                 counts["family_shadowed"] = counts.get("family_shadowed", 0) + 1
                 continue
@@ -545,6 +577,8 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
         registry.add(verb)
         counts["declared"] = counts.get("declared", 0) + 1
 
+    counts["authored"] = sum(1 for e in entries.values()
+                             if set(e) - {"file", "doc"})
     counts["total"] = len(registry.names())
     if report is not None:
         report(counts)

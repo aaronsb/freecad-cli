@@ -326,6 +326,18 @@ can also **declare verbs outright**, which is what an addon whose objects are
 `examples/curvedshapes_fccli_patch.py` is a worked example against a real
 installed addon.
 
+### The command tree
+
+Every command has a file: `fccli/lib/commands/<workbench>/<Command>.md`,
+Markdown with YAML frontmatter. The `generated:` block is the harvest's and
+the tool rewrites it; everything below it is yours — `verb`, `aliases`,
+`requires`, `panel`, `family`/`choice`, `rank`, `type` — and the body is
+the page `man` shows, seeded from the command's page on the FreeCAD wiki.
+`make commands` writes what is missing, `make dictionary` compiles the tree
+into `fccli/dictionary.json`, and `make lint` refuses a hand edit inside a
+generated block. The reasoning is in
+[ADR-100](docs/architecture/vocabulary/ADR-100-the-command-dictionary.md).
+
 ### Hand-written verbs
 
 Some things want the viewport, not a property sheet. `line`, `polyline`,
