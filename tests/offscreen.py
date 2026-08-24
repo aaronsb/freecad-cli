@@ -1383,6 +1383,8 @@ def _run():
     # knows about commands a running FreeCAD has not registered. `grid` is
     # Arch_Grid, and Arch commands come with BIM -- which the command's own
     # name does not say, so the descriptor has to.
+    import fccli.factory as _fmod
+    _paths_desc = _fmod.DESCRIPTOR
     _cmds = _load_desc()["commands"]
     _owned = [n for n, v in _cmds.items() if v.get("workbench")]
     check("commands say which workbench brings them", len(_owned) > 300, True)
@@ -1400,11 +1402,23 @@ def _run():
     # `tooltip or label or name`, so the gap never showed as missing --
     # it showed as a verb named arch_multimaterial whose whole
     # documentation was the string "Arch_MultiMaterial".
-    _bare = [n for n, c in _cmds.items() if not c.get("label")]
-    check("every command has a label", _bare, ["Std_WindowsMenu"])
-    _echo = [n for n, c in _cmds.items()
-             if (c.get("tooltip") or "").strip() == n]
-    check("  and no command's documentation is its own name", _echo, [])
+    check("every command has a label",
+          [n for n, c in _cmds.items() if not c.get("label")], [])
+    check("  and a tooltip",
+          [n for n, c in _cmds.items() if not c.get("tooltip")], [])
+    # endswith, not ==. The first version of this check asked for equality
+    # and passed while 909 tooltips read "CubeCreates a solid cubePart_Box"
+    # -- act.toolTip() is rich text in three blocks and clean() ran them
+    # together, so the name was glued to a sentence rather than being the
+    # whole string. Equality could not see it.
+    check("  and no command's documentation ends in its own name",
+          [n for n, c in _cmds.items()
+           if (c.get("tooltip") or "").endswith(n)], [])
+    # Nothing in a shipped artifact may name the machine that built it.
+    _raw = open(_paths_desc, encoding="utf-8").read()
+    check("the descriptor names no home directory", "/home/" in _raw, False)
+    check("  and no per-document cache path",
+          "FreeCAD_Doc_" in _raw, False)
 
     # Every command reaches a verb. A tier-0 name already taken used to be
     # dropped without a word -- 90 of them before this, 133 after labels

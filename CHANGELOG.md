@@ -12,7 +12,23 @@
   had their menuText and toolTip the whole time behind
   `Gui.Command.get(name).getInfo()`, which `harvest_commands.py` asserted
   did not exist. `multi_material` is now "Creates or edits multi-materials",
-  `nest` is "Nests a series of selected shapes in a container".
+  `nest` is "Nests a series of selected shapes in a container". Each field
+  now picks its own source rather than the whole entry riding on whether a
+  QAction exists -- `Std_WindowsMenu` has one whose text is empty, and it
+  stayed bare one branch away from the fix.
+- **909 tooltips were the command's own name glued to a sentence.**
+  `act.toolTip()` is rich text in three blocks and `clean()` ran them
+  together, so `Part_Box` documented itself as
+  `CubeCreates a solid cubePart_Box` -- and that string is what `man`
+  printed. The tooltip now comes from `getInfo`, which is the plain
+  sentence, falling back to the action's statusTip and then to the rich
+  text with the trailing name taken off.
+- **The descriptor no longer names the machine that built it.** TechDraw's
+  `PatIncluded`, `SvgIncluded` and `SymbolIncluded` defaults pointed at a
+  copy FreeCAD had made inside the transient document's cache directory --
+  24 absolute paths through a home directory, carrying a per-document UUID
+  that changed on every regeneration, into a directory deleted with the
+  document. `make descriptor` is now byte-identical across runs.
 - **A command whose verb name is taken is no longer dropped in silence.**
   Two commands whose labels slug the same are ordinary. The loser used to
   vanish -- 90 commands before this, and 133 once labels got better and
