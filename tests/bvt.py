@@ -329,9 +329,15 @@ def suite_tracker(dock):
     _prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
     _always = _prefs.GetBool("alwaysShowGrid", True)
     _during = _prefs.GetBool("grid", True)
-    if not (_always or _during):
-        print("       both grid preferences are off here -- the three "
+    # Per flag, not on the conjunction: with alwaysShowGrid off and grid on
+    # -- an ordinary Draft setup -- two of these three compare False to
+    # False and go green with the old suppression fully restored.
+    if not _always:
+        print("       alwaysShowGrid is off here -- the two show_always "
               "checks below cannot tell the fix from the fault")
+    if not _during:
+        print("       grid is off here -- the show_during_command check "
+              "below cannot tell the fix from the fault")
     if snapper.grid is not None:
         check("the grid shows what alwaysShowGrid asks for",
               bool(snapper.grid.show_always), _always)

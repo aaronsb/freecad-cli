@@ -47,6 +47,15 @@ class ActionBridge(QtCore.QObject):
         added = 0
         for act in mw.findChildren(QtGui.QAction):
             name = act.objectName()
+            # Never pruned, and it gates the skip. That is safe only
+            # because a Gui::Command is a session singleton in FreeCAD's
+            # CommandManager with its QAction parented to the main window,
+            # so a workbench switch rebuilds the toolbars around actions
+            # that persist -- the same fact _unflash relies on when it
+            # says the QToolButton is what dies. If FreeCAD ever destroys
+            # and recreates an action under the same objectName, the stale
+            # entry blocks reconnection and that command stops echoing,
+            # silently.
             if not name or name in self._connected:
                 continue
             act.triggered.connect(

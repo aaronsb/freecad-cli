@@ -44,6 +44,16 @@ def ensure_snapper(notify=None):
 
 
 def _bootstrap_snapper():
+    """Pull Draft in, once.
+
+    Draft's own `setTrackers` used to be called from here. It was dropped
+    as redundant -- `Snapper.snap` calls it itself, unconditionally -- and
+    that moves the build of nine Coin trackers plus `grid.set()` into the
+    first mouse-move callback of the first pick. On a large model that is
+    a visible hitch in the frame after the click. Weighed and accepted:
+    one frame inside the command the operator just started is cheaper than
+    a line of setup here that reads like the grid suppression coming back.
+    """
     if hasattr(Gui, "Snapper"):
         return True
     try:
@@ -90,20 +100,33 @@ def _draft_param(name):
 
     Through `draftutils.params`, whose types and defaults are parsed from
     Draft's own preference pages, so a default this module never sees stays
-    correct. Only ever called once Draft has loaded.
+    correct for as long as the key resolves. Only ever called once Draft
+    has loaded.
+
+    `silent=True` because a key that does not resolve is not an exception
+    -- `get_param` prints and returns None, which no `except` here would
+    catch. Draft calls it unguarded once per new view; this runs once per
+    point prompt, and a twenty-point polyline would have put forty lines
+    of Draft's diagnostic into the console this module exists to keep
+    clear. None reads as falsy and nothing gets reported, which is right.
     """
     from draftutils import params
-    return params.get_param(name)
+    return params.get_param(name, silent=True)
 
 
 def _grid_will_draw():
     """Whether Draft is about to draw the grid, as things stand.
 
     `setTrackers` draws for `alwaysShowGrid` outright, and for `grid` only
-    while `App.activeDraftCommand` is set. A bare point step never sets it;
-    a verb that reaches a Draft command through `runCommand` does. Reporting
-    on the second without that check told people about a grid that was not
-    going to appear.
+    while `App.activeDraftCommand` is set. Reporting on the second without
+    that check told people about a grid that was not going to appear.
+
+    The second disjunct cannot fire from any caller today: this is reached
+    only from a point step, and a point step never runs under a Draft
+    command -- the verbs that reach one through `runCommand` hand picking
+    to Draft's own snapper instead. It is here because it is the condition
+    `setTrackers` actually applies, so the answer stays right if that ever
+    changes. Nothing exercises it, and no test can until something does.
     """
     try:
         if _draft_param("alwaysShowGrid"):

@@ -352,9 +352,11 @@ that restraint because `user.cfg` was untouched.
 
 **A standing instruction is not a running command.** A preference outlives
 every command, so overruling one reaches past what the operator asked for.
+`units` is not a counter-example — there the preference is what was asked
+for.
 An event filter armed around a typed command *is* that command running, and
-is not the same thing. That is why `keyfilter.py` swallowing 195 of
-FreeCAD's single-key shortcuts is fair and `quiet_grid` was not: the filter
+is not the same thing. That is why `keyfilter.py` swallowing
+FreeCAD's bare-key shortcuts is fair and `quiet_grid` was not: the filter
 is scoped to focus and engine state, comes off with `remove()`, and is
 visible and switchable in the dock. `modals.py` clicking buttons on
 FreeCAD's own dialogs is the same case, refcounted to one emit.
@@ -378,10 +380,13 @@ both sides agree by accident. Say so in the run when it happens, rather
 than printing a green line that carries nothing. `tests/bvt.py`
 `suite_tracker`.
 
-The operator's real history, alias file, and any preference this project
-does not own are off limits to write. `tests/offscreen.py` runs against a
-scratch XDG root for exactly this; `main()` puts `UserSchema` back in a
-`finally`.
+The operator's real history and alias file are off limits outright —
+`tests/offscreen.py` runs against a scratch XDG root for exactly this. A
+preference this project does not own may be written only where the write
+*is* the thing under test, and only inside a `finally` that puts it back.
+§4f writes `Units/UserSchema` because `units`' whole job is that
+preference; `main()` restores it. A `finally` is what makes that one case
+allowed, not a general licence.
 
 ## Dialogs
 
@@ -486,6 +491,6 @@ documents, or read better than what a machine would derive.
 
 - A verb is a **lowercase word**, an underscore only where a type name forced
   one (`partdesign_box`).
-- An alias is short and unclaimed. The 195 bare-key shortcuts FreeCAD ships
+- An alias is short and unclaimed. The bare-key shortcuts FreeCAD ships
   are a seed alias file, not a collision.
 - A patch is keyed by **namespace** — a type module or an addon identity.

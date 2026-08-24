@@ -1449,12 +1449,25 @@ def _run():
         def name(self): return self._name
 
     class _FakeGui:
-        def __init__(self, active): self.active, self.calls = active, []
+        def __init__(self, active, brings=None):
+            self.active, self.calls = active, []
+            # What each workbench registers when it is activated.
+            self.brings = brings or {}
+            self.commands = []
         def activeWorkbench(self): return _FakeWb(self.active)
+        def listWorkbenches(self): return ["PartDesignWorkbench",
+                                           "BIMWorkbench"]
+        def listCommands(self): return list(self.commands)
         def activateWorkbench(self, name):
             self.active = name
             self.calls.append(name)
+            self.commands += self.brings.get(name, [])
 
+    # Nothing inside this block may trigger a fresh module import: an
+    # import landing here binds the fake permanently, past the finally.
+    # Safe today because every fccli module binds FreeCADGui at its own
+    # module level, and _workbench_borrowed's import is function-local, so
+    # the fake reaches exactly the code under test and nothing else.
     _real_gui = sys.modules.get("FreeCADGui")
     try:
         gui = _FakeGui("PartDesignWorkbench")
@@ -1483,6 +1496,35 @@ def _run():
             pass
         check("a body that raises still gives the workbench back",
               gui.calls, ["BIMWorkbench", "PartDesignWorkbench"])
+
+        # And the fetch says where it went. This is the whole user-visible
+        # half of the fix -- a fetch rebuilds the toolbars twice, and an
+        # unexplained double flicker is what it replaced.
+        def _fetch(active, brings, already=()):
+            said = []
+            g = _FakeGui(active, brings)
+            g.commands = list(already)
+            sys.modules["FreeCADGui"] = g
+            complaint = _panels.not_yet_loaded("Arch_Grid", said.append)
+            return said, complaint, g.calls
+        _brings = {"BIMWorkbench": ["Arch_Grid"]}
+        check("a fetch from elsewhere names both ends",
+              _fetch("PartDesignWorkbench", _brings)[0],
+              ["fetched Arch_Grid from BIMWorkbench, "
+               "back to PartDesignWorkbench"])
+        check("  a fetch from the same workbench has nowhere to go back to",
+              _fetch("BIMWorkbench", _brings)[0],
+              ["fetched Arch_Grid from BIMWorkbench"])
+        _said, _complaint, _calls = _fetch(
+            "PartDesignWorkbench", _brings, already=["Arch_Grid"])
+        check("a command already there is not fetched", _calls, [])
+        check("  and nothing is said about it", _said, [])
+        check("  and it does not complain", _complaint, None)
+        _said, _complaint, _calls = _fetch(
+            "PartDesignWorkbench", {"BIMWorkbench": []})
+        check("a fetch that does not produce the command complains",
+              bool(_complaint) and "BIMWorkbench" in _complaint, True)
+        check("  and claims no fetch it did not make", _said, [])
     finally:
         if _real_gui is not None:
             sys.modules["FreeCADGui"] = _real_gui
