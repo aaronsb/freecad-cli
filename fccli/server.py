@@ -159,7 +159,7 @@ class Server(QtCore.QObject):
         the line arriving is input for the command already running, not a
         second command competing with it.
         """
-        if self.session.engine.state != "idle":
+        if self.session.engine.driving or self.session.engine.state != "idle":
             return None
         try:
             import FreeCADGui as Gui

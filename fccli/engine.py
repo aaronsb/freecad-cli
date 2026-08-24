@@ -121,6 +121,13 @@ class Engine:
         # Steps for this invocation, when the verb only learned them by
         # starting. None means the verb's own declared steps stand.
         self.steps: Optional[List[Step]] = None
+        # Whether a command typed here is running right now. Not the same
+        # as state: _finish resets to IDLE before calling emit, so for the
+        # whole of the part that actually runs a command the engine reads
+        # idle. Anything asking "did the command line cause this?" -- the
+        # test suite's dialog watchdog, the socket's busy check -- wants
+        # this rather than state.
+        self.driving = False
         self.replay: List[str] = []
         # Which replay tokens came from the viewport rather than the
         # keyboard. A command driven half by mouse can then hand back the
@@ -273,14 +280,18 @@ class Engine:
                 # refuses the request says so -- and a modal raised with
                 # nothing armed waits for a click nobody is there to make,
                 # which is the whole of what modals.py exists to stop.
+                self.driving = True
                 with modals.intercepted(force=force) as caught:
                     found = self.verb.open(self)
             except Exception as exc:
+                self.driving = False
                 self._abort_verb()
                 self._reset()
                 self.bus.emit(_bus.ERROR, f"{name}: {exc}")
                 self._announce()
                 return
+            finally:
+                self.driving = False
             if caught:
                 self._abort_verb()
                 self._reset()
@@ -451,7 +462,25 @@ class Engine:
         if step.on_accept is not None and not self.dry:
             complaint = step.on_accept(self, step, value, typed)
             if complaint:
+                # Taken back. values is what says a line was answered, and
+                # a line that was refused had not been -- a typo'd field
+                # name reported its error and then pressed the panel's OK,
+                # because the value was already recorded by the time the
+                # complaint arrived.
+                self.replay.pop()
+                if step.repeat:
+                    held = self.values.get(step.id) or []
+                    if held:
+                        held.pop()
+                    if not held:
+                        self.values.pop(step.id, None)
+                else:
+                    self.values.pop(step.id, None)
+                    self.done.discard(step.id)
                 self.bus.emit(_bus.ERROR, complaint)
+                self._emit_live()
+                self._announce()
+                return
         self._emit_live()
         if not self.pending():
             self._finish()
@@ -517,13 +546,20 @@ class Engine:
             return
         doc = _open_transaction(verb, replay, panel=flags.get("panel"))
         try:
+            self.driving = True
             with modals.intercepted(force=flags.get("force")) as caught:
                 obj = verb.emit({**values, "_flags": flags, "_engine": self})
         except Exception as exc:
             _abort_transaction(doc)
+            # _reset already cleared self.verb, so the verb has to be told
+            # to clean up by name -- a panel verb whose commit raised left
+            # its panel on screen with the engine idle behind it.
+            self._abort_as(verb)
             self.bus.emit(_bus.ERROR, f"{verb.name} failed: {exc}")
             self._announce()
             return
+        finally:
+            self.driving = False
         if caught:
             # FreeCAD rejected the request. That is the same kind of answer
             # as a bad quantity, and it travels the same way -- rather than
@@ -562,19 +598,22 @@ class Engine:
         self.bus.emit(_bus.LIVE, " ".join(self.replay),
                       picked=list(self.picked))
 
-    def _abort_verb(self) -> None:
-        """Let a verb undo what starting it set up.
-
-        A panel left on screen holding half a command is worse than one
-        that was never opened, and the operator has already said stop.
-        """
-        verb = self.verb
+    def _abort_as(self, verb) -> None:
+        """Let a named verb undo what starting it set up."""
         if verb is None or verb.abort is None:
             return
         try:
             verb.abort(self)
         except Exception as exc:
             self.bus.emit(_bus.ERROR, f"{verb.name}: {exc}")
+
+    def _abort_verb(self) -> None:
+        """Let a verb undo what starting it set up.
+
+        A panel left on screen holding half a command is worse than one
+        that was never opened, and the operator has already said stop.
+        """
+        self._abort_as(self.verb)
 
     def _reset(self) -> None:
         self.state = IDLE

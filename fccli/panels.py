@@ -403,14 +403,25 @@ def resolve(token, found):
         return None, "give a name to set"
     exact = [f for f in found if key_for(f.name).lower() == wanted
              or f.name.lower() == wanted]
-    if exact:
+    if len(exact) == 1:
         return exact[0], None
+    if len(exact) > 1:
+        # key_for is lossy -- AngleQSB, angleSpinBox and Angle all read
+        # `angle` -- so two visible fields can answer to one name. Taking
+        # the first made the second unaddressable and swallowed every
+        # write aimed at either.
+        return None, (f"{token!r} names {len(exact)} fields on this panel "
+                      f"({', '.join(f.name for f in exact)}) -- "
+                      "use the one you mean by its full name")
     hits = [f for f in found if key_for(f.name).lower().startswith(wanted)]
     if len(hits) == 1:
         return hits[0], None
     if not hits:
-        return None, (f"{token!r} is not on this panel -- "
-                      f"{', '.join(sorted(key_for(f.name) for f in found)[:6])}...")
+        if not found:
+            return None, "the panel has closed"
+        names = sorted(key_for(f.name) for f in found)
+        shown = ", ".join(names[:6]) + ("..." if len(names) > 6 else "")
+        return None, f"{token!r} is not on this panel -- {shown}"
     return None, (f"{token!r} could be "
                   f"{', '.join(sorted(key_for(f.name) for f in hits))}")
 
@@ -451,16 +462,33 @@ def _assign(engine, step, value, typed=None):
     if leftover:
         return (f"{leftover!r} is not an assignment -- "
                 "name=value, or `done` to apply")
+    seen, problems = {}, []
     found = fields()
     for name, wanted in pairs:
+        if name.lower() in seen:
+            # Last would have won, silently, on a line somebody meant.
+            problems.append(f"{name}: given twice")
+            continue
+        seen[name.lower()] = wanted
+        if not wanted:
+            # An empty value is not a value. It cleared a text field and
+            # unchecked a flag, both without saying so.
+            problems.append(f"{name}: give it a value, or leave it out")
+            continue
         field, complaint = resolve(name, found)
         if complaint:
-            return complaint
+            problems.append(complaint)
+            continue
         complaint = field.write(wanted)
         if complaint:
-            return complaint
-        found = fields()      # a choice can swap the page under the rest
-    return None
+            problems.append(f"{name}: {complaint}")
+            continue
+        # A choice can swap the page under whatever comes after it.
+        found = fields()
+    # Every pair is attempted and every complaint reported. Returning at
+    # the first one left the rest of the line untried while the whole line
+    # went into history, so replaying it did more than running it had.
+    return "; ".join(problems) if problems else None
 
 
 def offered(found):
@@ -489,7 +517,10 @@ def steps_from(found):
         kind=TEXT,
         prompt="name=value",
         repeat=True,
-        min_count=0,
+        # One, at least, before Enter can end it. Enter on a panel that
+        # has been told nothing used to press OK -- undocumented, and the
+        # prompt offers `done` and `cancel` and never mentioned it.
+        min_count=1,
         options=[DONE],
         # The whole line, not a token at a time: a value can hold spaces.
         raw=True,

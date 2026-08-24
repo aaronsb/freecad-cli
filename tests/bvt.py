@@ -61,7 +61,12 @@ def watch_for_dialogs(dock):
         if w is None or w.property(HANDLED):
             return          # nothing up, or the command line is handling it
         seen = "%s %r" % (type(w).__name__, w.windowTitle())
-        driving = dock is not None and dock.engine.state != "idle"
+        # engine.driving, not engine.state: _finish resets to IDLE before
+        # calling emit, so for the whole of the part that runs a command
+        # the engine reads idle -- every escaped modal during emit was
+        # filed as FreeCAD's business and could never fail the suite.
+        driving = dock is not None and (
+            dock.engine.driving or dock.engine.state != "idle")
         (ESCAPED if driving else EXPECTED).append(seen)
         try:
             w.reject()
@@ -576,6 +581,8 @@ def suite_panel(dock):
     settle(35)
     truthy("a bare number at a rotation is degrees",
            abs(slab.Placement.Rotation.Angle - 0.5236) < 0.01)
+    truthy("  about the axis it was named on",
+           abs(abs(slab.Placement.Rotation.Axis.z) - 1.0) < 0.01)
 
     # Names resolve the way verb names do. Placement reset first: the
     # rotation above turns the panel's local axes, so x stops being x.
@@ -597,13 +604,57 @@ def suite_panel(dock):
     settle(8)
     truthy("  and an unknown one says so",
            any("not on this panel" in ln for ln in said))
-    dock.engine.submit("justawordâ€¦" if False else "justaword")
+    dock.engine.submit("justaword")
     settle(8)
     truthy("something that is not an assignment says that",
            any("is not an assignment" in ln for ln in said))
     dock.engine.cancel()
     settle(25)
     check("cancelling closes the panel", panels.is_open(), False)
+
+    # A line the panel refused is not a line it was answered with. values
+    # is what says a command is complete, and _accept recorded the value
+    # before asking on_accept whether it was any good -- so a typo'd field
+    # name printed its error and then pressed the panel's OK.
+    slab.Placement = App.Placement()
+    doc.recompute()
+    said.clear()
+    select()
+    dock.engine.submit("transform xpositon=25 mm")
+    settle(30)
+    truthy("a typo says so", any("not on this panel" in ln for ln in said))
+    truthy("  and does not commit the panel", panels.is_open())
+    check("  nor move anything",
+          [round(v, 3) for v in slab.Placement.Base], [0.0, 0.0, 0.0])
+
+    # A value the parser cannot read is not a value.
+    said.clear()
+    dock.engine.submit("xposition=oops")
+    settle(12)
+    truthy("a value that will not parse says so", bool(said))
+    check("  and moves nothing",
+          [round(v, 3) for v in slab.Placement.Base], [0.0, 0.0, 0.0])
+
+    # An empty one clears a field without meaning to.
+    said.clear()
+    dock.engine.submit("xposition=")
+    settle(12)
+    truthy("an empty value is refused",
+           any("give it a value" in ln for ln in said))
+
+    # Every pair on the line is attempted, not just those before the first
+    # complaint -- the whole line went into history either way, so
+    # replaying it used to do more than running it had.
+    said.clear()
+    dock.engine.submit("xposition=6 mm nosuch=1 zposition=8 mm")
+    settle(15)
+    truthy("a bad name in the middle is reported",
+           any("not on this panel" in ln for ln in said))
+    check("  and the pairs around it still land",
+          [round(v, 3) for v in slab.Placement.Base], [6.0, 0.0, 8.0])
+
+    dock.engine.cancel()
+    settle(25)
 
     # check runs nothing. open() is where a command runs now, so without a
     # guard `check transform` moved the object, printed "nothing was run",

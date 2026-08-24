@@ -497,6 +497,13 @@ class CliDock(QtWidgets.QDockWidget):
         self._applying_remote = False
 
     def closeEvent(self, ev):
+        # Whatever is half-typed goes with the window. A panel verb left
+        # its task panel on screen with the engine still collecting for a
+        # command line that had gone.
+        try:
+            self.engine.cancel()
+        except Exception:
+            pass
         self.keyfilter.remove()
         self.picker.stop()
         # This handler is on the QApplication and holds the dock, so every
