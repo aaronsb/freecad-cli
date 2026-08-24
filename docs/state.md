@@ -24,6 +24,7 @@ Source: `fccli/engine.py`, `panels.py`, `picking.py`, `modals.py`,
 | `replay`, `picked` | list, list | the typed form of every value; indices of values that came from the viewport |
 | `flags` | dict | `force`, `panel`, and any option flags |
 | `repeat_hint` | str or `None` | the line an empty Enter re-runs |
+| `suppress_record` | int | above zero while a script runs its lines; a `RESULT` emitted then carries `record=False` |
 
 `driving` is independent of `state`. `_finish` resets `state` to `IDLE`
 before calling `emit`, so the engine reads idle for the whole of a
@@ -54,9 +55,10 @@ stateDiagram-v2
 
 `_start(text)`:
 
-1. Resolve the first token by prefix against the registry. Zero or more
-   than one match is an error; the engine stays `IDLE`. A trailing `!`
-   sets `flags.force`.
+1. Resolve the first token by prefix against the registry. A token that
+   matches nothing and contains `/` or starts with `.` is a path, and the
+   line becomes `run <token> …`. Zero or more than one match otherwise is
+   an error; the engine stays `IDLE`. A trailing `!` sets `flags.force`.
 2. `state = COLLECTING`; clear `values`, `done` and `picked`; seed
    `replay` with the verb name; set `steps = None`; emit `LIVE`.
 3. If the verb defines `open` and the engine is not dry: set `driving`,
@@ -153,6 +155,19 @@ has a value and is not `repeat`. A repeating step is filled only by `done`.
 picker, resets, and emits `INFO`. On an `IDLE` engine it does nothing —
 including during `emit()`, when `driving` is set and `state` is already
 `IDLE`.
+
+### Scripts
+
+A script verb's `emit` runs the file's lines through `submit`, one at a
+time, from inside `_finish`. The engine is `IDLE` when `emit` starts, so
+each inner line runs a full `_start` → `_finish` of its own: its own
+transaction, its own modal arming, its own `RESULT` with `record=False`.
+`driving` is set by the outer `_finish` and toggled by each inner one; it
+reads True again for the length of the outer `emit` only until the first
+inner line finishes. The runner stops at the first inner `ERROR` or at an
+inner line that leaves the engine `COLLECTING`, which it cancels. The
+script call is the one recorded `RESULT`; `repeat_hint` is the script
+call.
 
 ### Transactions
 
