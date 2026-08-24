@@ -6,9 +6,15 @@ A semantic version alone cannot answer "is this the build with the fix?" for
 anyone running from a checkout, which is everyone during development. So the
 banner carries a commit too.
 
-Two sources, in order: a ``_build.py`` stamped at release time, then live
-git, since a dev install is a symlink into the working tree. Neither being
-available is fine -- the version prints on its own.
+Two sources. Live git wins wherever there is a checkout to ask, because a
+dev install is a symlink into the working tree and the answer there changes
+with every commit. The ``_build.py`` stamped at release time answers for a
+build shipped without git, which is what it was written for.
+
+Reading the stamp first, as this did, meant a release froze the reported
+commit for every run afterwards: `make release` stamps, and from then on a
+working tree reports the released commit no matter what was committed
+since. Neither source being available is fine -- the version prints alone.
 """
 
 import os
@@ -49,7 +55,7 @@ def _from_git():
 def info():
     global _CACHE
     if _CACHE is None:
-        _CACHE = _stamped() or _from_git() or {}
+        _CACHE = _from_git() or _stamped() or {}
     return _CACHE
 
 

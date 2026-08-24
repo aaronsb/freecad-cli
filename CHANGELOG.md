@@ -57,6 +57,15 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
 
 ### Fixed
 
+- **The version banner froze at the last release.** `make release` stamps
+  `_build.py`, and the stamp was read before live git -- so from then on a
+  working tree reported the released commit no matter what was committed
+  since. Git wins wherever there is a checkout to ask; the stamp answers
+  for a build shipped without one, which is what it was written for.
+- **`version.py bump` stranded the cycle's notes.** It inserted a new
+  section directly under the `<!-- next -->` marker, above the
+  `## Unreleased` heading notes are written under. It retitles that
+  heading instead.
 - **`make bvt` overwrote the dock height in real preferences.** Showing the
   dock fires a resize and the dock saves what it is resized to, which under
   Xvfb is the Xvfb window's shape. The run now captures and restores the

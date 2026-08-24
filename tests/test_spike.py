@@ -13,6 +13,7 @@ Proves the four things the design rests on:
 """
 
 import os
+import subprocess as _sh
 import sys
 import tempfile
 import time
@@ -30,6 +31,7 @@ from PySide6 import QtCore, QtGui, QtWidgets  # noqa: E402
 from fccli.bus import Bus, ERROR, LIVE, RESULT  # noqa: E402
 from fccli.engine import Engine  # noqa: E402
 from fccli.completion import candidates as _complete  # noqa: E402
+from fccli import __version__ as _fccli_version  # noqa: E402
 from fccli.grammar import REGISTRY  # noqa: E402
 from fccli.session import History as _History  # noqa: E402
 from fccli.keyfilter import KeyFilter  # noqa: E402
@@ -755,6 +757,19 @@ def main():
     _bridge.console = _con2
     _bridge._suggest(REGISTRY.get("box"))
     check("the cue can be turned off outright", _con2.lines, [])
+
+    print("\n5r. the version banner reports where the code came from")
+    from fccli import build_info as _bi
+    _bi._CACHE = None
+    check("in a checkout, live git wins over a release stamp",
+          _bi.info().get("source"), "git")
+    check("  and the commit is this one",
+          _bi.info().get("commit", "").split("-")[0],
+          _sh.check_output(["git", "rev-parse", "--short", "HEAD"],
+                           text=True).strip())
+    check("describe carries version, commit and date",
+          _bi.describe().startswith(_fccli_version + "+"), True)
+    _bi._CACHE = None
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
