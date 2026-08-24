@@ -268,10 +268,36 @@ Four tiers, each only as hand-made as it needs to be.
 
 | Tier | From |
 |---|---|
-| 0 | every registered command, as a launcher |
+| 0 | every registered command — and, where it opens a task panel, that panel's own parameters |
 | families | a group FreeCAD spread apart, gathered under one name with a choice |
 | 1 | every parametric type, with steps from its own properties |
 | 2 | hand-written and patched |
+
+**A task panel names its own parameters, so none of them are written here.**
+Its widgets carry the names its `.ui` file gave them — `xPositionSpinBox`,
+`planeLength`, `AngleQSB` — the same in every language FreeCAD ships,
+unlike the labels beside them. Values are typed in rather than set, so
+FreeCAD's parser runs and `3/4 in` lands as 19.05mm without `fccli/panels.py`
+knowing what an inch is.
+
+Three things the shape of a panel forces:
+
+- **A panel is a stack, not a widget.** `Part_Primitives` puts
+  `PartGui__DlgPrimitives` and `PartGui__Location` side by side as siblings.
+- **The field set is live.** A combo box swaps a `QStackedWidget` page. A
+  step looks its field up by name when it writes, never holding the widget.
+- **Order comes from the screen.** Tab order lists Transform's eight hidden
+  checkboxes first and its x/y/z positions last.
+
+**A panel keeps its own undo and puts everything back on Cancel**, which is
+why a panel verb opens no transaction — a second wrapped around it would
+nest inside. It also applies as each field is written, so answers land as
+they are given rather than in a batch at the end.
+
+**Whether a verb was generated is stated, not inferred.** `Verb.generated`,
+set by the factory, read through `curation.authored`. The emit a verb
+carries stopped answering it: every generated command verb now shares one
+with the hand-written panel verbs.
 
 **Nothing generated takes a name a hand-written verb owns.** The generated
 one keeps a qualified name instead — `Part::Box` becomes `part_box` because
