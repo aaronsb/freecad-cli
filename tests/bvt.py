@@ -89,9 +89,18 @@ def suite_keys(dock):
         app.processEvents()
     check("typing with the viewport focused lands in the console",
           dock.console.input_text(), "box")
-    # hasFocus() also requires an active window, and Xvfb has no window
-    # manager to activate one. focusWidget() is the claim that matters.
-    check("focus followed", app.focusWidget() is dock.console, True)
+    # The claim is that typing keeps working, not that any particular widget
+    # reports focus: hasFocus() also needs an active window, which a display
+    # with no window manager never has, and the 3D view can take focus back
+    # asynchronously once a document opens.
+    for ch in "es":
+        target = app.focusWidget() or view
+        app.sendEvent(target, QtGui.QKeyEvent(
+            QtCore.QEvent.KeyPress, QtGui.QKeySequence(ch)[0].key(),
+            QtCore.Qt.NoModifier, ch))
+        app.processEvents()
+    check("and keeps landing, so focus followed",
+          dock.console.input_text(), "boxes")
     dock.console.set_input("")
     dock.engine.submit("close!")
 

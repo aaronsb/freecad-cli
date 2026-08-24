@@ -173,7 +173,8 @@ class Server(QtCore.QObject):
         if op == "complete":
             from .completion import candidates
             head, tail, hits = candidates(session.engine,
-                                          request.get("text", ""))
+                                          request.get("text", ""),
+                                          history=session.history)
             return {"kind": "completions", "head": head, "tail": tail,
                     "candidates": hits[:200]}
 

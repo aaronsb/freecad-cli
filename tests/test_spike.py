@@ -384,6 +384,52 @@ def main():
     engine.submit("unalias tb")
     check("unalias stops it resolving", REGISTRY.get("tb"), None)
 
+    print("\n5d. completion: verbs first, then arguments")
+    from fccli.completion import candidates as _cand
+    _units.set_schema("Internal")
+    engine.submit("new compdoc")
+    App.ActiveDocument.addObject("Part::Box", "Bracket")
+    session.history.entries[:] = ["circle 0,0,0 20"]
+
+    def hits(text):
+        return _cand(engine, text, history=session.history)[2]
+
+    check("a first token completes verbs", "circle" in hits("circ"), True)
+    check("an argument does not complete verbs",
+          any(h in REGISTRY.names() for h in hits("circle 0")), False)
+    check("  it completes the coordinate instead", hits("circle 0"), ["0,0,0"])
+    check("a bare number takes the schema's unit",
+          hits("circle 0,0,0 2"), ["2mm"])
+    check("a step that holds a command says so",
+          "polyline" in hits("man pol"), True)
+    check("  including check", "polyline" in hits("check pol"), True)
+    check("a selection step completes document objects",
+          hits("move Brac"), ["Bracket"])
+    check("the schema step completes schemas",
+          all("imperial" in h for h in hits("units imp")), True)
+
+    # Tab walks a remembered command out one argument at a time, for any
+    # verb -- nothing here is named or special-cased.
+    session.history.entries[:] = ["polyline 0,0,0 40,0,0 close"]
+    walked, line = [], "polyline"
+    for _ in range(4):
+        got = hits(line)
+        if not got:
+            break
+        head = line.rpartition(" ")[0]
+        line = (head + " " + got[0]) if head else got[0]
+        walked.append(line)
+    session.history.entries[:] = []
+    check("a choice step lists its choices on the space",
+          hits("zoom ")[:3], ["all", "extents", "in"])
+    check("  and narrows as you type", hits("zoom ex"), ["extents"])
+    check("  including the named views", hits("zoom f"), ["front"])
+    session.history.entries[:] = ["polyline 0,0,0 40,0,0 close"]
+
+    check("Tab walks a remembered command out",
+          walked[-1] if walked else None, "polyline 0,0,0 40,0,0 close")
+    engine.submit("close!")
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

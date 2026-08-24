@@ -373,8 +373,19 @@ def _install_completer(client, readline, args):
             return None
 
     readline.set_completer(complete)
+    # Coordinates are one token: 0,0,0 must not split on the commas.
     readline.set_completer_delims(" \t\n")
-    readline.parse_and_bind("tab: complete")
+    # The dock cycles through candidates on repeated Tab. readline's default
+    # inserts the longest common prefix instead, which for "c" against
+    # chamfer/check/circle/clear is "c" -- nothing happens, and the two
+    # surfaces feel different for the same candidates.
+    if "libedit" in getattr(readline, "__doc__", "") or "":
+        readline.parse_and_bind("bind ^I rl_complete")
+    else:
+        readline.parse_and_bind("tab: menu-complete")
+        readline.parse_and_bind('"\\e[Z": menu-complete-backward')
+        readline.parse_and_bind("set show-all-if-ambiguous off")
+        readline.parse_and_bind("set menu-complete-display-prefix off")
     try:
         history = client.ask(op="history", limit=500).get("entries", [])
         for line in history:

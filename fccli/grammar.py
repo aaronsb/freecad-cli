@@ -44,6 +44,11 @@ class Step:
     # Consume the rest of the line verbatim rather than one whitespace token.
     # For steps whose value is itself a command, a path, or a sentence.
     raw: bool = False
+    # Where this step's candidates come from, when they are not the step's
+    # own options or choices: "verbs", "objects", "aliases", "schemas".
+    # A step whose value is a command name says so rather than being
+    # guessed at by position.
+    completes: Optional[str] = None
 
     def option_names(self) -> List[str]:
         return [o.name for o in self.options]

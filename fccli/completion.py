@@ -5,7 +5,7 @@ would have needed its own copy that drifted. It lives here so the dock and
 the socket give the same answer, from the same live engine state.
 """
 
-from .grammar import QUANTITY, SELECTION
+from .grammar import CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT
 
 
 def step_for(engine, head):
@@ -41,8 +41,12 @@ def is_bare_number(token):
     return True
 
 
-def candidates(engine, text):
-    """Return (head, tail, candidates) for the text before the cursor."""
+def candidates(engine, text, history=None):
+    """Return (head, tail, candidates) for the text before the cursor.
+
+    Candidates replace ``tail``. One may contain a space, which is how a
+    remembered command hands back its next argument.
+    """
     head, _, tail = text.rpartition(" ")
     step = step_for(engine, head)
 
@@ -52,20 +56,73 @@ def candidates(engine, text):
         unit = preferred("angle" if step.unit == "deg" else "length")
         return head, tail, [tail + unit]
 
-    if step is None and not head:
-        pool = engine.registry.names()
-    elif step is not None:
-        pool = list(step.option_names())
-        if step.kind == SELECTION:
-            pool += document_labels()
+    # The first token is a verb; everything after a space is an argument.
+    # So verb names complete only at the start of a line, or at a step that
+    # declares its value is a command -- man, alias, check.
+    pool = []
+    if not head:
+        pool += engine.registry.names()
+    if step is not None:
+        pool += list(step.option_names())
         if step.choices:
             pool += list(step.choices)
-        pool += engine.registry.names()
-    else:
-        pool = engine.registry.names()
+        pool += from_source(engine, step.completes or _default_source(step))
 
     lowered = tail.lower()
-    return head, tail, [c for c in pool if c.lower().startswith(lowered)]
+    # A candidate identical to what is already typed adds nothing. Dropping
+    # it is what lets a fully typed verb fall through to its arguments.
+    hits = [c for c in pool
+            if c.lower().startswith(lowered) and c.lower() != lowered]
+
+    # The grammar has nothing left to offer, but a command run before may
+    # know what came next here. Hand back one argument at a time, so Tab
+    # walks the remembered command out rather than dumping the whole line.
+    #
+    # This is prefix matching over the history ring. No verb is named here
+    # and none is special-cased: whatever was run before completes the same
+    # way, including verbs generated from FreeCAD's registries and any an
+    # addon declared.
+    if not hits and history is not None:
+        remembered = next_from_history(history, text, tail)
+        if remembered:
+            hits = [remembered]
+    return head, tail, hits
+
+
+def _default_source(step):
+    """What a step completes from when it has not said."""
+    return "objects" if step.kind == SELECTION else None
+
+
+def from_source(engine, source):
+    if source == "verbs":
+        return engine.registry.names()
+    if source == "objects":
+        return document_labels()
+    if source == "aliases":
+        return sorted({a for name in engine.registry.names()
+                       for a in engine.registry.get(name).aliases})
+    if source == "schemas":
+        try:
+            from .units import schemas
+            return [s.lower() for s in schemas()]
+        except Exception:
+            return []
+    return []
+
+
+def next_from_history(history, text, tail):
+    """The next argument of the most recent command that began this way."""
+    remembered = history.latest_starting(text)
+    if not remembered:
+        return None
+    suffix = remembered[len(text):]
+    if not suffix:
+        return None
+    if suffix.startswith(" "):
+        nxt = suffix[1:].split(" ")[0]
+        return f"{tail} {nxt}" if nxt else None
+    return tail + suffix.split(" ")[0]
 
 
 def document_labels():

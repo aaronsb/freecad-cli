@@ -195,7 +195,8 @@ class Console(QtWidgets.QPlainTextEdit):
 
     def _candidates(self):
         from .completion import candidates
-        return candidates(self.engine, self.input_text())
+        return candidates(self.engine, self.input_text(),
+                          history=self.session.history)
 
     def _complete(self, backwards=False):
         """Tab cycles. The stem is remembered, so the second Tab does not

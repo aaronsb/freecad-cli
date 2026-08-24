@@ -17,7 +17,7 @@ import os
 import FreeCAD as App
 
 from . import bus as _bus
-from .grammar import PATH, TEXT, Step, Verb, REGISTRY
+from .grammar import CHOICE, PATH, TEXT, Step, Verb, REGISTRY
 from .dirty import dirty_documents, is_dirty, mark_clean
 
 
@@ -121,11 +121,49 @@ def _emit_redo(v):
     return None
 
 
+ZOOM_TARGETS = {
+    "extents": ("Std_ViewFitAll", "everything in the document"),
+    "all": ("Std_ViewFitAll", "everything in the document"),
+    "selection": ("Std_ViewFitSelection", "just what is selected"),
+    "in": ("Std_ViewZoomIn", "closer"),
+    "out": ("Std_ViewZoomOut", "further away"),
+    "window": ("Std_ViewBoxZoom", "a box you drag in the viewport"),
+}
+
+VIEW_TARGETS = {
+    "front": "Std_ViewFront", "back": "Std_ViewRear", "rear": "Std_ViewRear",
+    "top": "Std_ViewTop", "bottom": "Std_ViewBottom",
+    "left": "Std_ViewLeft", "right": "Std_ViewRight",
+    "iso": "Std_ViewIsometric", "isometric": "Std_ViewIsometric",
+    "axonometric": "Std_ViewIsometric",
+}
+
+
 def _emit_fit(v):
+    """Zoom, with a target rather than only fit-all.
+
+    FreeCAD spreads these across Std_ViewFitAll, Std_ViewFitSelection,
+    Std_ViewZoomIn, Std_ViewZoomOut and Std_ViewBoxZoom -- five commands
+    with no shared name. One verb with a choice reads better and is
+    completable.
+    """
     gui = _gui()
-    if gui is not None:
-        gui.SendMsgToActiveView("ViewFit")
-    return None
+    if gui is None:
+        raise RuntimeError("zoom needs the GUI")
+    target = (v.get("target") or "extents").lower()
+    if target in ZOOM_TARGETS:
+        command, _doc = ZOOM_TARGETS[target]
+        if target in ("extents", "all"):
+            gui.SendMsgToActiveView("ViewFit")
+        else:
+            gui.runCommand(command)
+        return None
+    if target in VIEW_TARGETS:
+        gui.runCommand(VIEW_TARGETS[target])
+        return None
+    raise RuntimeError(
+        f"zoom where? one of: {', '.join(sorted(ZOOM_TARGETS))}, "
+        f"{', '.join(sorted(set(VIEW_TARGETS)))}")
 
 
 def _emit_delete(v):
@@ -192,9 +230,13 @@ REGISTRY.add(Verb(
 ))
 
 REGISTRY.add(Verb(
-    name="fit", transactional=False, aliases=["zoom", "zf"], gui_command="Std_ViewFitAll",
-    doc="Zoom to fit everything in the view.",
-    steps=[], emit=_emit_fit,
+    name="zoom", transactional=False, aliases=["fit", "zf"],
+    gui_command="Std_ViewFitAll",
+    doc="Zoom the view: extents, selection, in, out, window, or a named view.",
+    steps=[Step("target", CHOICE, "Zoom to", optional=True,
+                default="extents",
+                choices=sorted(ZOOM_TARGETS) + sorted(set(VIEW_TARGETS)))],
+    emit=_emit_fit,
 ))
 
 REGISTRY.add(Verb(
@@ -724,21 +766,24 @@ def _emit_help(v):
 REGISTRY.add(Verb(
     name="check", transactional=False, aliases=["whatif", "dry", "ck"],
     doc="Validate a command without running it.",
-    steps=[Step("line", TEXT, "Command to check", raw=True)],
+    steps=[Step("line", TEXT, "Command to check", raw=True,
+                completes="verbs")],
     emit=_emit_check,
 ))
 
 REGISTRY.add(Verb(
     name="units", transactional=False,
     doc="Show or set the unit schema, e.g. units imperialbuilding",
-    steps=[Step("schema", TEXT, "Unit schema", optional=True)],
+    steps=[Step("schema", TEXT, "Unit schema", optional=True,
+                completes="schemas")],
     emit=_emit_units,
 ))
 
 REGISTRY.add(Verb(
     name="man", transactional=False, aliases=["help", "?", "h"],
     doc="List the commands, or describe one in full.",
-    steps=[Step("topic", TEXT, "Manual page", optional=True)],
+    steps=[Step("topic", TEXT, "Manual page", optional=True,
+                completes="verbs")],
     emit=_emit_man,
 ))
 
@@ -746,14 +791,15 @@ REGISTRY.add(Verb(
     name="alias", transactional=False,
     doc="List your aliases, or define one: alias b box",
     steps=[Step("name", TEXT, "Alias", optional=True),
-           Step("command", TEXT, "Command it stands for", optional=True)],
+           Step("command", TEXT, "Command it stands for", optional=True,
+                completes="verbs")],
     emit=_emit_alias,
 ))
 
 REGISTRY.add(Verb(
     name="unalias", transactional=False,
     doc="Remove one of your aliases.",
-    steps=[Step("name", TEXT, "Alias to remove")],
+    steps=[Step("name", TEXT, "Alias to remove", completes="aliases")],
     emit=_emit_unalias,
 ))
 

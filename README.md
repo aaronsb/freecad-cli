@@ -100,7 +100,8 @@ These take their arguments inline instead:
 > save ~/parts/bracket.FCStd     saves there, no dialog
 > open ~/parts/bracket.FCStd     new bracket     close     close!
 > alias b box                    unalias b       history   clear
-> undo    redo    fit    delete  quit    quit!
+> undo    redo    delete  quit    quit!
+> zoom extents  zoom selection  zoom in/out/window  zoom front/top/iso
 > units imperialbuilding         switch schema; 9.525mm reads as 3/8"
 > check box 0,0,0 40 30 20       validate without running
 ```
