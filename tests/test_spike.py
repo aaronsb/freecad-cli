@@ -71,7 +71,7 @@ def main():
     engine = Engine(bus, REGISTRY, picker=None)
     from fccli import dirty, units as _units
     dirty.install()
-    _units.set_schema("Internal")   # rendering assertions depend on it
+    entry_schema = _units.current_name()   # restored before returning
 
     window = QtWidgets.QWidget()
     layout = QtWidgets.QVBoxLayout(window)
@@ -144,11 +144,12 @@ def main():
     ])
 
     print("\n4b. typed values echo back in canonical form")
+    _units.set_schema("Internal")   # pin it next to the assertion
     live.clear()
     for line in ["box", "0,0,0", "10", "3/8in", "2.5cm"]:
         engine.submit(line)
     check("units normalized on input", results[-1],
-          "box 0,0,0 10.00mm 9.525mm 25.40mm")
+          "box 0,0,0 10.00mm 9.525mm 25.00mm")
 
     print("\n4c. shell builtins run without dialogs")
     import os
@@ -282,7 +283,7 @@ def main():
             lossy.append(token)
     check("every rendered token round-trips exactly", lossy, [])
     engine.submit("close!")
-    U.set_schema(before)
+    U.set_schema(entry_schema)
 
     print("\n5c. the factory: generated and patched verbs")
     from fccli.factory import load_descriptor, register_all
@@ -349,6 +350,7 @@ def main():
           f"passed={kf.stats['passed']}")
 
     kf.remove()
+    _units.set_schema(entry_schema)   # the tests must not move a real setting
     print(f"\n{len(PASS)} passed, {len(FAIL)} failed")
     if FAIL:
         print("failed: " + ", ".join(FAIL))
