@@ -177,6 +177,72 @@ def build_command_verb(command):
                 gui_command=name, generated=True)
 
 
+def runtime_commands(known):
+    """Commands FreeCAD has registered that the descriptor never saw.
+
+    The descriptor is harvested once, on one machine. An addon installed
+    after that registers its commands with FreeCAD at startup and got no
+    verb from it until somebody regenerated the descriptor with the addon
+    present -- layer 2 of ADR-600, true only by accident of timing.
+
+    Named the way the harvest would have named them: menuText with the
+    mnemonic dropped, unless it still holds a placeholder, in which case
+    the command name stands in. Placement is unknown, so they rank as
+    registry and claim a short name only if nobody else has.
+
+    Empty when there is no GUI to ask, or no listCommands on the one there
+    is -- which is the offscreen suite's FreeCADGui.
+    """
+    try:
+        import FreeCADGui as Gui
+        names = set(Gui.listCommands())
+    except Exception:
+        return []
+    out = []
+    for name in sorted(names - set(known)):
+        info = {}
+        try:
+            command = Gui.Command.get(name)
+            info = (command.getInfo() if command else None) or {}
+        except Exception:
+            pass
+        label = _label(info.get("menuText"))
+        if not label or "%" in label:
+            label = name
+        tooltip = _label(info.get("toolTip"))
+        if "%" in tooltip:
+            tooltip = ""
+        out.append({"name": name, "label": label, "tooltip": tooltip,
+                    "toolbar": None, "menu": None, "runtime": True})
+    return out
+
+
+def register_runtime(registry, descriptor=None):
+    """Give a verb to every command FreeCAD has that nothing here does yet.
+
+    Called once by register_all and again whenever a workbench activates:
+    an addon that registers its commands in its workbench's Initialize()
+    has none at startup and all of them the first time somebody opens it.
+    Idempotent -- a command that already reaches a verb is skipped, so the
+    second call costs a set difference and registers only what is new.
+
+    Returns how many were registered.
+    """
+    descriptor = descriptor if descriptor is not None else load_descriptor()
+    known = set((descriptor or {}).get("commands", {}))
+    known |= {getattr(registry.get(n), "gui_command", None)
+              for n in registry.names()}
+    added = 0
+    for command in runtime_commands(known):
+        verb = build_command_verb(command)
+        if registry.get(verb.name) is None:
+            registry.add(verb)
+        elif not _qualify_command(verb, command["name"], registry):
+            continue
+        added += 1
+    return added
+
+
 def _claimed(registry, name):
     """Whether a verb somebody wrote by hand already owns this name.
 
@@ -361,6 +427,9 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
                 counts["qualified"] = counts.get("qualified", 0) + 1
             else:
                 counts["unreachable"] = counts.get("unreachable", 0) + 1
+        # After the descriptor's commands, so a runtime command never takes
+        # a name the descriptor's owner of it would have had.
+        counts["runtime"] = register_runtime(registry, descriptor)
 
     # Two passes. A patch may rename a verb onto a name the generator
     # already produced from another type -- Part::Box patched to "cube"

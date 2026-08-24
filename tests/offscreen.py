@@ -1641,6 +1641,93 @@ def _run():
         else:
             sys.modules.pop("FreeCADGui", None)
 
+    print("\n5ab. a command FreeCAD has that the descriptor never saw")
+    # ADR-600, layer 2. An addon installed after the descriptor was
+    # harvested registers its commands with FreeCAD, and register_all read
+    # the descriptor only -- so the addon was invisible until somebody ran
+    # make descriptor on a machine that had it. At startup, a command in
+    # listCommands() the descriptor does not know gets a tier-0 verb with
+    # its label from getInfo(), the way the harvest would have named it.
+    class _FakeCmd:
+        def __init__(self, info): self._info = info
+        def getInfo(self): return self._info
+
+    class _RuntimeGui:
+        def __init__(self, extra):
+            self.extra = extra
+        def listCommands(self):
+            return list(_cmds)[:5] + list(self.extra)
+        class Command:
+            registry = {}
+            @classmethod
+            def get(cls, name): return cls.registry.get(name)
+
+    _RuntimeGui.Command.registry = {
+        "Acme_Widget": _FakeCmd({"menuText": "&Widget Thing",
+                                 "toolTip": "Makes a widget"}),
+        "Acme_About": _FakeCmd({"menuText": "About %1",
+                                "toolTip": "About %1"}),
+        "Std_ViewFront": _FakeCmd({"menuText": "Not used"}),
+    }
+    _real_gui = sys.modules.get("FreeCADGui")
+    try:
+        sys.modules["FreeCADGui"] = _RuntimeGui(["Acme_Widget", "Acme_About",
+                                                 "Std_ViewFront"])
+        _rt = _Registry()
+        _rc = register_all(_rt, tier0=True, patches=PatchSet())
+        check("commands the descriptor never saw are registered",
+              _rc.get("runtime", 0), 2)
+        _w = _rt.get("widget_thing")
+        check("  named from getInfo's menuText, mnemonic dropped",
+              _w.gui_command if _w else None, "Acme_Widget")
+        check("  documented from its toolTip",
+              _w.doc if _w else None, "Makes a widget")
+        _a = _rt.by_gui_command("Acme_About")
+        check("  a placeholder label falls back to the command name",
+              _a.name if _a else None, "acme_about")
+        check("  and a descriptor command is not registered twice",
+              _rc["tier0"], len(_cmds))
+        _launchers = [_rt.get(n) for n in _rt.names()
+                      if _rt.get(n).gui_command == "Std_ViewFront"
+                      and _rt.get(n).open is not None]
+        check("  the descriptor's own label wins for Std_ViewFront",
+              [v.name for v in _launchers], ["1_front"])
+        check("  and the runtime label for it was not used",
+              _rt.get("not_used"), None)
+    finally:
+        if _real_gui is None:
+            sys.modules.pop("FreeCADGui", None)
+        else:
+            sys.modules["FreeCADGui"] = _real_gui
+    # A workbench opened later brings more. The second call registers only
+    # what is new, and says how many.
+    from fccli.factory import register_runtime
+    _gui2 = _RuntimeGui(["Acme_Widget"])
+    _RuntimeGui.Command.registry["Acme_Later"] = _FakeCmd(
+        {"menuText": "Later Thing", "toolTip": "Came with a workbench"})
+    try:
+        sys.modules["FreeCADGui"] = _gui2
+        _rt3 = _Registry()
+        register_all(_rt3, tier0=True, patches=PatchSet())
+        check("  a second pass with nothing new registers nothing",
+              register_runtime(_rt3), 0)
+        _gui2.extra.append("Acme_Later")
+        check("  and a workbench's new commands are picked up on the next",
+              register_runtime(_rt3), 1)
+        check("    reachable by the name getInfo gives it",
+              _rt3.get("later_thing").gui_command
+              if _rt3.get("later_thing") else None, "Acme_Later")
+    finally:
+        if _real_gui is None:
+            sys.modules.pop("FreeCADGui", None)
+        else:
+            sys.modules["FreeCADGui"] = _real_gui
+    # Nothing to read: a FreeCADGui with no listCommands, which is what
+    # the offscreen suite has, registers nothing and raises nothing.
+    _rt2 = _Registry()
+    _rc2 = register_all(_rt2, tier0=True, patches=PatchSet())
+    check("  no GUI, no runtime commands, no error", _rc2.get("runtime", 0), 0)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

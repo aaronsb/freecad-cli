@@ -477,6 +477,7 @@ class CliDock(QtWidgets.QDockWidget):
     def activate(self):
         self.keyfilter.install()
         self.bridge.install()
+        self._watch_workbenches()
         self._serve()
         app = QtWidgets.QApplication.instance()
         self._focus_hook = None
@@ -485,6 +486,35 @@ class CliDock(QtWidgets.QDockWidget):
             app.focusChanged.connect(self._focus_hook)
         self.console.setFocus(Qt.OtherFocusReason)
         self._paint_focus_state()
+
+    def _watch_workbenches(self):
+        """Pick up the commands a workbench brings when it is opened.
+
+        An addon that registers its commands in Initialize() has none until
+        its workbench is activated for the first time, and register_all ran
+        before that. MainWindow.workbenchActivated fires after every
+        activation, including the ones panels.not_yet_loaded borrows.
+        """
+        try:
+            import FreeCADGui as Gui
+            mw = Gui.getMainWindow()
+            mw.workbenchActivated.connect(self._on_workbench_activated)
+        except Exception:
+            pass
+
+    def _on_workbench_activated(self, name):
+        from .factory import register_runtime
+        try:
+            added = register_runtime(REGISTRY)
+        except Exception:
+            return
+        if added:
+            self.factory_counts["runtime"] = (
+                self.factory_counts.get("runtime", 0) + added)
+            self.factory_counts["total"] = len(REGISTRY.names())
+            self.console.write(
+                f"{added} commands from {name} are on the command line now",
+                "info")
 
     def _serve(self):
         """Open the socket, so a terminal can reach this same session."""

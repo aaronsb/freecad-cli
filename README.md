@@ -228,7 +228,7 @@ invocation. `tools/generate_descriptor.py` harvests both into
 
 | Tier | Count | Source |
 |---|---|---|
-| 0 | 1111 | every registered command, as a zero-step verb that runs it |
+| 0 | 1111 | every registered command, as a zero-step verb that runs it — plus whatever FreeCAD registers that the descriptor never saw, at startup and when a workbench opens |
 | families | 40 | a group FreeCAD spread apart, as one verb with a choice |
 | 1 | ~213 | every parametric type, with steps from its own properties |
 | 2 | hand-written + patched | point-picking verbs, ordering, inline options |
