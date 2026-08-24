@@ -20,6 +20,9 @@ import FreeCAD as App
 
 from . import bus as _bus
 from . import curation as _curation
+from . import engine as _engine_mod
+from . import describe as _describe
+from . import shortcuts as _shortcuts
 from . import paths as _paths
 from .grammar import (CHOICE, PATH, QUANTITY, TEXT, Option, Step, Verb,
                       REGISTRY)
@@ -251,8 +254,7 @@ REGISTRY.add(Verb(
 ))
 
 
-SHOT_DIR = os.path.join(os.path.expanduser("~"), ".local", "share",
-                        "FreeCAD", "fccli", "shots")
+SHOT_DIR = _paths.data("shots")
 
 
 def _shot_path(given):
@@ -272,6 +274,189 @@ def _shot_path(given):
         if not os.path.exists(path):
             return path
         n += 1
+
+
+def _emit_shortcuts(v):
+    """List, import or drop FreeCAD's key chords as aliases.
+
+    A command rather than something that happens on first load: it changes
+    what a hundred words mean, and that should be asked for and reversible.
+    """
+    engine = v.get("_engine")
+    if engine is None:
+        return None
+
+    def say(text, role="info"):
+        engine.bus.emit(_bus.INFO, text, role=role)
+
+    what = (v.get("what") or "list").strip().lower()
+    mine, imported = _read_aliases()
+    from .factory import load_descriptor
+    accepted, rejected = _shortcuts.proposals(
+        REGISTRY, load_descriptor(), mine)
+
+    if what == "list":
+        say(f"{len(accepted)} chords could become aliases", "head")
+        for row in _columns([f"{a}={verb}" for a, verb in
+                             sorted(accepted.items())][:60], width=68):
+            say(f"  {row}", "quiet")
+        if rejected:
+            # `shortcuts why`. The hint used to name `shortcuts import
+            # --why`, and the CHOICE step takes `import` and discards the
+            # rest -- so somebody trying to read why a chord was skipped
+            # changed what a hundred and sixty words mean instead.
+            say(f"{len(rejected)} skipped -- shortcuts why says which",
+                "quiet")
+        say("shortcuts import adds them; shortcuts drop removes them again")
+        return None
+
+    if what == "why":
+        say(f"{len(rejected)} chords were skipped", "head")
+        for alias, reason in sorted(rejected.items()):
+            say(f"  {alias:<8} {reason}")
+        return None
+
+    if what == "import":
+        fresh = []
+        for alias, name in accepted.items():
+            verb = REGISTRY.get(name)
+            if verb is None or alias in verb.aliases:
+                continue
+            verb.aliases.append(alias)
+            REGISTRY.add(verb)
+            mine[alias] = name
+            imported.add(alias)
+            fresh.append(alias)
+        REGISTRY.reindex()
+        _save_aliases(mine, imported)
+        shown = ", ".join(sorted(fresh)[:3])
+        say(f"imported {len(fresh)} chords"
+            + (f" -- {shown} and the rest now type" if fresh else ""))
+        return None
+
+    if what == "drop":
+        dropped = 0
+        for alias in sorted(imported):
+            if alias not in mine:
+                continue
+            verb = REGISTRY.get(mine[alias])
+            if verb is not None and alias in verb.aliases:
+                verb.aliases.remove(alias)
+            mine.pop(alias, None)
+            dropped += 1
+        REGISTRY.reindex()
+        _save_aliases(mine, set())
+        say(f"dropped {dropped} imported chords"
+            + ("" if dropped else " -- nothing was imported"))
+        return None
+
+    raise RuntimeError(f"shortcuts takes list, why, import or drop")
+
+
+def _emit_describe(v):
+    """Read an object out, or list what the document holds.
+
+    Bare, it summarises every object. Given a label it describes one in
+    full. Nothing is written per type: the properties come off the object,
+    the filter is the one generated verbs use, and every number goes
+    through the unit schema.
+    """
+    engine = v.get("_engine")
+    doc = App.ActiveDocument
+    if engine is None:
+        return None
+    if doc is None:
+        raise RuntimeError("no active document")
+
+    def say(text, role="info"):
+        engine.bus.emit(_bus.INFO, text, role=role)
+
+    target = (v.get("object") or "").strip()
+    if not target:
+        gui = _gui()
+        # Gui exists without Selection under freecadcmd, so ask for the
+        # attribute rather than for the module.
+        selection = getattr(gui, "Selection", None) if gui else None
+        picked = list(selection.getSelection()) if selection else []
+        if picked:
+            objects = picked
+        else:
+            if not doc.Objects:
+                say(f"{doc.Label} is empty", "quiet")
+                return None
+            say(f"{doc.Label} -- {len(doc.Objects)} objects", "head")
+            for obj in doc.Objects:
+                say("  " + _describe.summary(obj))
+            say("  describe <label> reads one out in full", "quiet")
+            return None
+    else:
+        # engine._resolve_names is the same lookup a selection step does,
+        # so both surfaces answer to a name identically -- and describe
+        # gets `describe A,B` out of sharing it.
+        objects = _engine_mod._resolve_names(target)
+        if not objects:
+            names = [o.Label for o in doc.Objects]
+            hint = _did_you_mean_from(names, target)
+            raise RuntimeError(
+                f"no object called {target!r}"
+                + (f" -- did you mean {hint}?" if hint else ""))
+
+    for obj in objects:
+        for heading, rows in _describe.sections(obj, verb_for=_verb_for_type):
+            say(heading, "head")
+            for key, value in rows:
+                say(f"    {key:<16} {value}" if key else f"    {value}")
+    return None
+
+
+_BY_TYPE = None
+
+
+def _verb_for_type(type_id):
+    """The verb that builds this type, when the type says which.
+
+    Only when exactly one verb claims it. A Draft line, a Draft point and
+    anything else Draft wraps are all Part::FeaturePython, so picking the
+    first claimant in registry order reported every Draft line as made by
+    point. A type that several verbs build does not identify one, and
+    saying nothing is the honest answer.
+
+    Built once. This was a linear scan of the whole registry -- 1258 verbs
+    -- for every object described.
+    """
+    global _BY_TYPE
+    if _BY_TYPE is None:
+        curated = _curation.current()
+        claims = {}
+        for name in REGISTRY.names():
+            creates = REGISTRY.get(name).creates
+            if creates:
+                claims.setdefault(creates, []).append(name)
+        _BY_TYPE = {}
+        for creates, names in claims.items():
+            # A verb somebody wrote answers for the type over one the
+            # factory generated for it -- `box` over the re-homed
+            # `part_box`, which ranks PROMOTED just the same. Where that
+            # leaves more than one, nothing about the type says which:
+            # line and point are both hand-written and both build a
+            # Part::FeaturePython.
+            written = [n for n in names if _curation.authored(REGISTRY.get(n))]
+            best = written or names
+            if len(best) == 1:
+                _BY_TYPE[creates] = best[0]
+    return _BY_TYPE.get(type_id) if type_id else None
+
+
+def _closest(names, token, limit=1):
+    """Closest names to a token, so a typo suggests its fix."""
+    import difflib
+    return difflib.get_close_matches(token.lower(), list(names),
+                                     n=limit, cutoff=0.6)
+
+
+def _did_you_mean_from(names, token):
+    hit = _closest(names, token)
+    return hit[0] if hit else None
 
 
 def _emit_screenshot(v):
@@ -501,9 +686,7 @@ def _show(value):
 
 def _did_you_mean(registry, token, limit=4):
     """Closest verb names, so a typo suggests its fix."""
-    import difflib
-    return difflib.get_close_matches(token.lower(), registry.names(),
-                                     n=limit, cutoff=0.6)
+    return _closest(registry.names(), token, limit)
 
 
 def _emit_units(v):
@@ -580,7 +763,7 @@ def _emit_man(v):
                 say(f"       {step.prompt}")
             if step.choices:
                 say("       one of:")
-                groups = _curation.current().choice_groups(verb.name)
+                groups = _curation.current().choice_groups(verb.name, verb)
                 if groups:
                     for heading, names in groups:
                         say(f"         {heading or 'ungrouped'}", "head")
@@ -696,33 +879,54 @@ def load_aliases():
     return count
 
 
-def _save_aliases(pairs):
+# What `shortcuts import` wrote, marked so `shortcuts drop` can find it
+# again. Without it drop had to guess, and its guess -- "does this look
+# like a key chord" -- is true of any alias of two or more letters, so it
+# deleted everything the operator had ever written.
+CHORD_MARK = "\t# chord"
+
+
+def _save_aliases(pairs, imported=()):
+    imported = set(imported)
     try:
         _paths.ensure(ALIAS_PATH)
         with open(ALIAS_PATH, "w", encoding="utf-8") as fh:
             fh.write("# fccli aliases -- <name>=<command>\n")
             for name, target in sorted(pairs.items()):
-                fh.write(f"{name}={target}\n")
+                mark = CHORD_MARK if name in imported else ""
+                fh.write(f"{name}={target}{mark}\n")
     except OSError:
         pass
 
 
-def _user_aliases():
-    """Everything in the alias file, as name -> command."""
-    pairs = {}
+def _read_aliases():
+    """The alias file, as (name -> command, names `shortcuts import` wrote)."""
+    pairs, imported = {}, set()
     try:
         with open(_paths.readable(ALIAS_PATH, "aliases"),
                   encoding="utf-8") as fh:
             for line in fh:
+                line = line.rstrip("\n")
+                marked = line.endswith(CHORD_MARK)
+                if marked:
+                    line = line[:-len(CHORD_MARK)]
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
                 name, _, target = line.partition("=")
-                if name.strip() and target.strip():
-                    pairs[name.strip()] = target.strip()
+                name, target = name.strip(), target.strip()
+                if name and target:
+                    pairs[name] = target
+                    if marked:
+                        imported.add(name)
     except OSError:
         pass
-    return pairs
+    return pairs, imported
+
+
+def _user_aliases():
+    """Everything in the alias file, as name -> command."""
+    return _read_aliases()[0]
 
 
 def _emit_alias(v):
@@ -733,7 +937,7 @@ def _emit_alias(v):
     """
     engine = v.get("_engine")
     name, target = v.get("name"), v.get("command")
-    pairs = _user_aliases()
+    pairs, imported = _read_aliases()
     if not name:
         if engine is None:
             return None
@@ -757,21 +961,23 @@ def _emit_alias(v):
         verb.aliases.append(name)
         REGISTRY.add(verb)
     pairs[name] = verb.name
-    _save_aliases(pairs)
+    # Writing one by hand makes it the operator's, whatever import called
+    # it before. Everyone else's mark survives.
+    _save_aliases(pairs, imported - {name})
     _say(v, f"{name} -> {verb.name}")
     return None
 
 
 def _emit_unalias(v):
     name = v["name"]
-    pairs = _user_aliases()
+    pairs, imported = _read_aliases()
     if name not in pairs:
         raise RuntimeError(f"no alias {name}")
     verb = REGISTRY.get(pairs[name])
     if verb is not None and name in verb.aliases:
         verb.aliases.remove(name)
     del pairs[name]
-    _save_aliases(pairs)
+    _save_aliases(pairs, imported - {name})
     REGISTRY.reindex()
     _say(v, f"removed {name}")
     return None
@@ -854,6 +1060,22 @@ def _emit_help(v):
         engine.bus.emit(_bus.INFO, f"  {name + alias:<18} {verb.doc}")
     return None
 
+
+REGISTRY.add(Verb(
+    name="shortcuts", transactional=False,
+    doc="Offer FreeCAD's key chords as aliases: A,X becomes ax.",
+    steps=[Step("what", CHOICE, "Do what", optional=True,
+                choices=["list", "why", "import", "drop"])],
+    emit=_emit_shortcuts,
+))
+
+REGISTRY.add(Verb(
+    name="describe", transactional=False, aliases=["desc", "what"],
+    doc="Read an object out as text. Bare, it lists what the document holds.",
+    steps=[Step("object", TEXT, "Object", optional=True,
+                completes="objects")],
+    emit=_emit_describe,
+))
 
 REGISTRY.add(Verb(
     name="screenshot", transactional=False, aliases=["shot", "capture"],

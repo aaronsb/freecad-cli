@@ -7,6 +7,7 @@ to appear, then drives it with the same client a person would use. Nothing
 here imports FreeCAD -- if the client can do it, so can a terminal.
 """
 
+import atexit
 import json
 import os
 import shutil
@@ -40,10 +41,11 @@ def socket_dir():
 
 def fccli(*args, **kw):
     kw.setdefault("stdin", subprocess.DEVNULL)
+    kw.setdefault("timeout", 60)
     if "input" in kw:
         kw.pop("stdin")
     proc = subprocess.run([sys.executable, CLIENT, *args],
-                          capture_output=True, text=True, timeout=60, **kw)
+                          capture_output=True, text=True, **kw)
     return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
 
 
@@ -90,6 +92,7 @@ def main():
     # Mod directory, so repointing it hides the installed addon. And
     # XDG_RUNTIME_DIR is left alone: the socket belongs where it belongs.
     scratch = tempfile.mkdtemp(prefix="fccli-socket-")
+    atexit.register(shutil.rmtree, scratch, True)   # one per run, else kept
     os.environ["XDG_STATE_HOME"] = os.path.join(scratch, "state")
 
     os.makedirs(socket_dir(), mode=0o700, exist_ok=True)
@@ -100,7 +103,9 @@ def main():
     if code == 0:
         print("socket: a FreeCAD is already running, and the suite would be "
               "testing the session someone is using. Clear it with:\n"
-              "    bin/fccli exec 'quit!'\n"
+              "    bin/fccli cancel && bin/fccli exec 'quit!'\n"
+              "(cancel first: a session part-way through a command reads "
+              "quit! as input for the step it is waiting on)\n"
               "An aborted run leaves one behind, so this is often its own "
               "leftover rather than yours.", file=sys.stderr)
         print(out, file=sys.stderr)
@@ -163,6 +168,47 @@ def main():
         fccli("exec", "")            # let the engine settle
         subprocess.run([sys.executable, CLIENT, "exec", "--", ""],
                        capture_output=True)
+
+        print("\n4b. a command FreeCAD refuses does not hang either")
+        # PartDesign_Revolution wants an active body and says so in a modal.
+        # Nobody is sitting in front of a socket, so the dialog waited for a
+        # click that never came and the caller waited with it -- while the
+        # same instance went on answering everything else, so it did not
+        # even look wedged. 25s, not the usual 60: a regression here should
+        # report, not stall the suite.
+        try:
+            code, out, err = fccli("exec", "revolve", timeout=25)
+        except subprocess.TimeoutExpired:
+            check("a refused command answers instead of hanging",
+                  "hung", "answered")
+            code, out, err = 1, "", ""
+        else:
+            check("a refused command exits 1", code, 1)
+            truthy("FreeCAD's own words come back",
+                   "body" in err.lower() or "select" in err.lower())
+            truthy("  and it says the answer was cancelled",
+                   "cancelled" in err.lower())
+        code, out, _ = fccli("state")
+        truthy("the instance is still idle afterwards", "engine    idle" in out)
+
+        print("\n4c. a session part-way through a command can be cleared")
+        # Every line goes to the step being collected, so `exec quit!` was
+        # answered with "still wants The radius" and an instance mid-command
+        # could not be shut down from outside at all. The server has always
+        # had a cancel op; nothing offered it.
+        code, out, err = fccli("exec", "cylinder")
+        check("an incomplete command leaves the engine collecting", code, 1)
+        code, out, _ = fccli("state")
+        truthy("  and state says so", "engine    collecting" in out)
+        code, out, _ = fccli("exec", "quit!")
+        code, out, _ = fccli("state")
+        truthy("quit! is read as input for the open step, not as a command",
+               "engine    collecting" in out)
+        code, out, _ = fccli("cancel")
+        check("cancel exits clean", code, 0)
+        truthy("  and says what it did", "cancelled" in out)
+        code, out, _ = fccli("state")
+        truthy("the engine is idle again", "engine    idle" in out)
 
         print("\n5. check never mutates")
         fccli("exec", "cancel") if False else None

@@ -51,6 +51,7 @@ class History:
         # once the ring is at its limit an add trims an entry as it appends
         # one, so the count stops changing while the contents do not.
         self.revision = 0
+        self._tally, self._tally_at = {}, None
         self.load()
 
     @staticmethod
@@ -139,6 +140,19 @@ class History:
                 return True
         return False
 
+    def tally(self):
+        """Frequency and recency per command, rebuilt only when the ring is.
+
+        completion cached this privately, so the toolbar's familiarity cue
+        walked the whole ring and built a dict of every verb to read one
+        count -- on every click.
+        """
+        from . import frecency
+        if self._tally_at != self.revision:
+            self._tally = frecency.tally(self.usage())
+            self._tally_at = self.revision
+        return self._tally
+
     def tail(self, limit=None):
         return self.entries[-limit:] if limit else list(self.entries)
 
@@ -155,6 +169,17 @@ class History:
         if not _paths.ensure(self.path):
             return
         try:
+            if not os.path.exists(self.path):
+                # First write to the new path. Appending one line here made
+                # readable() prefer a file holding that one line, and the
+                # ring loaded from the old path -- everything the operator
+                # had typed before the move -- became unreachable on the
+                # next start, with the frecency ranking left nothing to
+                # rank. Carry the ring across, the way _save_aliases does.
+                with open(self.path, "w", encoding="utf-8") as fh:
+                    for held in self.entries:
+                        if held != line:
+                            fh.write(f"{self.stamps.get(held, 0)}\t{held}\n")
             with open(self.path, "a", encoding="utf-8") as fh:
                 fh.write(f"{self.stamps.get(line, 0)}\t{line}\n")
         except OSError:

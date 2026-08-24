@@ -155,6 +155,95 @@ def suite_picker(dock):
     dock.engine.cancel()
 
 
+def suite_selection(dock):
+    print("\n4h. a verb that acts on a selection takes the live one")
+    doc = App.ActiveDocument or App.newDocument("sel")
+    sphere = doc.addObject("Part::Sphere", "Ball")
+    doc.recompute()
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(doc.Name, sphere.Name)
+
+    dock.engine.submit("move")
+    QtWidgets.QApplication.processEvents()
+    step = dock.engine.current_step()
+    truthy("having selected, it does not ask again",
+           step is not None and step.kind == "point")
+    check("  it went straight to the first point", step.id, "frm")
+    check("  and the selection is what it holds",
+          [o.Name for o in dock.engine.values.get("objects", [])], ["Ball"])
+    check("nothing is offered as an anchor by a selection",
+          dock.picker._last, None)
+
+    dock.engine.feed_point(App.Vector(0, 0, 0))
+    QtWidgets.QApplication.processEvents()
+    check("a real point becomes the anchor Draft draws from",
+          tuple(dock.picker._last), (0.0, 0.0, 0.0))
+    dock.engine.feed_point(App.Vector(50, 20, 0))
+    QtWidgets.QApplication.processEvents()
+    check("the move landed", tuple(sphere.Placement.Base), (50.0, 20.0, 0.0))
+    no_dialog("no dialog appeared")
+
+    # With nothing selected, it says so rather than sitting silently.
+    Gui.Selection.clearSelection()
+    errors = []
+    stop = dock.bus.subscribe(
+        lambda m: errors.append(m.text) if m.kind == "error" else None)
+    dock.engine.submit("move")
+    QtWidgets.QApplication.processEvents()
+    dock.engine.submit("")
+    QtWidgets.QApplication.processEvents()
+    truthy("with nothing selected, Enter explains itself",
+           any("nothing selected" in e for e in errors))
+    stop()
+    dock.engine.cancel()
+    doc.removeObject(sphere.Name)
+    doc.recompute()
+
+
+def suite_tracker(dock):
+    print("\n5a. Draft's own track line is the rubber band")
+    # Not our line. Passing lastpoint to Gui.Snapper.snap makes Draft light
+    # its lineTracker from there to the cursor. It never appeared before
+    # because lastpoint was arriving as a document object for any verb with
+    # a selection step, so Draft raised inside p1() before reaching on().
+    from fccli.picking import ensure_snapper
+    truthy("the snapper is available", ensure_snapper())
+    snapper = Gui.Snapper
+    truthy("Draft owns a track line", snapper.trackLine is not None)
+
+    snapper.off()
+    QtWidgets.QApplication.processEvents()
+    check("it is dark to begin with", snapper.trackLine.Visible, False)
+
+    snapper.snap((400, 300), lastpoint=App.Vector(0, 0, 0))
+    QtWidgets.QApplication.processEvents()
+    truthy("a snap with a last point lights it", snapper.trackLine.Visible)
+    check("  anchored at the point given",
+          tuple(snapper.trackLine.p1()), (0.0, 0.0, 0.0))
+    truthy("  and running to where the cursor snapped",
+           tuple(snapper.trackLine.p2()) != (0.0, 0.0, 0.0))
+
+    snapper.snap((400, 300))
+    QtWidgets.QApplication.processEvents()
+    check("no last point, no line", snapper.trackLine.Visible, False)
+
+    snapper.off()
+    QtWidgets.QApplication.processEvents()
+    check("Snapper.off puts it away, which is what teardown calls",
+          snapper.trackLine.Visible, False)
+
+    # And the engine feeds it a point, never anything else.
+    dock.engine.submit("line")
+    QtWidgets.QApplication.processEvents()
+    check("the first point has no anchor to offer", dock.picker._last, None)
+    dock.engine.feed_point(App.Vector(3, 4, 0))
+    QtWidgets.QApplication.processEvents()
+    check("the second is anchored on the first",
+          tuple(dock.picker._last), (3.0, 4.0, 0.0))
+    dock.engine.cancel()
+    QtWidgets.QApplication.processEvents()
+
+
 def suite_dock_geometry(dock):
     print("\n5b. the dock resizes, docked and floating")
     from fccli import dock as D
@@ -192,13 +281,19 @@ def suite_dock_geometry(dock):
     check("re-docked, the docked height comes back, not the floating one",
           D.saved_height(), 380)
 
-    # A stored size below the floor -- hand-edited, or written by a build
-    # before the floor existed -- must not produce an unusable window.
+    # A drag below MIN_FLOAT is deliberate -- minimumSizeHint allows it so a
+    # floating command line can be tucked into a corner -- and it now
+    # survives a re-float rather than snapping back to 320. Only a value
+    # small enough to leave a window nobody can find is clamped.
     from fccli.dock import params as _params
+    _params().SetInt("FloatWidth", 200)
+    _params().SetInt("FloatHeight", 90)
+    check("a size dragged below MIN_FLOAT is kept",
+          list(D.saved_float_size()), [200, 90])
     _params().SetInt("FloatWidth", 10)
     _params().SetInt("FloatHeight", 10)
     check("a stored size under the floor is clamped up",
-          list(D.saved_float_size()), list(D.MIN_FLOAT))
+          list(D.saved_float_size()), list(D.FLOOR_FLOAT))
     _params().SetInt("FloatWidth", 900)
     _params().SetInt("FloatHeight", 600)
     check("a stored size above it is taken as given",
@@ -239,6 +334,74 @@ def suite_check(dock, doc):
     truthy("it names a bad token", any("'zz'" in i for i in infos))
     check("nothing was created", len(doc.Objects), before)
     stop()
+
+
+def suite_modals(dock):
+    """A command that rejects the request must say so, not wait for a click.
+
+    Over the socket this hung the caller outright: the dialog waited for a
+    click nobody was there to make, while the same instance went on
+    answering everything else, so it did not even look broken.
+
+    Driven through engine.submit rather than modals.intercepted, so it
+    asserts what the operator sees -- an error on the bus, no object, and
+    the transaction rolled back -- rather than only what the filter caught.
+    """
+    print("\n7b. a rejected request answers on the command line")
+    from fccli import modals
+
+    errors, infos = [], []
+    stop = dock.bus.subscribe(
+        lambda m: errors.append(m.text) if m.kind == "error"
+        else (infos.append(m.text) if m.kind == "info" else None))
+
+    dock.engine.submit("new modals")
+    doc = App.ActiveDocument
+    doc.addObject("Part::Box", "Slab")
+    doc.recompute()
+    before, undo_before = len(doc.Objects), len(doc.UndoNames)
+
+    # PartDesign_Revolution wants an active body and says so in a modal.
+    dock.engine.submit("revolve")
+    for _ in range(30):
+        QtWidgets.QApplication.processEvents()
+
+    truthy("the refusal reaches the bus as an error", bool(errors))
+    truthy("  naming the verb that was typed",
+           any(e.startswith("revolve") for e in errors))
+    truthy("  and carrying what FreeCAD said",
+           any("body" in e.lower() or "select" in e.lower() for e in errors))
+    check("nothing was created", len(doc.Objects), before)
+    check("no undo step was left behind", len(doc.UndoNames), undo_before)
+    check("no modal is left waiting",
+          QtWidgets.QApplication.activeModalWidget(), None)
+    check("the engine is idle again", dock.engine.state, "idle")
+
+    # A notice is the command reporting that it worked. Reading every
+    # one-button box as a rejection rolled the transaction back and called
+    # a success a failure.
+    errors.clear()
+    with modals.intercepted() as caught:
+        box = QtWidgets.QMessageBox(Gui.getMainWindow())
+        box.setIcon(QtWidgets.QMessageBox.Information)
+        box.setWindowTitle("Mesh check")
+        box.setText("No errors found in the mesh.")
+        box.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        QtCore.QTimer.singleShot(0, box.exec)
+        for _ in range(30):
+            QtWidgets.QApplication.processEvents()
+    truthy("an informational box is caught", bool(caught.notices))
+    check("  and does not fail the command", bool(caught), False)
+    check("  nor is it left on screen",
+          QtWidgets.QApplication.activeModalWidget(), None)
+
+    # Nobody clicked anything above: the filter's own deferred press is
+    # what dismissed both, which the hand-clicked version never exercised.
+    truthy("the filter dismissed them itself",
+           QtWidgets.QApplication.activeModalWidget() is None)
+
+    stop()
+    dock.engine.submit("close!")
 
 
 def suite_roundtrip(dock):
@@ -334,10 +497,13 @@ def run():
         suite_keys(dock)
         doc = suite_geometry(dock)
         suite_undo(dock, doc)
+        suite_selection(dock)
         suite_picker(dock)
+        suite_tracker(dock)
         suite_dock_geometry(dock)
         suite_units(dock)
         suite_check(dock, doc)
+        suite_modals(dock)
         suite_roundtrip(dock)
         suite_shutdown(dock)
     except Exception:

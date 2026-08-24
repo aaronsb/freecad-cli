@@ -11,12 +11,49 @@ form, so a fully mouse-driven command can be replayed from history as text.
 from typing import Any, Dict, List, Optional
 
 from . import bus as _bus
+from . import modals
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
                       Registry, Step, Verb, order_of)
 from .parsing import format_point, format_quantity, parse_point, parse_quantity
 
 IDLE = "idle"
 COLLECTING = "collecting"
+
+
+def _selection_text(objects):
+    """How a selection reads back in history: by label, so it replays."""
+    return ",".join(o.Label for o in objects)
+
+
+def current_selection():
+    """What is selected in FreeCAD right now, as objects.
+
+    Asked of the GUI rather than tracked here: somebody can select in the
+    tree, in the viewport, or with a previous command, and all three are
+    the same answer.
+    """
+    try:
+        import FreeCADGui as Gui
+        selection = getattr(Gui, "Selection", None)
+        if selection is None:
+            return []
+        return list(selection.getSelection())
+    except Exception:
+        return []
+
+
+def _resolve_names(text):
+    """Labels or names typed at a selection step, as objects."""
+    try:
+        import FreeCAD as App
+        doc = App.ActiveDocument
+        if doc is None:
+            return []
+        wanted = [w.strip().lower() for w in text.split(",") if w.strip()]
+        return [o for o in doc.Objects
+                if o.Label.lower() in wanted or o.Name.lower() in wanted]
+    except Exception:
+        return []
 
 
 def _open_transaction(verb, label):
@@ -128,11 +165,21 @@ class Engine:
         return step is not None and step.kind in (POINT, QUANTITY)
 
     def last_point(self) -> Optional[Any]:
+        """The most recent point placed, for snapping and the rubber band.
+
+        Only a point step holds a point. Scanning every step for anything
+        list-shaped handed back the last selected object for any verb with
+        a selection step -- `move` gave Draft's snapper a Part::Sphere
+        where it wanted a vector, on every mouse move, which raises inside
+        Draft after it has already half-configured its own tracker.
+        """
         for step in reversed(self.prompt_sequence()):
+            if step.kind != POINT:
+                continue
             v = self.values.get(step.id)
             if isinstance(v, list) and v:
-                return v[-1]
-            if v is not None and hasattr(v, "x"):
+                v = v[-1]
+            if v is not None and hasattr(v, "x") and hasattr(v, "y"):
                 return v
         return None
 
@@ -276,6 +323,12 @@ class Engine:
                 self.bus.emit(_bus.ERROR, res.error)
                 return
             self._accept(step, res.value, format_quantity(res.value, step.unit))
+        elif step.kind == SELECTION:
+            found = _resolve_names(text)
+            if not found:
+                self.bus.emit(_bus.ERROR, f"no object called {text!r}")
+                return
+            self._accept(step, found, _selection_text(found))
         elif step.kind in (TEXT, PATH):
             self._accept(step, text, text)
         elif step.kind == CHOICE:
@@ -304,6 +357,21 @@ class Engine:
                      else parse_quantity(text))
             if probe.ok:
                 return False
+        if step.kind == CHOICE and step.choices:
+            # A choice the step declares is input, whatever else shares its
+            # name. `view sketch` used to cancel view and run the sketch
+            # verb; 242 verb-and-choice pairs read that way, including
+            # `constrain coincident` and `additive helix`.
+            if any(c.lower().startswith(token) for c in step.choices):
+                return False
+        if step.kind == SELECTION and _resolve_names(text):
+            # An object that exists is input, and FreeCAD's default labels
+            # are the verb names: Box, Cylinder, Sphere, Cone, Line, Circle,
+            # Point. Typing `Box` at move's selection step cancelled move
+            # and started the box verb asking for a Length, which made
+            # _resolve_names unreachable for exactly the labels FreeCAD
+            # hands out.
+            return False
         hits = self.registry.resolve_prefix(token)
         if len(hits) != 1:
             return False
@@ -346,6 +414,15 @@ class Engine:
             else:
                 self._announce()
             return
+        if step.kind == SELECTION:
+            picked = current_selection()
+            if not picked:
+                self.bus.emit(_bus.ERROR,
+                              "nothing selected -- select in the tree or the "
+                              "viewport, or name it")
+                return
+            self._accept(step, picked, _selection_text(picked))
+            return
         if step.default is not None:
             self._accept(step, step.default, str(step.default))
             return
@@ -379,13 +456,26 @@ class Engine:
             return
         doc = _open_transaction(verb, replay)
         try:
-            obj = verb.emit({**values, "_flags": flags, "_engine": self})
+            with modals.intercepted(force=flags.get("force")) as caught:
+                obj = verb.emit({**values, "_flags": flags, "_engine": self})
         except Exception as exc:
             _abort_transaction(doc)
             self.bus.emit(_bus.ERROR, f"{verb.name} failed: {exc}")
             self._announce()
             return
+        if caught:
+            # FreeCAD rejected the request. That is the same kind of answer
+            # as a bad quantity, and it travels the same way -- rather than
+            # waiting behind a dialog for a click nobody is there to make.
+            _abort_transaction(doc)
+            self.bus.emit(_bus.ERROR, f"{verb.name}: {caught.fault}")
+            self._announce()
+            return
         _commit_transaction(doc)
+        for notice in caught.notices:
+            # The command worked and had something to say. It said it in a
+            # box nobody could click, so say it here instead.
+            self.bus.emit(_bus.INFO, notice)
         self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
                       object=obj, picked=picked, typed=typed,
                       record=verb.record)
@@ -427,6 +517,13 @@ class Engine:
             self.bus.emit(_bus.PROMPT, "", step_kind=None, options=[], idle=True)
             self._stop_picking()
             return
+        if step.kind == SELECTION:
+            # Select the thing, then say what to do to it. Somebody who has
+            # already selected should not be asked to select again.
+            picked = current_selection()
+            if picked:
+                self._accept(step, picked, _selection_text(picked))
+                return
         self.bus.emit(_bus.PROMPT, step.prompt, step_kind=step.kind,
                       options=step.option_names(), idle=False)
         if step.kind == POINT and self.picker:

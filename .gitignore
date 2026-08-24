@@ -5,3 +5,6 @@ __pycache__/
 .idea/
 .vscode/
 fccli/_build.py
+
+# Documents a GUI test run saves
+tests/*.FCStd*

@@ -1886,46 +1886,6 @@
    "toolbar": null,
    "tooltip": "VcarveCreates a medial line engraving toolpathCAM_Vcarve"
   },
-  "CurvedArray": {
-   "icon": true,
-   "label": "Curved Array",
-   "menu": "Curved Shapes",
-   "name": "CurvedArray",
-   "shortcut": null,
-   "status": "Creates an array and resizes the items in the bounds of curves in the XY, XZ or YZ plane.",
-   "toolbar": "Curved Shapes",
-   "tooltip": "Curved ArrayCreates an array and resizes the items in the bounds of curves in theXY, XZ or YZ plane.CurvedArray"
-  },
-  "CurvedPathArray": {
-   "icon": true,
-   "label": "Curved Path Array",
-   "menu": "Curved Shapes",
-   "name": "CurvedPathArray",
-   "shortcut": null,
-   "status": "Creates an array, sweeps the elements around a path curve, and resizes the items in the bounds of optional hullcurves.",
-   "toolbar": "Curved Shapes",
-   "tooltip": "Curved Path ArrayCreates an array, sweeps the elements around a path curve, and resizesthe items in the bounds of optional hullcurves.CurvedPathArray"
-  },
-  "CurvedPathSegment": {
-   "icon": true,
-   "label": "Curved Path Segment",
-   "menu": "Curved Shapes",
-   "name": "CurvedPathSegment",
-   "shortcut": null,
-   "status": "Interpolates a 3D shape between two 2D curves and optional hullcurves along a path",
-   "toolbar": "Curved Shapes",
-   "tooltip": "Curved Path SegmentInterpolates a 3D shape between two 2D curves and optional hullcurvesalong a pathCurvedPathSegment"
-  },
-  "CurvedSegment": {
-   "icon": true,
-   "label": "Curved Segment",
-   "menu": "Curved Shapes",
-   "name": "CurvedSegment",
-   "shortcut": null,
-   "status": "Interpolates a 3D shape between two 2D curves and optional hullcurves",
-   "toolbar": "Curved Shapes",
-   "tooltip": "Curved SegmentInterpolates a 3D shape between two 2D curves and optional hullcurvesCurvedSegment"
-  },
   "Draft_AddConstruction": {
    "icon": true,
    "label": "Add to Construction Group",
@@ -2749,9 +2709,6 @@
    "toolbar": "Draft Utility",
    "tooltip": "Working Plane ProxyCreates a proxy object from the current working plane that allows torestore the camera position and visibility of objectsDraft_WorkingPlaneProxy"
   },
-  "FCCLI_Toggle": {
-   "name": "FCCLI_Toggle"
-  },
   "FEM_Analysis": {
    "icon": true,
    "label": "New Analysis",
@@ -3552,36 +3509,6 @@
    "toolbar": null,
    "tooltip": "Solver Z88 (S, Z)Creates a FEM solver Z88FEM_SolverZ88"
   },
-  "FishingLure": {
-   "icon": true,
-   "label": "Fishing Lure",
-   "menu": "Examples",
-   "name": "FishingLure",
-   "shortcut": null,
-   "status": "Example fishing lure shapes demonstrating the PreserveAspectRatio property of CurvedArray",
-   "toolbar": null,
-   "tooltip": "Fishing LureExample fishing lure shapes demonstrating the PreserveAspectRatioproperty of CurvedArrayFishingLure"
-  },
-  "FlyingWingS800": {
-   "icon": true,
-   "label": "S800",
-   "menu": "Examples",
-   "name": "FlyingWingS800",
-   "shortcut": null,
-   "status": "A cheap flying wing",
-   "toolbar": null,
-   "tooltip": "S800A cheap flying wingFlyingWingS800"
-  },
-  "Horten_HIX": {
-   "icon": true,
-   "label": "Horten H IX",
-   "menu": "Examples",
-   "name": "Horten_HIX",
-   "shortcut": null,
-   "status": "Example shape of a stealth fighter from WW2",
-   "toolbar": null,
-   "tooltip": "Horten H IXExample shape of a stealth fighter from WW2Horten_HIX"
-  },
   "IFC_ConvertDocument": {
    "name": "IFC_ConvertDocument"
   },
@@ -3650,16 +3577,6 @@
    "status": "Inspects the objects visually",
    "toolbar": null,
    "tooltip": "Visual Inspection\u2026Inspects the objects visuallyInspection_VisualInspection"
-  },
-  "InterpolatedMiddle": {
-   "icon": true,
-   "label": "Interpolated Middle",
-   "menu": "Curved Shapes",
-   "name": "InterpolatedMiddle",
-   "shortcut": null,
-   "status": "Interpolates a 2D shape into the middle between two 2D curves",
-   "toolbar": "Curved Shapes",
-   "tooltip": "Interpolated MiddleInterpolates a 2D shape into the middle between two 2D curvesInterpolatedMiddle"
   },
   "Material_Edit": {
    "icon": true,
@@ -4064,16 +3981,6 @@
    "status": "Calculates the curvature of the vertices of a mesh",
    "toolbar": "Mesh Analyze",
    "tooltip": "Curvature PlotCalculates the curvature of the vertices of a meshMesh_VertexCurvature"
-  },
-  "NotchConnector": {
-   "icon": true,
-   "label": "Notch Connector",
-   "menu": "Curved Shapes",
-   "name": "NotchConnector",
-   "shortcut": null,
-   "status": "Cuts notches into an object to make it connectable other objects with a notch",
-   "toolbar": "Curved Shapes",
-   "tooltip": "Notch ConnectorCuts notches into an object to make it connectable other objects witha notchNotchConnector"
   },
   "OpenSCAD_AddOpenSCADElement": {
    "name": "OpenSCAD_AddOpenSCADElement"
@@ -6904,16 +6811,6 @@
    "toolbar": "Spreadsheet",
    "tooltip": "Underline Text (Ctrl+U)Underlines the text in the selected cellsSpreadsheet_StyleUnderline"
   },
-  "Start_RPC_Server": {
-   "icon": false,
-   "label": "Start RPC Server",
-   "menu": "FreeCAD MCP",
-   "name": "Start_RPC_Server",
-   "shortcut": null,
-   "status": "Start RPC Server",
-   "toolbar": "FreeCAD MCP",
-   "tooltip": "Start RPC ServerStart_RPC_Server"
-  },
   "Start_Start": {
    "icon": true,
    "label": "&Start Page",
@@ -8871,26 +8768,6 @@
    "status": "Switches between workbenches",
    "toolbar": null,
    "tooltip": "Test Framework"
-  },
-  "Stop_RPC_Server": {
-   "icon": false,
-   "label": "Stop RPC Server",
-   "menu": "FreeCAD MCP",
-   "name": "Stop_RPC_Server",
-   "shortcut": null,
-   "status": "Stop RPC Server",
-   "toolbar": "FreeCAD MCP",
-   "tooltip": "Stop RPC ServerStop_RPC_Server"
-  },
-  "SurfaceCut": {
-   "icon": true,
-   "label": "Surface Cut",
-   "menu": "Curved Shapes",
-   "name": "SurfaceCut",
-   "shortcut": null,
-   "status": "Creates a wire by cutting through surfaces",
-   "toolbar": "Curved Shapes",
-   "tooltip": "Surface CutCreates a wire by cutting through surfacesSurfaceCut"
   },
   "Surface_BlendCurve": {
    "icon": true,
@@ -14893,32 +14770,6 @@
    "types": [
     "App::TextDocument",
     "Fem::FemPostPipeline"
-   ]
-  },
-  "FishingLure": {
-   "confidence": "traced",
-   "types": [
-    "Part::Revolution"
-   ]
-  },
-  "FlyingWingS800": {
-   "confidence": "weak",
-   "types": [
-    "Part::Compound",
-    "Part::Cut",
-    "Part::Extrusion",
-    "Part::Loft",
-    "Part::Mirroring",
-    "Sketcher::SketchObject"
-   ]
-  },
-  "Horten_HIX": {
-   "confidence": "weak",
-   "types": [
-    "Part::Compound",
-    "Part::Cut",
-    "Part::Mirroring",
-    "Part::Spline"
    ]
   },
   "IFC_MakeProject": {
@@ -28306,7 +28157,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -28412,7 +28263,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -28633,7 +28484,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -28739,7 +28590,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -28803,7 +28654,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat hatch file. System use only.",
      "group": "GeomHatch",
      "kind": "path",
@@ -28866,7 +28717,7 @@
      "property_type": "App::PropertyLinkSub"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded SVG hatch file. System use only.",
      "group": "Hatch",
      "kind": "path",
@@ -29621,7 +29472,7 @@
      "property_type": "App::PropertyFile"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/blankTile.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/blankTile.svg",
      "doc": "Embedded Symbol. System use only.",
      "group": "TileWeld",
      "kind": "path",
@@ -29695,7 +29546,7 @@
      "property_type": "App::PropertyFile"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/blankTile.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/blankTile.svg",
      "doc": "Embedded Symbol. System use only.",
      "group": "TileWeld",
      "kind": "path",
@@ -31064,7 +30915,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -31157,7 +31008,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -31370,7 +31221,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -31463,7 +31314,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -32030,10 +31881,6 @@
   "CAM_ToolBitSaveAs",
   "CAM_ToolController",
   "CAM_Vcarve",
-  "CurvedArray",
-  "CurvedPathArray",
-  "CurvedPathSegment",
-  "CurvedSegment",
   "Draft_AddConstruction",
   "Draft_AddNamedGroup",
   "Draft_AddToGroup",
@@ -32114,7 +31961,6 @@
   "Draft_Wire",
   "Draft_WireToBSpline",
   "Draft_WorkingPlaneProxy",
-  "FCCLI_Toggle",
   "FEM_Analysis",
   "FEM_ClippingPlaneAdd",
   "FEM_ClippingPlaneRemoveAll",
@@ -32209,9 +32055,6 @@
   "FEM_SolverMystran",
   "FEM_SolverRun",
   "FEM_SolverZ88",
-  "FishingLure",
-  "FlyingWingS800",
-  "Horten_HIX",
   "IFC_ConvertDocument",
   "IFC_Diff",
   "IFC_Expand",
@@ -32221,7 +32064,6 @@
   "IFC_UpdateIOS",
   "Inspection_InspectElement",
   "Inspection_VisualInspection",
-  "InterpolatedMiddle",
   "Material_Edit",
   "Materials_InspectAppearance",
   "Materials_InspectMaterial",
@@ -32268,7 +32110,6 @@
   "Mesh_TrimByPlane",
   "Mesh_Union",
   "Mesh_VertexCurvature",
-  "NotchConnector",
   "OpenSCAD_AddOpenSCADElement",
   "OpenSCAD_ColorCodeShape",
   "OpenSCAD_Edgestofaces",
@@ -32543,7 +32384,6 @@
   "Spreadsheet_StyleBold",
   "Spreadsheet_StyleItalic",
   "Spreadsheet_StyleUnderline",
-  "Start_RPC_Server",
   "Start_Start",
   "Std_About",
   "Std_AboutQt",
@@ -32758,8 +32598,6 @@
   "Std_Windows",
   "Std_WindowsMenu",
   "Std_Workbench",
-  "Stop_RPC_Server",
-  "SurfaceCut",
   "Surface_BlendCurve",
   "Surface_CurveOnMesh",
   "Surface_ExtendFace",
@@ -36043,7 +35881,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -36149,7 +35987,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -36359,7 +36197,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -36465,7 +36303,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -36525,7 +36363,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat hatch file. System use only.",
      "group": "GeomHatch",
      "kind": "path",
@@ -36584,7 +36422,7 @@
      "property_type": "App::PropertyLinkSub"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded SVG hatch file. System use only.",
      "group": "Hatch",
      "kind": "path",
@@ -37273,7 +37111,7 @@
      "property_type": "App::PropertyFile"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/blankTile.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/blankTile.svg",
      "doc": "Embedded Symbol. System use only.",
      "group": "TileWeld",
      "kind": "path",
@@ -37342,7 +37180,7 @@
      "property_type": "App::PropertyFile"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/blankTile.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/blankTile.svg",
      "doc": "Embedded Symbol. System use only.",
      "group": "TileWeld",
      "kind": "path",
@@ -38620,7 +38458,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -38713,7 +38551,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -38916,7 +38754,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -39009,7 +38847,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_b988ae20-854f-486e-b994-fc4be646e364_da39a3_459773/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_8ef531c5-b4b8-4eaa-b36d-f940cdde9d26_da39a3_116131/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -47874,10 +47712,8 @@
   "AssemblyWorkbench",
   "BIMWorkbench",
   "CAMWorkbench",
-  "CurvedShapesWB",
   "DraftWorkbench",
   "FemWorkbench",
-  "FreeCADMCPAddonWorkbench",
   "InspectionWorkbench",
   "MaterialWorkbench",
   "MeshWorkbench",

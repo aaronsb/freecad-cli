@@ -226,6 +226,7 @@ def build_family_verb(name, members):
                     choices=choices)],
         emit=_emit_family(members),
         doc=f"{len(choices)} commands FreeCAD spreads apart: {labels}...",
+        family=name,
     )
 
 
