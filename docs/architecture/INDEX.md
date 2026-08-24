@@ -22,6 +22,13 @@ _What the verbs are — descriptor, harvest, factory tiers, families, patches, t
 |-----|-------|--------|
 | [ADR-100](./vocabulary/ADR-100-the-command-dictionary.md) | The command dictionary | Accepted |
 
+## Surface
+_How it is presented and reached — dock, prompt, colour, completion, message bus, socket, external shell, history_
+
+| ADR | Title | Status |
+|-----|-------|--------|
+| [ADR-300](./surface/ADR-300-the-prompt-shows-where-the-session-is.md) | The prompt shows where the session is | Accepted |
+
 ## Practice
 _How the project is built and checked — test tiers, review, release, reconcile, records_
 
