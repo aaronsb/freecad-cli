@@ -17,15 +17,39 @@ PALETTE = {
     "option":   ("#dcdcaa", False),
     "object":   ("#9cdcfe", False),
     "sep":      ("#808080", False),
+
+    # Coordinates carry FreeCAD's axis colours, desaturated. The viewport
+    # already teaches red-green-blue for x-y-z; the command line says the
+    # same thing. Muted so an x never reads as the error red, which stays
+    # saturated and keeps its wavy underline.
+    "axis_x":   ("#d98e73", False),
+    "axis_y":   ("#8fbc7a", False),
+    "axis_z":   ("#7aa6d9", False),
+
+    # A number's dimension, named by FreeCAD's Unit.Type.
+    "dim_length": ("#b5cea8", False),
+    "dim_angle":  ("#c9a26d", False),
+    "dim_area":   ("#a3c9a8", False),
+    "dim_volume": ("#a3c9a8", False),
+    "dim_mass":   ("#c9b0d9", False),
+    "scalar":     ("#9cb8c9", False),
 }
 
 
-def _fmt(role):
+def _fmt(role, italic=False):
+    """Weight and slant each carry one meaning.
+
+    Bold is the verb: the token that decides what every other token means.
+    Italic is anything the command line supplied rather than the person --
+    a unit taken from the schema, or a suggestion not yet accepted.
+    """
     colour, bold = PALETTE[role]
     f = QtGui.QTextCharFormat()
     f.setForeground(QtGui.QColor(colour))
     if bold:
         f.setFontWeight(QtGui.QFont.Bold)
+    if italic:
+        f.setFontItalic(True)
     if role == "bad":
         f.setUnderlineStyle(QtGui.QTextCharFormat.WaveUnderline)
         f.setUnderlineColor(QtGui.QColor(colour))
@@ -38,6 +62,11 @@ class InputHighlighter(QtGui.QSyntaxHighlighter):
         self.console = console
         self.engine = engine
         self.formats = {k: _fmt(k) for k in PALETTE}
+        self.implicit_formats = {k: _fmt(k, italic=True) for k in PALETTE}
+
+    def format_for(self, role, implicit=False):
+        table = self.implicit_formats if implicit else self.formats
+        return table.get(role, self.formats["number"])
 
     def highlightBlock(self, text):
         doc = self.document()
@@ -50,9 +79,10 @@ class InputHighlighter(QtGui.QSyntaxHighlighter):
 
     # ----------------------------------------------------------------------
 
-    def _apply(self, start, length, role):
+    def _apply(self, start, length, role, implicit=False):
         if length > 0:
-            self.setFormat(start, length, self.formats[role])
+            table = self.implicit_formats if implicit else self.formats
+            self.setFormat(start, length, table[role])
 
     def _highlight_input(self, body, base):
         step = self.engine.current_step()
@@ -97,7 +127,74 @@ class InputHighlighter(QtGui.QSyntaxHighlighter):
             role = span.role if span.ok else "bad"
             if role not in PALETTE:
                 role = "number"
-            self._apply(at + span.start, span.end - span.start, role)
+            self._apply(at + span.start, span.end - span.start, role,
+                        implicit=span.implicit)
+
+
+def command_spans(registry, text, offset=0):
+    """Spans for a whole command line, resolved from the line itself.
+
+    The input highlighter asks the engine what step is open. A line already
+    in the scrollback has no open step -- the engine moved on -- so the verb
+    is read from the first token and its own steps walked. That is what lets
+    a finished command stay coloured in the transcript rather than going
+    flat the moment it runs.
+    """
+    from .parsing import parse_point, parse_quantity
+    from .grammar import POINT, QUANTITY, SELECTION, CHOICE
+
+    out = []
+    tokens = _tokens(text)
+    if not tokens:
+        return out
+
+    start, first = tokens[0]
+    hits = registry.resolve_prefix(first.rstrip("!"))
+    verb = registry.get(hits[0]) if len(hits) == 1 else None
+    out.append((offset + start, len(first), "verb" if verb else "unknown",
+                False))
+    if verb is None:
+        return out
+
+    index, last_point = 0, None
+    for start, token in tokens[1:]:
+        step = verb.steps[min(index, len(verb.steps) - 1)] if verb.steps else None
+        if step is None:
+            out.append((offset + start, len(token), "option", False))
+            continue
+        if any(o.name.lower().startswith(token.lower()) for o in step.options):
+            out.append((offset + start, len(token), "option", False))
+            continue
+        if step.kind == POINT:
+            res = parse_point(token, last_point)
+            if res.ok:
+                last_point = res.value
+            _extend(out, res, offset + start, len(token))
+        elif step.kind == QUANTITY:
+            _extend(out, parse_quantity(token, unit_hint=step.unit),
+                    offset + start, len(token))
+        elif step.kind in (SELECTION,):
+            out.append((offset + start, len(token),
+                        "object" if _resolves(token) else "unknown", False))
+        elif step.kind == CHOICE:
+            ok = any(c.lower().startswith(token.lower()) for c in step.choices)
+            out.append((offset + start, len(token),
+                        "option" if ok else "unknown", False))
+        else:
+            out.append((offset + start, len(token), "number", False))
+        if not step.repeat:
+            index += 1
+    return out
+
+
+def _extend(out, res, base, length):
+    if not res.spans:
+        out.append((base, length, "number" if res.ok else "bad", False))
+        return
+    for span in res.spans:
+        role = span.role if span.ok else "bad"
+        out.append((base + span.start, span.end - span.start,
+                    role if role in PALETTE else "number", span.implicit))
 
 
 def _tokens(text):

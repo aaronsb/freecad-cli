@@ -200,7 +200,7 @@ class Engine:
                 return
             self._accept(step, res.value, format_point(res.value))
         elif step.kind == QUANTITY:
-            res = parse_quantity(text)
+            res = parse_quantity(text, unit_hint=step.unit)
             if not res.ok:
                 self.bus.emit(_bus.ERROR, res.error)
                 return

@@ -17,13 +17,36 @@ Vector = App.Vector
 REL_PREFIXES = ("@", "r")  # AutoCAD's @, Rhino's r
 POLAR = "<"
 
+# The axes, in the order a coordinate is written and in the order FreeCAD
+# colours them in the viewport.
+AXIS_ROLES = ("axis_x", "axis_y", "axis_z")
+
+
+def dimension_role(quantity):
+    """The role a parsed number carries, named by FreeCAD's own dimension.
+
+    Unit.Type answers Length, Angle, Area, Mass and so on, so nothing here
+    keeps a table of what a unit means.
+    """
+    try:
+        kind = quantity.Unit.Type
+    except Exception:
+        return "number"
+    if not kind or kind == "1":
+        return "scalar"
+    return "dim_" + kind.lower()
+
 
 @dataclass
 class Span:
     start: int
     end: int
-    role: str          # "number" | "unit" | "prefix" | "bad" | "sep"
+    role: str          # axis_x/y/z, dim_*, scalar, prefix, sep, bad
     ok: bool = True
+    # True when the unit was supplied by the schema rather than typed. A
+    # renderer can say so, which is the difference between "12 of whatever
+    # I am reading in" and "12mm, stated".
+    implicit: bool = False
 
 
 @dataclass
@@ -50,9 +73,12 @@ def parse_quantity(text: str, unit_hint: str = "mm") -> ParseResult:
     t = text.strip()
     if not t:
         return ParseResult(ok=False, error="empty")
+    implicit = False
     if BARE_NUMBER.match(t):
-        from .units import preferred
-        t = t + preferred("angle" if unit_hint == "deg" else "length")
+        if unit_hint:
+            from .units import preferred
+            t = t + preferred("angle" if unit_hint == "deg" else "length")
+            implicit = True
     try:
         q = Units.Quantity(t)
     except (ValueError, TypeError):
@@ -62,7 +88,9 @@ def parse_quantity(text: str, unit_hint: str = "mm") -> ParseResult:
             spans=[Span(0, len(text), "bad", False)],
             error=f"{t!r} is not a number or quantity",
         )
-    return ParseResult(ok=True, value=q.Value, spans=[Span(0, len(text), "number")])
+    return ParseResult(ok=True, value=q.Value,
+                       spans=[Span(0, len(text), dimension_role(q),
+                                   implicit=implicit)])
 
 
 def _split_components(text: str) -> List[Tuple[int, str]]:
@@ -119,10 +147,11 @@ def parse_point(text: str, last: Optional[Vector] = None) -> ParseResult:
     if POLAR in body:
         dist_s, _, ang_s = body.partition(POLAR)
         d = parse_quantity(dist_s)
-        a = parse_quantity(ang_s)
+        a = parse_quantity(ang_s, unit_hint="deg")
         for res, base in ((d, offset), (a, offset + len(dist_s) + 1)):
             for s in res.spans:
-                spans.append(Span(base + s.start, base + s.end, s.role, s.ok))
+                spans.append(Span(base + s.start, base + s.end, s.role, s.ok,
+                                  s.implicit))
         spans.append(Span(offset + len(dist_s), offset + len(dist_s) + 1, "sep"))
         if not (d.ok and a.ok):
             return ParseResult(ok=False, spans=spans, error="bad polar coordinate")
@@ -139,11 +168,15 @@ def parse_point(text: str, last: Optional[Vector] = None) -> ParseResult:
                            error="expected 2 or 3 comma-separated components")
 
     vals, all_ok = [], True
-    for start, comp in comps:
+    for index, (start, comp) in enumerate(comps):
         res = parse_quantity(comp)
         base = offset + start
+        # A coordinate is always written x, y, z, so each component can be
+        # coloured for its axis rather than as an anonymous number.
+        axis = AXIS_ROLES[index] if index < len(AXIS_ROLES) else "number"
         for s in res.spans:
-            spans.append(Span(base + s.start, base + s.end, s.role, s.ok))
+            spans.append(Span(base + s.start, base + s.end,
+                              axis if s.ok else s.role, s.ok, s.implicit))
         if res.ok:
             vals.append(res.value)
         else:

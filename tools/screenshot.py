@@ -129,6 +129,35 @@ def shot_check(dock):
     save(dock, "check.png")
 
 
+def shot_colour(dock):
+    """Axis colours, dimensions, and italic for an implied unit."""
+    set_height(dock, 260)
+    dock.engine.submit("units internal")
+    dock.engine.submit("clear")
+    for line in ("box 0,0,0 40mm 30 20",
+                 "circle 10,20,30 3/8in",
+                 "polyline 0,0,0 @40,-15,0 100<45 close"):
+        dock.engine.submit(line)
+    dock.engine.submit("polyline")
+    dock.engine.submit("10,20,30")
+    dock.console.set_input("@40,-15,zz")
+    QtWidgets.QApplication.processEvents()
+    save(dock, "colour_point.png")
+    dock.console.set_input("")
+    dock.engine.cancel()
+
+    dock.engine.submit("clear")
+    dock.engine.submit("cylinder")
+    dock.console.set_input("12")           # bare: unit implied, italic
+    QtWidgets.QApplication.processEvents()
+    save(dock, "colour_implicit.png")
+    dock.console.set_input("12mm")         # stated: upright
+    QtWidgets.QApplication.processEvents()
+    save(dock, "colour_explicit.png")
+    dock.console.set_input("")
+    dock.engine.cancel()
+
+
 def shot_man(dock):
     set_height(dock, 380)
     dock.engine.submit("clear")
@@ -220,6 +249,7 @@ def run():
     shot_console(dock)
     shot_midcommand(dock)
     shot_units(dock)
+    shot_colour(dock)
     shot_check(dock)
     shot_man(dock)
     shot_hero(dock)

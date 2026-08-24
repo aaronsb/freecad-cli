@@ -108,6 +108,32 @@ class Console(QtWidgets.QPlainTextEdit):
         self.setTextCursor(cur)
         self.ensureCursorVisible()
 
+    def _paint_spans(self, cursor, text, base_role):
+        """Colour a finished command in the transcript the way it was typed.
+
+        A command that goes flat the moment it runs loses exactly the thing
+        that made it readable while it was being typed.
+        """
+        from .highlight import command_spans
+        indent = len(text) - len(text.lstrip())
+        try:
+            spans = command_spans(self.engine.registry, text[indent:], indent)
+        except Exception:
+            spans = []
+        if not spans:
+            return False
+        cursor.setCharFormat(_char_format(base_role))
+        cursor.insertText(text)
+        block = cursor.block()
+        for start, length, role, implicit in spans:
+            span_cursor = QtGui.QTextCursor(block)
+            span_cursor.setPosition(block.position() + start)
+            span_cursor.setPosition(block.position() + start + length,
+                                    QtGui.QTextCursor.KeepAnchor)
+            span_cursor.setCharFormat(
+                self.highlighter.format_for(role, implicit))
+        return True
+
     def write_live(self, text, role="echo"):
         """Write the command being built, rewriting it in place.
 
@@ -127,10 +153,10 @@ class Console(QtWidgets.QPlainTextEdit):
         cur.movePosition(QtGui.QTextCursor.StartOfBlock)
         cur.movePosition(QtGui.QTextCursor.EndOfBlock,
                          QtGui.QTextCursor.KeepAnchor)
-        fmt = QtGui.QTextCharFormat()
-        fmt.setForeground(QtGui.QColor(ROLE_COLOURS.get(role, "#d4d4d4")))
-        cur.setCharFormat(fmt)
-        cur.insertText(text)
+        cur.removeSelectedText()
+        if not self._paint_spans(cur, text, role):
+            cur.setCharFormat(_char_format(role))
+            cur.insertText(text)
         self.moveCursor(QtGui.QTextCursor.End)
         self.ensureCursorVisible()
 
@@ -234,7 +260,9 @@ class Console(QtWidgets.QPlainTextEdit):
         if not self._suggestion:
             return
         painter = QtGui.QPainter(self.viewport())
-        painter.setFont(self.font())
+        font = QtGui.QFont(self.font())
+        font.setItalic(True)          # not yours until you accept it
+        painter.setFont(font)
         painter.setPen(QtGui.QColor("#5a5a5a"))
         rect = self.cursorRect()
         painter.drawText(rect.right(), rect.bottom() - 3, self._suggestion)
@@ -337,6 +365,12 @@ class Console(QtWidgets.QPlainTextEdit):
         self._suggestion = ""
         self.set_input("")
         self.submitted.emit(text)
+
+
+def _char_format(role):
+    fmt = QtGui.QTextCharFormat()
+    fmt.setForeground(QtGui.QColor(ROLE_COLOURS.get(role, "#d4d4d4")))
+    return fmt
 
 
 def _document_labels():

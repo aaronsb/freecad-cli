@@ -108,19 +108,31 @@ class Client:
 
 # ------------------------------------------------------------------ output
 
+# The same role names the dock paints, mapped to ANSI. 256-colour so the
+# axis hues stay muted: an x must never read as the error red.
 ROLE_ANSI = {
     "head": "\033[36m", "value": "\033[32m", "ok": "\033[36m",
     "warn": "\033[33m", "bad": "\033[31m", "quiet": "\033[90m",
     "error": "\033[31m", "result": "\033[36m", "prompt": "\033[33m",
     "echo": "\033[0m", "info": "\033[90m",
+    # Coordinates carry FreeCAD's axis colours, desaturated.
+    "axis_x": "\033[38;5;173m", "axis_y": "\033[38;5;108m",
+    "axis_z": "\033[38;5;110m",
+    # A number's dimension, named by FreeCAD's Unit.Type.
+    "dim_length": "\033[38;5;151m", "dim_angle": "\033[38;5;180m",
+    "dim_area": "\033[38;5;151m", "dim_volume": "\033[38;5;151m",
+    "dim_mass": "\033[38;5;182m", "scalar": "\033[38;5;109m",
+    "prefix": "\033[38;5;176m", "sep": "\033[90m",
 }
 RESET = "\033[0m"
+ITALIC = "\033[3m"
 
 
-def paint(text, role, stream):
+def paint(text, role, stream, italic=False):
+    """Italic means the command line supplied it, not the person."""
     if not stream.isatty() or os.environ.get("NO_COLOR"):
         return text
-    return f"{ROLE_ANSI.get(role, '')}{text}{RESET}"
+    return f"{ITALIC if italic else ''}{ROLE_ANSI.get(role, '')}{text}{RESET}"
 
 
 def documents_of(payload):

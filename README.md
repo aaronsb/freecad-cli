@@ -131,6 +131,27 @@ modal; `!` discards. Unsaved state is tracked through
 `App.addDocumentObserver`, so it is accurate for edits made anywhere — the
 command line, a toolbar, a macro.
 
+### Colour carries meaning
+
+![Coordinates coloured by axis, dimensions by unit type](docs/images/colour_point.png)
+
+FreeCAD paints x red, y green and z blue in the viewport. A coordinate on
+the command line says the same thing, desaturated so a component never reads
+as the error red — which stays saturated and keeps its wavy underline.
+
+Numbers are coloured by dimension, and the dimension comes from FreeCAD:
+`Unit.Type` answers `Length`, `Angle`, `Area`, `Mass`, so there is no table
+here that could disagree with it. A polar point tells its distance from its
+angle for the same reason.
+
+**Bold is the verb** — the token that decides what every other token means.
+**Italic is what the command line supplied rather than you**: a unit taken
+from the schema, and a suggestion not yet accepted. Above, `0,0,0` is italic
+because the unit is implied; `40.00mm` is upright because it was stated.
+
+A finished command keeps its colouring in the transcript rather than going
+flat once it runs.
+
 ### check
 
 ![check output, coloured by role](docs/images/check.png)

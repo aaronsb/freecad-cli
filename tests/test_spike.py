@@ -457,6 +457,36 @@ def main():
           split_command("Sketcher_ConstrainCoincident"),
           ("Sketcher", ["Constrain", "Coincident"]))
 
+    print("\n5f. syntax colouring carries meaning")
+    from fccli.parsing import parse_point as _pp, parse_quantity as _pq
+    _units.set_schema("Internal")
+
+    spans = _pp("10,20,30", App.Vector(0, 0, 0)).spans
+    check("a coordinate is coloured by axis",
+          [sp.role for sp in spans], ["axis_x", "axis_y", "axis_z"])
+    check("  and a bad component still reads as an error",
+          [sp.role for sp in _pp("10,20,zz", App.Vector(0, 0, 0)).spans][-1],
+          "bad")
+    polar = _pp("100<45", App.Vector(0, 0, 0)).spans
+    check("polar distance and angle are told apart",
+          sorted({sp.role for sp in polar}),
+          ["dim_angle", "dim_length", "sep"])
+    check("a dimension is named by FreeCAD, not a table here",
+          _pq("10mm^2").spans[0].role, "dim_area")
+    check("  angles too", _pq("45deg").spans[0].role, "dim_angle")
+    check("  and a dimensionless number is scalar",
+          _pq("3", unit_hint="").spans[0].role, "scalar")
+
+    # Italic says the command line supplied it, not the person.
+    check("a bare number is marked as having an implied unit",
+          _pq("12", unit_hint="mm").spans[0].implicit, True)
+    check("  a stated one is not", _pq("12mm", unit_hint="mm").spans[0].implicit,
+          False)
+
+    from fccli.highlight import PALETTE
+    check("every span role has a colour",
+          [sp.role for sp in spans if sp.role not in PALETTE], [])
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])
