@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_Create3PointArc"
   wiki_rev: "0499378"
+  seed: "268eaa1722b4"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []
@@ -22,7 +23,3 @@ type: null
 ---
 
 The Sketcher Create3PointArc tool creates an arc by its endpoints and a point along the arc. This is the same tool as Sketcher CreateArc but with a different initial mode.
-
-## See also
-
-- Sketcher CreateArc

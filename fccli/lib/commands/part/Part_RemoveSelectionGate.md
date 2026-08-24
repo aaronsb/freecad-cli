@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_RemoveSelectionGate"
   wiki_rev: null
+  seed: "2f1f659109eb"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

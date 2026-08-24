@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_ToggleGrounded"
   wiki_rev: "0499378"
+  seed: "4d0a8e870b29"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_ConstrainParallel"
   wiki_rev: "0499378"
+  seed: "d97a3b5e2dc3"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

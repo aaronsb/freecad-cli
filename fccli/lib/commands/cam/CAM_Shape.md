@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "CAMWorkbench"
   wiki: "CAM_Shape"
   wiki_rev: "0499378"
+  seed: "ee7f7bc76deb"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

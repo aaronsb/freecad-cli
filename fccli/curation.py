@@ -45,8 +45,12 @@ RANK_NAMES = {PROMOTED: "promoted", MENU: "menu", REGISTRY: "registry"}
 class Curation:
     """Rank and adjacency, read off a descriptor's command table."""
 
-    def __init__(self, commands=None):
+    def __init__(self, commands=None, dictionary=None):
         self.commands = commands or {}
+        self.dictionary = dictionary or {}
+        # rank: registry in a command file sorts a promoted command last.
+        self._demoted = {n for n, e in self.dictionary.get("commands", {}).items()
+                         if e.get("rank") == "registry"}
         self._families = self._rank_families()
         self._siblings = {}
         for name, meta in self.commands.items():
@@ -63,9 +67,11 @@ class Curation:
         findable as the buttons, and offering it below them would bury the
         one name that makes them discoverable.
         """
-        from .families import families
+        from .families import families, overrides_of
+        over, exclude = overrides_of(self.dictionary)
         out = {}
-        for name, members in families(self.commands).items():
+        for name, members in families(self.commands, overrides=over,
+                                      exclude=exclude).items():
             commands = [m["command"] for m in members.values()]
             out[name] = (min((self.rank(c) for c in commands),
                              default=REGISTRY), commands, members)
@@ -76,7 +82,7 @@ class Curation:
     def rank(self, command):
         """How prominently FreeCAD presents one command."""
         meta = self.commands.get(command or "")
-        if not meta:
+        if not meta or command in self._demoted:
             return REGISTRY
         if meta.get("toolbar"):
             return PROMOTED
@@ -260,10 +266,10 @@ class Curation:
 _CURATION = Curation()
 
 
-def load(descriptor):
+def load(descriptor, dictionary=None):
     """Install the curation the descriptor describes."""
     global _CURATION
-    _CURATION = Curation((descriptor or {}).get("commands", {}))
+    _CURATION = Curation((descriptor or {}).get("commands", {}), dictionary)
     return _CURATION
 
 

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PointsWorkbench"
   wiki: "Points_PolyCut"
   wiki_rev: "0499378"
+  seed: "7ce4fad1e13c"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

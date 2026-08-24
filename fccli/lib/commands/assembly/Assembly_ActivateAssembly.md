@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_ActivateAssembly"
   wiki_rev: null
+  seed: "663e5be324d5"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

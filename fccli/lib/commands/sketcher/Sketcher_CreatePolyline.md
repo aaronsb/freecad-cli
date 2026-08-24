@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CreatePolyline"
   wiki_rev: "0499378"
+  seed: "d0d106d75977"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

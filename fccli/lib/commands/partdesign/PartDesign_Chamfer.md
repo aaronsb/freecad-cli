@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartDesignWorkbench"
   wiki: "PartDesign_Chamfer"
   wiki_rev: "0499378"
+  seed: "c21d6020176d"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

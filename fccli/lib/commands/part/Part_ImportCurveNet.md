@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_ImportCurveNet"
   wiki_rev: null
+  seed: "43be2dee7a8b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_ViewUndock"
   wiki_rev: null
+  seed: "6dcb4001a2bc"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

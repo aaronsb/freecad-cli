@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "DraftWorkbench"
   wiki: "Draft_BezierTools"
   wiki_rev: null
+  seed: "ebba06cdf362"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

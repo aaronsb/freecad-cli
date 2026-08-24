@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Materials_InspectAppearance"
   wiki_rev: null
+  seed: "92b3126de9b0"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

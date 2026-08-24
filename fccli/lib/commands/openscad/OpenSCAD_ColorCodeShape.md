@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "OpenSCADWorkbench"
   wiki: "OpenSCAD_ColorCodeShape"
   wiki_rev: null
+  seed: "402fcfe40073"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

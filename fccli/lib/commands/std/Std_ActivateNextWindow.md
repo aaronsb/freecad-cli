@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_ActivateNextWindow"
   wiki_rev: "0499378"
+  seed: "fb8b4456d634"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

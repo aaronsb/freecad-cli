@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartDesignWorkbench"
   wiki: "PartDesign_PolarPattern"
   wiki_rev: "0499378"
+  seed: "75f69a93fa03"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_TextDocument"
   wiki_rev: "0499378"
+  seed: "6ab59fb21766"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []
@@ -22,8 +23,3 @@ type: null
 ---
 
 The Std TextDocument command creates an object capable of holding arbitrary text. This element can be used to write general information or documentation about the model.
-
-## See also
-
-- Draft ShapeString
-- Draft Text

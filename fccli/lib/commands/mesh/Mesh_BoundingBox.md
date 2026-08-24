@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "MeshWorkbench"
   wiki: "Mesh_BoundingBox"
   wiki_rev: "0499378"
+  seed: "dcc60ec280cd"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

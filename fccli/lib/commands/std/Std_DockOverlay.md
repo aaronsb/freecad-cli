@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_DockOverlay"
   wiki_rev: null
+  seed: "128e9934c38d"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

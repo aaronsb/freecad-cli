@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CreateBSplineByInterpolation"
   wiki_rev: "0499378"
+  seed: "cfaae0174ce6"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

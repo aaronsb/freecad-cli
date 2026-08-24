@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_CreateJointPerpendicular"
   wiki_rev: "0499378"
+  seed: "5e7bde321726"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

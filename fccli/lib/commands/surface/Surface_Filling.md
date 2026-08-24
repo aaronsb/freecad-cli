@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SurfaceWorkbench"
   wiki: "Surface_Filling"
   wiki_rev: "0499378"
+  seed: "94e00da96418"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

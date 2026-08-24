@@ -87,8 +87,23 @@
   the command's page in FreeCAD/FreeCAD-documentation (854) or its tooltip
   (257). `make commands` writes what is missing, `make dictionary` compiles
   the tree to `fccli/dictionary.json`, and `tools/lint_dictionary.py` runs
-  in `make lint` with ADR-100's five rules. Nothing reads the compiled file
-  yet; that is the next change.
+  in `make lint` with ADR-100's five rules.
+- **The tree is read.** `register_all` loads `fccli/dictionary.json` and a
+  command file's `verb`, `aliases`, `rank`, `family`/`choice`, `requires`
+  and `panel` reach its verb; the page becomes the verb's manual, which
+  `man` prints as DESCRIPTION. `std/_families.yaml` now holds the list of
+  leading words that are not actions, moved out of `families.py`. First two
+  authored entries: `Mesh_PolySegm` is `mesh_segment` and `Draft_Split` is
+  `draft_split`, generic words given back. `requires` and `panel` are
+  carried and not yet acted on; `type` is parsed and not yet applied.
+- **`make reconcile`.** Harvests FreeCAD afresh, refreshes the wiki clone,
+  and reports what changed against the committed tree: commands added,
+  removed, re-homed, fields changed, bodies reseeded, conflicts where a
+  page moved under a body somebody wrote, and authored verbs that became
+  what the factory derives anyway. `FLAGS=--apply` brings the tree, the
+  descriptor and the compiled dictionary to the new harvest together.
+  A `seed` hash in each generated block is what tells a written body from
+  a stale one. Against a fresh harvest today: nothing changed.
 - **Every command carries its wiki page.** `getInfo()` returns `whatsThis`,
   the page name FreeCAD's F1 help resolves against, and the harvest had
   been dropping it. It is recorded as `wiki`: 1106 of 1111 have one, 9

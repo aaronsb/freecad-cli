@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_CompSplitFeatures"
   wiki_rev: null
+  seed: "d913f94e344b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

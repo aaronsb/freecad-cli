@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_SelectMalformedConstraints"
   wiki_rev: null
+  seed: "61f50a169ce5"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

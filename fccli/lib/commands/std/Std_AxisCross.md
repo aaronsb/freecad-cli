@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_AxisCross"
   wiki_rev: "0499378"
+  seed: "b1740680d3f5"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

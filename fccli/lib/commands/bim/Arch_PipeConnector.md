@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "BIMWorkbench"
   wiki: "Arch_PipeConnector"
   wiki_rev: "0499378"
+  seed: "d9e3a58bb9e2"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

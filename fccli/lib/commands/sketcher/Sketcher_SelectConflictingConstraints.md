@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_SelectConflictingConstraints"
   wiki_rev: "0499378"
+  seed: "7a7bb87dadcd"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

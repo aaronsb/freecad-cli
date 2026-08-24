@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_Offset2D"
   wiki_rev: "0499378"
+  seed: "cfd5efbdf5a0"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

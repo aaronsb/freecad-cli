@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "FemWorkbench"
   wiki: "FEM_SolverCalculiXCcxTools"
   wiki_rev: null
+  seed: "68316231ed1f"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "MeshWorkbench"
   wiki: "Mesh_FillupHoles"
   wiki_rev: "0499378"
+  seed: "70f4770e388c"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

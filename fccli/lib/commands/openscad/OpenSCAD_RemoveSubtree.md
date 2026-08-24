@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "OpenSCADWorkbench"
   wiki: "OpenSCAD_RemoveSubtree"
   wiki_rev: "0499378"
+  seed: "4d48250128ec"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

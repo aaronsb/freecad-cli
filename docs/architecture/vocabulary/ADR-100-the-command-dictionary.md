@@ -91,6 +91,7 @@ generated:                      # owned by the tool; rewritten on reconcile
   workbench: SketcherWorkbench
   wiki: Sketcher_CreateCircle   # whatsThis; the page name F1 resolves
   wiki_rev: 3f1c2a9             # FreeCAD-documentation commit the body was seeded from
+  seed: 9c1e0b7d2a44            # hash of the body as seeded; a body that no longer matches was written by a person
 verb: null                      # authored from here down; null means "as generated"
 aliases: []
 requires: [sketch-edit]
@@ -115,7 +116,10 @@ three-way merge per file, per field: base is the generation from the
 committed descriptor at the file's stamp, theirs is a fresh harvest, ours
 is the file. A field unchanged by the harvest is kept; a field the
 harvest changed is applied to `generated:`; an authored field is never
-touched. A command gone from the harvest is reported and its file moved
+touched. The body's base is `generated.seed`: a body that still hashes
+to it is the tool's and is reseeded when the page moves; one that does
+not was written by a person and is reported as a conflict when the page
+moves, and left alone. A command gone from the harvest is reported and its file moved
 aside, not deleted; a command new to the harvest gets a fresh file. That
 is `make reconcile`, and it is what a release PR reads before `make
 descriptor` commits the new stamp.

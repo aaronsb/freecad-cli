@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "OpenSCADWorkbench"
   wiki: "OpenSCAD_Hull"
   wiki_rev: "0499378"
+  seed: "28a643f744d5"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

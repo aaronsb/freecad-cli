@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ExtensionCreateCoordDimensionGroup"
   wiki_rev: null
+  seed: "4151e01dfd72"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

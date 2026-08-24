@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SpreadsheetWorkbench"
   wiki: "Spreadsheet_AlignVCenter"
   wiki_rev: "0499378"
+  seed: "10775c2df179"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

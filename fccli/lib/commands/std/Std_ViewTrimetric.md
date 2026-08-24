@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_ViewTrimetric"
   wiki_rev: "0499378"
+  seed: "6558d0a3e08a"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

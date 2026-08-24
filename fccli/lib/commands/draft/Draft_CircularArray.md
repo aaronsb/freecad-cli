@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "DraftWorkbench"
   wiki: "Draft_CircularArray"
   wiki_rev: "0499378"
+  seed: "b7f613092045"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

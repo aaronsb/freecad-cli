@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CreateHexagon"
   wiki_rev: "0499378"
+  seed: "4ccc2c8ab6cb"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

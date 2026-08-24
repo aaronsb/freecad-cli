@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "MeshWorkbench"
   wiki: "Mesh_PolySplit"
   wiki_rev: null
+  seed: "6deacecc7865"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

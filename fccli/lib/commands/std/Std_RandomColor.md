@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_RandomColor"
   wiki_rev: "0499378"
+  seed: "548403f98d5d"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

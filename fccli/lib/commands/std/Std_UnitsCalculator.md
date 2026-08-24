@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_UnitsCalculator"
   wiki_rev: "0499378"
+  seed: "67a2e643048d"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

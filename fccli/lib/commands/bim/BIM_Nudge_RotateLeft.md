@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "BIMWorkbench"
   wiki: "BIM_Nudge_RotateLeft"
   wiki_rev: null
+  seed: "43b51c861895"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

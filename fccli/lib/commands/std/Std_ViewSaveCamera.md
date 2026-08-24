@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_ViewSaveCamera"
   wiki_rev: null
+  seed: "0995c6260f90"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

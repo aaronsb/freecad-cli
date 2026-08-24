@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_Alignment"
   wiki_rev: "0499378"
+  seed: "2418fb6b790e"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

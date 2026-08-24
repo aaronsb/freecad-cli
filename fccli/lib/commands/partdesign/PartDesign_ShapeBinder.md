@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartDesignWorkbench"
   wiki: "PartDesign_ShapeBinder"
   wiki_rev: "0499378"
+  seed: "764505816eb2"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

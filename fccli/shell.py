@@ -715,6 +715,11 @@ def _emit_units(v):
     return None
 
 
+def _wrap(text, width):
+    import textwrap
+    return textwrap.wrap(text, width) or [""]
+
+
 def _emit_man(v):
     """The manual. Bare, it lists what exists; given a topic, it describes
     one thing in full -- every step with its kind, unit and choices, the
@@ -775,6 +780,29 @@ def _emit_man(v):
             for opt in step.options:
                 say(f"       option {opt.name}: {opt.doc}")
 
+    # The page's own See also is kept for the SEE ALSO below, where the
+    # wiki's page names are answered as verb names beside what FreeCAD
+    # put on the same toolbar.
+    from_page = []
+    if getattr(verb, "manual", ""):
+        say("DESCRIPTION", "head")
+        holding = False
+        for para in verb.manual.split("\n\n"):
+            if para.startswith("## "):
+                holding = para[3:].strip().lower() == "see also"
+                if not holding:
+                    say(para[3:].upper(), "head")
+                continue
+            if holding:
+                from_page.extend(l.lstrip("- ").strip()
+                                 for l in para.splitlines() if l.strip())
+                continue
+            for row in _wrap(para, 72):
+                say(f"    {row}")
+    if getattr(verb, "requires", None):
+        say("REQUIRES", "head")
+        say("    " + ", ".join(verb.requires))
+
     curated = _curation.current()
     if verb.gui_command:
         say("GUI", "head")
@@ -790,6 +818,14 @@ def _emit_man(v):
     # "what goes with what", and it is a better answer than a guess from
     # the names would be.
     near = curated.neighbours(REGISTRY, verb)
+    # The page's names first, in the page's order, and only those that
+    # are a verb here: a page for a workbench or a concept is not.
+    first = []
+    for page in from_page:
+        other = REGISTRY.by_gui_command(page)
+        if other and other.name != verb.name and other.name not in first:
+            first.append(other.name)
+    near = first + [n for n in near if n not in first]
     if near:
         say(f"    {', '.join(near)}", "ok")
     say("    man     (list every command)")

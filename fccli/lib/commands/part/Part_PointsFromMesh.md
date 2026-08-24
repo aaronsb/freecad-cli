@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_PointsFromMesh"
   wiki_rev: "0499378"
+  seed: "394bcb7f50c7"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

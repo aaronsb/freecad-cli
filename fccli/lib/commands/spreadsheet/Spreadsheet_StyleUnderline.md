@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SpreadsheetWorkbench"
   wiki: "Spreadsheet_StyleUnderline"
   wiki_rev: "0499378"
+  seed: "4dd8992f80dd"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

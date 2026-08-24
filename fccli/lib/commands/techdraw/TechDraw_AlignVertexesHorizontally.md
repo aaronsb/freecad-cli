@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_AlignVertexesHorizontally"
   wiki_rev: null
+  seed: "bbe39808807c"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

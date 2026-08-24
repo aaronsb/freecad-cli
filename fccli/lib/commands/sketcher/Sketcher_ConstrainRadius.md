@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_ConstrainRadius"
   wiki_rev: "0499378"
+  seed: "ceb8cd01b58b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ExtensionLinePPGroup"
   wiki_rev: null
+  seed: "ceb75bd7a0d8"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

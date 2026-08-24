@@ -19,7 +19,7 @@ import yaml
 # generated: fields, in the order they are written. Every one is harvest
 # output the reconcile may rewrite.
 GENERATED = ("freecad", "label", "tooltip", "toolbar", "menu", "shortcut",
-             "workbench", "wiki", "wiki_rev")
+             "workbench", "wiki", "wiki_rev", "seed")
 
 # Authored fields, their defaults, and what the lint accepts.
 AUTHORED = {
@@ -113,10 +113,35 @@ def read(path):
         return parse(fh.read())
 
 
+def seed_of(body):
+    """What the tool seeded a body as, so reconcile can tell a body a
+    person wrote from one the wiki moved under."""
+    import hashlib
+    return hashlib.sha1((body or "").strip().encode("utf-8")).hexdigest()[:12]
+
+
+def edited(front, body):
+    """Whether a person has written in this body.
+
+    A body that still hashes to its seed is the tool's. A file with no
+    seed predates the seed and is taken as the tool's too, so the first
+    reconcile after the field appeared stamps it rather than reporting
+    a thousand conflicts.
+    """
+    seed = (front.get("generated") or {}).get("seed")
+    return bool(seed) and seed_of(body) != seed
+
+
 def walk(root):
-    """Every command file under root: (relative path, absolute path)."""
+    """Every command file under root: (relative path, absolute path).
+
+    A name starting with _ is not a command file: _families.yaml beside
+    the std commands, and _retired/ where reconcile parks the files of
+    commands FreeCAD no longer has.
+    """
     out = []
-    for dirpath, _dirs, files in os.walk(root):
+    for dirpath, dirs, files in os.walk(root):
+        dirs[:] = sorted(d for d in dirs if not d.startswith("_"))
         for f in sorted(files):
             if f.endswith(".md") and not f.startswith("_"):
                 full = os.path.join(dirpath, f)

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_DatumPlane"
   wiki_rev: "0499378"
+  seed: "c25fcc46b130"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []
