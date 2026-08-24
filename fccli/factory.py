@@ -188,6 +188,31 @@ def _claimed(registry, name):
     return sitting is not None and not getattr(sitting, "generated", False)
 
 
+def _by_prominence(commands):
+    """Commands in the order they should get to claim a short name.
+
+    Two commands whose labels slug the same both want the plain name, and
+    whoever is registered first takes it. Left to the descriptor's own
+    order that is alphabetical, which decides by accident: `compound` went
+    to CAM_Compound over Part_Compound, and `material` to Arch_Material
+    over the BIM_Material that sits in a toolbar, because C sorts before P
+    and A before B.
+
+    FreeCAD already says which of the two it considers the front door, by
+    putting one in a toolbar or a menu and leaving the other reachable
+    only from code. That is the same signal curation.py ranks completions
+    by. Sorting on it first costs nothing and settles every one of these
+    the way a person would: in all twenty cases the command that loses a
+    contested name under alphabetical order is the one FreeCAD surfaces.
+
+    Stable within a rank, so the descriptor's sorted order still decides
+    genuine ties and the result does not move between regenerations.
+    """
+    return sorted(commands,
+                  key=lambda c: (c.get("toolbar") is None,
+                                 c.get("menu") is None))
+
+
 def _qualify_command(verb, command, registry):
     """Re-home a command verb whose name another command already took.
 
@@ -326,7 +351,7 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
                for n, l in descriptor.get("links", {}).items()}
 
     if tier0:
-        for command in descriptor["commands"].values():
+        for command in _by_prominence(descriptor["commands"].values()):
             verb = build_command_verb(command)
             if registry.get(verb.name) is None:
                 registry.add(verb)

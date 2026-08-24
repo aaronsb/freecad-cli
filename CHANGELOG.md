@@ -29,6 +29,15 @@
   24 absolute paths through a home directory, carrying a per-document UUID
   that changed on every regeneration, into a directory deleted with the
   document. `make descriptor` is now byte-identical across runs.
+- **A contested short name goes to the command FreeCAD surfaces.** Two
+  commands whose labels slug the same both want the plain name and the
+  first registered took it, which alphabetical order decided by accident:
+  `compound` went to CAM_Compound over Part_Compound, `material` to
+  Arch_Material over the BIM_Material sitting in a toolbar. Twenty names
+  moved that way, every one off a command with a toolbar or menu entry and
+  onto one reachable only from code. Registration is now ordered by that
+  presence, which is the same signal `curation.py` ranks completions by,
+  and the descriptor's sorted order still breaks genuine ties.
 - **A command whose verb name is taken is no longer dropped in silence.**
   Two commands whose labels slug the same are ordinary. The loser used to
   vanish -- 90 commands before this, and 133 once labels got better and

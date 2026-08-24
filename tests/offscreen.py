@@ -1429,6 +1429,30 @@ def _run():
     check("  none is left unreachable", _c.get("unreachable", 0), 0)
     check("  and the ones that had to move say so", _c["qualified"] > 100, True)
 
+    # Who wins a contested short name is FreeCAD's call, not the alphabet's.
+    # Two commands whose labels slug the same both want the plain name and
+    # the first registered takes it; sorted by command name that picked
+    # CAM_Compound over Part_Compound and Arch_Material over the
+    # BIM_Material in a toolbar. Twenty names moved that way before
+    # _by_prominence, every one of them off a command FreeCAD surfaces and
+    # onto one reachable only from code.
+    for _verb, _want in (("compound", "Part_Compound"),
+                         ("material", "BIM_Material"),
+                         ("cross_sections", "Mesh_CrossSections"),
+                         ("mesh_from_shape", "Mesh_FromPartShape")):
+        _got = _fresh.get(_verb)
+        check(f"  {_verb} is the one FreeCAD puts on a toolbar",
+              _got.gui_command if _got else None, _want)
+    # The loser is qualified, not lost.
+    check("  and the one it beat is still reachable",
+          _fresh.by_gui_command("CAM_Compound") is not None, True)
+    # Stable: the rank is the key, the descriptor's order breaks ties.
+    _again = _Registry()
+    register_all(_again, tier0=True, patches=PatchSet())
+    check("  and rebuilding gives the same answer",
+          {n: _again.get(n).gui_command for n in _again.names()},
+          {n: _fresh.get(n).gui_command for n in _fresh.names()})
+
     print("\n5aa. FreeCAD's settings stay FreeCAD's")
     # The picker used to turn Draft's grid off on every snap because the
     # operator's gridSpacing was 0 -- while their alwaysShowGrid was on.
