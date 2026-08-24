@@ -78,8 +78,7 @@ class ActionBridge(QtCore.QObject):
         history = getattr(session, "history", None)
         if history is None:
             return False
-        stats = _frecency.tally(history.usage())
-        count, _ = stats.get(verb.name, (0, 0))
+        count, _ = history.tally().get(verb.name, (0, 0))
         return count >= self.CUE_UNTIL
 
     def _suggest(self, verb):

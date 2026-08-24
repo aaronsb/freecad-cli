@@ -464,8 +464,10 @@ class CliDock(QtWidgets.QDockWidget):
         self.bridge.install()
         self._serve()
         app = QtWidgets.QApplication.instance()
+        self._focus_hook = None
         if app is not None:
-            app.focusChanged.connect(lambda *_: self._paint_focus_state())
+            self._focus_hook = lambda *_: self._paint_focus_state()
+            app.focusChanged.connect(self._focus_hook)
         self.console.setFocus(Qt.OtherFocusReason)
         self._paint_focus_state()
 
@@ -487,6 +489,16 @@ class CliDock(QtWidgets.QDockWidget):
     def closeEvent(self, ev):
         self.keyfilter.remove()
         self.picker.stop()
+        # This handler is on the QApplication and holds the dock, so every
+        # open/close cycle used to leave another one behind, painting a
+        # window that had gone away.
+        if getattr(self, "_focus_hook", None) is not None:
+            try:
+                QtWidgets.QApplication.instance().focusChanged.disconnect(
+                    self._focus_hook)
+            except (RuntimeError, TypeError):
+                pass
+            self._focus_hook = None
         if self.server is not None:
             self.server.stop()
         super().closeEvent(ev)

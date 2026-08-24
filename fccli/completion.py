@@ -123,7 +123,21 @@ def candidates(engine, text, history=None, scope=None):
 RECENT_LIMIT = 12
 
 
-_TALLY = {"key": None, "stats": {}}
+# History.tally owns this now, so both callers share one cache -- the
+# toolbar's familiarity cue used to rebuild the whole thing per click.
+# This remains for anything ring-shaped that is not a History.
+#
+# Keyed on the object rather than id(history): CPython reuses an address
+# as soon as one is freed, so a new ring could inherit a dead one's tally.
+_TALLY = {"history": None, "revision": None, "stats": {}}
+
+
+def _fallback_tally(history, revision):
+    if _TALLY["history"] is not history or _TALLY["revision"] != revision:
+        _TALLY["history"] = history
+        _TALLY["revision"] = revision
+        _TALLY["stats"] = frecency.tally(history.usage())
+    return _TALLY["stats"]
 
 
 def _by_habit(names, history, now=None):
@@ -137,11 +151,9 @@ def _by_habit(names, history, now=None):
     """
     if history is None or not getattr(history, "entries", None):
         return names
-    key = (id(history), getattr(history, "revision", len(history.entries)))
-    if _TALLY["key"] != key:
-        _TALLY["key"] = key
-        _TALLY["stats"] = frecency.tally(history.usage())
-    stats = _TALLY["stats"]
+    revision = getattr(history, "revision", len(history.entries))
+    stats = (history.tally() if hasattr(history, "tally")
+             else _fallback_tally(history, revision))
     return frecency.partition(
         names, lambda n: stats.get(n, (0, 0)),
         now if now is not None else int(time.time()))

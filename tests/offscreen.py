@@ -941,8 +941,33 @@ def _run():
                          (31, 2), (180, 2), (181, 1)):
         check(f"  {_days}d weighs {_want}",
               _frec.recency_weight(_now, _now - _days * 86400), _want)
-    check("a timestamp in the future is not trusted",
-          _frec.recency_weight(_now, _now + 86400), 1)
+    # This used to weigh 1 -- the stalest possible -- on the grounds that a
+    # future stamp is not to be trusted. The cost of that distrust is worse
+    # than the thing it guards: a clock that ran fast and was then corrected
+    # backwards buried everything typed in between at weight 1 permanently,
+    # because stamps are written once and never revisited. A stamp ahead of
+    # now is the most recent thing in the ring, so it weighs most.
+    check("a timestamp in the future is the newest thing there is",
+          _frec.recency_weight(_now, _now + 86400), 16)
+    check("  and one far in the future is still just the newest",
+          _frec.recency_weight(_now, _now + 400 * 86400), 16)
+
+    # One tally, shared. completion cached it privately, so the toolbar's
+    # familiarity cue rebuilt the whole thing -- every line in the ring,
+    # every verb in the dict -- to read one count, on every click.
+    _th = _History(path=os.path.join(tempfile.mkdtemp(), "history"))
+    # Interleaved: add refuses a line identical to the one before it, so
+    # three in a row would be one entry.
+    for _ in range(3):
+        _th.add("box 0,0,0 1 1 1", when=_now)
+        _th.add("circle 0,0,0 5", when=_now)
+    _first = _th.tally()
+    check("the tally counts what was run", _first.get("box")[0], 3)
+    check("  and is not rebuilt while the ring is unchanged",
+          _th.tally() is _first, True)
+    _th.add("sphere 3", when=_now)
+    check("  but is once it changes", _th.tally() is _first, False)
+    check("  with the new entry in it", _th.tally().get("sphere")[0], 1)
     check("a zero count scores zero however recent",
           _frec.score(0, _now, _now), 0)
     check("partition of nothing is nothing", _frec.partition([], dict, _now), [])

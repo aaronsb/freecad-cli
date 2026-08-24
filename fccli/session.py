@@ -51,6 +51,7 @@ class History:
         # once the ring is at its limit an add trims an entry as it appends
         # one, so the count stops changing while the contents do not.
         self.revision = 0
+        self._tally, self._tally_at = {}, None
         self.load()
 
     @staticmethod
@@ -138,6 +139,19 @@ class History:
                 self.revision += 1
                 return True
         return False
+
+    def tally(self):
+        """Frequency and recency per command, rebuilt only when the ring is.
+
+        completion cached this privately, so the toolbar's familiarity cue
+        walked the whole ring and built a dict of every verb to read one
+        count -- on every click.
+        """
+        from . import frecency
+        if self._tally_at != self.revision:
+            self._tally = frecency.tally(self.usage())
+            self._tally_at = self.revision
+        return self._tally
 
     def tail(self, limit=None):
         return self.entries[-limit:] if limit else list(self.entries)

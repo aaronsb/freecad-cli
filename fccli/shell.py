@@ -445,9 +445,15 @@ def _verb_for_type(type_id):
     return _BY_TYPE.get(type_id) if type_id else None
 
 
-def _did_you_mean_from(names, token):
+def _closest(names, token, limit=1):
+    """Closest names to a token, so a typo suggests its fix."""
     import difflib
-    hit = difflib.get_close_matches(token, names, n=1, cutoff=0.6)
+    return difflib.get_close_matches(token.lower(), list(names),
+                                     n=limit, cutoff=0.6)
+
+
+def _did_you_mean_from(names, token):
+    hit = _closest(names, token)
     return hit[0] if hit else None
 
 
@@ -678,9 +684,7 @@ def _show(value):
 
 def _did_you_mean(registry, token, limit=4):
     """Closest verb names, so a typo suggests its fix."""
-    import difflib
-    return difflib.get_close_matches(token.lower(), registry.names(),
-                                     n=limit, cutoff=0.6)
+    return _closest(registry.names(), token, limit)
 
 
 def _emit_units(v):

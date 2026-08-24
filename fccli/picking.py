@@ -94,6 +94,11 @@ class _ViewPicker:
         self.stop()
         view = _active_view()
         if view is None:
+            # The step has already been prompted for. Returning quietly
+            # left the engine waiting on a click that could never arrive,
+            # with nothing said about why.
+            if self.notify:
+                self.notify("no 3D view to pick in -- type the point instead")
             return
         self._callback = callback
         # Only ever a point. Draft's snapper takes lastpoint straight to
