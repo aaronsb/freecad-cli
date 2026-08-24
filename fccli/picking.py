@@ -22,78 +22,102 @@ _SNAPPER_READY = None
 
 
 def ensure_snapper(notify=None):
-    """Bring ``Gui.Snapper`` into existence.
+    """Bring ``Gui.Snapper`` into existence, and say what Draft's grid will do.
 
     It is installed by Draft, not by the core GUI, so it is absent until
     something pulls Draft in. Importing DraftTools is the bootstrap Draft
     documents for exactly this. Done lazily on the first point step, so
     FreeCAD starts no slower for people who never pick.
+
+    The report sits out here rather than inside the bootstrap because the
+    bootstrap runs at most once and usually does nothing: anyone who opened
+    Draft or BIM before their first pick already has a Snapper, and those
+    are exactly the people who have grid preferences worth reporting on. It
+    kept its own counsel for everyone it was written for.
     """
     global _SNAPPER_READY
-    if _SNAPPER_READY is not None:
-        return _SNAPPER_READY
-    if hasattr(Gui, "Snapper"):
-        _SNAPPER_READY = True
-        return True
-    try:
-        import DraftTools  # noqa: F401
-    except Exception as exc:
-        App.Console.PrintWarning(f"[fccli] could not load Draft: {exc}\n")
-        _SNAPPER_READY = False
-        return False
-    _SNAPPER_READY = hasattr(Gui, "Snapper")
+    if _SNAPPER_READY is None:
+        _SNAPPER_READY = _bootstrap_snapper()
     if _SNAPPER_READY:
         report_grid(notify)
     return _SNAPPER_READY
 
 
-_GRID_CHECKED = False
+def _bootstrap_snapper():
+    if hasattr(Gui, "Snapper"):
+        return True
+    try:
+        import DraftTools  # noqa: F401
+    except Exception as exc:
+        App.Console.PrintWarning(f"[fccli] could not load Draft: {exc}\n")
+        return False
+    return hasattr(Gui, "Snapper")
+
+
+_GRID_REPORTED = False
 
 
 def report_grid(notify=None):
-    """Say what Draft's grid is about to do, once, and change nothing.
+    """Name Draft's zero-spacing grid once, and change nothing.
 
-    Bootstrapping Draft builds its grid tracker, which reads the operator's
-    own `alwaysShowGrid`, `grid` and `gridSpacing` preferences. When the
-    spacing is 0 the grid draws as a handful of stray lines across the
-    model and Draft prints "Draft Grid: Spacing value is zero" once per
-    update, three times per bootstrap.
+    Draft's grid tracker reads the operator's own `alwaysShowGrid`, `grid`
+    and `gridSpacing`. At a spacing of 0 `gridTracker.update` empties both
+    line sets and returns, leaving the axes and the human figure on screen
+    with no grid between them, and prints "Draft Grid: Spacing value is
+    zero" once per update.
 
-    This used to turn the grid off and suppress the warnings. That read the
-    operator's preferences and overruled them: `alwaysShowGrid` was on,
-    Draft honoured it in setTrackers, and the picker switched it back off
-    for the rest of the session. The command line is a way of interacting
-    with FreeCAD, not a second opinion about how FreeCAD should be set up.
+    This used to turn the grid off and suppress those warnings, which read
+    the operator's preferences and overruled them -- see the settings
+    section of docs/conventions.md. The condition is reported instead.
 
-    So the grid is left exactly as configured, and the condition is
-    reported the way every other fault is -- as a line on the command line,
-    naming where to fix it.
+    The flag is tested last and set only when something was said, so a
+    spacing corrected mid-session is picked up: Draft carries a parameter
+    observer for that key precisely because it changes while a session
+    runs. Two preference reads per point step is nothing.
     """
-    global _GRID_CHECKED
-    if _GRID_CHECKED or notify is None:
+    global _GRID_REPORTED
+    if notify is None or _GRID_REPORTED:
         return
-    _GRID_CHECKED = True
     if not _grid_will_draw() or _grid_spacing() != 0:
         return
-    notify("Draft's grid spacing is 0, so its grid draws as stray lines. "
-           "Preferences -> Draft -> Grid and snapping -> Grid spacing.")
+    _GRID_REPORTED = True
+    notify("Draft's grid spacing is 0, so it draws no grid -- just its axes "
+           "and the human figure. Preferences -> Draft -> Grid and snapping.")
+
+
+def _draft_param(name):
+    """One Draft preference, read the way Draft reads it.
+
+    Through `draftutils.params`, whose types and defaults are parsed from
+    Draft's own preference pages, so a default this module never sees stays
+    correct. Only ever called once Draft has loaded.
+    """
+    from draftutils import params
+    return params.get_param(name)
 
 
 def _grid_will_draw():
-    """Whether the operator has asked for the grid at all."""
+    """Whether Draft is about to draw the grid, as things stand.
+
+    `setTrackers` draws for `alwaysShowGrid` outright, and for `grid` only
+    while `App.activeDraftCommand` is set. A bare point step never sets it;
+    a verb that reaches a Draft command through `runCommand` does. Reporting
+    on the second without that check told people about a grid that was not
+    going to appear.
+    """
     try:
-        prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
-        return prefs.GetBool("alwaysShowGrid", True) or \
-            prefs.GetBool("grid", True)
+        if _draft_param("alwaysShowGrid"):
+            return True
+        return bool(_draft_param("grid")
+                    and getattr(App, "activeDraftCommand", None))
     except Exception:
         return False
 
 
 def _grid_spacing():
-    """Draft's grid spacing as a number, read the way Draft reads it."""
+    """Draft's grid spacing as a number, or None if it could not be read."""
     try:
-        prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
-        return App.Units.Quantity(prefs.GetString("gridSpacing", "1 mm")).Value
+        return App.Units.Quantity(_draft_param("gridSpacing")).Value
     except Exception:
         return None
 

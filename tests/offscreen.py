@@ -1387,18 +1387,22 @@ def _run():
     # Overruling a preference at runtime is the same imposition as
     # rewriting it. The condition gets reported instead.
     from fccli import picking as _pick
-    check("nothing forces the grid off any more",
+
+    # Revert detectors, not behaviour: an inlined suppression leaves these
+    # green. Named so nobody counts them as coverage.
+    check("quiet_grid is not back by that name",
           hasattr(_pick, "quiet_grid"), False)
-    check("  nor silences Draft's warnings", hasattr(_pick, "_hushed"), False)
+    check("  nor _hushed", hasattr(_pick, "_hushed"), False)
 
     _was_draw, _was_space = _pick._grid_will_draw, _pick._grid_spacing
     try:
-        def _report(will_draw, spacing):
+        def _report(will_draw, spacing, notify=True, fresh=True):
             said = []
-            _pick._GRID_CHECKED = False
+            if fresh:
+                _pick._GRID_REPORTED = False
             _pick._grid_will_draw = lambda: will_draw
             _pick._grid_spacing = lambda: spacing
-            _pick.report_grid(said.append)
+            _pick.report_grid(said.append if notify else None)
             return said
         check("zero spacing on a grid that draws is reported",
               len(_report(True, 0.0)), 1)
@@ -1409,20 +1413,81 @@ def _run():
         check("an unreadable preference says nothing", _report(True, None), [])
 
         # Once per session: three point steps must not print it three times.
+        _pick._GRID_REPORTED = False
         said = []
-        _pick._GRID_CHECKED = False
         _pick._grid_will_draw, _pick._grid_spacing = lambda: True, lambda: 0.0
         for _ in range(3):
             _pick.report_grid(said.append)
         check("it is said once, not once per pick", len(said), 1)
+
+        # A call that had nowhere to say it must not count as having said
+        # it. bvt calls ensure_snapper() bare, and that used to silence the
+        # report for the rest of the process.
+        _pick._GRID_REPORTED = False
+        _report(True, 0.0, notify=False, fresh=False)
+        check("a call with no way to speak does not use up the one report",
+              len(_report(True, 0.0, fresh=False)), 1)
+
+        # Nothing to say yet is not the same as said. Draft carries a
+        # parameter observer for gridSpacing because it changes mid-session.
+        _pick._GRID_REPORTED = False
+        _report(True, 10.0, fresh=False)
+        check("a spacing corrected to zero later is still reported",
+              len(_report(True, 0.0, fresh=False)), 1)
     finally:
         _pick._grid_will_draw, _pick._grid_spacing = _was_draw, _was_space
-        _pick._GRID_CHECKED = False
+        _pick._GRID_REPORTED = False
 
-    # A workbench fetched to run a command is handed back.
+    # A workbench fetched to run a command is handed back. Driven against a
+    # stub, because the import is inside the function: what matters is the
+    # order, the no-op when it is already active, and that the restore
+    # happens when the body raises.
     from fccli import panels as _panels
-    check("a borrowed workbench is a context manager",
-          hasattr(_panels, "_workbench_borrowed"), True)
+
+    class _FakeWb:
+        def __init__(self, name): self._name = name
+        def name(self): return self._name
+
+    class _FakeGui:
+        def __init__(self, active): self.active, self.calls = active, []
+        def activeWorkbench(self): return _FakeWb(self.active)
+        def activateWorkbench(self, name):
+            self.active = name
+            self.calls.append(name)
+
+    _real_gui = sys.modules.get("FreeCADGui")
+    try:
+        gui = _FakeGui("PartDesignWorkbench")
+        sys.modules["FreeCADGui"] = gui
+        with _panels._workbench_borrowed("BIMWorkbench") as was:
+            inside = gui.active
+        check("the borrow activates what was asked for",
+              inside, "BIMWorkbench")
+        check("  and names what it displaced", was, "PartDesignWorkbench")
+        check("  and puts it back",
+              gui.calls, ["BIMWorkbench", "PartDesignWorkbench"])
+
+        gui = _FakeGui("BIMWorkbench")
+        sys.modules["FreeCADGui"] = gui
+        with _panels._workbench_borrowed("BIMWorkbench"):
+            pass
+        check("already there means no switch back",
+              gui.calls, ["BIMWorkbench"])
+
+        gui = _FakeGui("PartDesignWorkbench")
+        sys.modules["FreeCADGui"] = gui
+        try:
+            with _panels._workbench_borrowed("BIMWorkbench"):
+                raise RuntimeError("the command blew up")
+        except RuntimeError:
+            pass
+        check("a body that raises still gives the workbench back",
+              gui.calls, ["BIMWorkbench", "PartDesignWorkbench"])
+    finally:
+        if _real_gui is not None:
+            sys.modules["FreeCADGui"] = _real_gui
+        else:
+            sys.modules.pop("FreeCADGui", None)
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

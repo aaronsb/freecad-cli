@@ -288,8 +288,28 @@ def suite_tracker(dock):
     # its lineTracker from there to the cursor. It never appeared before
     # because lastpoint was arriving as a document object for any verb with
     # a selection step, so Draft raised inside p1() before reaching on().
+    from fccli import picking as _pick
     from fccli.picking import ensure_snapper
     truthy("the snapper is available", ensure_snapper())
+
+    # That bare call is the hazard the report used to fall into: it settles
+    # _SNAPPER_READY, and the report used to live inside the bootstrap, so
+    # every later call short-circuited before reaching it. Anyone who had
+    # opened Draft before their first pick was in the same position -- and
+    # they are the people with grid preferences worth reporting on.
+    _was_draw, _was_space, _was_said = (
+        _pick._grid_will_draw, _pick._grid_spacing, _pick._GRID_REPORTED)
+    try:
+        _pick._GRID_REPORTED = False
+        _pick._grid_will_draw, _pick._grid_spacing = (lambda: True,
+                                                      lambda: 0.0)
+        said = []
+        ensure_snapper(said.append)
+        check("a snapper already up still gets the grid reported",
+              len(said), 1)
+    finally:
+        _pick._grid_will_draw, _pick._grid_spacing = _was_draw, _was_space
+        _pick._GRID_REPORTED = _was_said
     snapper = Gui.Snapper
     truthy("Draft owns a track line", snapper.trackLine is not None)
 
@@ -298,20 +318,32 @@ def suite_tracker(dock):
     # what alwaysShowGrid said, which held for the rest of the session.
     # setTrackers is where Draft reads those preferences, so compare
     # against what it set rather than against a constant.
+    #
+    # Reading the preference is what makes this portable and is also its
+    # weakness: gridTracker starts both flags False, which is what the old
+    # suppression set them to, so on a machine with the preference off both
+    # sides agree either way and the check cannot tell the fix from the
+    # fault. Say so rather than printing a green line that carries nothing.
     snapper.setTrackers()
     QtWidgets.QApplication.processEvents()
     _prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
+    _always = _prefs.GetBool("alwaysShowGrid", True)
+    _during = _prefs.GetBool("grid", True)
+    if not (_always or _during):
+        print("       both grid preferences are off here -- the three "
+              "checks below cannot tell the fix from the fault")
     if snapper.grid is not None:
         check("the grid shows what alwaysShowGrid asks for",
-              bool(snapper.grid.show_always),
-              _prefs.GetBool("alwaysShowGrid", True))
+              bool(snapper.grid.show_always), _always)
         check("  and during a command, what grid asks for",
-              bool(snapper.grid.show_during_command),
-              _prefs.GetBool("grid", True))
+              bool(snapper.grid.show_during_command), _during)
         # Through the picker, which is where the suppression used to sit:
         # quiet_grid ran on every resolve and every teardown, so a grid
         # switched back on by hand went away again at the next click.
+        # start() first -- resolve on an unstarted picker dereferences a
+        # None view, which raises instead of failing a check.
         _before = bool(snapper.grid.show_always)
+        dock.picker.start(lambda *_: None)
         dock.picker.resolve((400, 300))
         dock.picker.stop()
         QtWidgets.QApplication.processEvents()

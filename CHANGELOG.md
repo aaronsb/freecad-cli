@@ -17,8 +17,17 @@
   command with BIM unloaded moved the operator from wherever they were to
   BIM and left them there. `_workbench_borrowed` activates, takes the
   command registration -- which survives the switch, so it is still a
-  one-off -- and puts the previous workbench back.
+  one-off -- and puts the previous workbench back, saying on the command
+  line where it went and where it came back to. FreeCAD has no
+  load-without-activating, so the round trip runs both workbenches'
+  `Activated`/`Deactivated` hooks; what those write is FreeCAD's business
+  and is now written down rather than discovered.
 
+- **A toolbar flash no longer sticks.** `actions.flash` read the live
+  stylesheet as the thing to restore, so a second flash inside the first
+  one's 350ms saved the flashed state as the real one and left FreeCAD's
+  button yellow until the workbench reloaded. The base is parked in a
+  widget property and taken back once.
 
 ## 0.3.0 -- 2026-08-23
 

@@ -336,21 +336,52 @@ the same imposition through different doors — the picker once turned
 Draft's grid off on every snap while `alwaysShowGrid` was on, and called
 that restraint because `user.cfg` was untouched.
 
-Three rules fall out:
-
-- **Report the condition, do not correct it.** A grid drawn as stray lines
-  because `gridSpacing` is `0` gets one line on the command line naming
-  where to fix it. `fccli/picking.py` `report_grid`.
+- **Report the condition, do not correct it.** A grid that draws nothing
+  because `gridSpacing` is `0` gets one line naming where to fix it.
+  `fccli/picking.py` `report_grid`.
 - **Borrow and return.** A command that needs its workbench loaded does not
-  need it left in front. `fccli/panels.py` `_workbench_borrowed` activates,
-  takes what it came for, and puts back whichever workbench was on.
+  need it left in front. `fccli/panels.py` `_workbench_borrowed`.
+  `fccli/actions.py` `flash` is the same move on a toolbar button, and
+  shows the trap: it saves what to restore into a widget property rather
+  than reading the live stylesheet, because a second borrow inside the
+  first one's window otherwise saves the borrowed state as the real one.
 - **Write only what was asked for, and only where it belongs.** `units`
   writes `Units/UserSchema` because somebody ran `units`, which is the
   command-line spelling of Preferences → Units. Everything this project
   keeps for itself lives under `Mod/fccli`.
 
-Tests inherit this: a suite may not read or write the operator's real
-history, alias file, or preferences.
+**A standing instruction is not a running command.** A preference outlives
+every command, so overruling one reaches past what the operator asked for.
+An event filter armed around a typed command *is* that command running, and
+is not the same thing. That is why `keyfilter.py` swallowing 195 of
+FreeCAD's single-key shortcuts is fair and `quiet_grid` was not: the filter
+is scoped to focus and engine state, comes off with `remove()`, and is
+visible and switchable in the dock. `modals.py` clicking buttons on
+FreeCAD's own dialogs is the same case, refcounted to one emit.
+
+**A borrowed workbench cannot be borrowed quietly.** FreeCAD has no
+load-without-activating, and `Activated()` / `Deactivated()` hooks are the
+workbench's own business: BIM's writes `RestoreBimViews` and `BimViewsSize`
+into `Mod/BIM` and calls `Snapper.hide()`. A fetch therefore costs a round
+trip through two workbenches' hooks and fires more of them than switching
+and staying would. Accepted, because the alternatives are refusing to run
+the command or leaving somebody where a typed command moved them. What this
+project owes is not stacking its own writes on top.
+
+**Tests may read the operator's settings and may not write them.** A GUI
+suite runs inside a real FreeCAD and its job is checking that FreeCAD's
+state matches what FreeCAD's own settings ask for — stubbing the
+preference would replace that assertion with a tautology about the stub.
+Reading one has a second cost, though: a check that compares live state
+against a preference is silent on any machine where the preference makes
+both sides agree by accident. Say so in the run when it happens, rather
+than printing a green line that carries nothing. `tests/bvt.py`
+`suite_tracker`.
+
+The operator's real history, alias file, and any preference this project
+does not own are off limits to write. `tests/offscreen.py` runs against a
+scratch XDG root for exactly this; `main()` puts `UserSchema` back in a
+`finally`.
 
 ## Dialogs
 
