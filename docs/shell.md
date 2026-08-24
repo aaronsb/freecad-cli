@@ -302,7 +302,8 @@ Pure stdlib — FreeCAD ships the system Python, so the client imports nothing
 that is not in the standard library and runs from any terminal or venv.
 
 ```bash
-fccli                              # tty → interactive REPL
+fccli                              # usage, and what it can attach to
+fccli start --headless             # launch FreeCAD and wait for it
 fccli exec 'box 0,0,0 40 30 20'    # one command
 echo 'circle 0,0,0 20' | fccli     # stdin, one command per line
 fccli history                      # the ring

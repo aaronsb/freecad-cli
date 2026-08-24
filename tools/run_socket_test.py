@@ -38,9 +38,35 @@ def socket_dir():
 
 
 def fccli(*args, **kw):
+    kw.setdefault("stdin", subprocess.DEVNULL)
+    if "input" in kw:
+        kw.pop("stdin")
     proc = subprocess.run([sys.executable, CLIENT, *args],
                           capture_output=True, text=True, timeout=60, **kw)
     return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
+
+
+class _Handle:
+    """Just enough of a Popen to ask whether the process is still alive.
+
+    fccli start detaches the process, so there is no child to wait on.
+    """
+
+    def __init__(self, pid):
+        self.pid = pid
+
+    def poll(self):
+        try:
+            os.kill(self.pid, 0)
+        except OSError:
+            return 0
+        return None
+
+    def kill(self):
+        try:
+            os.kill(self.pid, 9)
+        except OSError:
+            pass
 
 
 def wait_for_socket(before, deadline):
@@ -56,27 +82,46 @@ def wait_for_socket(before, deadline):
 
 def main():
     os.makedirs(socket_dir(), mode=0o700, exist_ok=True)
-    before = set(os.listdir(socket_dir()))
 
-    runner = []
-    if not os.environ.get("DISPLAY") and shutil.which("xvfb-run"):
-        runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"]
-    boot = os.path.join(ROOT, "tests", "socket_host.py")
-    proc = subprocess.Popen(runner + ["freecad", boot],
-                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    print(f"launching FreeCAD (pid {proc.pid})...")
-    sock = wait_for_socket(before, time.monotonic() + BOOT_TIMEOUT)
-    if sock is None:
-        proc.kill()
-        out, err = proc.communicate(timeout=10)
-        print("no socket appeared", file=sys.stderr)
-        print(err.decode()[-2000:], file=sys.stderr)
+    # The suite assumes one reachable instance, so it will not run alongside
+    # a FreeCAD someone is using -- that would be its session under test.
+    code, out, _ = fccli("ls")
+    if code == 0:
+        print("socket: a FreeCAD is already running. Quit it first "
+              "(fccli exec 'quit!') so the suite has a clean session.",
+              file=sys.stderr)
+        print(out, file=sys.stderr)
         return 2
-    pid = sock[:-5]
-    print(f"socket: {sock}\n")
+
+    print("launching FreeCAD through `fccli start`...")
+    code, out, err = fccli("start", "--headless",
+                           "--timeout", str(BOOT_TIMEOUT),
+                           "--log", "/tmp/fccli-socket-test.log")
+    check("start exits clean", code, 0)
+    truthy("it reports the pid it started", "started FreeCAD, pid" in out)
+    truthy("  and that no --pid is needed", "no --pid" in out)
+    if code != 0:
+        print(err, file=sys.stderr)
+        return 2
+
+    # Ask again in JSON rather than scraping the friendly output.
+    code, out, _ = fccli("--json", "ls")
+    rows = json.loads(out)
+    check("exactly one instance is reachable", len(rows), 1)
+    pid = str(rows[0]["pid"])
+    proc = _Handle(rows[0]["pid"])
+    print()
 
     try:
-        print("1. the client finds the instance")
+        print("0. bare invocation orients the caller")
+        code, out, err = fccli()
+        check("it exits clean", code, 0)
+        truthy("it shows usage", "usage: fccli" in (out + err))
+        truthy("it names the single instance",
+               "One instance running" in out and pid in out)
+        truthy("  and says no --pid is needed", "no --pid" in out)
+
+        print("\n1. the client finds the instance")
         code, out, _ = fccli("ls")
         check("ls exits clean", code, 0)
         truthy("it lists the running pid", pid in out)
@@ -169,7 +214,7 @@ def main():
         check("FreeCAD exited", proc.poll() is not None, True)
         if proc.poll() is None:
             proc.kill()
-        leftover = os.path.join(socket_dir(), sock)
+        leftover = os.path.join(socket_dir(), f"{pid}.sock")
         check("the socket was cleaned up", os.path.exists(leftover), False)
 
     passed = sum(1 for c in CHECKS if c)

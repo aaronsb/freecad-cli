@@ -28,7 +28,10 @@ import errno
 import glob
 import json
 import os
+import select
+import shutil
 import socket
+import subprocess
 import sys
 import tempfile
 import time
@@ -262,6 +265,66 @@ def cmd_history(client, args):
     return EX_OK
 
 
+def find_freecad():
+    for name in ("freecad", "FreeCAD"):
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
+def cmd_start(args):
+    """Launch FreeCAD and wait until its command line is reachable.
+
+    So a whole session can be run from a terminal: start it, drive it, quit
+    it, without touching the application window.
+    """
+    binary = find_freecad()
+    if binary is None:
+        print("fccli: no freecad on PATH", file=sys.stderr)
+        return EX_NOINSTANCE
+
+    before = {pid for pid, _ in instances()}
+    if before and not args.force:
+        print(f"fccli: {len(before)} instance(s) already running. "
+              "Use --force to start another, or fccli ls to see them.",
+              file=sys.stderr)
+        return EX_AMBIGUOUS
+
+    runner = []
+    if args.headless:
+        if not shutil.which("xvfb-run"):
+            print("fccli: --headless needs xvfb-run", file=sys.stderr)
+            return EX_NOINSTANCE
+        runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"]
+
+    log = open(args.log, "ab") if args.log else subprocess.DEVNULL
+    proc = subprocess.Popen(runner + [binary, *args.args],
+                            stdout=log, stderr=log,
+                            stdin=subprocess.DEVNULL, start_new_session=True)
+    deadline = time.monotonic() + args.timeout
+    while time.monotonic() < deadline:
+        fresh = [(pid, path) for pid, path in instances() if pid not in before]
+        if fresh:
+            pid, path = fresh[0]
+            if args.json:
+                print(json.dumps({"pid": pid, "socket": path,
+                                  "only": not before}))
+                return EX_OK
+            print(f"started FreeCAD, pid {pid}")
+            if not before:
+                print("commands attach to it with no --pid.")
+            return EX_OK
+        if proc.poll() is not None:
+            print(f"fccli: FreeCAD exited before opening a socket "
+                  f"(status {proc.returncode})", file=sys.stderr)
+            return EX_NOINSTANCE
+        time.sleep(0.5)
+    print(f"fccli: no socket after {args.timeout:g}s. Is the addon installed?",
+          file=sys.stderr)
+    return EX_NOINSTANCE
+
+
 def cmd_docs(client, args):
     warn_protocol(client)
     reply = client.ask(op="documents")
@@ -298,14 +361,67 @@ def cmd_state(client, args):
     return EX_OK
 
 
-def _stdin_lines():
+def _stdin_lines(wait=0.1):
+    """Lines piped in, or nothing.
+
+    A pipe that is open but idle would block a bare `fccli` forever, so the
+    no-subcommand path asks whether anything is actually waiting rather than
+    reading and hoping.
+    """
     if sys.stdin.isatty():
         return []
+    if wait is not None:
+        try:
+            ready, _, _ = select.select([sys.stdin], [], [], wait)
+            if not ready:
+                return []
+        except (OSError, ValueError):
+            return []
     return sys.stdin.read().splitlines()
 
 
+EPILOG = """\
+Attaching:
+  With one FreeCAD running, every command attaches to it. --pid is only
+  needed when several are running; fccli ls names them.
+
+Exit codes:
+  0   done
+  1   the command was rejected -- a fault, reason on stderr
+  2   usage
+  3   no running instance, or it went away
+  4   several instances, pass --pid
+  75  busy -- a dialog is open or someone holds the floor. Ordinary, not a
+      fault: EX_TEMPFAIL, so `if ! fccli exec ...` does not read it as a
+      broken command. --wait queues instead.
+"""
+
+
+def show_help(parser):
+    """Bare fccli: the help, and what there is to attach to."""
+    parser.print_help()
+    found = instances()
+    print()
+    if not found:
+        print("No FreeCAD is running with the command line loaded.")
+        return EX_OK
+    if len(found) == 1:
+        pid, _ = found[0]
+        print(f"One instance running (pid {pid}); commands attach to it "
+              "with no --pid.")
+    else:
+        print(f"{len(found)} instances running -- pass --pid:")
+        for pid, _ in found:
+            print(f"  --pid {pid}")
+    print("Try: fccli ls")
+    return EX_OK
+
+
 def main():
-    parser = argparse.ArgumentParser(prog="fccli", description=__doc__)
+    parser = argparse.ArgumentParser(
+        prog="fccli", description=__doc__.split("\n\n")[0],
+        epilog=EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--pid", type=int, help="which FreeCAD to talk to")
     parser.add_argument("--json", action="store_true",
                         help="raw messages, for programs")
@@ -328,10 +444,30 @@ def main():
     hist.add_argument("-f", "--follow", action="store_true")
 
     sub.add_parser("state", help="what the session is doing")
+
+    start = sub.add_parser("start", help="launch FreeCAD and wait for it")
+    start.add_argument("args", nargs="*", help="passed through to FreeCAD")
+    start.add_argument("--headless", action="store_true",
+                       help="run under a virtual display (needs xvfb-run)")
+    start.add_argument("--timeout", type=float, default=90, metavar="SECONDS")
+    start.add_argument("--log", metavar="FILE", help="where FreeCAD's own output goes")
+    start.add_argument("--force", action="store_true",
+                       help="start another even if one is running")
     sub.add_parser("ls", help="running instances and what they have open")
     sub.add_parser("docs", help="documents open in one instance")
 
     args = parser.parse_args()
+
+    # No subcommand and nothing piped in: the caller is looking around.
+    # Show what this does and what it can reach, rather than a terse error.
+    if args.op is None:
+        piped = _stdin_lines()
+        if not any(line.strip() for line in piped):
+            return show_help(parser)
+        args.command = piped
+
+    if args.op == "start":
+        return cmd_start(args)
 
     if args.op == "ls":
         found = instances()
@@ -382,13 +518,7 @@ def main():
         handler = {"exec": cmd_exec, "check": cmd_check, "docs": cmd_docs,
                    "history": cmd_history, "state": cmd_state}.get(args.op)
         if handler is None:
-            # No subcommand: stdin is a script, a tty is a session.
-            args.command = _stdin_lines()
-            if not args.command:
-                print("fccli: nothing on stdin. Try: fccli exec '<command>'",
-                      file=sys.stderr)
-                return EX_USAGE
-            handler = cmd_exec
+            handler = cmd_exec          # stdin was a script
         return handler(client, args)
     except ConnectionError as exc:
         print(f"fccli: {exc}", file=sys.stderr)

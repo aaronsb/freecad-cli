@@ -153,6 +153,24 @@ the dock's prompt changes.
 Nothing in the client imports FreeCAD. It is standard library only, so it
 runs from any terminal or virtualenv.
 
+A whole session can run without touching the application window:
+
+```bash
+$ fccli start --headless          # launch it and wait until it answers
+started FreeCAD, pid 3074336
+commands attach to it with no --pid.
+
+$ fccli exec 'new bracket'
+$ fccli exec 'box 0,0,0 40 30 20'
+= box 0,0,0 40.00mm 30.00mm 20.00mm
+$ fccli exec 'save ~/parts/bracket.FCStd'
+$ fccli exec 'quit!'
+```
+
+With one FreeCAD running, every command attaches to it; `--pid` is only
+needed when several are. Bare `fccli` prints the usage and says what it can
+reach.
+
 ```bash
 $ fccli ls
 pid 3068224   idle, 1 client(s), floor free
