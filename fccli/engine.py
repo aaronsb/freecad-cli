@@ -304,6 +304,13 @@ class Engine:
                      else parse_quantity(text))
             if probe.ok:
                 return False
+        if step.kind == CHOICE and step.choices:
+            # A choice the step declares is input, whatever else shares its
+            # name. `view sketch` used to cancel view and run the sketch
+            # verb; 242 verb-and-choice pairs read that way, including
+            # `constrain coincident` and `additive helix`.
+            if any(c.lower().startswith(token) for c in step.choices):
+                return False
         hits = self.registry.resolve_prefix(token)
         if len(hits) != 1:
             return False

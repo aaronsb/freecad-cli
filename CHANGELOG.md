@@ -55,6 +55,18 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
 - **A family verb cites its neighbours too.** It runs no command of its own,
   so the toolbar holding most of its members answers on its behalf.
 
+- **`describe`** reads an object out as text -- identity, placement, the
+  parametric properties, and what the shape measures. Bare it lists the
+  document. Closes #1.
+- **`shortcuts`** offers FreeCAD's key chords as aliases: `A,X` becomes
+  `ax`. `list`, `why`, `import`, `drop`. Closes #4.
+- **`units.format_measure`** for numbers FreeCAD computed rather than ones
+  somebody typed, which are not owed a round-trip and print better without
+  one: `5.03 ml`, not `5.02654824574ml`.
+- **`fccli/properties.py`** holds the property filter that `describe` and
+  the type harvester now share, so what a verb asks for and what describe
+  reads back cannot drift apart.
+
 ### Changed (tests)
 
 - **`tests/test_spike.py` is now `tests/offscreen.py`.** It stopped being a
@@ -67,6 +79,11 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
 
 ### Fixed
 
+- **A declared choice was hijacked by a command of the same name.**
+  `_is_restart` guarded text, point and quantity steps and forgot choices,
+  so `view sketch` cancelled `view` and ran the `sketch` verb. 242
+  verb-and-choice pairs read that way, `constrain coincident` and
+  `additive helix` among them.
 - **Ranking stopped learning once the history ring filled.** The frecency
   tally was cached against the ring's length, and an add past the limit
   trims as it appends -- so at 2000 entries the length stopped moving while

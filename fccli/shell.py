@@ -21,6 +21,7 @@ import FreeCAD as App
 from . import bus as _bus
 from . import curation as _curation
 from . import describe as _describe
+from . import shortcuts as _shortcuts
 from . import paths as _paths
 from .grammar import (CHOICE, PATH, QUANTITY, TEXT, Option, Step, Verb,
                       REGISTRY)
@@ -273,6 +274,76 @@ def _shot_path(given):
         if not os.path.exists(path):
             return path
         n += 1
+
+
+def _emit_shortcuts(v):
+    """List, import or drop FreeCAD's key chords as aliases.
+
+    A command rather than something that happens on first load: it changes
+    what a hundred words mean, and that should be asked for and reversible.
+    """
+    engine = v.get("_engine")
+    if engine is None:
+        return None
+
+    def say(text, role="info"):
+        engine.bus.emit(_bus.INFO, text, role=role)
+
+    what = (v.get("what") or "list").strip().lower()
+    mine = _user_aliases()
+    from .factory import load_descriptor
+    accepted, rejected = _shortcuts.proposals(
+        REGISTRY, load_descriptor(), mine)
+
+    if what == "list":
+        say(f"{len(accepted)} chords could become aliases", "head")
+        for row in _columns([f"{a}={verb}" for a, verb in
+                             sorted(accepted.items())][:60], width=68):
+            say(f"  {row}", "quiet")
+        if rejected:
+            say(f"{len(rejected)} skipped -- shortcuts import --why "
+                f"says which", "quiet")
+        say("shortcuts import adds them; shortcuts drop removes them again")
+        return None
+
+    if what == "why":
+        say(f"{len(rejected)} chords were skipped", "head")
+        for alias, reason in sorted(rejected.items()):
+            say(f"  {alias:<8} {reason}")
+        return None
+
+    if what == "import":
+        added = 0
+        for alias, name in accepted.items():
+            verb = REGISTRY.get(name)
+            if verb is None or alias in verb.aliases:
+                continue
+            verb.aliases.append(alias)
+            REGISTRY.add(verb)
+            mine[alias] = name
+            added += 1
+        REGISTRY.reindex()
+        _save_aliases(mine)
+        say(f"imported {added} chords -- ax, ci, bu and the rest now type")
+        return None
+
+    if what == "drop":
+        _, _ = accepted, rejected
+        dropped = 0
+        for alias in list(mine):
+            if _shortcuts.chord_to_alias(alias.upper()) != alias:
+                continue
+            verb = REGISTRY.get(mine[alias])
+            if verb is not None and alias in verb.aliases:
+                verb.aliases.remove(alias)
+                dropped += 1
+            mine.pop(alias, None)
+        REGISTRY.reindex()
+        _save_aliases(mine)
+        say(f"dropped {dropped} imported chords")
+        return None
+
+    raise RuntimeError(f"shortcuts takes list, why, import or drop")
 
 
 def _emit_describe(v):
@@ -925,6 +996,14 @@ def _emit_help(v):
         engine.bus.emit(_bus.INFO, f"  {name + alias:<18} {verb.doc}")
     return None
 
+
+REGISTRY.add(Verb(
+    name="shortcuts", transactional=False,
+    doc="Offer FreeCAD's key chords as aliases: A,X becomes ax.",
+    steps=[Step("what", CHOICE, "Do what", optional=True,
+                choices=["list", "why", "import", "drop"])],
+    emit=_emit_shortcuts,
+))
 
 REGISTRY.add(Verb(
     name="describe", transactional=False, aliases=["desc", "what"],

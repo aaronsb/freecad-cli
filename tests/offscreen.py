@@ -921,6 +921,65 @@ def main():
     _stop()
     App.closeDocument("describe")
 
+    print("\n5u. a declared choice is input, not a new command")
+    # _is_restart guarded TEXT, POINT and QUANTITY steps and forgot CHOICE,
+    # so any choice sharing a name with a verb cancelled its own command.
+    _restart = []
+    _stopr = bus.subscribe(
+        lambda m: _restart.append(m.text) if m.kind == "info" else None)
+    engine.submit("check view sketch")
+    check("a choice that is also a verb fills the step",
+          any("41 commands" in ln for ln in _restart), True)
+    check("  and does not cancel the command",
+          any("cancelled" in ln for ln in _restart), False)
+    _stopr()
+    _hijacked = 0
+    for _name in REGISTRY.names():
+        for _st in REGISTRY.get(_name).steps:
+            if _st.kind == "choice" and _st.choices:
+                _hijacked += sum(
+                    1 for c in _st.choices
+                    if len(REGISTRY.resolve_prefix(c.lower())) == 1)
+    check("the pairs that would have been hijacked are many",
+          _hijacked > 100, True)
+
+    print("\n5v. FreeCAD's key chords, offered as aliases")
+    from fccli import shortcuts as _short
+    check("a two-key chord becomes a word", _short.chord_to_alias("A, X"), "ax")
+    check("a three-key chord too", _short.chord_to_alias("G, P, 3"), "gp3")
+    check("a modified shortcut is left alone",
+          _short.chord_to_alias("Ctrl+S"), None)
+    check("a single key is a keystroke, not a word",
+          _short.chord_to_alias("C"), None)
+    for _key in ("Esc", "Del", "Space", "F10", "Home"):
+        check(f"  {_key} stays a key", _short.chord_to_alias(_key), None)
+
+    _accepted, _rejected = _short.proposals(
+        REGISTRY, _load_desc(), {"ax": "circle"})
+    check("an alias the operator already owns is not taken",
+          "ax" in _accepted, False)
+    check("  and the reason says whose it is",
+          "you alias" in _rejected.get("ax", ""), True)
+    _accepted2, _rejected2 = _short.proposals(REGISTRY, _load_desc(), {})
+    check("a chord never shadows a command",
+          [a for a in _accepted2 if REGISTRY.get(a) is not None], [])
+    check("every accepted chord names a real verb",
+          all(REGISTRY.get(v) is not None for v in _accepted2.values()), True)
+    check("there are chords worth importing", len(_accepted2) > 100, True)
+
+    _out2 = []
+    _stop2 = bus.subscribe(
+        lambda m: _out2.append(m.text) if m.kind == "info" else None)
+    engine.submit("shortcuts import")
+    check("import gives ax to the axis verb",
+          REGISTRY.resolve_prefix("ax"), ["axis"])
+    engine.submit("shortcuts drop")
+    check("drop takes it back again",
+          "ax" in REGISTRY.get("axis").aliases, False)
+    check("  without disturbing a hand-written alias",
+          REGISTRY.resolve_prefix("ci"), ["circle"])
+    _stop2()
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])
