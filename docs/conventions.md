@@ -218,6 +218,18 @@ multiplier, integer arithmetic, no curve.
   real setting. Stopping the debounce timer is not enough, because a later
   relayout restarts it.
 
+## The viewport
+
+- **Frame-rate updates do not go on the bus.** The bus carries roles a dock
+  renders in Qt colours and a terminal renders in ANSI, and it crosses a
+  socket. A scene update on every mouse move has no business on it, and a
+  terminal has nothing to do with the answer. The widget and the tracker
+  are peers, both fed by the engine through the picker.
+- **The rubber band draws from the second point on.** The first click of a
+  command has nothing to draw from.
+- **Anything the command line puts in the scene graph is unpickable.** The
+  line somebody is drawing must not be a thing they can snap to.
+
 ## Files
 
 `fccli/paths.py` is the only module that names a directory.

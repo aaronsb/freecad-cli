@@ -130,17 +130,19 @@ a bad descriptor breaks a toolbar button, and users blame FreeCAD. The
 per-verb kill switch and the global `off` exist for that reason. Default is
 `echo`.
 
-**Live trackers.** Rhino rubber-bands from the last point to the cursor at
-frame rate. That is Coin3D scene-graph mutation driven by `SoLocation2Event`
-and it bypasses the message stream entirely — the widget and the tracker are
-peers, both fed by the engine. Not built.
+**Live trackers.** Built. `fccli/tracker.py` puts an `SoAnnotation` in the
+view's scene graph and the picker moves it on every `SoLocation2Event`. Two
+details worth keeping: `SoPickStyle.UNPICKABLE`, so the line being drawn is
+not something to snap to, and `SoGroup.findChild` rather than identity when
+testing membership — pivy returns a fresh Python wrapper per `getChild`, so
+`is` compares wrappers rather than nodes.
 
 **Sketcher.** Bare `C`, `D`, `E` are Sketcher constraint commands pressed
 mid-interaction against a selection. Under usurping they cost one extra
 keystroke (Enter). Whether that is acceptable needs live-fire feedback.
 
-**Frecency ranking.** Tab cycles alphabetically. Most-recently-used ordering
-is the obvious next step and is unbuilt.
+**Frecency ranking.** Built. Completion orders by FreeCAD's own promotion
+first, then lifts whatever this operator actually runs above it.
 
 ## The 195
 
@@ -154,6 +156,9 @@ Del End Esc
 ```
 
 The Draft chords are already a command language — a bad one, with no
-discoverability and no arguments. `Shortcuts.cfg` can be imported as a seed
-alias file: strip the commas and `ci` + Enter does what `C,I` did. Muscle
-memory survives the transition. That import is not built yet.
+discoverability and no arguments. Stripping the commas turns each into an
+alias, so `ax` + Enter does what `A,X` did and muscle memory survives the
+transition. Built as the `shortcuts` verb — and it does not parse
+`Shortcuts.cfg` after all: `harvest_commands.py` already reads the shortcut
+off each QAction, and a running GUI has the live ones, which reflect what
+the operator remapped rather than what FreeCAD shipped.

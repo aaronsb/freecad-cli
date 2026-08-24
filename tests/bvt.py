@@ -155,6 +155,70 @@ def suite_picker(dock):
     dock.engine.cancel()
 
 
+def suite_tracker(dock):
+    print("\n5a. a rubber band follows the cursor between clicks")
+    band = dock.picker.band
+    check("nothing is drawn while idle", band.attached, False)
+
+    dock.engine.submit("polyline")
+    QtWidgets.QApplication.processEvents()
+    check("the first point has nothing to draw from", band.attached, False)
+
+    dock.engine.feed_point(App.Vector(0, 0, 0))
+    QtWidgets.QApplication.processEvents()
+    truthy("after a point lands, the band is in the scene graph",
+           band.attached)
+
+    view = Gui.ActiveDocument.ActiveView if Gui.ActiveDocument else None
+    root = view.getSceneGraph() if view else None
+    # findChild rather than identity: pivy hands back a fresh Python
+    # wrapper for each getChild, so `is` compares wrappers, not nodes.
+    truthy("  and the scene graph is what holds it",
+           root is not None and root.findChild(band.node) >= 0)
+
+    ok = band.update(App.Vector(0, 0, 0), App.Vector(30, 40, 0))
+    truthy("it moves when told where the cursor is", ok)
+    pts = band._coords.point
+    check("  from the last point", tuple(pts.getValues()[0].getValue()),
+          (0.0, 0.0, 0.0))
+    check("  to the cursor", tuple(pts.getValues()[1].getValue()),
+          (30.0, 40.0, 0.0))
+
+    dock.engine.feed_point(App.Vector(30, 40, 0))
+    QtWidgets.QApplication.processEvents()
+    truthy("it survives into the next segment", band.attached)
+
+    gone = band.node          # detach clears the handle, so keep it first
+    dock.engine.cancel()
+    QtWidgets.QApplication.processEvents()
+    check("cancelling takes it out of the scene graph", band.attached, False)
+    truthy("  and out of the graph itself",
+           root is None or gone is None or root.findChild(gone) < 0)
+
+    # It must not be pickable: the line being drawn cannot be the thing
+    # somebody snaps to.
+    dock.engine.submit("polyline")
+    dock.engine.feed_point(App.Vector(0, 0, 0))
+    QtWidgets.QApplication.processEvents()
+    from pivy import coin
+    styles = [band.node.getChild(i) for i in range(band.node.getNumChildren())]
+    picks = [s for s in styles if isinstance(s, coin.SoPickStyle)]
+    truthy("the band declares itself unpickable",
+           bool(picks) and picks[0].style.getValue()
+           == coin.SoPickStyle.UNPICKABLE)
+    dock.engine.cancel()
+    QtWidgets.QApplication.processEvents()
+
+    # Finishing a command tears it down the same way cancelling does.
+    dock.engine.submit("polyline")
+    dock.engine.feed_point(App.Vector(0, 0, 0))
+    dock.engine.feed_point(App.Vector(10, 0, 0))
+    QtWidgets.QApplication.processEvents()
+    dock.engine.submit("")
+    QtWidgets.QApplication.processEvents()
+    check("finishing tears it down too", band.attached, False)
+
+
 def suite_dock_geometry(dock):
     print("\n5b. the dock resizes, docked and floating")
     from fccli import dock as D
@@ -335,6 +399,7 @@ def run():
         doc = suite_geometry(dock)
         suite_undo(dock, doc)
         suite_picker(dock)
+        suite_tracker(dock)
         suite_dock_geometry(dock)
         suite_units(dock)
         suite_check(dock, doc)

@@ -58,6 +58,11 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
 - **`describe`** reads an object out as text -- identity, placement, the
   parametric properties, and what the shape measures. Bare it lists the
   document. Closes #1.
+- **A rubber band follows the cursor** from the last point placed, so a
+  polyline shows what it is about to become. Dashed, unpickable, drawn over
+  the model, and torn down on finish or cancel. It never touches the
+  message bus: a scene update on every mouse move does not belong on
+  something that crosses a socket. Closes #2.
 - **`shortcuts`** offers FreeCAD's key chords as aliases: `A,X` becomes
   `ax`. `list`, `why`, `import`, `drop`. Closes #4.
 - **`units.format_measure`** for numbers FreeCAD computed rather than ones
