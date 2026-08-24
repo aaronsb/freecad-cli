@@ -103,6 +103,15 @@ editable text.
 
 ## Open
 
+Tracked as issues:
+[#1 describe](https://github.com/aaronsb/freecad-cli/issues/1) ·
+[#2 live trackers](https://github.com/aaronsb/freecad-cli/issues/2) ·
+[#4 alias import](https://github.com/aaronsb/freecad-cli/issues/4) ·
+[#5 frecency](https://github.com/aaronsb/freecad-cli/issues/5) ·
+[#6 follow mode](https://github.com/aaronsb/freecad-cli/issues/6) ·
+[#7 Sketcher keys](https://github.com/aaronsb/freecad-cli/issues/7)
+
+
 **Whether `follow` mode fights the Task panels.** Swallowing a `QAction`
 trigger and opening the grammar instead is the invasive part of the design:
 a bad descriptor breaks a toolbar button, and users blame FreeCAD. The

@@ -366,7 +366,9 @@ one modal state.
    that proves the shared answer is genuinely shared.
 7. **Shared buffer** — `buffer` ops both ways, the dock rendering rather
    than owning.
-8. **REPL** with readline, rendering spans as ANSI.
+8. **REPL** rendering another client's half-typed line —
+   [#3](https://github.com/aaronsb/freecad-cli/issues/3), and possibly a
+   wontfix: `fccli watch` may be the honest answer.
 
 Steps 1–4 give a working tool. Steps 6–7 are what make a terminal feel
 identical to the dock, and they are worth doing in that order: the shared
