@@ -2,6 +2,68 @@
 
 <!-- next -->
 
+## Unreleased
+
+### Changed
+
+- **License is now LGPL-2.1-or-later**, replacing MIT -- the same license
+  FreeCAD is under. Code can move between this addon and FreeCAD in either
+  direction with no relicensing step, and a fork that modifies these files
+  has to publish the modifications.
+- **SPDX headers** on every source file, matching FreeCAD's own convention.
+- **Completion offers verbs in rank order.** Nothing is hidden -- a verb
+  FreeCAD never surfaces still completes, it just sorts after the ones it
+  gives a toolbar button.
+- **`Bezier Curve` slugs to `bezier_curve`.** Accents folded to their base
+  letter instead of stripped, which had produced `b_zier_curve`.
+
+### Added
+
+- **`fccli/curation.py`** -- rank and adjacency read from the toolbar and
+  menu placement `harvest_commands.py` already recorded and nothing read.
+  510 commands sit in a default toolbar, 399 in a menu only, 215 in
+  neither.
+- **`man <verb>` cites where FreeCAD puts a command and what it puts beside
+  it.** `man box` ends with cone, cylinder, sphere, torus, tube -- the rest
+  of the Solids toolbar.
+- **`fccli/frecency.py`** -- completion ranks by what this operator actually
+  runs, layered over curation rather than replacing it. Mozilla's frecency
+  buckets by way of [clicue](https://github.com/aaronsb/clicue): a count
+  times a bucketed age multiplier. A partition, not a sort, so an unused
+  verb keeps its curation order behind the used ones.
+- **`fccli/paths.py`** -- one module owns every directory name.
+  `$XDG_STATE_HOME/fccli/history` and `$XDG_DATA_HOME/fccli/aliases`, with
+  reads falling back to the old `~/.local/share/FreeCAD/fccli/` so nothing
+  is lost. Nothing is moved or deleted.
+- **History carries timestamps**, `<epoch>\t<command>`. A line without one
+  reads as epoch 0 and counts as frequency, so an existing file still works.
+- **Clicking an unfamiliar command names its neighbours** in the command
+  line, and stops after five uses. `ActionBridge.cue` turns it off.
+
+- **The dock resizes in both states.** Docked, it takes the height it is
+  dragged to. Floating, both axes follow, and the size is remembered apart
+  from the docked height -- dragging a floating window tall no longer
+  leaves a deep strip across the top of FreeCAD when it is re-docked.
+- **A floating command line can be made genuinely small.** The control
+  strip's width was the floor for the whole dock; it now clips instead.
+- **Long choice lists lay out in columns.** `man view` was one 700-character
+  line of 41 names.
+- **Qt mnemonic markers are stripped from labels** -- `&Box Zoom` read as
+  `&Box Zoom`.
+- **A family verb cites its neighbours too.** It runs no command of its own,
+  so the toolbar holding most of its members answers on its behalf.
+
+### Fixed
+
+- **`make bvt` overwrote the dock height in real preferences.** Showing the
+  dock fires a resize and the dock saves what it is resized to, which under
+  Xvfb is the Xvfb window's shape. The run now captures and restores the
+  geometry settings, as it already did for the unit schema, and
+  `CliDock.persist` turns saving off outright.
+- **157 dead lines in `fccli/shell.py`.** `ALIAS_PATH` through `_emit_quit`
+  had been pasted twice; the second copy shadowed the first, so a third of
+  the module was unreachable.
+
 ## 0.2.0 -- 2026-08-23
 
 The command language stops being hand-written.

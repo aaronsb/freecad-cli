@@ -155,6 +155,45 @@ def suite_picker(dock):
     dock.engine.cancel()
 
 
+def suite_dock_geometry(dock):
+    print("\n5b. the dock resizes, docked and floating")
+    from fccli import dock as D
+    mw = Gui.getMainWindow()
+
+    dock.persist = True            # the suite is testing persistence itself
+    mw.resizeDocks([dock], [380], QtCore.Qt.Vertical)
+    QtWidgets.QApplication.processEvents()
+    check("docked, it takes the height it is dragged to", dock.height(), 380)
+    dock._save_geometry()
+    check("  and remembers it", D.saved_height(), 380)
+
+    dock.setFloating(True)
+    for _ in range(3):
+        QtWidgets.QApplication.processEvents()
+    truthy("floating, it is a window", dock.isFloating())
+    dock.resize(880, 520)
+    for _ in range(3):
+        QtWidgets.QApplication.processEvents()
+    check("floating, width follows", dock.width(), 880)
+    check("floating, height follows", dock.height(), 520)
+
+    # The control strip must not set the floor for the whole window.
+    dock.resize(340, 150)
+    for _ in range(3):
+        QtWidgets.QApplication.processEvents()
+    truthy("it shrinks past the width of the control strip", dock.width() <= 360)
+    dock._save_geometry()
+    check("the floating size is remembered apart from the docked one",
+          list(D.saved_float_size()), [dock.width(), dock.height()])
+
+    dock.setFloating(False)
+    for _ in range(3):
+        QtWidgets.QApplication.processEvents()
+    check("re-docked, the docked height comes back, not the floating one",
+          D.saved_height(), 380)
+    dock.persist = False
+
+
 def suite_units(dock):
     print("\n6. units follow the schema")
     from fccli import units as U
@@ -227,17 +266,61 @@ def _view_widget(mw):
 
 # -------------------------------------------------------------------- run
 
+GEOMETRY_KEYS = ("DockHeight", "FloatWidth", "FloatHeight")
+
+
+def geometry_prefs():
+    """Read the dock geometry settings, so the run can put them back.
+
+    Showing the dock fires a resize, and the dock saves what it is resized
+    to. Under Xvfb that is the Xvfb window's shape, so without this a test
+    run silently replaces whatever height somebody had dragged to. The unit
+    schema is captured for the same reason a few suites down.
+    """
+    from fccli.dock import params
+    have = {}
+    for key in GEOMETRY_KEYS:
+        value = params().GetInt(key, -1)
+        if value >= 0:
+            have[key] = value
+    return have
+
+
+def restore_geometry(saved, dock=None):
+    """Put the geometry settings back exactly as they were found.
+
+    The dock saves on a debounce, so its pending timer has to be stopped
+    first -- otherwise it fires after the restore and writes the test's
+    window shape back over the real setting.
+    """
+    if dock is not None and getattr(dock, "_save_timer", None) is not None:
+        dock._save_timer.stop()
+    from fccli.dock import params
+    for key in GEOMETRY_KEYS:
+        if key in saved:
+            params().SetInt(key, saved[key])
+        else:
+            try:
+                params().RemInt(key)     # it was not set before this run
+            except Exception:
+                pass
+
+
 def run():
     started = time.perf_counter()
     failed_early = None
+    entry_geometry = geometry_prefs()
     try:
         from fccli import dock as D
         dock = D.instance()
+        if dock is not None:
+            dock.persist = False       # this window's shape is not a setting
         suite_dock(dock)
         suite_keys(dock)
         doc = suite_geometry(dock)
         suite_undo(dock, doc)
         suite_picker(dock)
+        suite_dock_geometry(dock)
         suite_units(dock)
         suite_check(dock, doc)
         suite_roundtrip(dock)
@@ -245,6 +328,12 @@ def run():
     except Exception:
         failed_early = traceback.format_exc()
         print(failed_early)
+
+    try:
+        from fccli import dock as _D
+        restore_geometry(entry_geometry, _D.instance())
+    except Exception:
+        restore_geometry(entry_geometry)   # the tests must not move a setting
 
     passed = sum(1 for c in CHECKS if c["ok"])
     payload = {
