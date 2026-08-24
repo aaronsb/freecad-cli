@@ -142,6 +142,46 @@ command line, a toolbar, a macro.
 Nobody wrote that page — it is generated from FreeCAD's own property
 documentation, so every verb has one.
 
+## From a terminal
+
+`bin/fccli` talks to a running FreeCAD over a unix socket. It is not a copy
+of the command language reached over a wire — the server subscribes to the
+same message bus the dock does and calls the same engine, so there is one
+registry, one document, and one prompt. Start a command from a terminal and
+the dock's prompt changes.
+
+Nothing in the client imports FreeCAD. It is standard library only, so it
+runs from any terminal or virtualenv.
+
+```bash
+$ fccli ls
+pid 3068224   idle, 1 client(s), floor free
+    bracket                1 objects  /tmp/bracket.FCStd
+  * scratch                1 objects  (never saved) [unsaved]
+
+$ fccli exec 'box 0,0,0 40 30 20'
+= box 0,0,0 40.00mm 30.00mm 20.00mm
+
+$ fccli check 'cylinder 12 40'      # never mutates
+$ fccli history -f                  # follow, live
+$ echo 'circle 0,0,0 20' | fccli    # stdin is a script
+$ fccli --json docs                 # what an agent reads
+```
+
+A one-shot answers rather than narrating: stdout carries the result, stderr
+the reason a command failed, and `-v` shows the running echo if you want it.
+
+**Exit codes separate "wrong" from "not now".** A rejected command is a
+fault — exit 1, reason on stderr. A busy session is ordinary, since someone
+using FreeCAD has a dialog open a good fraction of the time — exit **75**
+(`EX_TEMPFAIL`), nothing on stderr, deliberately far from 1 so
+`if ! fccli exec ...` does not read it as a broken command. `--wait` queues
+instead.
+
+Several FreeCADs each get their own socket, and `ls` lists what each has
+open so you can tell them apart. See [docs/shell.md](docs/shell.md) for the
+design, including the floor and the shared buffer that follow.
+
 ## Where the verbs come from
 
 FreeCAD has no Discovery API. It has a **command registry** that knows names,
@@ -261,7 +301,8 @@ make            # list the targets
 make install    # symlink into FreeCAD's Mod directory
 make check      # compile, version-check, test  (offscreen, no GUI)
 make bvt        # drive a real FreeCAD GUI end to end, unattended
-make check-all  # both
+make socket     # drive a real FreeCAD from outside, over the socket
+make check-all  # all three
 make descriptor # regenerate fccli/descriptor.json
 make screenshot # recapture docs/images
 make bump PART=minor

@@ -10,10 +10,6 @@ import os
 from .qt import Qt, QtCore, QtGui, QtWidgets
 from .highlight import InputHighlighter
 
-HISTORY_PATH = os.path.join(
-    os.path.expanduser("~"), ".local", "share", "FreeCAD", "fccli", "history"
-)
-
 # Semantic roles, resolved to colour here and only here. The same names
 # would map to ANSI in a terminal client.
 ROLE_COLOURS = {
@@ -35,11 +31,16 @@ class Console(QtWidgets.QPlainTextEdit):
     submitted = QtCore.Signal(str)
     cancelled = QtCore.Signal()
 
-    def __init__(self, engine, parent=None):
+    def __init__(self, engine, parent=None, session=None):
         super().__init__(parent)
         self.engine = engine
+        # History belongs to the session, so a socket client and a headless
+        # FreeCAD can both see it. The widget keeps only its cursor into it.
+        if session is None:
+            from .session import Session
+            session = Session(engine)
+        self.session = session
         self._prompt = "> "
-        self._history = []
         self._hist_index = None
         self._draft = ""
         self._completions = []
@@ -61,7 +62,6 @@ class Console(QtWidgets.QPlainTextEdit):
             "QPlainTextEdit { background:#1e1e1e; color:#d4d4d4;"
             " selection-background-color:#264f78; border:1px solid #333; }"
         )
-        self._load_history()
         self._render_prompt()
         self.highlighter = InputHighlighter(self.document(), self, engine)
 
@@ -168,51 +168,28 @@ class Console(QtWidgets.QPlainTextEdit):
 
     # ------------------------------------------------------------- history
 
-    def _load_history(self):
-        try:
-            with open(HISTORY_PATH, "r", encoding="utf-8") as fh:
-                self._history = [ln.rstrip("\n") for ln in fh if ln.strip()][-2000:]
-        except OSError:
-            self._history = []
+    @property
+    def _history(self):
+        return self.session.history.entries
 
     def append_history(self, line, persist=True):
-        if not line or (self._history and self._history[-1] == line):
-            return
-        self._history.append(line)
-        if persist:
-            self._persist(line)
-
-    def _persist(self, line):
-        try:
-            os.makedirs(os.path.dirname(HISTORY_PATH), exist_ok=True)
-            with open(HISTORY_PATH, "a", encoding="utf-8") as fh:
-                fh.write(line + "\n")
-        except OSError:
-            pass
+        return self.session.history.add(line, persist=persist)
 
     def commit_history(self, line):
-        """Record a finished command in its assembled form.
-
-        A multi-step command is typed as fragments -- "polyline", then a
-        point, then another -- and none of those is worth recalling on its
-        own. The provisional fragment that opened the command is dropped in
-        favour of the whole thing, which is what Up should hand back.
-        """
-        while self._history and line.startswith(self._history[-1]):
-            self._history.pop()
-        self.append_history(line)
+        return self.session.history.commit(line)
 
     def _history_step(self, delta):
-        if not self._history:
+        entries = self._history
+        if not entries:
             return
         if self._hist_index is None:
             self._draft = self.input_text()
-            self._hist_index = len(self._history)
-        self._hist_index = max(0, min(len(self._history), self._hist_index + delta))
-        if self._hist_index == len(self._history):
+            self._hist_index = len(entries)
+        self._hist_index = max(0, min(len(entries), self._hist_index + delta))
+        if self._hist_index == len(entries):
             self.set_input(self._draft)
         else:
-            self.set_input(self._history[self._hist_index])
+            self.set_input(entries[self._hist_index])
 
     # ---------------------------------------------------------- completion
 
@@ -283,12 +260,8 @@ class Console(QtWidgets.QPlainTextEdit):
     def _refresh_suggestion(self):
         """Fish-style ghost text from history."""
         text = self.input_text()
-        self._suggestion = ""
-        if text:
-            for line in reversed(self._history):
-                if line.startswith(text) and line != text:
-                    self._suggestion = line[len(text):]
-                    break
+        match = self.session.history.latest_starting(text)
+        self._suggestion = match[len(text):] if match else ""
         self.viewport().update()
 
     def paintEvent(self, ev):
@@ -393,10 +366,6 @@ class Console(QtWidgets.QPlainTextEdit):
 
     def _submit(self):
         text = self.input_text()
-        # Fragments of a command in progress are not worth recalling; the
-        # assembled command is committed when the engine finishes it.
-        if self.engine.state == "idle":
-            self.append_history(text, persist=False)
         self._hist_index = None
         self._completions = []
         self._comp_inserted = None

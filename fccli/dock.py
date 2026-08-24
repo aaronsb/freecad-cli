@@ -83,16 +83,19 @@ class CliDock(QtWidgets.QDockWidget):
         install_dirty()
         from .shell import load_aliases
         self.alias_count = load_aliases()
+        self.server = None
         self.factory_counts = _load_factory()
         self.picker = make_picker("snap", notify=self._notify)
         self.engine = Engine(self.bus, REGISTRY, picker=self.picker)
-        self.console = Console(self.engine)
+        from .session import Session
+        self.session = Session(self.engine, self.bus)
+        self.console = Console(self.engine, session=self.session)
         self.bridge = ActionBridge(self.engine, self.console, REGISTRY, self)
         self.keyfilter = KeyFilter(self.console, self.engine, self)
 
         self.setWidget(self._build(self.console))
         self.bus.subscribe(self._on_message)
-        self.console.submitted.connect(self.engine.submit)
+        self.console.submitted.connect(self.session.submit)
         self.console.cancelled.connect(self.engine.cancel)
         self.console.write(_banner(self.factory_counts), "info")
         if (self.factory_counts or {}).get("error"):
@@ -237,7 +240,6 @@ class CliDock(QtWidgets.QDockWidget):
                                    msg.data.get("role", "info"))
         elif msg.kind == _bus.RESULT:
             self.console.end_live("  " + msg.text, "result")
-            self.console.commit_history(msg.data.get("replay", msg.text))
             verb = REGISTRY.get(msg.data.get("verb", ""))
             if verb and verb.gui_command:
                 flash(verb.gui_command)
@@ -257,7 +259,7 @@ class CliDock(QtWidgets.QDockWidget):
         self._paint_focus_state()
 
     def _show_history(self):
-        ring = self.console._history[-40:]
+        ring = self.session.history.tail(40)
         if not ring:
             self.console.write("  (no history yet)", "info")
             return
@@ -332,15 +334,32 @@ class CliDock(QtWidgets.QDockWidget):
     def activate(self):
         self.keyfilter.install()
         self.bridge.install()
+        self._serve()
         app = QtWidgets.QApplication.instance()
         if app is not None:
             app.focusChanged.connect(lambda *_: self._paint_focus_state())
         self.console.setFocus(Qt.OtherFocusReason)
         self._paint_focus_state()
 
+    def _serve(self):
+        """Open the socket, so a terminal can reach this same session."""
+        try:
+            from .server import Server
+            self.server = Server(self.session, self)
+            path = self.server.start()
+            if path:
+                import FreeCAD as App
+                App.Console.PrintMessage(f"[fccli] listening on {path}\n")
+        except Exception as exc:
+            import FreeCAD as App
+            App.Console.PrintWarning(f"[fccli] socket: {exc}\n")
+            self.server = None
+
     def closeEvent(self, ev):
         self.keyfilter.remove()
         self.picker.stop()
+        if self.server is not None:
+            self.server.stop()
         super().closeEvent(ev)
 
 

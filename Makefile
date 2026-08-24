@@ -34,17 +34,22 @@ test:  ## Run the test suite (offscreen, no FreeCAD GUI needed)
 
 .PHONY: lint
 lint:  ## Byte-compile everything
-	@python3 -m compileall -q fccli tools tests InitGui.py Init.py && echo "compiles clean"
+	@python3 -m compileall -q fccli tools tests InitGui.py Init.py bin/fccli \
+	  && echo "compiles clean"
 
 .PHONY: bvt
 bvt:  ## Drive a real FreeCAD GUI end to end, unattended
 	@python3 tools/run_bvt.py
 
+.PHONY: socket
+socket:  ## Drive a real FreeCAD from outside, over the socket
+	@python3 tools/run_socket_test.py
+
 .PHONY: check
 check: lint version-check test  ## lint + version-check + test
 
 .PHONY: check-all
-check-all: check bvt  ## check, plus the live GUI run
+check-all: check bvt socket  ## check, plus the live GUI and socket runs
 
 .PHONY: descriptor
 descriptor:  ## Regenerate fccli/descriptor.json from FreeCAD's registries

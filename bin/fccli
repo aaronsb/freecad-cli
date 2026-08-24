@@ -1,0 +1,401 @@
+#!/usr/bin/env python3
+"""Talk to a running FreeCAD's command line.
+
+Nothing here imports FreeCAD. The client speaks a unix socket and the
+standard library, so it runs from any terminal, any virtualenv, and on a
+machine where FreeCAD is not on PATH.
+
+    fccli exec 'box 0,0,0 40 30 20'
+    fccli check 'cylinder 12 40'
+    fccli history
+    echo 'circle 0,0,0 20' | fccli
+    fccli state
+
+Exit codes separate "wrong" from "not now":
+
+    0   done
+    1   the command was rejected -- a fault, reason on stderr
+    2   usage
+    3   no running instance, or it went away
+    4   several instances, pass --pid
+    75  busy -- a dialog is open or someone holds the floor. Informational,
+        nothing on stderr, and EX_TEMPFAIL by convention so a script that
+        checks `if ! fccli exec` does not read it as a broken command.
+"""
+
+import argparse
+import errno
+import glob
+import json
+import os
+import socket
+import sys
+import tempfile
+import time
+
+EX_OK, EX_REJECTED, EX_USAGE, EX_NOINSTANCE, EX_AMBIGUOUS = 0, 1, 2, 3, 4
+EX_TEMPFAIL = 75
+
+PROTOCOL = 1
+
+
+def socket_dir():
+    root = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
+    return os.path.join(root, "fccli")
+
+
+def instances():
+    """Live sockets, newest first. A stale one is removed as it is found."""
+    found = []
+    for path in sorted(glob.glob(os.path.join(socket_dir(), "*.sock"))):
+        pid = os.path.basename(path)[:-5]
+        if not pid.isdigit() or not _alive(int(pid)):
+            _remove_stale(path)
+            continue
+        found.append((int(pid), path))
+    return sorted(found, reverse=True)
+
+
+def _alive(pid):
+    try:
+        os.kill(pid, 0)
+    except OSError as exc:
+        return exc.errno == errno.EPERM
+    return True
+
+
+def _remove_stale(path):
+    try:
+        os.remove(path)
+        print(f"fccli: removed stale socket {path}", file=sys.stderr)
+    except OSError:
+        pass
+
+
+class Client:
+    def __init__(self, path):
+        self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.sock.settimeout(30)
+        self.sock.connect(path)
+        self.buffer = b""
+        self.hello = self.read()
+
+    def send(self, **request):
+        self.sock.sendall((json.dumps(request) + "\n").encode("utf-8"))
+
+    def read(self):
+        while b"\n" not in self.buffer:
+            chunk = self.sock.recv(65536)
+            if not chunk:
+                raise ConnectionError("the FreeCAD session closed")
+            self.buffer += chunk
+        line, _, self.buffer = self.buffer.partition(b"\n")
+        return json.loads(line.decode("utf-8"))
+
+    def ask(self, **request):
+        self.send(**request)
+        return self.read()
+
+    def close(self):
+        try:
+            self.sock.close()
+        except OSError:
+            pass
+
+
+# ------------------------------------------------------------------ output
+
+ROLE_ANSI = {
+    "head": "\033[36m", "value": "\033[32m", "ok": "\033[36m",
+    "warn": "\033[33m", "bad": "\033[31m", "quiet": "\033[90m",
+    "error": "\033[31m", "result": "\033[36m", "prompt": "\033[33m",
+    "echo": "\033[0m", "info": "\033[90m",
+}
+RESET = "\033[0m"
+
+
+def paint(text, role, stream):
+    if not stream.isatty() or os.environ.get("NO_COLOR"):
+        return text
+    return f"{ROLE_ANSI.get(role, '')}{text}{RESET}"
+
+
+def documents_of(payload):
+    """Document rows, from a server of any version.
+
+    A FreeCAD started before an upgrade is still running the module it
+    loaded, so a newer client will meet an older server. Older ones reported
+    documents as bare names.
+    """
+    rows = []
+    for doc in payload.get("documents") or []:
+        if isinstance(doc, str):
+            rows.append({"name": doc, "label": doc, "file": None,
+                         "objects": None, "dirty": None, "active": None})
+        elif isinstance(doc, dict):
+            rows.append(doc)
+    return rows
+
+
+def show_document(doc, indent="  "):
+    mark = "*" if doc.get("active") else " "
+    count = doc.get("objects")
+    count = f"{count:>4} objects" if isinstance(count, int) else " " * 12
+    dirty = " [unsaved]" if doc.get("dirty") else ""
+    where = doc.get("file") or "(never saved)"
+    print(f"{indent}{mark} {doc.get('label') or doc.get('name'):<20}"
+          f"{count}  {where}{dirty}")
+
+
+def warn_protocol(client):
+    theirs = client.hello.get("protocol")
+    if theirs is not None and theirs != PROTOCOL:
+        print(f"fccli: this session speaks protocol {theirs}, "
+              f"the client speaks {PROTOCOL}. Restart FreeCAD to match.",
+              file=sys.stderr)
+
+
+def render(reply, args):
+    """Print one submit reply, and return the exit code it implies."""
+    if args.json:
+        print(json.dumps(reply))
+        return EX_OK if reply.get("ok", True) else EX_REJECTED
+
+    if reply.get("kind") == "busy":
+        detail = reply.get("detail") or reply.get("holder") or reply["reason"]
+        print(f"not now: {detail}. The command was not run.")
+        return EX_TEMPFAIL
+
+    # A one-shot answers; it does not narrate. The live echo and the
+    # prompts a getter raises are progress for someone watching a session,
+    # not output for someone who asked one question. -v shows them.
+    ANSWER = ("result", "info", "error")
+    for msg in reply.get("messages", []):
+        kind = msg["kind"]
+        if not msg["text"]:
+            continue
+        if kind not in ANSWER and not args.verbose:
+            continue
+        role = msg.get("role", kind)
+        # stdout carries the answer; anything else goes to stderr so it
+        # never lands in a redirect.
+        stream = sys.stdout if kind in ("result", "info") else sys.stderr
+        prefix = {"error": "error: ", "result": "= "}.get(kind, "")
+        print(paint(prefix + msg["text"], role, stream), file=stream)
+
+    if reply.get("engine") != "idle" and reply.get("prompt"):
+        options = reply.get("options") or []
+        tail = f" [{'/'.join(options)}]" if options else ""
+        print(paint(f"incomplete: still wants {reply['prompt']}{tail}",
+                    "warn", sys.stderr), file=sys.stderr)
+        return EX_REJECTED
+    return EX_OK if reply.get("ok", True) else EX_REJECTED
+
+
+# ---------------------------------------------------------------- commands
+
+def pick_instance(args):
+    found = instances()
+    if not found:
+        print("fccli: no running FreeCAD with the command line loaded",
+              file=sys.stderr)
+        return None, EX_NOINSTANCE
+    if args.pid:
+        for pid, path in found:
+            if pid == args.pid:
+                return path, EX_OK
+        print(f"fccli: no instance with pid {args.pid}", file=sys.stderr)
+        return None, EX_NOINSTANCE
+    if len(found) > 1:
+        print("fccli: several instances, pass --pid:", file=sys.stderr)
+        for pid, _ in found:
+            print(f"  --pid {pid}", file=sys.stderr)
+        return None, EX_AMBIGUOUS
+    return found[0][1], EX_OK
+
+
+def submit_lines(client, lines, args):
+    worst = EX_OK
+    deadline = time.monotonic() + (args.wait or 0)
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        while True:
+            reply = client.ask(op="submit", text=line, steal=args.steal)
+            if reply.get("kind") != "busy" or time.monotonic() >= deadline:
+                break
+            time.sleep(0.25)
+        code = render(reply, args)
+        worst = code if code and not worst else worst
+    return worst
+
+
+def cmd_exec(client, args):
+    return submit_lines(client, args.command or _stdin_lines(), args)
+
+
+def cmd_check(client, args):
+    text = " ".join(args.command or [])
+    return submit_lines(client, [f"check {text}"], args)
+
+
+def cmd_history(client, args):
+    reply = client.ask(op="history", limit=args.limit)
+    entries = reply.get("entries", [])
+    if args.json:
+        print(json.dumps(entries))
+        return EX_OK
+    start = 1
+    for i, line in enumerate(entries, start):
+        print(f"{i:>5}  {line}")
+    if args.follow:
+        client.ask(op="subscribe")
+        try:
+            while True:
+                msg = client.read()
+                if msg.get("kind") == "result":
+                    print(f"{'':>5}  {msg.get('replay') or msg.get('text')}")
+                    sys.stdout.flush()
+        except (KeyboardInterrupt, ConnectionError):
+            pass
+    return EX_OK
+
+
+def cmd_docs(client, args):
+    warn_protocol(client)
+    reply = client.ask(op="documents")
+    if reply.get("kind") == "error":
+        reply = client.ask(op="state")          # older servers had no op
+    docs = documents_of(reply)
+    if args.json:
+        print(json.dumps(docs))
+        return EX_OK
+    if not docs:
+        print("no documents open")
+        return EX_OK
+    for doc in docs:
+        show_document(doc, indent="")
+    return EX_OK
+
+
+def cmd_state(client, args):
+    warn_protocol(client)
+    reply = client.ask(op="state")
+    if args.json:
+        print(json.dumps(reply))
+        return EX_OK
+    print(f"pid       {client.hello.get('pid')}")
+    print(f"clients   {reply.get('clients')}")
+    print(f"engine    {reply.get('engine')}")
+    if reply.get("verb"):
+        print(f"command   {reply['verb']} -- wants {reply.get('prompt')}")
+    floor = reply.get("floor") or {}
+    print(f"floor     {floor.get('holder') or 'free'}"
+          f"{' (busy)' if floor.get('busy') else ''}")
+    for doc in documents_of(reply):
+        show_document(doc)
+    return EX_OK
+
+
+def _stdin_lines():
+    if sys.stdin.isatty():
+        return []
+    return sys.stdin.read().splitlines()
+
+
+def main():
+    parser = argparse.ArgumentParser(prog="fccli", description=__doc__)
+    parser.add_argument("--pid", type=int, help="which FreeCAD to talk to")
+    parser.add_argument("--json", action="store_true",
+                        help="raw messages, for programs")
+    parser.add_argument("--wait", type=float, default=0, metavar="SECONDS",
+                        help="queue for the floor instead of giving up")
+    parser.add_argument("--steal", action="store_true",
+                        help="take the floor from whoever holds it")
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="show the running echo and prompts too")
+    sub = parser.add_subparsers(dest="op")
+
+    run = sub.add_parser("exec", help="run a command")
+    run.add_argument("command", nargs="*")
+
+    chk = sub.add_parser("check", help="validate without running")
+    chk.add_argument("command", nargs="+")
+
+    hist = sub.add_parser("history", help="what has been run")
+    hist.add_argument("-n", "--limit", type=int, default=50)
+    hist.add_argument("-f", "--follow", action="store_true")
+
+    sub.add_parser("state", help="what the session is doing")
+    sub.add_parser("ls", help="running instances and what they have open")
+    sub.add_parser("docs", help="documents open in one instance")
+
+    args = parser.parse_args()
+
+    if args.op == "ls":
+        found = instances()
+        if not found:
+            print("no running FreeCAD with the command line loaded")
+            return EX_NOINSTANCE
+        rows = []
+        for pid, path in found:
+            row = {"pid": pid, "socket": path, "reachable": False}
+            try:
+                client = Client(path)
+                row.update(client.ask(op="state"))
+                row["reachable"] = True
+                client.close()
+            except (OSError, ConnectionError, ValueError) as exc:
+                row["error"] = str(exc)
+            rows.append(row)
+        if args.json:
+            print(json.dumps(rows, default=str))
+            return EX_OK
+        for row in rows:
+            if not row["reachable"]:
+                print(f"pid {row['pid']}  unreachable: "
+                      f"{row.get('error', '')[:60]}")
+                continue
+            floor = (row.get("floor") or {}).get("holder") or "free"
+            doing = row.get("verb") or row.get("engine", "?")
+            print(f"pid {row['pid']}   {doing}, "
+                  f"{row.get('clients', 0)} client(s), floor {floor}")
+            docs = documents_of(row)
+            if not docs:
+                print("    (no documents open)")
+            for doc in docs:
+                show_document(doc)
+        return EX_OK
+
+    path, code = pick_instance(args)
+    if path is None:
+        return code
+
+    try:
+        client = Client(path)
+    except (OSError, ConnectionError) as exc:
+        print(f"fccli: cannot reach the session: {exc}", file=sys.stderr)
+        return EX_NOINSTANCE
+
+    try:
+        handler = {"exec": cmd_exec, "check": cmd_check, "docs": cmd_docs,
+                   "history": cmd_history, "state": cmd_state}.get(args.op)
+        if handler is None:
+            # No subcommand: stdin is a script, a tty is a session.
+            args.command = _stdin_lines()
+            if not args.command:
+                print("fccli: nothing on stdin. Try: fccli exec '<command>'",
+                      file=sys.stderr)
+                return EX_USAGE
+            handler = cmd_exec
+        return handler(client, args)
+    except ConnectionError as exc:
+        print(f"fccli: {exc}", file=sys.stderr)
+        return EX_NOINSTANCE
+    finally:
+        client.close()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

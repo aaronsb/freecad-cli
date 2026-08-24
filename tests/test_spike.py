@@ -77,13 +77,15 @@ def main():
     layout = QtWidgets.QVBoxLayout(window)
     viewport = QtWidgets.QWidget(window)        # stands in for the 3D view
     viewport.setFocusPolicy(QtCore.Qt.StrongFocus)
-    console = Console(engine, window)
+    from fccli.session import Session
+    session = Session(engine, bus)
+    console = Console(engine, window, session=session)
+    console.submitted.connect(session.submit)
     editor = QtWidgets.QLineEdit(window)        # stands in for Python console
     for w in (viewport, console, editor):
         layout.addWidget(w)
     window.show()
 
-    console.submitted.connect(engine.submit)
     console.cancelled.connect(engine.cancel)
     kf = KeyFilter(console, engine)
     kf.install()
@@ -201,9 +203,6 @@ def main():
     print("\n5b. history replay reproduces the geometry")
     engine.submit("new replaydoc")
     # Drive through the console so history is written the way typing does.
-    bus.subscribe(lambda m: console.commit_history(m.data.get("replay", ""))
-                  if m.kind == RESULT else None)
-
     def enter(text):
         console.set_input(text)
         console._submit()
