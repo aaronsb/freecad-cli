@@ -116,6 +116,30 @@ def _internal_form(value, unit):
     return f"{n(value)}{unit}" if unit else n(value)
 
 
+def format_typed(quantity):
+    """Render a stored Quantity so it can be typed back in.
+
+    A property that holds a Quantity is a value somebody entered, so it
+    belongs on the same side of the line as the echo: whatever is printed
+    has to parse back to what is stored. Its UserString does not. Under
+    ImperialBuilding a 100 mm Length reads as 3" + 7/8", which is a syntax
+    error, and 1234.5 mm reads as 4' 5/8", which parses 0.575 mm off --
+    the quiet one.
+    """
+    try:
+        value = float(quantity.Value)
+    except Exception:
+        return None
+    text = _schema_form(quantity, value) or _converted_form(quantity, value)
+    if text:
+        return text
+    try:
+        target = quantity.getUserPreferred()[2]
+        return _internal_form(float(quantity.getValueAs(target)), target)
+    except Exception:
+        return _internal_form(value, "")
+
+
 def format_measure(value, unit):
     """Render a measurement FreeCAD computed rather than one somebody typed.
 

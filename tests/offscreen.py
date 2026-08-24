@@ -93,7 +93,7 @@ def type_into(app, s):
         app.processEvents()
 
 
-def main():
+def _run():
     app = QtWidgets.QApplication(sys.argv)
     App.newDocument("spike")
 
@@ -312,6 +312,27 @@ def main():
     engine.submit("circle 0,0,0 12")
     check("a bare number is read in the schema's unit",
           results[-1], "circle 0,0,0 1'")
+
+    # A stored Quantity is a value somebody typed, so describe has to print
+    # it readable-back. Its UserString is not: under this schema 100 mm
+    # reads as 3" + 7/8", a syntax error, and 1234.5 mm reads as 4' 5/8",
+    # which parses 0.575 mm off -- the quiet one.
+    for _mm in (100.0, 250.0, 999.9, 1234.5, 19.05, 0.0):
+        _q = App.Units.Quantity(_mm, "mm")
+        _shown = U.format_typed(_q)
+        check(f"{_mm}mm prints as something that parses",
+              abs(App.Units.Quantity(_shown).Value - _mm) < 1e-6, True)
+    check("and 1234.5mm is exact, not 0.575mm off",
+          abs(App.Units.Quantity(U.format_typed(
+              App.Units.Quantity(1234.5, "mm"))).Value - 1234.5) < 1e-9, True)
+    _bad = App.Units.Quantity(1234.5, "mm").UserString
+    check("  which its UserString was not",
+          _bad != U.format_typed(App.Units.Quantity(1234.5, "mm")), True)
+
+    # An angle takes the same ladder, and has no schema conversion to do.
+    _ang = U.format_typed(App.Units.Quantity(30.0, "deg"))
+    check("an angle round-trips too",
+          abs(App.Units.Quantity(_ang).Value - 30.0) < 1e-6, True)
     # Every rendering must survive being read back, since the echo is what
     # Up recalls.
     from FreeCAD import Units as _U
@@ -1260,6 +1281,26 @@ def main():
     if FAIL:
         print("failed: " + ", ".join(FAIL))
     return 1 if FAIL else 0
+
+
+def main():
+    """Run the suite, and put the unit schema back whatever happens.
+
+    UserSchema is a real FreeCAD preference that persists to user.cfg, and
+    4f moves it to exercise the schemas. The restore used to sit on the
+    happy path, so a failing check anywhere after it left the operator in
+    ImperialBuilding -- and every later run of the suite then failed on
+    bare numbers meaning inches, which reads as a code regression.
+    """
+    from fccli import units as _u
+    entry = _u.current_name()
+    try:
+        return _run()
+    finally:
+        try:
+            _u.set_schema(entry)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

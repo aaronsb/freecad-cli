@@ -62,7 +62,9 @@ def _value(obj, prop):
     except Exception:
         pass
     if hasattr(value, "Value") and hasattr(value, "UserString"):
-        return value.UserString                     # already a Quantity
+        # A stored Quantity is a value somebody typed, so it is rendered
+        # the way the echo renders one -- readable back. UserString is not.
+        return _units.format_typed(value) or value.UserString
     if hasattr(value, "x") and hasattr(value, "y"):
         return _vector(value)
     if isinstance(value, bool):
