@@ -155,6 +155,17 @@ class History:
         if not _paths.ensure(self.path):
             return
         try:
+            if not os.path.exists(self.path):
+                # First write to the new path. Appending one line here made
+                # readable() prefer a file holding that one line, and the
+                # ring loaded from the old path -- everything the operator
+                # had typed before the move -- became unreachable on the
+                # next start, with the frecency ranking left nothing to
+                # rank. Carry the ring across, the way _save_aliases does.
+                with open(self.path, "w", encoding="utf-8") as fh:
+                    for held in self.entries:
+                        if held != line:
+                            fh.write(f"{self.stamps.get(held, 0)}\t{held}\n")
             with open(self.path, "a", encoding="utf-8") as fh:
                 fh.write(f"{self.stamps.get(line, 0)}\t{line}\n")
         except OSError:

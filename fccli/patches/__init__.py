@@ -86,22 +86,29 @@ def _load_module(path, name):
         return None
 
 
+# Patches are imported by path, so they get a synthetic module name rather
+# than a package one. curation.rank_of reads this to tell a verb somebody
+# wrote from one the factory generated -- it used to look for "patches" in
+# the module name, which nothing here has ever produced.
+MODULE_PREFIX = "fccli_"
+
+
 def discover():
     """Every patch on disk, in ascending order of precedence."""
     found = []
     for path in sorted(glob.glob(os.path.join(BUILTIN_DIR, "[!_]*.py"))):
-        patch = _load_module(path, "fccli_builtin_" + os.path.basename(path)[:-3])
+        patch = _load_module(path, MODULE_PREFIX + "builtin_" + os.path.basename(path)[:-3])
         if patch:
             found.append(("builtin", path, patch))
     for root in MOD_DIRS:
         for path in sorted(glob.glob(os.path.join(root, "*", ADDON_PATCH))):
             addon = os.path.basename(os.path.dirname(path))
-            patch = _load_module(path, "fccli_addon_" + addon)
+            patch = _load_module(path, MODULE_PREFIX + "addon_" + addon)
             if patch:
                 patch.setdefault("key", addon)
                 found.append(("addon", path, patch))
     for path in sorted(glob.glob(os.path.join(USER_DIR, "*.py"))):
-        patch = _load_module(path, "fccli_user_" + os.path.basename(path)[:-3])
+        patch = _load_module(path, MODULE_PREFIX + "user_" + os.path.basename(path)[:-3])
         if patch:
             found.append(("user", path, patch))
     return found

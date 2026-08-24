@@ -82,6 +82,12 @@ class Verb:
     doc: str = ""
     gui_command: Optional[str] = None  # the QAction this verb usurps, if any
     creates: Optional[str] = None      # the document type it produces, if any
+    # Which family the factory built this from, for the ones it did. Carried
+    # rather than looked up by name: the family table holds every family in
+    # the descriptor, including those register_all refused because a
+    # hand-written verb already owned the name, so matching by name handed
+    # `point` the TechDraw annotation family and `move` nothing at all.
+    family: Optional[str] = None
     # Wrap the command in a document transaction, so one typed line is one
     # undo step. False for verbs that manage documents rather than edit them.
     transactional: bool = True

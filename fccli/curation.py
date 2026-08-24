@@ -21,6 +21,18 @@ having run one command, the neighbours are what FreeCAD put next to it.
 """
 
 # How prominently FreeCAD presents a command, lowest first.
+def _authored(module):
+    """Whether a patch module wrote this verb, rather than the factory.
+
+    A patch is imported by path under a synthetic name -- fccli_builtin_x,
+    fccli_addon_X, fccli_user_x -- so it never reads as fccli.patches.
+    Matching that string meant an addon's own hand-written verb ranked
+    below every generated launcher, which is the opposite of the rule.
+    """
+    from .patches import MODULE_PREFIX
+    return module.startswith(MODULE_PREFIX)
+
+
 PROMOTED = 0    # in a default toolbar -- a button somebody can click
 MENU = 1        # reachable from a menu, but no button
 REGISTRY = 2    # neither: internals, test hooks, context-menu-only
@@ -80,13 +92,13 @@ class Curation:
         if verb is None:
             return REGISTRY
         module = getattr(verb.emit, "__module__", "")
-        if module.endswith((".verbs", ".shell")) or "patches" in module:
+        if module.endswith((".verbs", ".shell")) or _authored(module):
             return PROMOTED
         command = getattr(verb, "gui_command", None)
         if command:
             return self.rank(command)
-        if verb.name in self._families:
-            return self._families[verb.name][0]
+        if verb.family and verb.family in self._families:
+            return self._families[verb.family][0]
         # A tier 1 verb builds a type rather than running a command. It was
         # named and parameterized from a documented type, so it is at least
         # as findable as a menu entry.
@@ -162,7 +174,7 @@ class Curation:
                 break
         return out
 
-    def choice_groups(self, name):
+    def choice_groups(self, name, verb=None):
         """A family's choices, under the menu headings FreeCAD filed them in.
 
         Forty-one view commands is a wall of names. FreeCAD already sorted
@@ -174,6 +186,8 @@ class Curation:
         Returns [(heading, [choice, ...]), ...], largest group first, with
         whatever FreeCAD filed nowhere last under None.
         """
+        if verb is not None and getattr(verb, "family", None) != name:
+            return []       # the name collides with a family it is not
         family = self._families.get(name)
         if not family:
             return []
@@ -194,8 +208,9 @@ class Curation:
         A neighbour reachable under a name someone chose is offered under
         that name; the rest are offered as the launchers they are.
         """
-        family = self._families.get(verb.name)
         command = getattr(verb, "gui_command", None)
+        family = (self._families.get(verb.family)
+                  if getattr(verb, "family", None) else None)
         if not command and not family:
             return []
         by_command = {}
@@ -204,10 +219,10 @@ class Curation:
             source = getattr(other, "gui_command", None)
             if source and source not in by_command:
                 by_command[source] = name
-        if family:
-            near_commands = self._family_neighbours(family[1], limit)
-        else:
+        if command:
             near_commands = self.adjacent(command, limit=limit * 2)
+        else:
+            near_commands = self._family_neighbours(family[1], limit)
 
         out = []
         for near in near_commands:

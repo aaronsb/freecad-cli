@@ -722,7 +722,7 @@ def _emit_man(v):
                 say(f"       {step.prompt}")
             if step.choices:
                 say("       one of:")
-                groups = _curation.current().choice_groups(verb.name)
+                groups = _curation.current().choice_groups(verb.name, verb)
                 if groups:
                     for heading, names in groups:
                         say(f"         {heading or 'ungrouped'}", "head")

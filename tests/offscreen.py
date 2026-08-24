@@ -45,6 +45,15 @@ from fccli.completion import candidates as _complete  # noqa: E402
 from fccli import __version__ as _fccli_version  # noqa: E402
 from fccli.grammar import REGISTRY  # noqa: E402
 from fccli.session import History as _History  # noqa: E402
+from fccli import paths as _paths_mod  # noqa: E402
+
+# Every History built here names a fresh temp path, and readable() falls
+# back to the pre-XDG location when that path does not exist yet -- so the
+# suite has been loading the operator's real history into test rings all
+# along, silently, making anything that ranks by habit depend on whose
+# machine it ran on. 0252fba stopped the suites writing there; this is the
+# reading half.
+_paths_mod.LEGACY = tempfile.mkdtemp(prefix="fccli-no-legacy-")
 from fccli.keyfilter import KeyFilter  # noqa: E402
 from fccli.widget import Console  # noqa: E402
 import fccli.verbs  # noqa: E402,F401
@@ -658,6 +667,52 @@ def main():
           < curated.rank_of(REGISTRY.get("sketcher_bsplinedegree")), True)
     check("a family ranks as its best member",
           curated.rank_of(REGISTRY.get("view")), _cur.PROMOTED)
+
+    # A hand-written verb whose name a family also claims. The family table
+    # holds every family in the descriptor, including the ones register_all
+    # refused because a verb already owned the name, so asking it by name
+    # answered for the wrong command: `man point` listed TechDraw's
+    # annotation toolbar for a Draft point, and `move`, `save` and `close`
+    # got nothing at all.
+    _point = REGISTRY.get("point")
+    check("the colliding name is still a family in the table",
+          "point" in curated._families, True)
+    check("  but the verb does not claim it",
+          getattr(_point, "family", None), None)
+    _near = curated.neighbours(REGISTRY, _point)
+    check("a verb's own command decides its neighbours", bool(_near), True)
+    check("  not a family that merely shares its name",
+          any(n.endswith("annotation") or "leader" in n for n in _near), False)
+    check("  and they come off its own toolbar",
+          "circle" in _near or "arc" in _near, True)
+    for _name in ("move", "save", "close"):
+        check(f"{_name} has neighbours again",
+              bool(curated.neighbours(REGISTRY, REGISTRY.get(_name))), True)
+    check("a real family verb still answers from its family",
+          bool(curated.neighbours(REGISTRY, REGISTRY.get("view"))), True)
+    check("choices are not offered for a name a verb does not own",
+          curated.choice_groups("close", REGISTRY.get("close")), [])
+
+    # An addon's own verb. Patches are imported by path under a synthetic
+    # module name, so the old test for one -- "patches" in the module --
+    # matched nothing the loader has ever produced, and a verb an addon
+    # author wrote by hand ranked below every generated launcher.
+    from fccli.patches import MODULE_PREFIX as _PREFIX
+    from fccli.grammar import Verb as _Verb
+
+    def _addon_emit(values):
+        return None
+    _addon_emit.__module__ = _PREFIX + "addon_Whatever"
+    _declared = _Verb(name="whatever", steps=[], emit=_addon_emit)
+    check("a verb an addon wrote ranks promoted",
+          curated.rank_of(_declared), _cur.PROMOTED)
+    check("  above anything the factory generated",
+          curated.rank_of(_declared)
+          < curated.rank_of(REGISTRY.get("sketcher_bsplinedegree")), True)
+    _generated = _Verb(name="whatever2", steps=[], emit=lambda v: None)
+    _generated.emit.__module__ = "fccli.factory"
+    check("a generated verb is not promoted by the same test",
+          curated.rank_of(_generated) > _cur.PROMOTED, True)
     check("an accented label slugs to a typeable name",
           REGISTRY.get("bezier_curve") is not None, True)
 
@@ -687,10 +742,38 @@ def main():
           "/tmp/fccli-data/fccli/aliases")
     for k, v in _saved.items():
         os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
-    _fresh = os.path.join(tempfile.mkdtemp(), "history")
-    check("an absent new path falls back to the old one",
-          _paths.readable(_fresh, "history"), _paths.legacy("history")
-          if os.path.exists(_paths.legacy("history")) else _fresh)
+    # This used to compute its expectation with the same os.path.exists the
+    # implementation branches on, so it passed either way.
+    _dir = tempfile.mkdtemp()
+    _fresh = os.path.join(_dir, "absent")
+    _present = os.path.join(_dir, "present")
+    open(_present, "w", encoding="utf-8").close()
+    check("a new path that exists wins outright",
+          _paths.readable(_present, "history"), _present)
+    check("an absent one defers to whatever legacy says",
+          _paths.readable(_fresh, "history") in
+          (_fresh, _paths.legacy("history")), True)
+
+    # The move to XDG must not strand what came before it. Appending one
+    # line to the new path made readable() prefer a file holding that one
+    # line, and everything typed before the move went unreachable on the
+    # next start -- with the frecency ranking this release adds left
+    # nothing to rank.
+    _mig = os.path.join(tempfile.mkdtemp(), "history")
+    _ring = _History(path=_mig)
+    _ring.entries = ["box 0,0,0 10", "circle 0,0,0 5", "line 0,0,0 1,1,1"]
+    _ring.stamps = {"box 0,0,0 10": 111, "circle 0,0,0 5": 222,
+                    "line 0,0,0 1,1,1": 333}
+    _ring._write("cylinder 12 40")
+    check("the first write carries the whole ring across",
+          _History(path=_mig).entries,
+          ["box 0,0,0 10", "circle 0,0,0 5", "line 0,0,0 1,1,1",
+           "cylinder 12 40"])
+    check("  with the stamps that came with it",
+          _History(path=_mig).stamps.get("circle 0,0,0 5"), 222)
+    _ring._write("sphere 8")
+    check("a later write only appends",
+          len(_History(path=_mig).entries), 5)
 
     print("\n5n. frecency -- ranking by what somebody does")
     from fccli import frecency as _frec
