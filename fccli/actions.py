@@ -15,6 +15,8 @@ Three behaviours, in rising order of risk:
     follow  swallow the trigger and open the grammar instead
 """
 
+from . import curation as _curation
+from . import frecency as _frecency
 from .qt import QtCore, QtGui, QtWidgets
 
 ECHO = "echo"
@@ -31,6 +33,7 @@ class ActionBridge(QtCore.QObject):
         self.registry = registry
         self.mode = ECHO
         self.disabled_verbs = set()     # per-verb kill switch for follow
+        self.cue = True                 # show neighbours for unfamiliar verbs
         self._connected = {}
 
     # ------------------------------------------------------------ scanning
@@ -63,6 +66,36 @@ class ActionBridge(QtCore.QObject):
                 if combo.objectName() == "WbSelector":
                     combo.currentIndexChanged.connect(lambda *_: self.scan())
 
+    # ---------------------------------------------------------------- cue
+
+    # How many times somebody has to run a command before the neighbours
+    # stop being news.
+    CUE_UNTIL = 5
+
+    def _familiar(self, verb):
+        """Whether this operator has used a verb enough to know its corner."""
+        session = getattr(self.console, "session", None)
+        history = getattr(session, "history", None)
+        if history is None:
+            return False
+        stats = _frecency.tally(history.usage())
+        count, _ = stats.get(verb.name, (0, 0))
+        return count >= self.CUE_UNTIL
+
+    def _suggest(self, verb):
+        """What else is on the toolbar this button came from.
+
+        Clicking is how somebody explores, so it is the moment the rest of
+        the group is worth naming. It stops once they have used the command
+        enough times to have found the group themselves -- a cue that never
+        goes away is a status bar, and gets read as furniture.
+        """
+        if not self.cue or verb is None or self._familiar(verb):
+            return
+        near = _curation.current().neighbours(self.registry, verb, limit=5)
+        if near:
+            self.console.write(f"  also here: {', '.join(near)}", "quiet")
+
     # ------------------------------------------------------------ dispatch
 
     def _on_trigger(self, command_name):
@@ -74,9 +107,11 @@ class ActionBridge(QtCore.QObject):
 
         if self.mode == ECHO or verb is None:
             self.console.write(f"> {label}{alias}", "echo")
+            self._suggest(verb)
             return
         if self.mode == GHOST:
             self.console.set_input(label + " ")
+            self._suggest(verb)
             return
         if self.mode == FOLLOW:
             if verb.name in self.disabled_verbs:

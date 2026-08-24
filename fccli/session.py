@@ -15,11 +15,12 @@ being refused all day.
 """
 
 import os
+import time
 
 from . import bus as _bus
+from . import paths as _paths
 
-HISTORY_PATH = os.path.join(
-    os.path.expanduser("~"), ".local", "share", "FreeCAD", "fccli", "history")
+HISTORY_PATH = _paths.state("history")
 
 DOCK = "dock"
 
@@ -41,21 +42,48 @@ class History:
         # Keyed by the full line, so the ring itself stays a list of strings
         # and everything that reads it keeps working.
         self.typed = {}
+        # When each distinct line was last run. Kept beside the ring rather
+        # than in it, so `entries` stays a list of strings and everything
+        # that reads it is unaffected.
+        self.stamps = {}
         self.load()
 
+    @staticmethod
+    def _parse(raw):
+        """One stored line -> (command, epoch).
+
+        Lines written before timestamps existed have no tab and are read
+        with an epoch of 0, which frecency treats as frequency-only rather
+        than discarding.
+        """
+        when, tab, rest = raw.partition("\t")
+        if tab and when.isdigit():
+            return rest, int(when)
+        return raw, 0
+
     def load(self):
+        self.entries, self.stamps = [], {}
         try:
-            with open(self.path, encoding="utf-8") as fh:
-                self.entries = [ln.rstrip("\n") for ln in fh
-                                if ln.strip()][-self.limit:]
+            with open(_paths.readable(self.path, "history"),
+                      encoding="utf-8") as fh:
+                rows = [self._parse(ln.rstrip("\n")) for ln in fh if ln.strip()]
         except OSError:
-            self.entries = []
+            return 0
+        for line, when in rows[-self.limit:]:
+            self.entries.append(line)
+            if when > self.stamps.get(line, 0):
+                self.stamps[line] = when
         return len(self.entries)
 
-    def add(self, line, persist=True):
+    def usage(self):
+        """(line, last-seen) per entry, for frecency to tally."""
+        return [(line, self.stamps.get(line, 0)) for line in self.entries]
+
+    def add(self, line, persist=True, when=None):
         if not line or (self.entries and self.entries[-1] == line):
             return False
         self.entries.append(line)
+        self.stamps[line] = when if when is not None else int(time.time())
         del self.entries[:-self.limit]
         if persist:
             self._write(line)
@@ -82,6 +110,7 @@ class History:
         """Empty the ring, and the file behind it."""
         self.entries = []
         self.typed = {}
+        self.stamps = {}
         try:
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
             open(self.path, "w", encoding="utf-8").close()
@@ -109,10 +138,11 @@ class History:
         return None
 
     def _write(self, line):
+        if not _paths.ensure(self.path):
+            return
         try:
-            os.makedirs(os.path.dirname(self.path), exist_ok=True)
             with open(self.path, "a", encoding="utf-8") as fh:
-                fh.write(line + "\n")
+                fh.write(f"{self.stamps.get(line, 0)}\t{line}\n")
         except OSError:
             pass
 

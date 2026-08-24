@@ -7,7 +7,10 @@ would have needed its own copy that drifted. It lives here so the dock and
 the socket give the same answer, from the same live engine state.
 """
 
+import time
+
 from . import curation
+from . import frecency
 from .grammar import CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT
 
 
@@ -93,12 +96,14 @@ def candidates(engine, text, history=None, scope=None):
         hits = narrowed or hits
 
     # Completing a verb name means choosing among up to 1250 of them, and
-    # they are not equals: FreeCAD gives some a toolbar button and leaves
-    # others reachable only from code. Offer them in that order. Nothing is
-    # removed -- a launcher nobody promotes still completes, it just sorts
-    # after the things that do.
+    # they are not equals. Two orderings compose here, weakest first:
+    # FreeCAD's own -- a toolbar button outranks something reachable only
+    # from code -- and then this operator's, which overrides it wherever
+    # they have a habit. Nothing is removed by either. A launcher nobody
+    # promotes and nobody has run still completes; it is simply last.
     if not head:
         hits = curation.current().order(engine.registry, hits)
+        hits = _by_habit(hits, history)
 
     # The grammar has nothing left to offer, but a command run before may
     # know what came next here. Hand back one argument at a time, so Tab
@@ -116,6 +121,28 @@ def candidates(engine, text, history=None, scope=None):
 
 
 RECENT_LIMIT = 12
+
+
+_TALLY = {"key": None, "stats": {}}
+
+
+def _by_habit(names, history, now=None):
+    """Float what this operator actually runs above the general ordering.
+
+    The tally is rebuilt only when the ring has changed, because ghosting
+    asks for candidates on every keystroke and there is no reason to count
+    two thousand lines again between two of them.
+    """
+    if history is None or not getattr(history, "entries", None):
+        return names
+    key = (id(history), len(history.entries))
+    if _TALLY["key"] != key:
+        _TALLY["key"] = key
+        _TALLY["stats"] = frecency.tally(history.usage())
+    stats = _TALLY["stats"]
+    return frecency.partition(
+        names, lambda n: stats.get(n, (0, 0)),
+        now if now is not None else int(time.time()))
 
 
 def recent_commands(history, limit=RECENT_LIMIT):

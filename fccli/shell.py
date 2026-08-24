@@ -20,6 +20,7 @@ import FreeCAD as App
 
 from . import bus as _bus
 from . import curation as _curation
+from . import paths as _paths
 from .grammar import (CHOICE, PATH, QUANTITY, TEXT, Option, Step, Verb,
                       REGISTRY)
 from .dirty import dirty_documents, is_dirty, mark_clean
@@ -670,14 +671,14 @@ def _list_verbs(engine):
     return None
 
 
-ALIAS_PATH = os.path.join(os.path.expanduser("~"), ".local", "share",
-                          "FreeCAD", "fccli", "aliases")
+ALIAS_PATH = _paths.data("aliases")
 
 
 def load_aliases():
     """Read the user's aliases and attach them to their verbs."""
     try:
-        with open(ALIAS_PATH, encoding="utf-8") as fh:
+        with open(_paths.readable(ALIAS_PATH, "aliases"),
+                  encoding="utf-8") as fh:
             lines = [ln.strip() for ln in fh if ln.strip()
                      and not ln.startswith("#")]
     except OSError:
@@ -697,7 +698,7 @@ def load_aliases():
 
 def _save_aliases(pairs):
     try:
-        os.makedirs(os.path.dirname(ALIAS_PATH), exist_ok=True)
+        _paths.ensure(ALIAS_PATH)
         with open(ALIAS_PATH, "w", encoding="utf-8") as fh:
             fh.write("# fccli aliases -- <name>=<command>\n")
             for name, target in sorted(pairs.items()):
@@ -710,7 +711,8 @@ def _user_aliases():
     """Everything in the alias file, as name -> command."""
     pairs = {}
     try:
-        with open(ALIAS_PATH, encoding="utf-8") as fh:
+        with open(_paths.readable(ALIAS_PATH, "aliases"),
+                  encoding="utf-8") as fh:
             for line in fh:
                 line = line.strip()
                 if not line or line.startswith("#"):
