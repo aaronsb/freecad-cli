@@ -87,6 +87,15 @@
 
 ### Added
 
+- **The prompt shows where the session is.** `PartDesign Body › Sketch* [2]
+  /plinth > `: the workbench, the active Body or Part and the object in
+  edit, a `*` when the document is dirty, the selection count, the working
+  directory -- each left out when empty, so a fresh session still says
+  `> `. One `STATE` message from the session, after every command and on
+  workbench, selection and document change; both terminals render it. Tab
+  puts the active workbench's commands first within a rank. A command
+  FreeCAD says cannot run now is refused before running, with the reason
+  from its file's `requires`; `!` runs it anyway. ADR-300.
 - **A root the terminal navigates.** `~/.local/share/fccli` laid out after
   the FHS on first run: `bin/`, `etc/`, `lib/commands` linking to the
   shipped command tree, `lib/addons/<name>` to what each addon ships, and

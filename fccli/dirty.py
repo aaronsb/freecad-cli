@@ -28,6 +28,8 @@ class DirtyTracker:
     def __init__(self):
         self.names = set()
         self._installed = False
+        self.listeners = []
+        self._last_told = False
 
     # ----------------------------------------------------------- queries
 
@@ -35,9 +37,24 @@ class DirtyTracker:
         doc = doc if doc is not None else App.ActiveDocument
         return doc is not None and doc.Name in self.names
 
+    def _tell(self):
+        # After a change of dirtiness, not after every object change: a
+        # recompute marks a thousand objects and the prompt's star is the
+        # same before and after.
+        now = self.is_dirty()
+        if now == self._last_told:
+            return
+        self._last_told = now
+        for fn in list(self.listeners):
+            try:
+                fn()
+            except Exception:
+                pass
+
     def mark(self, doc):
         if doc is not None:
             self.names.add(getattr(doc, "Name", doc))
+        self._tell()
 
     def clear(self, doc=None, name=None):
         if name is None:
@@ -47,6 +64,7 @@ class DirtyTracker:
                 return
             name = getattr(doc, "Name", doc)
         self.names.discard(name)
+        self._tell()
 
     def dirty_documents(self):
         return sorted(n for n in App.listDocuments() if n in self.names)
@@ -113,6 +131,12 @@ def install():
 
 def is_dirty(doc=None):
     return TRACKER.is_dirty(doc)
+
+
+def listen(fn):
+    """Call fn after every change of dirtiness."""
+    TRACKER.listeners.append(fn)
+    return lambda: TRACKER.listeners.remove(fn)
 
 
 def mark_dirty(doc=None):

@@ -390,7 +390,7 @@ def cmd_repl(client, args):
             continue
 
         for msg in reply.get("messages", []):
-            if not msg["text"] or msg["kind"] in ("live", "prompt"):
+            if not msg["text"] or msg["kind"] in ("live", "prompt", "state"):
                 continue
             role = msg.get("role", msg["kind"])
             prefix = {"error": "error: ", "result": "= "}.get(msg["kind"], "")
@@ -403,8 +403,12 @@ def cmd_repl(client, args):
 def _prompt_for(state):
     """The engine's own prompt, so the terminal shows what the dock shows."""
     if state.get("engine") == "idle" or not state.get("prompt"):
-        cwd = state.get("cwd") or "/"
-        return "> " if cwd == "/" else f"{cwd} > "
+        # The same segment the dock shows, from the same snapshot.
+        segment = (state.get("context") or {}).get("segment")
+        if segment is None:
+            cwd = state.get("cwd") or "/"
+            segment = "" if cwd == "/" else cwd
+        return f"{segment} > " if segment else "> "
     options = state.get("options") or []
     tail = f" [{'/'.join(options)}]" if options else ""
     return f"{state['prompt']}{tail}: "

@@ -45,7 +45,7 @@ session's context whenever it changes and after every command:
 |---|---|---|
 | `workbench` | `Gui.activeWorkbench().name()`, `Workbench`/`WB` suffix dropped | `PartDesign` |
 | `active` | the active Body or Part, then the object in edit (`Gui.ActiveDocument.getInEdit()`) | `Body › Sketch` |
-| `dirty` | `App.ActiveDocument.Modified` | `*` after the document chain |
+| `dirty` | the dirty tracker (`dirty.py`), which the addon already keeps | `*` after the document chain |
 | `selection` | `Gui.Selection.getSelection()` count, when non-zero | `[3]` |
 | `cwd` | the session (ADR-601) | `/plinth` |
 

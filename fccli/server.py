@@ -289,6 +289,8 @@ class _Collector:
         self._stop = bus.subscribe(self._on)
 
     def _on(self, msg):
+        if msg.kind == _bus.STATE:
+            return          # where the session is, not what the line did
         payload = {"kind": msg.kind, "text": msg.text}
         role = msg.data.get("role")
         if role:

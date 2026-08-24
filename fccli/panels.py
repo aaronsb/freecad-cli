@@ -788,6 +788,17 @@ def not_yet_loaded(command, notify=None):
         return None
 
 
+def can_run(command):
+    """Gui.Command.isActive(), or True when FreeCAD cannot say."""
+    try:
+        import FreeCADGui as Gui
+        cmd = Gui.Command.get(command)
+        active = getattr(cmd, "isActive", None)
+        return True if active is None else bool(active())
+    except Exception:
+        return True
+
+
 def _open_panel(command):
     """Run the command, and ask whatever panel it opens what it wants.
 
@@ -803,6 +814,14 @@ def _open_panel(command):
             lambda text: engine.bus.emit(_bus.INFO, text, role="quiet"))
         if missing:
             raise RuntimeError(missing)
+        # FreeCAD says whether this can run now -- the same answer it
+        # greys a button with -- and the command's file says why not.
+        # Read at this moment, never stored (ADR-100, ADR-300). A bang
+        # runs it anyway.
+        if not engine.flags.get("force") and not can_run(command):
+            from . import context as _context
+            requires = getattr(engine.verb, "requires", None)
+            raise RuntimeError(_context.reason(requires))
         before = names_on_screen()
         Gui.runCommand(command)
         if not wait_for_panel(before):

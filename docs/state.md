@@ -32,8 +32,12 @@ command's execution. Code that needs to know whether the command line
 caused an event — the bvt dialog watchdog, the socket's busy check — reads
 `driving`.
 
-`bus.STATE` is declared in `bus.py` and never emitted. Idle is signalled
-as a `PROMPT` message with `idle=True`.
+Idle is signalled as a `PROMPT` message with `idle=True`. The session
+answers it with `STATE` (ADR-300): the workbench, the active Body or Part
+and the object in edit, dirtiness, the selection count and `cwd`, with
+the rendered segment as the text. The session also emits `STATE` when a
+workbench activates, the selection changes, or a document's dirtiness
+changes. Both terminals render their idle prompt from it.
 
 ### Transitions
 
@@ -62,7 +66,9 @@ stateDiagram-v2
 2. `state = COLLECTING`; clear `values`, `done` and `picked`; seed
    `replay` with the verb name; set `steps = None`; emit `LIVE`.
 3. If the verb defines `open` and the engine is not dry: set `driving`,
-   arm the modal filter, call `open(engine)`. An exception or a caught
+   arm the modal filter, call `open(engine)`. A tier-0 verb's `open`
+   asks `Gui.Command.isActive()` first and, unless the line carried `!`,
+   refuses with the command file's `requires` as the reason (ADR-300). An exception or a caught
    fault aborts the verb, resets, and reports an error. A returned list
    becomes `steps`.
 4. Feed each remaining token to the pending step whose kind matches it

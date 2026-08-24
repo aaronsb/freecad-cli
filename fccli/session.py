@@ -247,7 +247,17 @@ class Session:
         engine.session = self          # so a verb can reach the scope
         self.bus.subscribe(self._on_message)
 
+    def announce_context(self):
+        """Say where the session is (ADR-300): one STATE message both
+        terminals render their idle prompt from."""
+        from . import context as _context
+        ctx = _context.snapshot(self)
+        self.bus.emit(_bus.STATE, _context.segment(ctx), **ctx)
+
     def _on_message(self, msg):
+        if msg.kind == _bus.PROMPT and msg.data.get("idle"):
+            self.announce_context()
+            return
         if msg.kind != _bus.RESULT:
             return
         # The line as typed and the line as canonicalised are the same
@@ -320,4 +330,11 @@ class Session:
             "floor": self.floor.state(),
             "scope": self.scope,
             "cwd": self.cwd,
+            "context": self._context(),
         }
+
+    def _context(self):
+        from . import context as _context
+        ctx = _context.snapshot(self)
+        ctx["segment"] = _context.segment(ctx)
+        return ctx

@@ -45,7 +45,7 @@ def workbench():
 
 
 def _label(obj):
-    return getattr(obj, "Label", None) or getattr(obj, "Name", None)
+    return getattr(obj, "Label", None) or getattr(obj, "Name", None) or None
 
 
 def active():
@@ -62,7 +62,7 @@ def active():
                 obj = view.getActiveObject(kind) if view is not None else None
             except Exception:
                 obj = None
-            if obj is not None and _label(obj) not in chain:
+            if obj is not None and _label(obj) and _label(obj) not in chain:
                 chain.append(_label(obj))
         try:
             editing = gdoc.getInEdit()
@@ -70,7 +70,7 @@ def active():
             editing = None
         if editing is not None:
             obj = getattr(editing, "Object", None)
-            if obj is not None and _label(obj) not in chain:
+            if obj is not None and _label(obj) and _label(obj) not in chain:
                 chain.append(_label(obj))
     except Exception:
         pass

@@ -306,6 +306,8 @@ class CliDock(QtWidgets.QDockWidget):
     # ------------------------------------------------------------ messages
 
     def _on_message(self, msg):
+        if msg.kind == _bus.STATE:
+            self._on_state(msg)
         if msg.kind == _bus.PROMPT:
             self._on_prompt(msg)
         elif msg.kind == _bus.BUFFER:
@@ -332,12 +334,22 @@ class CliDock(QtWidgets.QDockWidget):
             if verb and verb.gui_command:
                 flash(verb.gui_command)
 
+    def _on_state(self, msg):
+        """The idle prompt shows where the session is (ADR-300). The
+        session says so after every command and whenever the workbench,
+        the selection or the document changes."""
+        if self.engine.state != "idle":
+            return
+        from . import context as _context
+        self.console.set_prompt(_context.prompt(msg.data))
+
     def _on_prompt(self, msg):
         if msg.data.get("idle"):
-            # Where the session is, the way a shell prompt shows the path.
-            cwd = getattr(self.session, "cwd", "/")
-            self.console.set_prompt("> " if cwd == "/" else f"{cwd} > ")
-            self.status.setText("idle")
+            # _on_state owns the idle prompt's text; here the strip returns
+            # to idle and the border is repainted. Not set_prompt: the
+            # STATE that set the segment was delivered just before this.
+            self._paint_focus_state()
+            return
         else:
             opts = msg.data.get("options") or []
             tail = f" [{'/'.join(opts)}]" if opts else ""
@@ -480,6 +492,7 @@ class CliDock(QtWidgets.QDockWidget):
         self.keyfilter.install()
         self.bridge.install()
         self._watch_workbenches()
+        self._watch_context()
         self._lay_out_root()
         self._serve()
         app = QtWidgets.QApplication.instance()
@@ -529,7 +542,40 @@ class CliDock(QtWidgets.QDockWidget):
             except Exception:
                 pass
 
+    def _watch_context(self):
+        """Selection and dirtiness move the prompt (ADR-300)."""
+        self._dirty_unlisten = None
+        try:
+            from . import dirty as _dirty
+            self._dirty_unlisten = _dirty.listen(self.session.announce_context)
+        except Exception:
+            pass
+        self._selection_observer = None
+        try:
+            import FreeCADGui as Gui
+            dock = self
+
+            def _tell(*a):
+                try:
+                    dock.session.announce_context()
+                except Exception:
+                    pass
+
+            class _Observer:
+                addSelection = staticmethod(_tell)
+                removeSelection = staticmethod(_tell)
+                setSelection = staticmethod(_tell)
+                clearSelection = staticmethod(_tell)
+            self._selection_observer = _Observer()
+            Gui.Selection.addObserver(self._selection_observer)
+        except Exception:
+            self._selection_observer = None
+
     def _on_workbench_activated(self, name):
+        try:
+            self.session.announce_context()
+        except Exception:
+            pass
         from .factory import load_descriptor, register_runtime
         try:
             if getattr(self, "_descriptor", None) is None:
@@ -575,6 +621,19 @@ class CliDock(QtWidgets.QDockWidget):
         # This handler is on the QApplication and holds the dock, so every
         # open/close cycle used to leave another one behind, painting a
         # window that had gone away.
+        if getattr(self, "_selection_observer", None) is not None:
+            try:
+                import FreeCADGui as Gui
+                Gui.Selection.removeObserver(self._selection_observer)
+            except Exception:
+                pass
+            self._selection_observer = None
+        if getattr(self, "_dirty_unlisten", None) is not None:
+            try:
+                self._dirty_unlisten()
+            except Exception:
+                pass
+            self._dirty_unlisten = None
         if getattr(self, "_workbench_hook", None) is not None:
             try:
                 import FreeCADGui as Gui

@@ -108,7 +108,9 @@ def candidates(engine, text, history=None, scope=None):
     # they have a habit. Nothing is removed by either. A launcher nobody
     # promotes and nobody has run still completes; it is simply last.
     if not head:
-        hits = curation.current().order(engine.registry, hits)
+        from . import context as _context
+        hits = curation.current().order(engine.registry, hits,
+                                        workbench=_context.workbench())
         hits = _by_habit(hits, history)
 
     # The grammar has nothing left to offer, but a command run before may
