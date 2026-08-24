@@ -4,7 +4,10 @@ SHELL := /bin/bash
 VERSION      := $(shell python3 tools/version.py)
 MOD_DIR      ?= $(HOME)/.local/share/FreeCAD/v1-1/Mod
 INSTALL_DIR  := $(MOD_DIR)/freecad-cli
-XVFB         := xvfb-run -a -s "-screen 0 1600x1000x24"
+# QT_QPA_PLATFORM: xvfb-run sets DISPLAY, but Qt6 on a Wayland session
+# picks its plugin from XDG_SESSION_TYPE and connects to the operator's
+# compositor instead, ignoring the virtual display entirely.
+XVFB         := QT_QPA_PLATFORM=xcb xvfb-run -a -s "-screen 0 1600x1000x24"
 PART         ?= patch
 
 .DEFAULT_GOAL := help

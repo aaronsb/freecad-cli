@@ -45,6 +45,23 @@ from fccli.completion import candidates as _complete  # noqa: E402
 from fccli import __version__ as _fccli_version  # noqa: E402
 from fccli.grammar import REGISTRY  # noqa: E402
 from fccli.session import History as _History  # noqa: E402
+from fccli import paths as _paths_mod  # noqa: E402
+
+# Every History built here names a fresh temp path, and readable() falls
+# back to the pre-XDG location when that path does not exist yet -- so the
+# suite has been loading the operator's real history into test rings all
+# along, silently, making anything that ranks by habit depend on whose
+# machine it ran on. 0252fba stopped the suites writing there; this is the
+# reading half.
+_paths_mod.LEGACY = tempfile.mkdtemp(prefix="fccli-no-legacy-")
+
+# 5v drives `shortcuts import` through the engine, which writes every
+# accepted chord to ALIAS_PATH -- the operator's real alias file, since
+# make test sets no XDG_DATA_HOME. It ends by dropping them again, so the
+# file survived by luck; a failure between the two left 161 aliases behind.
+from fccli import shell as _shell_mod  # noqa: E402
+_shell_mod.ALIAS_PATH = os.path.join(
+    tempfile.mkdtemp(prefix="fccli-aliases-"), "aliases")
 from fccli.keyfilter import KeyFilter  # noqa: E402
 from fccli.widget import Console  # noqa: E402
 import fccli.verbs  # noqa: E402,F401
@@ -76,7 +93,7 @@ def type_into(app, s):
         app.processEvents()
 
 
-def main():
+def _run():
     app = QtWidgets.QApplication(sys.argv)
     App.newDocument("spike")
 
@@ -295,6 +312,27 @@ def main():
     engine.submit("circle 0,0,0 12")
     check("a bare number is read in the schema's unit",
           results[-1], "circle 0,0,0 1'")
+
+    # A stored Quantity is a value somebody typed, so describe has to print
+    # it readable-back. Its UserString is not: under this schema 100 mm
+    # reads as 3" + 7/8", a syntax error, and 1234.5 mm reads as 4' 5/8",
+    # which parses 0.575 mm off -- the quiet one.
+    for _mm in (100.0, 250.0, 999.9, 1234.5, 19.05, 0.0):
+        _q = App.Units.Quantity(_mm, "mm")
+        _shown = U.format_typed(_q)
+        check(f"{_mm}mm prints as something that parses",
+              abs(App.Units.Quantity(_shown).Value - _mm) < 1e-6, True)
+    check("and 1234.5mm is exact, not 0.575mm off",
+          abs(App.Units.Quantity(U.format_typed(
+              App.Units.Quantity(1234.5, "mm"))).Value - 1234.5) < 1e-9, True)
+    _bad = App.Units.Quantity(1234.5, "mm").UserString
+    check("  which its UserString was not",
+          _bad != U.format_typed(App.Units.Quantity(1234.5, "mm")), True)
+
+    # An angle takes the same ladder, and has no schema conversion to do.
+    _ang = U.format_typed(App.Units.Quantity(30.0, "deg"))
+    check("an angle round-trips too",
+          abs(App.Units.Quantity(_ang).Value - 30.0) < 1e-6, True)
     # Every rendering must survive being read back, since the echo is what
     # Up recalls.
     from FreeCAD import Units as _U
@@ -658,6 +696,74 @@ def main():
           < curated.rank_of(REGISTRY.get("sketcher_bsplinedegree")), True)
     check("a family ranks as its best member",
           curated.rank_of(REGISTRY.get("view")), _cur.PROMOTED)
+
+    # A hand-written verb whose name a family also claims. The family table
+    # holds every family in the descriptor, including the ones register_all
+    # refused because a verb already owned the name, so asking it by name
+    # answered for the wrong command: `man point` listed TechDraw's
+    # annotation toolbar for a Draft point, and `move`, `save` and `close`
+    # got nothing at all.
+    _point = REGISTRY.get("point")
+    check("the colliding name is still a family in the table",
+          "point" in curated._families, True)
+    check("  but the verb does not claim it",
+          getattr(_point, "family", None), None)
+    _near = curated.neighbours(REGISTRY, _point)
+    check("a verb's own command decides its neighbours", bool(_near), True)
+    check("  not a family that merely shares its name",
+          any(n.endswith("annotation") or "leader" in n for n in _near), False)
+    check("  and they come off its own toolbar",
+          "circle" in _near or "arc" in _near, True)
+    for _name in ("move", "save", "close"):
+        check(f"{_name} has neighbours again",
+              bool(curated.neighbours(REGISTRY, REGISTRY.get(_name))), True)
+    check("a real family verb still answers from its family",
+          bool(curated.neighbours(REGISTRY, REGISTRY.get("view"))), True)
+    check("choices are not offered for a name a verb does not own",
+          curated.choice_groups("close", REGISTRY.get("close")), [])
+
+    # `made by` used to take the first claimant in registry order, so every
+    # Draft line was reported as made by point -- both are hand-written and
+    # both build a Part::FeaturePython, and nothing about the type says
+    # which. A verb somebody wrote answers over one the factory generated
+    # for the same type; where that still leaves several, it says nothing.
+    check("a hand-written verb is recognised as authored",
+          _cur.authored(REGISTRY.get("box")), True)
+    check("  and a generated one is not",
+          _cur.authored(REGISTRY.get("sketcher_bsplinedegree")), False)
+    from fccli.shell import _verb_for_type as _made_by
+    check("an unambiguous type names its verb",
+          _made_by("Part::Box"), "box")
+    _shared = [n for n in REGISTRY.names()
+               if REGISTRY.get(n).creates == "Part::FeaturePython"
+               and _cur.authored(REGISTRY.get(n))]
+    check("more than one hand-written verb builds Part::FeaturePython",
+          len(_shared) > 1, True)
+    check("  so the type does not name one", _made_by("Part::FeaturePython"),
+          None)
+    check("an unknown type names nothing", _made_by("No::Such"), None)
+    check("and neither does no type at all", _made_by(None), None)
+
+    # An addon's own verb. Patches are imported by path under a synthetic
+    # module name, so the old test for one -- "patches" in the module --
+    # matched nothing the loader has ever produced, and a verb an addon
+    # author wrote by hand ranked below every generated launcher.
+    from fccli.patches import MODULE_PREFIX as _PREFIX
+    from fccli.grammar import Verb as _Verb
+
+    def _addon_emit(values):
+        return None
+    _addon_emit.__module__ = _PREFIX + "addon_Whatever"
+    _declared = _Verb(name="whatever", steps=[], emit=_addon_emit)
+    check("a verb an addon wrote ranks promoted",
+          curated.rank_of(_declared), _cur.PROMOTED)
+    check("  above anything the factory generated",
+          curated.rank_of(_declared)
+          < curated.rank_of(REGISTRY.get("sketcher_bsplinedegree")), True)
+    _generated = _Verb(name="whatever2", steps=[], emit=lambda v: None)
+    _generated.emit.__module__ = "fccli.factory"
+    check("a generated verb is not promoted by the same test",
+          curated.rank_of(_generated) > _cur.PROMOTED, True)
     check("an accented label slugs to a typeable name",
           REGISTRY.get("bezier_curve") is not None, True)
 
@@ -687,10 +793,38 @@ def main():
           "/tmp/fccli-data/fccli/aliases")
     for k, v in _saved.items():
         os.environ.pop(k, None) if v is None else os.environ.__setitem__(k, v)
-    _fresh = os.path.join(tempfile.mkdtemp(), "history")
-    check("an absent new path falls back to the old one",
-          _paths.readable(_fresh, "history"), _paths.legacy("history")
-          if os.path.exists(_paths.legacy("history")) else _fresh)
+    # This used to compute its expectation with the same os.path.exists the
+    # implementation branches on, so it passed either way.
+    _dir = tempfile.mkdtemp()
+    _fresh = os.path.join(_dir, "absent")
+    _present = os.path.join(_dir, "present")
+    open(_present, "w", encoding="utf-8").close()
+    check("a new path that exists wins outright",
+          _paths.readable(_present, "history"), _present)
+    check("an absent one defers to whatever legacy says",
+          _paths.readable(_fresh, "history") in
+          (_fresh, _paths.legacy("history")), True)
+
+    # The move to XDG must not strand what came before it. Appending one
+    # line to the new path made readable() prefer a file holding that one
+    # line, and everything typed before the move went unreachable on the
+    # next start -- with the frecency ranking this release adds left
+    # nothing to rank.
+    _mig = os.path.join(tempfile.mkdtemp(), "history")
+    _ring = _History(path=_mig)
+    _ring.entries = ["box 0,0,0 10", "circle 0,0,0 5", "line 0,0,0 1,1,1"]
+    _ring.stamps = {"box 0,0,0 10": 111, "circle 0,0,0 5": 222,
+                    "line 0,0,0 1,1,1": 333}
+    _ring._write("cylinder 12 40")
+    check("the first write carries the whole ring across",
+          _History(path=_mig).entries,
+          ["box 0,0,0 10", "circle 0,0,0 5", "line 0,0,0 1,1,1",
+           "cylinder 12 40"])
+    check("  with the stamps that came with it",
+          _History(path=_mig).stamps.get("circle 0,0,0 5"), 222)
+    _ring._write("sphere 8")
+    check("a later write only appends",
+          len(_History(path=_mig).entries), 5)
 
     print("\n5n. frecency -- ranking by what somebody does")
     from fccli import frecency as _frec
@@ -807,8 +941,33 @@ def main():
                          (31, 2), (180, 2), (181, 1)):
         check(f"  {_days}d weighs {_want}",
               _frec.recency_weight(_now, _now - _days * 86400), _want)
-    check("a timestamp in the future is not trusted",
-          _frec.recency_weight(_now, _now + 86400), 1)
+    # This used to weigh 1 -- the stalest possible -- on the grounds that a
+    # future stamp is not to be trusted. The cost of that distrust is worse
+    # than the thing it guards: a clock that ran fast and was then corrected
+    # backwards buried everything typed in between at weight 1 permanently,
+    # because stamps are written once and never revisited. A stamp ahead of
+    # now is the most recent thing in the ring, so it weighs most.
+    check("a timestamp in the future is the newest thing there is",
+          _frec.recency_weight(_now, _now + 86400), 16)
+    check("  and one far in the future is still just the newest",
+          _frec.recency_weight(_now, _now + 400 * 86400), 16)
+
+    # One tally, shared. completion cached it privately, so the toolbar's
+    # familiarity cue rebuilt the whole thing -- every line in the ring,
+    # every verb in the dict -- to read one count, on every click.
+    _th = _History(path=os.path.join(tempfile.mkdtemp(), "history"))
+    # Interleaved: add refuses a line identical to the one before it, so
+    # three in a row would be one entry.
+    for _ in range(3):
+        _th.add("box 0,0,0 1 1 1", when=_now)
+        _th.add("circle 0,0,0 5", when=_now)
+    _first = _th.tally()
+    check("the tally counts what was run", _first.get("box")[0], 3)
+    check("  and is not rebuilt while the ring is unchanged",
+          _th.tally() is _first, True)
+    _th.add("sphere 3", when=_now)
+    check("  but is once it changes", _th.tally() is _first, False)
+    check("  with the new entry in it", _th.tally().get("sphere")[0], 1)
     check("a zero count scores zero however recent",
           _frec.score(0, _now, _now), 0)
     check("partition of nothing is nothing", _frec.partition([], dict, _now), [])
@@ -861,6 +1020,302 @@ def main():
     check("mnemonic markers are stripped from a label",
           _factory_label("&Box Zoom"), "Box Zoom")
 
+    print("\n5t. describe reads an object out as text")
+    from fccli import describe as _desc
+    from fccli.properties import is_noise as _is_noise
+    _ddoc = App.newDocument("describe")
+    _dbox = _ddoc.addObject("Part::Box", "Slab")
+    _dbox.Length, _dbox.Width, _dbox.Height = 1219.2, 610, 19
+    _ddoc.recompute()
+
+    _out = []
+    _stop = bus.subscribe(
+        lambda m: _out.append(m.text) if m.kind == "info" else None)
+    engine.submit("describe Slab")
+    _text = "\n".join(_out)
+    check("it names the object", "Slab" in _text, True)
+    check("  and its type", "Part::Box" in _text, True)
+    check("  and the verb that would build another", "made by" in _text, True)
+    check("it reports placement", "position" in _text, True)
+    check("it reports the parametric properties",
+          all(p in _text for p in ("Length", "Width", "Height")), True)
+    check("it reports what the shape measures",
+          "bounding box" in _text and "volume" in _text, True)
+    check("the filter is the one generated verbs use -- no plumbing",
+          any(p in _text for p in ("AttachmentOffset", "MapReversed",
+                                   "ExpressionEngine")), False)
+
+    _by_heading = dict((h, dict(rows)) for h, rows in _desc.sections(_dbox))
+    check("properties are exactly the useful ones",
+          sorted(_by_heading["PROPERTIES"]),
+          sorted(p for p in _dbox.PropertiesList if not _is_noise(_dbox, p)))
+
+    _out.clear()
+    engine.submit("describe")
+    check("bare, it lists what the document holds",
+          any("objects" in ln for ln in _out), True)
+    check("  with one line each", any("Slab" in ln for ln in _out), True)
+
+    _errs = []
+    _stoperr = bus.subscribe(
+        lambda m: _errs.append(m.text) if m.kind == ERROR else None)
+    engine.submit("describe Slabb")
+    check("a near miss is suggested, not just refused",
+          any("did you mean" in e and "Slab" in e for e in _errs), True)
+    _stoperr()
+
+    # Derived numbers use FreeCAD's own rendering: they are read, never
+    # typed back, so they are not held to the round-trip that a typed
+    # value is. Held to it, a volume prints twelve significant digits.
+    _entry_schema = _units.current_name()
+    _units.set_schema("Internal")
+    _shape = dict((h, dict(r)) for h, r in _desc.sections(_dbox))["SHAPE"]
+    check("a volume renders to the Decimals preference",
+          _shape["volume"], "14.13 l")
+    _units.set_schema("ImperialBuilding")
+    _shape = dict((h, dict(r)) for h, r in _desc.sections(_dbox))["SHAPE"]
+    check("  and a bounding box follows the schema",
+          _shape["bounding box"], "4\' x 2\' x 3/4\"")
+    _units.set_schema(_entry_schema)
+    _stop()
+    App.closeDocument("describe")
+
+    print("\n5u. a declared choice is input, not a new command")
+    # _is_restart guarded TEXT, POINT and QUANTITY steps and forgot CHOICE,
+    # so any choice sharing a name with a verb cancelled its own command.
+    _restart = []
+    _stopr = bus.subscribe(
+        lambda m: _restart.append(m.text) if m.kind == "info" else None)
+    engine.submit("check view sketch")
+    check("a choice that is also a verb fills the step",
+          any("41 commands" in ln for ln in _restart), True)
+    check("  and does not cancel the command",
+          any("cancelled" in ln for ln in _restart), False)
+    _stopr()
+    _hijacked = 0
+    for _name in REGISTRY.names():
+        for _st in REGISTRY.get(_name).steps:
+            if _st.kind == "choice" and _st.choices:
+                _hijacked += sum(
+                    1 for c in _st.choices
+                    if len(REGISTRY.resolve_prefix(c.lower())) == 1)
+    check("the pairs that would have been hijacked are many",
+          _hijacked > 100, True)
+
+    # SELECTION was the other one it forgot, and FreeCAD's default labels
+    # are the verb names: Box, Cylinder, Sphere, Cone, Line, Circle, Point.
+    # Typing `Box` at move's selection step cancelled move and started the
+    # box verb asking for a Length, which made _resolve_names unreachable
+    # for exactly the labels FreeCAD hands out.
+    _seldoc = App.newDocument("restartsel")
+    _seldoc.addObject("Part::Box", "Box")
+    _seldoc.recompute()
+    _sel = []
+    _stops = bus.subscribe(
+        lambda m: _sel.append(m.text) if m.kind == "info" else None)
+    engine.cancel()
+    engine.submit("move")
+    engine.submit("Box")
+    check("an object's own label fills the selection step",
+          engine.state, "collecting")
+    check("  the command is still move", engine.verb.name, "move")
+    check("  and the object landed",
+          [o.Name for o in engine.values.get("objects", [])], ["Box"])
+    check("  nothing was cancelled",
+          any("cancelled" in ln for ln in _sel), False)
+
+    # A verb name that is not an object in the document still restarts.
+    _sel.clear()
+    engine.submit("cancel") if False else engine.cancel()
+    _sel.clear()
+    engine.submit("move")
+    engine.submit("cylinder")
+    check("a name no object answers to still restarts",
+          any("cancelled" in ln for ln in _sel), True)
+    check("  and the new verb is the one that started",
+          engine.verb.name, "cylinder")
+    engine.cancel()
+    _stops()
+    App.closeDocument(_seldoc.Name)
+
+    print("\n5v. FreeCAD's key chords, offered as aliases")
+    from fccli import shortcuts as _short
+    check("a two-key chord becomes a word", _short.chord_to_alias("A, X"), "ax")
+    check("a three-key chord too", _short.chord_to_alias("G, P, 3"), "gp3")
+    check("a modified shortcut is left alone",
+          _short.chord_to_alias("Ctrl+S"), None)
+    check("a single key is a keystroke, not a word",
+          _short.chord_to_alias("C"), None)
+    for _key in ("Esc", "Del", "Space", "F10", "Home"):
+        check(f"  {_key} stays a key", _short.chord_to_alias(_key), None)
+
+    _accepted, _rejected = _short.proposals(
+        REGISTRY, _load_desc(), {"ax": "circle"})
+    check("an alias the operator already owns is not taken",
+          "ax" in _accepted, False)
+    check("  and the reason says whose it is",
+          "you alias" in _rejected.get("ax", ""), True)
+    _accepted2, _rejected2 = _short.proposals(REGISTRY, _load_desc(), {})
+    check("a chord never shadows a command",
+          [a for a in _accepted2 if REGISTRY.get(a) is not None], [])
+    check("every accepted chord names a real verb",
+          all(REGISTRY.get(v) is not None for v in _accepted2.values()), True)
+    check("there are chords worth importing", len(_accepted2) > 100, True)
+
+    # drop used to decide what to remove by asking whether an alias looked
+    # like a key chord. Every alias of two or more letters does, so it
+    # deleted the operator's own -- with nothing ever imported. The file
+    # records who wrote each one instead.
+    from fccli import shell as _shell
+    _alias_saved = _shell.ALIAS_PATH
+    _shell.ALIAS_PATH = os.path.join(tempfile.mkdtemp(), "aliases")
+    try:
+        _shell._save_aliases({"sq": "box", "zzz": "circle", "ax": "circle"},
+                             imported={"ax"})
+        _pairs, _imported = _shell._read_aliases()
+        check("what import wrote is marked", _imported, {"ax"})
+        check("  and what the operator wrote is not",
+              sorted(set(_pairs) - _imported), ["sq", "zzz"])
+        check("every alias still reads back",
+              sorted(_pairs), ["ax", "sq", "zzz"])
+        check("the mark never leaks into the command",
+              _pairs["ax"], "circle")
+        # A chord the operator redefines by hand becomes theirs.
+        _shell._save_aliases(_pairs, _imported - {"ax"})
+        check("redefining one by hand clears its mark",
+              _shell._read_aliases()[1], set())
+    finally:
+        _shell.ALIAS_PATH = _alias_saved
+
+    _out2 = []
+    _stop2 = bus.subscribe(
+        lambda m: _out2.append(m.text) if m.kind == "info" else None)
+    # A hand-written alias, in the file drop reads -- `ci` is declared on
+    # the circle verb in fccli/verbs.py, so it never reaches the alias file
+    # and drop never considered it. The check passed either way.
+    engine.submit("alias sq box")
+    check("a hand-written alias resolves", REGISTRY.resolve_prefix("sq"),
+          ["box"])
+    engine.submit("shortcuts import")
+    check("import gives ax to the axis verb",
+          REGISTRY.resolve_prefix("ax"), ["axis"])
+    check("  and marks it as its own",
+          "ax" in _shell_mod._read_aliases()[1], True)
+    check("  leaving the hand-written one unmarked",
+          "sq" in _shell_mod._read_aliases()[1], False)
+    engine.submit("shortcuts drop")
+    check("drop takes it back again",
+          "ax" in REGISTRY.get("axis").aliases, False)
+    check("  without disturbing a hand-written alias",
+          REGISTRY.resolve_prefix("sq"), ["box"])
+    check("  which is still in the file",
+          _shell_mod._read_aliases()[0].get("sq"), "box")
+    engine.submit("unalias sq")
+    _stop2()
+
+    print("\n5w. a selection is not a point")
+    from fccli.grammar import SELECTION as _SEL, POINT as _PT
+    _mv = REGISTRY.get("move")
+    check("move asks for a selection first",
+          [s.kind for s in _mv.steps][0], _SEL)
+    _probe = Engine(Bus(), REGISTRY, picker=None)
+    _probe.verb = _mv
+    _probe.state = "collecting"
+    _probe.values = {"objects": ["not a vector", "nor is this"]}
+    check("a filled selection step is not read back as a point",
+          _probe.last_point(), None)
+    _probe.values["frm"] = App.Vector(1, 2, 3)
+    check("  the point step is", tuple(_probe.last_point()), (1.0, 2.0, 3.0))
+    _probe.values["to"] = App.Vector(4, 5, 6)
+    check("  and the latest one wins", tuple(_probe.last_point()),
+          (4.0, 5.0, 6.0))
+
+    print("\n5x. a dialog's own buttons say what the command line should do")
+    from fccli import modals as _modals
+    from fccli.qt import QtWidgets as _QW
+
+    def _box(icon, text, buttons, title="Revolve"):
+        b = _QW.QMessageBox()
+        b.setIcon(icon)
+        b.setWindowTitle(title)
+        b.setText(text)
+        b.setStandardButtons(buttons)
+        return b
+
+    _reject = _box(_QW.QMessageBox.Critical, "Select a shape for revolution.",
+                   _QW.QMessageBox.Ok)
+    _kind, _text, _buttons = _modals.read(_reject)
+    check("a lone OK on a complaint is a rejection", _kind, "rejection")
+    check("  and its role is what marks it", _buttons[0][1], "AcceptRole")
+    check("the words come through", "revolution" in _text, True)
+    check("  with the title folded in", _text.startswith("Revolve"), True)
+
+    # An Information box is the command reporting that it worked. Reading
+    # every one-button box as a rejection rolled the transaction back and
+    # called a success a failure.
+    _notice = _box(_QW.QMessageBox.Information, "No errors found in the mesh.",
+                   _QW.QMessageBox.Ok, title="Mesh check")
+    check("an informational box is a notice, not a rejection",
+          _modals.read(_notice)[0], "notice")
+
+    _ask = _box(_QW.QMessageBox.Question, "Save changes before closing?",
+                _QW.QMessageBox.Save | _QW.QMessageBox.Discard
+                | _QW.QMessageBox.Cancel)
+    _k2, _text2, _buttons2 = _modals.read(_ask)
+    check("several buttons make a question", _k2, "question")
+    check("  offering three ways out", len(_buttons2), 3)
+    check("  with Discard as the destructive one",
+          sorted(r for _, r in _buttons2),
+          ["AcceptRole", "DestructiveRole", "RejectRole"])
+
+    check("without the bang, a question is cancelled",
+          _modals._pick(_buttons2, force=False).text().replace("&", ""),
+          "Cancel")
+    check("the bang asks for the destructive answer instead",
+          _modals._pick(_buttons2, force=True).text().replace("&", ""),
+          "Discard")
+    check("the bang changes nothing when there is nothing to discard",
+          _modals._pick(_buttons, force=True).text().replace("&", ""), "OK")
+
+    # A file chooser has no buttons worth reading, and calling .text() on
+    # one raised out of the event filter -- which left the chooser up and
+    # the caller hanging, which is the bug this module exists for.
+    _chooser = _QW.QFileDialog()
+    _kc, _tc, _bc = _modals.read(_chooser)
+    check("a file chooser is its own kind", _kc, "chooser")
+    check("  with no buttons to read", _bc, [])
+    check("  and an answer that says what to do instead",
+          "path as an argument" in _tc, True)
+
+    _dupe = _box(_QW.QMessageBox.Warning, "Revolve", _QW.QMessageBox.Ok)
+    check("a title the body repeats appears once",
+          _modals.read(_dupe)[1], "Revolve")
+    _long = _box(_QW.QMessageBox.Critical, "x " * 400, _QW.QMessageBox.Ok)
+    check("a wall of text is capped",
+          len(_modals.read(_long)[1]) <= _modals.LIMIT, True)
+
+    # Caught: a notice alone is not a failure, so the command still commits.
+    _c = _modals.Caught()
+    _c.notices.append("done")
+    check("a notice on its own does not fail the command", bool(_c), False)
+    _c.faults.append("nope")
+    check("  a rejection does", bool(_c), True)
+
+    # Nested arming. One filter per block let the inner one claim a dialog
+    # the outer had raised, and the outer then committed a command it
+    # should have failed.
+    with _modals.intercepted() as _outer:
+        with _modals.intercepted() as _inner:
+            check("the innermost block is the one armed",
+                  _modals._FILTER.targets[-1] is _inner, True)
+        check("  and the outer one is armed again after it",
+              _modals._FILTER.targets[-1] is _outer, True)
+    check("nothing stays armed once the blocks are done",
+          _modals._FILTER.targets, [])
+
+    for _b in (_reject, _notice, _ask, _dupe, _long, _chooser):
+        _b.deleteLater()
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])
@@ -873,6 +1328,26 @@ def main():
     if FAIL:
         print("failed: " + ", ".join(FAIL))
     return 1 if FAIL else 0
+
+
+def main():
+    """Run the suite, and put the unit schema back whatever happens.
+
+    UserSchema is a real FreeCAD preference that persists to user.cfg, and
+    4f moves it to exercise the schemas. The restore used to sit on the
+    happy path, so a failing check anywhere after it left the operator in
+    ImperialBuilding -- and every later run of the suite then failed on
+    bare numbers meaning inches, which reads as a code regression.
+    """
+    from fccli import units as _u
+    entry = _u.current_name()
+    try:
+        return _run()
+    finally:
+        try:
+            _u.set_schema(entry)
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

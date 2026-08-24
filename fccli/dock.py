@@ -21,7 +21,14 @@ DEFAULT_HEIGHT = 140
 # separately: dragging a floating window tall should not leave a 600px strip
 # across the top of FreeCAD the next time it is docked.
 DEFAULT_FLOAT = (760, 340)
+# Where a floating dock starts, not a floor on where it is kept.
+# minimumSizeHint deliberately lets one be dragged genuinely small so it
+# can be tucked into a corner, and clamping save and restore to MIN_FLOAT
+# meant that drag did not survive a re-float: 200px snapped back to 320.
 MIN_FLOAT = (320, 120)
+# Small enough to be a corner, big enough to grab. Only so that a
+# hand-edited or pre-floor zero cannot leave a window nobody can find.
+FLOOR_FLOAT = (60, 40)
 
 FULL = "full"
 PARTIAL = "partial"
@@ -61,9 +68,12 @@ def saved_height():
 
 
 def saved_float_size():
+    """What it was last dragged to, honoured."""
     try:
-        return (max(MIN_FLOAT[0], params().GetInt("FloatWidth", DEFAULT_FLOAT[0])),
-                max(MIN_FLOAT[1], params().GetInt("FloatHeight", DEFAULT_FLOAT[1])))
+        return (max(FLOOR_FLOAT[0],
+                    params().GetInt("FloatWidth", DEFAULT_FLOAT[0])),
+                max(FLOOR_FLOAT[1],
+                    params().GetInt("FloatHeight", DEFAULT_FLOAT[1])))
     except Exception:
         return DEFAULT_FLOAT
 
@@ -413,8 +423,8 @@ class CliDock(QtWidgets.QDockWidget):
             return
         try:
             if self.isFloating():
-                params().SetInt("FloatWidth", max(MIN_FLOAT[0], self.width()))
-                params().SetInt("FloatHeight", max(MIN_FLOAT[1], self.height()))
+                params().SetInt("FloatWidth", max(FLOOR_FLOAT[0], self.width()))
+                params().SetInt("FloatHeight", max(FLOOR_FLOAT[1], self.height()))
             else:
                 params().SetInt("DockHeight", max(70, self.height()))
         except Exception:
@@ -464,8 +474,10 @@ class CliDock(QtWidgets.QDockWidget):
         self.bridge.install()
         self._serve()
         app = QtWidgets.QApplication.instance()
+        self._focus_hook = None
         if app is not None:
-            app.focusChanged.connect(lambda *_: self._paint_focus_state())
+            self._focus_hook = lambda *_: self._paint_focus_state()
+            app.focusChanged.connect(self._focus_hook)
         self.console.setFocus(Qt.OtherFocusReason)
         self._paint_focus_state()
 
@@ -487,6 +499,16 @@ class CliDock(QtWidgets.QDockWidget):
     def closeEvent(self, ev):
         self.keyfilter.remove()
         self.picker.stop()
+        # This handler is on the QApplication and holds the dock, so every
+        # open/close cycle used to leave another one behind, painting a
+        # window that had gone away.
+        if getattr(self, "_focus_hook", None) is not None:
+            try:
+                QtWidgets.QApplication.instance().focusChanged.disconnect(
+                    self._focus_hook)
+            except (RuntimeError, TypeError):
+                pass
+            self._focus_hook = None
         if self.server is not None:
             self.server.stop()
         super().closeEvent(ev)

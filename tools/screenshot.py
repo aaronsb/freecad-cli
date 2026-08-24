@@ -2,7 +2,7 @@
 
 """Capture the screenshots the README uses.
 
-    xvfb-run -a freecad tools/screenshot.py
+    make screenshot   (xvfb-run alone is not enough on Wayland)
 
 Four images. Three are widget grabs of the dock, which are faithful. The
 hero is a composite: a grab of the whole window with the 3D area replaced by

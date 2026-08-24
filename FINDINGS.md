@@ -130,17 +130,27 @@ a bad descriptor breaks a toolbar button, and users blame FreeCAD. The
 per-verb kill switch and the global `off` exist for that reason. Default is
 `echo`.
 
-**Live trackers.** Rhino rubber-bands from the last point to the cursor at
-frame rate. That is Coin3D scene-graph mutation driven by `SoLocation2Event`
-and it bypasses the message stream entirely — the widget and the tracker are
-peers, both fed by the engine. Not built.
+**Live trackers.** Draft already had one. `Gui.Snapper.snap(pos,
+lastpoint=v)` sets `Snapper.trackLine.p1(v)`, then `p2` to the snapped
+point, colours it and turns it on — a `draftguitools.gui_trackers.lineTracker`
+that has been there the whole time. `Snapper.off()` puts it away, which
+teardown already called.
+
+It never appeared because `lastpoint` was arriving as a document object, so
+Draft raised inside `p1()` before reaching `on()`. Passing a vector is the
+whole feature.
+
+Draft ships seventeen trackers — line, wire, rectangle, arc, bspline,
+bezcurve, ghost, dim, box, radius, grid and more. **Look there before
+putting a node in the scene graph.** This project wrote its own
+`SoAnnotation` line for exactly one commit before finding that out.
 
 **Sketcher.** Bare `C`, `D`, `E` are Sketcher constraint commands pressed
 mid-interaction against a selection. Under usurping they cost one extra
 keystroke (Enter). Whether that is acceptable needs live-fire feedback.
 
-**Frecency ranking.** Tab cycles alphabetically. Most-recently-used ordering
-is the obvious next step and is unbuilt.
+**Frecency ranking.** Built. Completion orders by FreeCAD's own promotion
+first, then lifts whatever this operator actually runs above it.
 
 ## The 195
 
@@ -154,6 +164,9 @@ Del End Esc
 ```
 
 The Draft chords are already a command language — a bad one, with no
-discoverability and no arguments. `Shortcuts.cfg` can be imported as a seed
-alias file: strip the commas and `ci` + Enter does what `C,I` did. Muscle
-memory survives the transition. That import is not built yet.
+discoverability and no arguments. Stripping the commas turns each into an
+alias, so `ax` + Enter does what `A,X` did and muscle memory survives the
+transition. Built as the `shortcuts` verb — and it does not parse
+`Shortcuts.cfg` after all: `harvest_commands.py` already reads the shortcut
+off each QAction, and a running GUI has the live ones, which reflect what
+the operator remapped rather than what FreeCAD shipped.

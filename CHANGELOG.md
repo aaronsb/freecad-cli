@@ -55,6 +55,23 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
 - **A family verb cites its neighbours too.** It runs no command of its own,
   so the toolbar holding most of its members answers on its behalf.
 
+- **`describe`** reads an object out as text -- identity, placement, the
+  parametric properties, and what the shape measures. Bare it lists the
+  document. Closes #1.
+- **A rubber band follows the cursor** from the last point placed. It is
+  Draft's -- `Gui.Snapper.snap(lastpoint=...)` lights `Snapper.trackLine`
+  from that point to the cursor, and always could. It never appeared
+  because `lastpoint` was arriving as a document object. Closes #2 with
+  FreeCAD's own tracker rather than another one. Closes #2.
+- **`shortcuts`** offers FreeCAD's key chords as aliases: `A,X` becomes
+  `ax`. `list`, `why`, `import`, `drop`. Closes #4.
+- **`units.format_measure`** for numbers FreeCAD computed rather than ones
+  somebody typed, which are not owed a round-trip and print better without
+  one: `5.03 ml`, not `5.02654824574ml`.
+- **`fccli/properties.py`** holds the property filter that `describe` and
+  the type harvester now share, so what a verb asks for and what describe
+  reads back cannot drift apart.
+
 ### Changed (tests)
 
 - **`tests/test_spike.py` is now `tests/offscreen.py`.** It stopped being a
@@ -67,6 +84,28 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
 
 ### Fixed
 
+- **A verb that acts on a selection could never run.** `move`, and anything
+  else with a selection step, asked "select objects" and had no way to be
+  answered: nothing in the engine ever read `Gui.Selection`. Enter said the
+  step was required, forever. The engine now takes the live selection --
+  and takes it without asking when something is already selected, which is
+  what select-then-act means.
+- **`last_point` returned a document object.** It scanned every step for
+  anything list-shaped, so for any verb with a selection step it handed
+  back the last selected object. That went to `Gui.Snapper.snap` as
+  `lastpoint`, which passes it to Draft's own tracker, which raises inside
+  `p1()` -- on every mouse move, after part-configuring that tracker.
+- **`make bvt` ran on the operator's desktop.** It used Xvfb only when
+  `DISPLAY` was unset, so running the suite on a workstation opened FreeCAD
+  windows on that workstation and popped its dialogs at whoever was there.
+  It now always takes its own display; `FCCLI_BVT_DISPLAY=1` asks for the
+  real one.
+
+- **A declared choice was hijacked by a command of the same name.**
+  `_is_restart` guarded text, point and quantity steps and forgot choices,
+  so `view sketch` cancelled `view` and ran the `sketch` verb. 242
+  verb-and-choice pairs read that way, `constrain coincident` and
+  `additive helix` among them.
 - **Ranking stopped learning once the history ring filled.** The frecency
   tally was cached against the ring's length, and an add past the limit
   trims as it appends -- so at 2000 entries the length stopped moving while

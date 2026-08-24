@@ -15,6 +15,9 @@ Three backends:
 import FreeCAD as App
 import FreeCADGui as Gui
 
+def _is_point(value):
+    return value is not None and hasattr(value, "x") and hasattr(value, "y")
+
 _SNAPPER_READY = None
 
 
@@ -91,9 +94,17 @@ class _ViewPicker:
         self.stop()
         view = _active_view()
         if view is None:
+            # The step has already been prompted for. Returning quietly
+            # left the engine waiting on a click that could never arrive,
+            # with nothing said about why.
+            if self.notify:
+                self.notify("no 3D view to pick in -- type the point instead")
             return
         self._callback = callback
-        self._last = last
+        # Only ever a point. Draft's snapper takes lastpoint straight to
+        # its own tracker and raises there if it is anything else, after
+        # having already part-configured it.
+        self._last = last if _is_point(last) else None
         self._view = view
         self._cbs.append(
             ("SoMouseButtonEvent",
@@ -175,7 +186,14 @@ class SnapPicker(_ViewPicker):
         return super().resolve(pos)
 
     def _on_move(self, info) -> None:
-        """Drive the snap tracker so the user sees what will be picked."""
+        """Let the Snapper draw.
+
+        One call does both jobs. The snap marker says what a click would
+        land on, and passing lastpoint makes Draft light its own trackLine
+        from there to the cursor -- the rubber band, drawn by the code that
+        already owns rubber bands in FreeCAD, in the colour the rest of
+        Draft uses.
+        """
         pos = info.get("Position")
         if not pos or not self._snapping:
             return

@@ -37,9 +37,13 @@ def recency_weight(now, last):
     frequency rather than dropping it. History written before timestamps
     existed still counts.
     """
-    if not last or not now or last > now:
+    if not last or not now:
         return FLOOR
-    days = (now - last) // DAY
+    # A stamp ahead of now is the most recent thing in the ring, not the
+    # stalest. A clock that ran fast -- a resumed VM, a bad RTC -- and was
+    # then corrected backwards used to bury everything typed in between at
+    # weight 1, permanently, since stamps are written once.
+    days = max(0, (now - last) // DAY)
     for edge, weight in BUCKETS:
         if days <= edge:
             return weight
