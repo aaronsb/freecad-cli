@@ -76,6 +76,25 @@ class InputHighlighter(QtGui.QSyntaxHighlighter):
         if len(text) <= offset:
             return
         self._highlight_input(text[offset:], offset)
+        self._mark_picked(text, offset)
+
+    def _mark_picked(self, text, offset):
+        """Underline what a click produced, on a line recalled from history.
+
+        Colour already says what a token is. Underline says where it came
+        from, and that clicking will replace it.
+        """
+        start = self.console.picked_from()
+        if start is None:
+            return
+        at = offset + start
+        length = len(text) - at
+        if length <= 0:
+            return
+        fmt = QtGui.QTextCharFormat()
+        fmt.setUnderlineStyle(QtGui.QTextCharFormat.DotLine)
+        fmt.setUnderlineColor(QtGui.QColor("#7a7a7a"))
+        self.setFormat(at, length, fmt)
 
     # ----------------------------------------------------------------------
 
@@ -83,6 +102,10 @@ class InputHighlighter(QtGui.QSyntaxHighlighter):
         if length > 0:
             table = self.implicit_formats if implicit else self.formats
             self.setFormat(start, length, table[role])
+
+    def rehighlight_input(self):
+        doc = self.document()
+        self.rehighlightBlock(doc.lastBlock())
 
     def _highlight_input(self, body, base):
         step = self.engine.current_step()

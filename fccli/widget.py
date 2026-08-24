@@ -51,6 +51,9 @@ class Console(QtWidgets.QPlainTextEdit):
         self._search_mode = False
         self._search_buffer = ""
         self._live = False
+        # A line recalled from history, and which part of it came from the
+        # viewport. Underlined, because clicking replaces it.
+        self._recalled = None
 
         font = QtGui.QFontDatabase.systemFont(QtGui.QFontDatabase.FixedFont)
         font.setPointSize(font.pointSize() + 1)
@@ -70,6 +73,10 @@ class Console(QtWidgets.QPlainTextEdit):
     def prompt_length(self):
         return len(self._prompt)
 
+    def picked_from(self):
+        """Where the recalled line's clicked tail starts, if any."""
+        return self._recalled["from"] if self._recalled else None
+
     def input_text(self):
         block = self.document().lastBlock().text()
         return block[len(self._prompt):]
@@ -82,6 +89,10 @@ class Console(QtWidgets.QPlainTextEdit):
                          QtGui.QTextCursor.KeepAnchor)
         cur.insertText(self._prompt + text)
         self.setTextCursor(cur)
+        # Any change away from the recalled line makes it yours: the clicked
+        # tail stops being up for grabs.
+        if self._recalled is not None and text != self._recalled["full"]:
+            self._recalled = None
         self._refresh_suggestion()
 
     def set_prompt(self, text):
@@ -172,10 +183,16 @@ class Console(QtWidgets.QPlainTextEdit):
         if self._live and text is not None:
             self.write_live(text, role)
         self._live = False
+        # A line recalled from history, and which part of it came from the
+        # viewport. Underlined, because clicking replaces it.
+        self._recalled = None
 
     def clear_scrollback(self):
         pending = self.input_text()
         self._live = False
+        # A line recalled from history, and which part of it came from the
+        # viewport. Underlined, because clicking replaces it.
+        self._recalled = None
         self.setPlainText("")
         self._render_prompt()
         self.set_input(pending)
@@ -220,9 +237,20 @@ class Console(QtWidgets.QPlainTextEdit):
             self._hist_index = len(entries)
         self._hist_index = max(0, min(len(entries), self._hist_index + delta))
         if self._hist_index == len(entries):
+            self._recalled = None
             self.set_input(self._draft)
-        else:
-            self.set_input(entries[self._hist_index])
+            return
+        line = entries[self._hist_index]
+        typed = self.session.history.recall(line)
+        # Recall the whole command, and mark the part a click produced. It
+        # stays visible so the shape of the last command is legible, and
+        # underlined so it reads as up for grabs: Enter re-arms it and the
+        # next click lands there.
+        self.set_input(line)
+        self._recalled = {"full": line, "typed": typed,
+                          "from": len(typed)} if typed != line else None
+        if getattr(self, "highlighter", None) is not None:
+            self.highlighter.rehighlight_input()
 
     # ---------------------------------------------------------- completion
 
@@ -334,6 +362,11 @@ class Console(QtWidgets.QPlainTextEdit):
         self._clamp()
         super().keyPressEvent(ev)
         self._hist_index = None
+        # Editing a recalled line makes it yours: the picked part stops
+        # being up for grabs and Enter runs what is written.
+        if self._recalled is not None and \
+                self.input_text() != self._recalled["full"]:
+            self._recalled = None
         self._refresh_suggestion()
 
     def _at_end(self):
@@ -366,6 +399,12 @@ class Console(QtWidgets.QPlainTextEdit):
 
     def _submit(self):
         text = self.input_text()
+        recalled = self._recalled
+        if recalled is not None and text == recalled["full"]:
+            # Untouched since it was recalled: run the part that was typed
+            # and wait for a click to place it again.
+            text = recalled["typed"]
+        self._recalled = None
         self._hist_index = None
         self._completions = []
         self._comp_inserted = None

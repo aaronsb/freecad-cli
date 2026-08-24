@@ -35,6 +35,10 @@ class History:
         self.path = path
         self.limit = limit
         self.entries = []
+        # For a command driven half by mouse, what the keyboard contributed.
+        # Keyed by the full line, so the ring itself stays a list of strings
+        # and everything that reads it keeps working.
+        self.typed = {}
         self.load()
 
     def load(self):
@@ -55,11 +59,22 @@ class History:
             self._write(line)
         return True
 
-    def commit(self, line):
+    def commit(self, line, typed=None):
         """Record a finished command, dropping the fragment that opened it."""
         while self.entries and line.startswith(self.entries[-1]):
             self.entries.pop()
+        if typed and typed != line:
+            self.typed[line] = typed
         return self.add(line)
+
+    def recall(self, line):
+        """What Up hands back for a line: the part that was typed.
+
+        The whole line stays in the ring, so Tab still completes the picked
+        tail from it. Recall gives back the half a keyboard produced, ready
+        for the next click.
+        """
+        return self.typed.get(line, line)
 
     def drop(self, line):
         """Remove a provisional entry the finished command supersedes."""
@@ -153,7 +168,8 @@ class Session:
         if self._provisional is not None:
             self.history.drop(self._provisional)
             self._provisional = None
-        self.history.commit(msg.data.get("replay") or msg.text)
+        self.history.commit(msg.data.get("replay") or msg.text,
+                            typed=msg.data.get("typed"))
 
     def submit(self, text, who=DOCK):
         """Run a line, recording it provisionally so a typo can be recalled."""

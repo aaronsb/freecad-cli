@@ -386,6 +386,15 @@ version, the commit it was built from, and that commit's date. Running from
 a checkout the commit is read live from git and marked `-dirty` when the tree
 has changes; a released copy carries a stamped `fccli/_build.py`.
 
+## Documentation
+
+| | |
+|---|---|
+| [docs/conventions.md](docs/conventions.md) | every rule the command line follows, in one place |
+| [docs/shell.md](docs/shell.md) | the terminal client's design |
+| [FINDINGS.md](FINDINGS.md) | what was learned about FreeCAD's internals |
+| [CHANGELOG.md](CHANGELOG.md) | releases |
+
 ## Status
 
 Working, and in use. [CHANGELOG.md](CHANGELOG.md) tracks releases.

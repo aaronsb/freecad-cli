@@ -498,6 +498,55 @@ def main():
     check("  and an absent path is numbered under the document",
           auto.endswith(".png") and "shots" in auto, True)
 
+    print("\n5h. place, recall, place again")
+    _units.set_schema("Internal")
+    engine.submit("new placedoc")
+    session.history.entries[:] = []
+    session.history.typed.clear()
+
+    # Everything typeable first; the pick is what commits the command.
+    engine.submit("circle diameter 10")
+    check("a point is asked for last", engine.current_step().kind, "point")
+    engine.feed_point(App.Vector(15, 30, 0))
+    check("the click completed it", len(App.ActiveDocument.Objects), 1)
+    line = session.history.entries[-1]
+    check("history holds the whole line", line, "circle diameter 10.00mm 15,30,0")
+    check("  and knows what the keyboard contributed",
+          session.history.recall(line), "circle diameter 10.00mm")
+
+    console.set_input("")
+    console._history_step(-1)
+    check("Up shows the whole command", console.input_text(), line)
+    check("  with the clicked tail marked", console.picked_from(), 23)
+    console._submit()
+    check("Enter re-arms it for a click", engine.current_step().kind, "point")
+    engine.feed_point(App.Vector(-40, 5, 0))
+    placed = [tuple(o.Placement.Base) for o in App.ActiveDocument.Objects]
+    check("the second lands where the second click was",
+          placed, [(15.0, 30.0, 0.0), (-40.0, 5.0, 0.0)])
+
+    # Editing a recalled line makes it yours again.
+    console._history_step(-1)
+    console.set_input(console.input_text() + " ")
+    check("an edited line is no longer up for grabs",
+          console.picked_from(), None)
+
+    print("\n5i. arguments find their step by kind")
+    engine.submit("circle 0,0,0 20")
+    check("the old order still works",
+          [round(c) for c in App.ActiveDocument.Objects[-1].Placement.Base],
+          [0, 0, 0])
+    engine.submit("circle 20 5,5,0")
+    check("  and so does the new one",
+          [round(c) for c in App.ActiveDocument.Objects[-1].Placement.Base],
+          [5, 5, 0])
+    engine.submit("box 0,0,0 40 30 20")
+    box = App.ActiveDocument.Objects[-1]
+    check("same-kind arguments stay positional",
+          (box.Length.Value, box.Width.Value, box.Height.Value),
+          (40.0, 30.0, 20.0))
+    engine.submit("close!")
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

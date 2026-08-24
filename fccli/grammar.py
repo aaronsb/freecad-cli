@@ -49,9 +49,26 @@ class Step:
     # A step whose value is a command name says so rather than being
     # guessed at by position.
     completes: Optional[str] = None
+    # Where this step sits when the engine has to ask for it. Lower is
+    # sooner. Points default late, so a pick is what commits a command
+    # whose numbers were typed. An explicit value overrides that.
+    prompt_order: Optional[int] = None
 
     def option_names(self) -> List[str]:
         return [o.name for o in self.options]
+
+
+# What a step gets when it does not say. Selections come first -- pick the
+# thing, then say what to do to it -- and points come last, so everything
+# typeable is out of the way before the viewport is asked for anything.
+DEFAULT_ORDER = {SELECTION: 0, CHOICE: 10, TEXT: 10, PATH: 10,
+                 QUANTITY: 20, POINT: 90}
+
+
+def order_of(step) -> int:
+    if step.prompt_order is not None:
+        return step.prompt_order
+    return DEFAULT_ORDER.get(step.kind, 50)
 
 
 @dataclass

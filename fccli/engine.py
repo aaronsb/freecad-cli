@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 from . import bus as _bus
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
-                      Registry, Step, Verb)
+                      Registry, Step, Verb, order_of)
 from .parsing import format_point, format_quantity, parse_point, parse_quantity
 
 IDLE = "idle"
@@ -72,18 +72,46 @@ class Engine:
         self.state = IDLE
         self.verb: Optional[Verb] = None
         self.step_index = 0
+        self.done: set = set()
         self.values: Dict[str, Any] = {}
         self.replay: List[str] = []
+        # Which replay tokens came from the viewport rather than the
+        # keyboard. A command driven half by mouse can then hand back the
+        # half you typed, and complete the rest from history.
+        self.picked: List[int] = []
         self.flags: Dict[str, Any] = {}
 
     # ---------------------------------------------------------------- query
 
+    def prompt_sequence(self) -> List[Step]:
+        """The verb's steps in the order they will be asked for.
+
+        Declaration order says how a command reads; this says how it is
+        filled in. A point sorts last, so `circle 20` types the size and
+        then waits for a click -- and Up recalls `circle 20` to place the
+        next one.
+        """
+        if self.verb is None:
+            return []
+        return sorted(self.verb.steps, key=order_of)
+
+    def pending(self) -> List[Step]:
+        """Steps still to fill, in prompt order."""
+        return [s for s in self.prompt_sequence() if not self._is_filled(s)]
+
+    def _is_filled(self, step: Step) -> bool:
+        if step.id in self.done:
+            return True
+        got = self.values.get(step.id)
+        if step.repeat:
+            return False        # repeats end on Enter, not on a value
+        return got is not None
+
     def current_step(self) -> Optional[Step]:
         if self.state != COLLECTING or self.verb is None:
             return None
-        if self.step_index >= len(self.verb.steps):
-            return None
-        return self.verb.steps[self.step_index]
+        remaining = self.pending()
+        return remaining[0] if remaining else None
 
     def wants_numeric(self) -> bool:
         """Step-aware key routing.
@@ -96,7 +124,7 @@ class Engine:
         return step is not None and step.kind in (POINT, QUANTITY)
 
     def last_point(self) -> Optional[Any]:
-        for step in reversed(self.verb.steps if self.verb else []):
+        for step in reversed(self.prompt_sequence()):
             v = self.values.get(step.id)
             if isinstance(v, list) and v:
                 return v[-1]
@@ -136,7 +164,7 @@ class Engine:
         step = self.current_step()
         if step is None or step.kind != POINT:
             return
-        self._accept(step, vec, format_point(vec))
+        self._accept(step, vec, format_point(vec), picked=True)
 
     # ------------------------------------------------------------- internal
 
@@ -157,9 +185,11 @@ class Engine:
         self.verb = self.registry.get(hits[0])
         self.state = COLLECTING
         self.step_index = 0
+        self.done = set()
         self.values = {}
         self.flags = {"force": force}
         self.replay = [self.verb.name + ("!" if force else "")]
+        self.picked = []
         self._emit_live()
         while rest and self.state == COLLECTING:
             step = self.current_step()
@@ -167,7 +197,11 @@ class Engine:
                 # The rest of the line is one value, not a token each.
                 self._feed_text(" ".join(rest))
                 break
-            self._feed_text(rest.pop(0))
+            token = rest.pop(0)
+            # An inline argument goes to the step whose kind it matches, so
+            # "circle 0,0,0 20" and "circle 20 0,0,0" both work and a
+            # remembered line replays whatever order it was typed in.
+            self._feed_text(token, step=self._step_for_token(token))
         if self.state == COLLECTING and self._only_optional_left():
             # Nothing required remains, so the command is already complete.
             # "save", "new" and "help" run on Enter rather than stopping to
@@ -176,8 +210,36 @@ class Engine:
             return
         self._announce()
 
-    def _feed_text(self, text: str) -> None:
-        step = self.current_step()
+    def _step_for_token(self, token: str):
+        """Which pending step an inline argument belongs to.
+
+        A coordinate is recognisably a coordinate and a scalar is
+        recognisably a scalar, so they are matched by kind. Steps of the
+        same kind stay positional among themselves -- a box's three lengths
+        are told apart by order and nothing else.
+        """
+        remaining = self.pending()
+        if not remaining:
+            return None
+        head = remaining[0]
+        if any(o.name.lower().startswith(token.lower()) for o in head.options):
+            return head
+        looks_like_point = "," in token or token[:1] in "@<" or (
+            token[:1].lower() == "r" and token[1:2].isdigit())
+        wanted = POINT if looks_like_point else None
+        if wanted is None and parse_quantity(token, unit_hint="").ok:
+            wanted = QUANTITY
+        if wanted is None:
+            return head
+        match = next((s for s in remaining if s.kind == wanted), None)
+        return match or head
+
+    def _feed_text(self, text: str, step=None) -> None:
+        # A value goes to the step whose kind it matches, whether it arrived
+        # inline or at a prompt. Typing a coordinate while a length is being
+        # asked for fills the coordinate: the command line can see which is
+        # which, so it should not make the caller keep track.
+        step = step if step is not None else self._step_for_token(text)
         if step is None:
             return
         if self._is_restart(text, step):
@@ -242,16 +304,18 @@ class Engine:
         self._start(text)
         return True
 
-    def _accept(self, step: Step, value, typed: str) -> None:
+    def _accept(self, step: Step, value, typed: str, picked: bool = False
+                ) -> None:
+        if picked:
+            self.picked.append(len(self.replay))
         if step.repeat:
             self.values.setdefault(step.id, []).append(value)
         else:
             self.values[step.id] = value
+            self.done.add(step.id)
         self.replay.append(typed)
         self._emit_live()
-        if not step.repeat:
-            self.step_index += 1
-        if self.step_index >= len(self.verb.steps):
+        if not self.pending():
             self._finish()
         else:
             self._announce()
@@ -267,8 +331,8 @@ class Engine:
                 self.bus.emit(_bus.ERROR,
                               f"need at least {step.min_count} more for {step.id}")
                 return
-            self.step_index += 1
-            if self.step_index >= len(self.verb.steps):
+            self.done.add(step.id)
+            if not self.pending():
                 self._finish()
             else:
                 self._announce()
@@ -278,8 +342,8 @@ class Engine:
             return
         if step.optional:
             self.values[step.id] = None
-            self.step_index += 1
-            if self.step_index >= len(self.verb.steps):
+            self.done.add(step.id)
+            if not self.pending():
                 self._finish()
             else:
                 self._announce()
@@ -289,12 +353,16 @@ class Engine:
     def _finish(self) -> None:
         verb, values, flags = self.verb, self.values, dict(self.flags)
         replay = " ".join(self.replay)
+        # Capture provenance before the reset clears it.
+        picked = list(self.picked)
+        typed = self.typed_prefix(self.replay, picked)
         self._stop_picking()
         self._reset()
         if self.dry:
             self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
                           object=None, dry=True, creates=verb.creates,
-                          values=values, flags=flags)
+                          values=values, flags=flags, picked=picked,
+                          typed=typed)
             self._announce()
             return
         doc = _open_transaction(verb, replay)
@@ -306,23 +374,38 @@ class Engine:
             self._announce()
             return
         _commit_transaction(doc)
-        self.bus.emit(_bus.RESULT, replay,
-                      verb=verb.name, replay=replay, object=obj)
+        self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
+                      object=obj, picked=picked, typed=typed)
         self._announce()
 
     def _only_optional_left(self) -> bool:
-        remaining = self.verb.steps[self.step_index:] if self.verb else []
-        return all(s.optional or s.default is not None for s in remaining)
+        return all(s.optional or s.default is not None for s in self.pending())
+
+    def typed_prefix(self, replay=None, picked=None) -> str:
+        """The command as far as the keyboard took it.
+
+        Everything up to the first value that came from the viewport. That
+        is what Up hands back, so the next one can be placed with a fresh
+        click; the whole line stays in history for Tab to complete.
+        """
+        replay = self.replay if replay is None else replay
+        picked = self.picked if picked is None else picked
+        if not picked:
+            return " ".join(replay)
+        return " ".join(replay[:min(picked)])
 
     def _emit_live(self) -> None:
-        self.bus.emit(_bus.LIVE, " ".join(self.replay))
+        self.bus.emit(_bus.LIVE, " ".join(self.replay),
+                      picked=list(self.picked))
 
     def _reset(self) -> None:
         self.state = IDLE
         self.verb = None
         self.step_index = 0
+        self.done = set()
         self.values = {}
         self.replay = []
+        self.picked = []
         self.flags = {}
 
     def _announce(self) -> None:
