@@ -5,6 +5,7 @@ needs spans rather than a yes/no, so every parse reports which slice of the
 input failed.
 """
 
+import re
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
@@ -34,11 +35,24 @@ class ParseResult:
     error: str = ""
 
 
+BARE_NUMBER = re.compile(r"^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$")
+
+
 def parse_quantity(text: str, unit_hint: str = "mm") -> ParseResult:
-    """Parse one scalar. FreeCAD's own parser handles 3/8in, 2.5cm, 45deg."""
+    """Parse one scalar. FreeCAD's own parser handles 3/8in, 2.5cm, 45deg.
+
+    A bare number takes the configured schema's unit. FreeCAD's parser reads
+    an unqualified number as internal millimetres whatever the schema says,
+    which makes "cylinder 12" mean 12mm to someone whose every reading is in
+    inches. Tab appends the same unit, so what a bare number means is
+    visible rather than assumed.
+    """
     t = text.strip()
     if not t:
         return ParseResult(ok=False, error="empty")
+    if BARE_NUMBER.match(t):
+        from .units import preferred
+        t = t + preferred("angle" if unit_hint == "deg" else "length")
     try:
         q = Units.Quantity(t)
     except (ValueError, TypeError):

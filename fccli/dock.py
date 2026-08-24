@@ -233,7 +233,8 @@ class CliDock(QtWidgets.QDockWidget):
             if msg.text == "@@history@@":
                 self._show_history()
             else:
-                self.console.write("  " + msg.text, "info")
+                self.console.write("  " + msg.text,
+                                   msg.data.get("role", "info"))
         elif msg.kind == _bus.RESULT:
             self.console.end_live("  " + msg.text, "result")
             self.console.commit_history(msg.data.get("replay", msg.text))

@@ -14,12 +14,20 @@ HISTORY_PATH = os.path.join(
     os.path.expanduser("~"), ".local", "share", "FreeCAD", "fccli", "history"
 )
 
+# Semantic roles, resolved to colour here and only here. The same names
+# would map to ANSI in a terminal client.
 ROLE_COLOURS = {
     "echo":   "#d4d4d4",
     "info":   "#808080",
     "error":  "#f14c4c",
     "result": "#4ec9b0",
     "prompt": "#dcdcaa",
+    "head":   "#9cdcfe",   # what is being described
+    "value":  "#b5cea8",   # a parsed number or coordinate
+    "ok":     "#4ec9b0",   # would succeed
+    "warn":   "#dcdcaa",   # succeeded, but something was dropped
+    "bad":    "#f14c4c",   # would not succeed
+    "quiet":  "#6a6a6a",   # footnotes
 }
 
 

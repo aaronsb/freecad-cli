@@ -13,7 +13,8 @@ PROMPT = "prompt"    # engine wants input; payload: text, options, kind
 OPTIONS = "options"  # the legal option keywords at this step
 ECHO = "echo"        # a command line, as typed or as reconstructed
 LIVE = "live"        # the command being built, rewritten in place
-INFO = "info"        # chatter
+INFO = "info"        # chatter, optionally carrying a semantic role:
+                     #   head value ok warn bad dim quiet
 ERROR = "error"      # something did not parse or did not resolve
 RESULT = "result"    # a command completed; payload includes replay text
 STATE = "state"      # engine idle/collecting transitions

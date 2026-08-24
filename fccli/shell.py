@@ -225,7 +225,8 @@ def _emit_check(v):
     if not line:
         raise RuntimeError("check what?")
 
-    say = lambda text: engine.bus.emit(_b.INFO, text)
+    def say(text, role="info"):
+        engine.bus.emit(_b.INFO, text, role=role)
     seen = {"errors": [], "result": None, "prompt": None}
     shadow_bus = _b.Bus()
 
@@ -245,16 +246,16 @@ def _emit_check(v):
     hits = engine.registry.resolve_prefix(token.rstrip("!"))
     if not hits:
         near = _did_you_mean(engine.registry, token)
-        say(f"unknown command: {token}")
+        say(f"unknown command: {token}", "bad")
         if near:
-            say("  did you mean: " + ", ".join(near))
+            say("  did you mean: " + ", ".join(near), "head")
         return None
     if len(hits) > 1:
-        say(f"ambiguous: {token} matches " + ", ".join(hits))
+        say(f"ambiguous: {token} matches " + ", ".join(hits), "warn")
         return None
 
     verb = engine.registry.get(hits[0])
-    say(f"{verb.name} -- {verb.doc}")
+    say(f"{verb.name} -- {verb.doc}", "head")
 
     result = seen["result"]
     if result is not None:
@@ -262,34 +263,34 @@ def _emit_check(v):
         # what it was rejected for was optional. Say so rather than
         # reporting a clean run.
         for text in seen["errors"]:
-            say(f"  ignored: {text}")
-        say(f"  would run:  {result.data['replay']}")
+            say(f"  ignored: {text}", "warn")
+        say(f"  would run:  {result.data['replay']}", "ok")
         values = result.data.get("values") or {}
         for step in verb.steps:
             if step.id in values:
-                say(f"    {step.id:<12} {_show(values[step.id])}")
+                say(f"    {step.id:<12} {_show(values[step.id])}", "value")
         flags = [k for k, on in (result.data.get("flags") or {}).items()
                  if on and k != "force"]
         if flags:
-            say("    options      " + ", ".join(flags))
+            say("    options      " + ", ".join(flags), "value")
         if verb.creates:
-            say(f"  would create: {verb.creates}")
-        say("  nothing was run.")
+            say(f"  would create: {verb.creates}", "ok")
+        say("  nothing was run.", "quiet")
         return None
 
     if seen["errors"]:
         for text in seen["errors"]:
-            say(f"  rejected: {text}")
+            say(f"  rejected: {text}", "bad")
         return None
 
     prompt = seen["prompt"]
     if prompt is not None:
         remaining = [st.id for st in shadow.verb.steps[shadow.step_index:]] \
             if shadow.verb else []
-        say(f"  incomplete -- still wants: {prompt.text}")
+        say(f"  incomplete -- still wants: {prompt.text}", "warn")
         if len(remaining) > 1:
-            say("    then: " + ", ".join(remaining[1:]))
-        say("  valid so far, nothing was run.")
+            say("    then: " + ", ".join(remaining[1:]), "quiet")
+        say("  valid so far, nothing was run.", "quiet")
     return None
 
 
@@ -328,8 +329,9 @@ def _emit_units(v):
         engine.bus.emit(_bus.INFO,
                         f"{current} -- a bare number means {U.preferred()}")
         for name in U.schemas():
-            mark = "*" if name == current else " "
-            engine.bus.emit(_bus.INFO, f"  {mark} {name}")
+            active = name == current
+            engine.bus.emit(_bus.INFO, f"  {'*' if active else ' '} {name}",
+                            role="ok" if active else "quiet")
         return None
     name = U.set_schema(wanted)
     _say(v, f"{name} -- a bare number now means {U.preferred()}")
@@ -353,23 +355,24 @@ def _emit_man(v):
     verb = REGISTRY.get(topic)
     if verb is None:
         raise RuntimeError(f"no manual entry for {topic}")
-    say = lambda line: engine.bus.emit(_bus.INFO, line)
+    def say(line, role="info"):
+        engine.bus.emit(_bus.INFO, line, role=role)
 
-    say(f"NAME")
+    say("NAME", "head")
     alias = f"  ({', '.join(verb.aliases)})" if verb.aliases else ""
     say(f"    {verb.name}{alias} -- {verb.doc}")
 
-    say("SYNOPSIS")
+    say("SYNOPSIS", "head")
     parts = [verb.name]
     for step in verb.steps:
         token = f"<{step.id}>"
         parts.append(f"[{token}]" if step.optional else token)
         if step.repeat:
             parts.append("...")
-    say("    " + " ".join(parts))
+    say("    " + " ".join(parts), "ok")
 
     if verb.steps:
-        say("ARGUMENTS")
+        say("ARGUMENTS", "head")
         for i, step in enumerate(verb.steps, 1):
             unit = f" in {step.unit}" if step.kind == "quantity" and step.unit else ""
             flags = []
@@ -387,9 +390,9 @@ def _emit_man(v):
                 say(f"       option {opt.name}: {opt.doc}")
 
     if verb.gui_command:
-        say("GUI")
+        say("GUI", "head")
         say(f"    {verb.gui_command}")
-    say("SEE ALSO")
+    say("SEE ALSO", "head")
     say("    man     (list every command)")
     return None
 

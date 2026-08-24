@@ -56,6 +56,29 @@ toolbars and the 3D view. `` Ctrl+` `` toggles it, and it is listed under
 | trailing `!` | force past a refusal — `close!` |
 | `check <command>` | validate it without running it (`whatif`, `ck`) |
 
+### Units
+
+![The same command under two schemas](docs/images/units.png)
+
+Display follows FreeCAD's own unit schema, and every conversion goes through
+FreeCAD's API — `getUserPreferred` names the unit, `getValueAs` converts.
+There is no mapping table here.
+
+```
+> units imperialbuilding
+> cylinder 12 40          →  cylinder 1' 3'4"
+> box 0,0,0 3/8in 1ft 25.4mm  →  box 0,0,0 3/8" 1' 1"
+```
+
+A bare number takes the schema's unit rather than internal millimetres, so
+`12` means twelve of whatever you read in. Tab on a bare number appends that
+unit, and `units` says what it is.
+
+Schema rendering is meant for reading, not re-parsing: it rounds, and its
+compound imperial form (`3" + 7/8"`) does not parse back. Since the echoed
+line is also what Up recalls, every rendering is round-tripped before use
+and falls back to a precise conversion when it fails.
+
 ### Coordinates
 
 ```
@@ -106,6 +129,10 @@ run, rather than a second implementation that can drift:
 modal; `!` discards. Unsaved state is tracked through
 `App.addDocumentObserver`, so it is accurate for edits made anywhere — the
 command line, a toolbar, a macro.
+
+### check
+
+![check output, coloured by role](docs/images/check.png)
 
 ### man
 
@@ -232,14 +259,23 @@ once a getter is open.
 ```bash
 make            # list the targets
 make install    # symlink into FreeCAD's Mod directory
-make check      # compile, version-check, test
+make check      # compile, version-check, test  (offscreen, no GUI)
+make bvt        # drive a real FreeCAD GUI end to end, unattended
+make check-all  # both
 make descriptor # regenerate fccli/descriptor.json
 make screenshot # recapture docs/images
 make bump PART=minor
 make release    # stamp the commit, tag, push, cut a GitHub release
 ```
 
-`make check` runs offscreen and needs no FreeCAD GUI.
+`make check` covers the grammar offscreen. `make bvt` covers what only a
+running GUI can: the dock, the application-level key filter, the picker,
+the factory loading at startup, undo through real transactions, and the
+shutdown path. It runs under its own Xvfb display, drives everything
+through the command line, and never touches a dialog — which is only
+possible because every document verb takes its arguments inline. So it runs
+unattended, and a missing result file is reported as a failure rather than
+mistaken for success.
 
 The version prints in the banner as `0.2.0+c4113ff (2026-08-23)` — semantic
 version, the commit it was built from, and that commit's date. Running from

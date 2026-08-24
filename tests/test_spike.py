@@ -264,13 +264,19 @@ def main():
     check("internal renders mm", results[-1], "circle 0,0,0 9.525mm")
     check("a bare number means mm", U.preferred(), "mm")
     U.set_schema("ImperialBuilding")
-    engine.submit("circle 0,0,0 9.525")
+    check("a bare number now means in", U.preferred(), "in")
+    # An explicit unit is honoured whatever the schema, and rendered in it.
+    engine.submit("circle 0,0,0 9.525mm")
     check("imperial building renders fractions",
           results[-1], 'circle 0,0,0 3/8"')
-    check("a bare number now means in", U.preferred(), "in")
-    engine.submit("box 0,0,0 3/8in 1ft 25.4")
+    engine.submit("box 0,0,0 3/8in 1ft 25.4mm")
     check("mixed input unifies on output",
           results[-1], 'box 0,0,0 3/8" 1\' 1"')
+    # A bare number takes the schema's unit rather than internal mm, so the
+    # number someone types means what their readings mean.
+    engine.submit("circle 0,0,0 12")
+    check("a bare number is read in the schema's unit",
+          results[-1], "circle 0,0,0 1'")
     # Every rendering must survive being read back, since the echo is what
     # Up recalls.
     from FreeCAD import Units as _U

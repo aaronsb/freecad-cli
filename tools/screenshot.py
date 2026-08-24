@@ -98,6 +98,37 @@ def shot_midcommand(dock):
     dock.engine.cancel()
 
 
+def shot_units(dock):
+    """The same command under two schemas."""
+    set_height(dock, 250)
+    dock.engine.submit("clear")
+    dock.engine.submit("units internal")
+    dock.engine.submit("cylinder 12 40")
+    dock.engine.submit("units imperialbuilding")
+    dock.engine.submit("cylinder 12 40")
+    dock.engine.submit("box 0,0,0 3/8in 1ft 25.4mm")
+    dock.console.set_input("")
+    dock.console.verticalScrollBar().setValue(0)
+    QtWidgets.QApplication.processEvents()
+    save(dock, "units.png")
+    dock.engine.submit("units internal")
+
+
+def shot_check(dock):
+    """The validator, showing the semantic roles it renders in."""
+    set_height(dock, 330)
+    dock.engine.submit("units internal")
+    dock.engine.submit("clear")
+    for line in ("check cylinder 12 40",
+                 "check box 0,0,0 40 zz 20",
+                 "check polylne 0,0,0"):
+        dock.engine.submit(line)
+    dock.console.set_input("")
+    dock.console.verticalScrollBar().setValue(0)
+    QtWidgets.QApplication.processEvents()
+    save(dock, "check.png")
+
+
 def shot_man(dock):
     set_height(dock, 380)
     dock.engine.submit("clear")
@@ -188,6 +219,8 @@ def run():
         dock.engine.submit(line)
     shot_console(dock)
     shot_midcommand(dock)
+    shot_units(dock)
+    shot_check(dock)
     shot_man(dock)
     shot_hero(dock)
 
@@ -196,6 +229,18 @@ def run():
     for tmp in ("_hero_view.png", "_hero_window.png"):
         path = os.path.join(OUT, tmp)
         os.path.exists(path) and os.remove(path)
+
+    # Close every document through the command line, so no confirmation
+    # dialog can appear on the way out. save <path> writes without a file
+    # chooser; close! discards without asking.
+    import tempfile
+    scratch = os.path.join(tempfile.gettempdir(), "fccli-shots.FCStd")
+    dock.engine.submit(f"save {scratch}")
+    dock.engine.submit("close")          # clean now, so it goes quietly
+    while App.listDocuments():
+        dock.engine.submit("close!")     # anything still dirty is scratch
+    os.path.exists(scratch) and os.remove(scratch)
+    App.Console.PrintMessage("[shot] all documents closed, no dialogs\n")
     QtCore.QTimer.singleShot(400, QtWidgets.QApplication.quit)
 
 
