@@ -23,7 +23,7 @@ type: null
 
 The Std DependencyGraph command displays the dependencies between objects in the active document in a graph. As opposed to the Tree view, objects are listed in reverse chronological order, with the first created object at the bottom.
 
-It can be useful in analyzing a FreeCAD document and locating forks in a tree. The dependency graph layout will depend on which workbench was used to create the objects in the document. For example a model made exclusively in the PartDesign workbench can display a linear dependency graph with a single vertical branch. A model made with Part operations will have many branches, but for a single part they will join up at the top after Boolean operations. If they don\'t, it means that they are separate objects.
+It can be useful in analyzing a FreeCAD document and locating forks in a tree. The dependency graph layout will depend on which workbench was used to create the objects in the document. For example a model made exclusively in the PartDesign workbench can display a linear dependency graph with a single vertical branch. A model made with Part operations will have many branches, but for a single part they will join up at the top after Boolean operations. If they don't, it means that they are separate objects.
 
 The dependency graph is purely a visualization tool, therefore it cannot be edited. It automatically updates if changes are made to the model.
 

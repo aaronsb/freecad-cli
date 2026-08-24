@@ -25,10 +25,6 @@ The TechDraw StackBottom tool moves Views to the bottom of the stacking order. T
 
 See TechDraw StackTop.
 
-{{TechDraw Tools navi}}
-
---- ⏵ documentation index > TechDraw > TechDraw StackBottom
-
 ## See also
 
 - TechDraw_StackTop

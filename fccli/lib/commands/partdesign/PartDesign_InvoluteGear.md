@@ -23,7 +23,7 @@ type: null
 
 This tool allows you to create a 2D profile of an involute gear or spline. This 2D profile is fully parametric, and can be padded with the PartDesign Pad or PartDesign AdditiveHelix feature.
 
-For more detailed information see Wikipedia\'s entries for: Gear and Involute Gear
+For more detailed information see Wikipedia's entries for: Gear and Involute Gear
 
 ## See also
 

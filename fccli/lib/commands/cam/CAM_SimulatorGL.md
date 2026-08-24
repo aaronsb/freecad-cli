@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The SimulatorGL tool is a new alternative to CAM Simulator. It\'s based on low-level OpenGL functions. To eliminate interference with the 3D view of FreeCAD, it works in a separate window with a separate OpenGL context. It\'s meant to be faster and more precise than the old simulator.
+The SimulatorGL tool is a new alternative to CAM Simulator. It's based on low-level OpenGL functions. To eliminate interference with the 3D view of FreeCAD, it works in a separate window with a separate OpenGL context. It's meant to be faster and more precise than the old simulator.
 
 ## See also
 

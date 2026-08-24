@@ -21,4 +21,9 @@ rank: null
 type: null
 ---
 
-Displays the active view either in fullscreen, undocked, or docked mode.
+3D views can be undocked from the main FreeCAD interface and moved to a different display for example.
+
+## See also
+
+- Std_ViewFullscreen
+- Std_MainFullscreen

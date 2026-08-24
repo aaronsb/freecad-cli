@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The tool Shape doesn\'t match the current CAM workflow. For that reason it\'s moved to the experimental features.
+The tool Shape doesn't match the current CAM workflow. For that reason it's moved to the experimental features.
 
 This tool generates tool-paths from CAM Object edges.
 

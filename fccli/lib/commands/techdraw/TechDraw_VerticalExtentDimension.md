@@ -25,10 +25,6 @@ The TechDraw VerticalExtentDimension tool adds a linear dimension to a View. The
 
 For more information see TechDraw HorizontalExtentDimension.
 
-{{TechDraw_Tools_navi}}
-
---- ⏵ documentation index > TechDraw > TechDraw VerticalExtentDimension
-
 ## See also
 
 - TechDraw_LengthDimension

@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-This equation performs electrostatic analyses using Gauss\' law.
+This equation performs electrostatic analyses using Gauss' law.
 
 For info about the math of the equation, see the Elmer models manual, section *Electrostatics*.
 

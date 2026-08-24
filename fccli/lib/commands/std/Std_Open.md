@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Std Open command opens a file. If the file is not a native FreeCAD file (\*.FCStd) its geometry will be imported into a new document. See Std Import for more information.
+The Std Open command opens a file. If the file is not a native FreeCAD file (*.FCStd) its geometry will be imported into a new document. See Std Import for more information.
 
 ## See also
 

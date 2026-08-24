@@ -21,4 +21,8 @@ rank: null
 type: null
 ---
 
-Inserts an editable text block annotation to the current page.
+The TechDraw Annotation tool adds a text block to a drawing page.
+
+## See also
+
+- TechDraw_RichTextAnnotation

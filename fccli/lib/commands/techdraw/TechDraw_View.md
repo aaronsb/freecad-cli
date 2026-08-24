@@ -23,7 +23,7 @@ type: null
 
 The TechDraw View tool adds a representation of one or more objects to a Drawing page. It can create a Projection Group Item (a single view), a Projection Group, a Spreadsheet View, an Arch View, a Symbol or an Image View.
 
-In {{VersionMinus|0.21}} the tool can only create a Part View, which is very similar to a Projection Group Item.
+In the tool can only create a Part View, which is very similar to a Projection Group Item.
 
 ## See also
 

@@ -25,9 +25,9 @@ The ToolBit Dock is easily accessible from the main toolbar in the CAM workbench
 
 The purpose of the dock is to display the currently selected library and allow the user to quickly add tool controllers to the CAM Job(s).
 
-Double-clicking on a toolbit will create a single tool controller for the toolbit. Multi-selecting toolbits and pressing the \'Add to Job\' button will create tool controllers for all toolbits in the library.
+Double-clicking on a toolbit will create a single tool controller for the toolbit. Multi-selecting toolbits and pressing the 'Add to Job' button will create tool controllers for all toolbits in the library.
 
-The user may also select multiple tools and use the \'add\...\' button at the bottom to add tool controllers for the selection.
+The user may also select multiple tools and use the 'add\...' button at the bottom to add tool controllers for the selection.
 
 +++ | | The top of the panel shows the name of the current library (1). All tool libraries from that location are scanned and shown in the dock. The dock will remember the last selection between uses. A manager button at the top right (4) allows the user to launch the library manager. The library manager can be used to maintain the toolbits and to select a different library. | +++
 

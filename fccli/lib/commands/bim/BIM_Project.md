@@ -27,6 +27,6 @@ It is not necessary to create a project to export a FreeCAD model to IFC, as a d
 
 Typically, you create a BIM project to attach an IFC file. When creating the project, the attached IFC file is blank, and not saved. The next time you will save the FreeCAD file, you will also be asked to save the IFC file.
 
-If you distribute the FreeCAD file, all attached IFC files must be distributed together, otherwise FreeCAD won\'t be able to extract the geometry. However, if the shape mode property of all objects contained in a project is set to Shape, then the FreeCAD file can be distributed without the accompanying IFC file, and will still open correctly on other computers. The IFC objects, however, won\'t be editable anymore.
+If you distribute the FreeCAD file, all attached IFC files must be distributed together, otherwise FreeCAD won't be able to extract the geometry. However, if the shape mode property of all objects contained in a project is set to Shape, then the FreeCAD file can be distributed without the accompanying IFC file, and will still open correctly on other computers. The IFC objects, however, won't be editable anymore.
 
 When inserting an IFC file, a project object is created, that contains all the contents of the file. Like all NativeIFC objects, the project can be expanded by double-clicking it in the tree.

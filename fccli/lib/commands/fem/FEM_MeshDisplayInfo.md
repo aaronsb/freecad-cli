@@ -23,15 +23,28 @@ type: null
 
 Displays basic statistics of existing mesh - number of nodes and elements of each type. Particularly, total number of the following features is shown:
 
-- Nodes, - Edges, - Faces, - Polygons, - Volumes, - Polyhedrons,
+- Nodes,
+- Edges,
+- Faces,
+- Polygons,
+- Volumes,
+- Polyhedrons,
 
-\* Linear edges,
+- Linear edges,
 
-- Linear faces, - Linear volumes,
+- Linear faces,
+- Linear volumes,
 
-\* Quadratic edges,
+- Quadratic edges,
 
-- Quadratic faces, - Quadratic triangles, - Quadratic quadrangles, - Quadratic volumes, - Quadratic hexahedrons, - Quadratic tetrahedrons, - Quadratic prisms, - Quadratic pyramids.
+- Quadratic faces,
+- Quadratic triangles,
+- Quadratic quadrangles,
+- Quadratic volumes,
+- Quadratic hexahedrons,
+- Quadratic tetrahedrons,
+- Quadratic prisms,
+- Quadratic pyramids.
 
 ## See also
 

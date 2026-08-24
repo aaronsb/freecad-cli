@@ -21,4 +21,10 @@ rank: null
 type: null
 ---
 
-Creates an intersection of two shapes.
+Extracts the common part (intersection) between selected Part objects. This operation is fully parametric and the components can be modified and the result recomputed.
+
+## See also
+
+- Part_Boolean
+- Part_Cut
+- Part_Fuse

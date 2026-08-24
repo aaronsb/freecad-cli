@@ -21,4 +21,8 @@ rank: null
 type: null
 ---
 
-Transforms the selected object.
+The Std TransformManip command allows you to apply rotation increments and translation increments to an object.
+
+## See also
+
+- Std_UserEditMode

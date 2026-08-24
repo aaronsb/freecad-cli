@@ -37,30 +37,41 @@ BOLD = re.compile(r"\*\*([^*]*)\*\*")
 VERSION = re.compile(r"\(v\d[\w.]*\)")
 DEFLIST = re.compile(r"\s+:\s+")
 CAPTION = re.compile(r"^\*[^*]+\*$")
-SECTION = re.compile(r"^## +(.*?)\s*$", re.M)
+TEMPLATE = re.compile(r"\{\{[^{}]*\}\}")
+QUOTES = re.compile(r"(?:\\?'){2,3}")   # wiki italics and bold, sometimes escaped
+ESCAPED = re.compile(r"\\(['\"*_])")      # the conversion escapes punctuation; prose does not
+LIST_ITEM = re.compile(r"^\s*(?:[-*]|\d+\.)\s+")
+REDIRECT = re.compile(r"REDIRECT\s+\[[^\]]*\]\((\w+)\.md\)")
+SECTION = re.compile(r"^#{2,3} +(.*?)\s*$", re.M)
 FIELD = re.compile(r"^\s*(\w+):\s*(.*?)\s*$", re.M)
+# Sections that describe the tool, first one wins.
+DESCRIBES = ("description", "introduction")
 
 
 def page_parts(text):
-    """(GuiCommand fields, description text) of a wiki page.
+    """(GuiCommand fields, description text, redirect target) of a page.
 
     The page's frontmatter is YAML-shaped and not YAML: `Shortcut: **G**
     **C**` is an alias to a parser. The fields are one per line, so a
-    line is what is read.
+    line is what is read. A page that is only a REDIRECT names where to
+    look instead; the caller follows one hop.
     """
     front = {}
     m = cf.FRONT.match(text)
     if m:
         front = {k: v for k, v in FIELD.findall(m.group(1)) if v}
         text = text[m.end():]
+    r = REDIRECT.search(text)
+    if r and not SECTION.search(text):
+        return front, "", r.group(1)
     sections = list(SECTION.finditer(text))
     description = ""
     for i, sec in enumerate(sections):
-        if sec.group(1).lower() == "description":
+        if sec.group(1).lower() in DESCRIBES:
             end = sections[i + 1].start() if i + 1 < len(sections) else len(text)
             description = text[sec.end():end]
             break
-    return front, clean(description)
+    return front, clean(description), None
 
 
 def clean(md):
@@ -69,12 +80,25 @@ def clean(md):
     md = LINK.sub(r"\1", md)
     md = BOLD.sub(r"\1", md)
     md = TAG.sub("", md)
+    md = TEMPLATE.sub("", md)
+    md = QUOTES.sub("", md)
+    md = ESCAPED.sub(r"\1", md)
     md = VERSION.sub("", md)
     md = DEFLIST.sub(" ", md)
     paragraphs = []
     for para in re.split(r"\n\s*\n", md):
-        lines = [" ".join(l.split()) for l in para.splitlines()]
-        joined = " ".join(l for l in lines if l).strip()
+        lines = [" ".join(l.split()) for l in para.splitlines() if l.strip()]
+        if not lines:
+            continue
+        if lines[0].startswith("---") or lines[0].startswith("\u23f5") \
+                or "documentation index" in lines[0]:
+            continue        # the page footer, when Description is last
+        if all(LIST_ITEM.match(l) for l in lines):
+            # A list stays a list; one item per line.
+            paragraphs.append("\n".join(
+                "- " + LIST_ITEM.sub("", l) for l in lines))
+            continue
+        joined = " ".join(lines).strip()
         if not joined or CAPTION.match(joined):
             continue        # an image's caption, with the image gone
         paragraphs.append(joined)
@@ -93,15 +117,21 @@ def body_for(entry, pages):
     name = entry["name"]
     page = entry.get("wiki") or name
     path = pages.get(page) or pages.get(name)
-    if path:
+    for _hop in range(2):           # a page may redirect once
+        if not path:
+            break
         with open(path, encoding="utf-8") as fh:
-            front, description = page_parts(fh.read())
+            front, description, redirect = page_parts(fh.read())
+        if redirect:
+            path = pages.get(redirect)
+            continue
         if description:
             body = description
             also = see_also(front)
             if also:
                 body += "\n\n## See also\n\n" + "\n".join(f"- {p}" for p in also)
             return body, "wiki"
+        break
     tooltip = entry.get("tooltip") or entry.get("label") or name
     return tooltip.rstrip(".") + ".", "tooltip"
 
@@ -129,9 +159,11 @@ def generate(out, force=False, quiet=False):
             "shortcut": entry.get("shortcut"),
             "workbench": entry.get("workbench"),
             "wiki": entry.get("wiki"),
-            "wiki_rev": rev,
+            "wiki_rev": None,
         }
         body, source = body_for(entry, pages)
+        if source == "wiki":
+            generated["wiki_rev"] = rev    # provenance only where there is any
         sources[source] += 1
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as fh:

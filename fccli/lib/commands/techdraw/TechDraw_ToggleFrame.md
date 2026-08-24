@@ -21,4 +21,8 @@ rank: null
 type: null
 ---
 
-Toggles visibility of view frames and vertices.
+The TechDraw ToggleFrame tool turns the display of View frames, labels and vertices on or off.
+
+## See also
+
+- TechDraw_View

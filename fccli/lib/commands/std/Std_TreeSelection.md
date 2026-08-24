@@ -23,4 +23,4 @@ type: null
 
 The Std TreeSelection command scrolls the Tree view to the first created object in a 3D view selection.
 
-If the Tree view SyncSelection mode is off, the Tree view is scrolled to the first created object in the selection whose parent is already expanded in the Tree view. If none of the objects\' parents are expanded the command will have no effect in that mode.
+If the Tree view SyncSelection mode is off, the Tree view is scrolled to the first created object in the selection whose parent is already expanded in the Tree view. If none of the objects' parents are expanded the command will have no effect in that mode.

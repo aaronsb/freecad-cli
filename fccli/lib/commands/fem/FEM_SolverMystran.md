@@ -23,7 +23,9 @@ type: null
 
 The SolverMystran command enables usage of the MYSTRAN solver. It may be used for:
 
-1. Setting analysis parameters. 2. Selecting working directory. 3. Running the MYSTRAN solver.
+- Setting analysis parameters.
+- Selecting working directory.
+- Running the MYSTRAN solver.
 
 ## See also
 

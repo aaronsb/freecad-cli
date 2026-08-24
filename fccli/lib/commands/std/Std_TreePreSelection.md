@@ -21,4 +21,4 @@ rank: null
 type: null
 ---
 
-The Std TreePreSelection command toggles the Tree view PreSelection mode. If this mode is on, an object that the mouse is over in the Tree view will be pre-selectected (temporarily highlighted) in all 3D views belonging to that object\'s document.
+The Std TreePreSelection command toggles the Tree view PreSelection mode. If this mode is on, an object that the mouse is over in the Tree view will be pre-selectected (temporarily highlighted) in all 3D views belonging to that object's document.

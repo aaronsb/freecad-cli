@@ -27,14 +27,19 @@ def cache_dir():
 
 def _git(*args, cwd=None):
     return subprocess.run(["git", *args], cwd=cwd, capture_output=True,
-                          text=True, check=True).stdout.strip()
+                          text=True, check=True, timeout=600).stdout.strip()
 
 
 def ensure(refresh=False, quiet=False):
     """The clone's path, cloning or refreshing as asked. None if git failed."""
     path = cache_dir()
     try:
-        if not os.path.isdir(os.path.join(path, ".git")):
+        # The wiki directory is what a clone is for. A .git with no wiki
+        # is an interrupted clone, and it is removed and done again.
+        if os.path.isdir(path) and not os.path.isdir(os.path.join(path, "wiki")):
+            import shutil
+            shutil.rmtree(path, ignore_errors=True)
+        if not os.path.isdir(os.path.join(path, "wiki")):
             os.makedirs(os.path.dirname(path), exist_ok=True)
             _git("clone", "-q", "--filter=blob:none", "--no-checkout",
                  "--depth", "1", URL, path)
@@ -43,7 +48,8 @@ def ensure(refresh=False, quiet=False):
         elif refresh:
             _git("fetch", "-q", "--depth", "1", "origin", "main", cwd=path)
             _git("reset", "-q", "--hard", "origin/main", cwd=path)
-    except (subprocess.CalledProcessError, OSError) as exc:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired,
+            OSError) as exc:
         if not quiet:
             print(f"docs_clone: {exc}", file=sys.stderr)
         return None

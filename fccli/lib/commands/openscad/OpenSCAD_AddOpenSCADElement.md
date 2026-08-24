@@ -23,7 +23,7 @@ type: null
 
 Add an OpenSCAD element by entering OpenSCAD code into the task panel and executing the OpenSCAD binary (requires OpenSCAD)
 
-When \'as mesh\' is selected, OpenSCAD renders a Mesh.
+When 'as mesh' is selected, OpenSCAD renders a Mesh.
 
 Each time Add is pressed the OpenSCAD code is executed and elements are imported.
 

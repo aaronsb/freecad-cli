@@ -25,6 +25,8 @@ The Slot tool creates a simple slotting operation using various methods of input
 
 Inputs include:
 
-- selecting one or more faces or edges. - selecting two vertices. - entering two custom points.
+- selecting one or more faces or edges.
+- selecting two vertices.
+- entering two custom points.
 
 The CAM Slot object is made to be part of a CAM Job.

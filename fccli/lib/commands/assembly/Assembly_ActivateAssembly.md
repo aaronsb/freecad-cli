@@ -9,7 +9,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   shortcut: null
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_ActivateAssembly"
-  wiki_rev: "0499378"
+  wiki_rev: null
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

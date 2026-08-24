@@ -23,9 +23,9 @@ type: null
 
 The Draft Fillet command creates a fillet, a rounded corner, or a chamfer, a straight edge, between two selected edges.
 
-In {{VersionMinus|0.21}} the command only works properly if both selected edges are straight.
+In the command only works properly if both selected edges are straight.
 
-In {{VersionMinus|1.0}} if the selected objects have multiple edges, their first edge will be used. This may not be the edge that was picked in the 3D view.
+In if the selected objects have multiple edges, their first edge will be used. This may not be the edge that was picked in the 3D view.
 
 ## See also
 

@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Spreadsheet Export tool exports a spreadsheet as a CSV file, which can be used in other applications. Note that the {{Value|tab}} character, and not the {{Value|comma}}, is the default field delimiter. But this can be changed in the Spreadsheet Preferences ( ).
+The Spreadsheet Export tool exports a spreadsheet as a CSV file, which can be used in other applications. Note that the character, and not the , is the default field delimiter. But this can be changed in the Spreadsheet Preferences ( ).
 
 ## See also
 

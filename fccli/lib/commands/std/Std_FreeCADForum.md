@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Std FreeCADForum command opens the FreeCAD forum website in the system\'s default Internet browser. The command requires a working Internet connection.
+The Std FreeCADForum command opens the FreeCAD forum website in the system's default Internet browser. The command requires a working Internet connection.
 
 Currently the command points to .
 

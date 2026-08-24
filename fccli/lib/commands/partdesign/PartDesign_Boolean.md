@@ -21,4 +21,4 @@ rank: null
 type: null
 ---
 
-PartDesign Boolean imports one or more PartDesign Bodies or PartDesign Clones (designated as \"tool bodies\") into the active PartDesign Body and applies a Boolean operation (fuse, cut or common).
+PartDesign Boolean imports one or more PartDesign Bodies or PartDesign Clones (designated as "tool bodies") into the active PartDesign Body and applies a Boolean operation (fuse, cut or common).

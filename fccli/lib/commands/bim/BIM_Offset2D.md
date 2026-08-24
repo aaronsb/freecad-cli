@@ -21,4 +21,12 @@ rank: null
 type: null
 ---
 
-Utility to offset planar shapes.
+The Part Offset2D tool constructs a wire, parallel to the original wire, at a certain distance from it. Or enlarges/shrinks a planar face, similarly.
+
+The wire/face must be planar. There can be multiple wires in one object, not necessarily coplanar.
+
+## See also
+
+- Part_Offset
+- Part_Thickness
+- Draft_Offset

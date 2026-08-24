@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Std MainFullscreen command toggles FreeCAD\'s main window fullscreen mode.
+The Std MainFullscreen command toggles FreeCAD's main window fullscreen mode.
 
 ## See also
 

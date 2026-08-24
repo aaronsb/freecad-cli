@@ -21,11 +21,11 @@ rank: null
 type: null
 ---
 
-This equation performs analyses using a 2D version of the Maxwell\'s equations when the unknown is the z-component (or φ-component).
+This equation performs analyses using a 2D version of the Maxwell's equations when the unknown is the z-component (or φ-component).
 
 For info about the math of the equation, see the Elmer models manual, section *Computation of Magnetic Fields in 2D*.
 
-For more general analyses in 3D using the Maxwell\'s equations FreeCAD supports Elmer\'s Magnetodynamic equation. Nevertheless, if it is possible to perform the analysis in 2D, this is recommended since the math behind this is then more simple and the calculation time is therefore faster.
+For more general analyses in 3D using the Maxwell's equations FreeCAD supports Elmer's Magnetodynamic equation. Nevertheless, if it is possible to perform the analysis in 2D, this is recommended since the math behind this is then more simple and the calculation time is therefore faster.
 
 ## See also
 

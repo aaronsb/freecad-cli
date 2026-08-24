@@ -21,4 +21,4 @@ rank: null
 type: null
 ---
 
-The Std Properties command displays the Property view panel. This panel is only available if the Tree view and Property view mode preference is set to {{Value|Independent}}. If the preference is set to {{Value|Combined}}, or if the panel is already visible, this command has no effect.
+The Std Properties command displays the Property view panel. This panel is only available if the Tree view and Property view mode preference is set to . If the preference is set to , or if the panel is already visible, this command has no effect.

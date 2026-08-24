@@ -23,8 +23,6 @@ type: null
 
 This command does not work at this time.
 
---- ⏵ documentation index > Std MacroStepInto
-
 ## See also
 
 - Std_MacroStepOver

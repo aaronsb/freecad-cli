@@ -34,10 +34,15 @@ import compile_dictionary as cd  # noqa: E402
 
 DESCRIPTOR = os.path.join(ROOT, "fccli", "descriptor.json")
 
-# Descriptor field -> generated: field. wiki_rev and freecad are the tool's
-# own stamps and are checked for presence, not against the descriptor.
+# Descriptor field -> generated: field, compared value for value. freecad
+# is compared to the descriptor's stamp; wiki_rev and seed are the tool's
+# own and only their presence as keys is checked.
 MIRRORED = ("label", "tooltip", "toolbar", "menu", "shortcut", "workbench",
             "wiki")
+
+
+def _kind(value, *types):
+    return value is None or isinstance(value, types)
 
 
 def lint(tree, descriptor_path, compiled_path):
@@ -64,7 +69,15 @@ def lint(tree, descriptor_path, compiled_path):
         want_dir = cf.workbench_dir(entry.get("workbench"))
         if os.path.dirname(rel) != want_dir:
             problems.append(f"{rel}: belongs in {want_dir}/ (rule 1)")
+        if os.path.basename(rel) != name + ".md":
+            problems.append(f"{rel}: file is not named {name}.md (rule 1)")
         generated = front.get("generated") or {}
+        if not isinstance(generated, dict):
+            problems.append(f"{rel}: generated must be a mapping (rule 2)")
+            generated = {}
+        for extra in sorted(set(generated) - set(cf.GENERATED)):
+            problems.append(f"{rel}: generated.{extra} is not a field the "
+                            f"tool writes (rule 2)")
         for key in MIRRORED:
             if generated.get(key) != entry.get(key):
                 problems.append(
@@ -76,33 +89,58 @@ def lint(tree, descriptor_path, compiled_path):
                             f"{generated.get('freecad')!r}, the descriptor is "
                             f"{descriptor.get('freecad')!r} (rule 2)")
         authored = cf.authored_of(front)
-        for extra in set(front) - set(cf.AUTHORED) - {"command", "generated"}:
+        for extra in sorted(set(front) - set(cf.AUTHORED) - {"command", "generated"}):
             problems.append(f"{rel}: unknown field {extra!r} (rule 3)")
-        for req in authored["requires"]:
-            if req not in cf.REQUIRES:
-                problems.append(f"{rel}: requires {req!r} is not one of "
-                                f"{sorted(cf.REQUIRES)} (rule 3)")
-        if authored["panel"] not in cf.PANEL:
+        # Shapes first, so a wrong type is one message rather than a crash
+        # or eleven per-character complaints.
+        shape = {
+            "verb": _kind(authored["verb"], str),
+            "aliases": isinstance(authored["aliases"], list)
+                       and all(isinstance(a, str) for a in authored["aliases"]),
+            "requires": isinstance(authored["requires"], list)
+                        and all(isinstance(r, str) for r in authored["requires"]),
+            "panel": _kind(authored["panel"], str),
+            "family": _kind(authored["family"], str, bool),
+            "choice": _kind(authored["choice"], str),
+            "rank": _kind(authored["rank"], str),
+            "type": _kind(authored["type"], dict),
+        }
+        for key, ok in shape.items():
+            if not ok:
+                problems.append(f"{rel}: {key} has the wrong shape (rule 3)")
+        if shape["requires"]:
+            for req in authored["requires"]:
+                if req not in cf.REQUIRES:
+                    problems.append(f"{rel}: requires {req!r} is not one of "
+                                    f"{sorted(cf.REQUIRES)} (rule 3)")
+        if shape["panel"] and authored["panel"] not in cf.PANEL:
             problems.append(f"{rel}: panel must be pick or null (rule 3)")
-        if authored["rank"] not in cf.RANK:
+        if shape["rank"] and authored["rank"] not in cf.RANK:
             problems.append(f"{rel}: rank must be registry or null (rule 3)")
-        if authored["type"] is not None:
-            if not isinstance(authored["type"], dict):
-                problems.append(f"{rel}: type must be a mapping (rule 3)")
-            else:
-                for key in set(authored["type"]) - cf.TYPE_KEYS:
-                    problems.append(f"{rel}: type.{key} is not one of "
-                                    f"{sorted(cf.TYPE_KEYS)} (rule 3)")
-        if not isinstance(authored["aliases"], list):
-            problems.append(f"{rel}: aliases must be a list (rule 3)")
-        if (authored["choice"] is None) != (authored["family"] is None):
-            problems.append(f"{rel}: family and choice go together (rule 3)")
+        if shape["type"] and authored["type"]:
+            for key in sorted(set(authored["type"]) - cf.TYPE_KEYS):
+                problems.append(f"{rel}: type.{key} is not one of "
+                                f"{sorted(cf.TYPE_KEYS)} (rule 3)")
+        fam, choice = authored["family"], authored["choice"]
+        if shape["family"] and shape["choice"]:
+            if fam is False and choice is not None:
+                problems.append(f"{rel}: family: false takes no choice (rule 3)")
+            elif fam is True:
+                problems.append(f"{rel}: family must be a name or false (rule 3)")
+            elif isinstance(fam, str) != isinstance(choice, str):
+                problems.append(f"{rel}: family and choice go together (rule 3)")
         verb = authored["verb"]
-        if verb:
+        if verb and shape["verb"]:
             if verb in verbs:
                 problems.append(f"{rel}: verb {verb!r} is also asked for by "
                                 f"{verbs[verb]} (rule 4)")
             verbs[verb] = rel
+        if shape["aliases"]:
+            for alias in authored["aliases"]:
+                if alias in verbs:
+                    problems.append(f"{rel}: alias {alias!r} is also asked for "
+                                    f"by {verbs[alias]} (rule 4)")
+                verbs[alias] = rel
     for name in commands:
         if name not in seen:
             problems.append(f"{name}: no file under {os.path.relpath(tree, ROOT)}"

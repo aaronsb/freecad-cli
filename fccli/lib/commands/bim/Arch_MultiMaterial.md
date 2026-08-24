@@ -25,7 +25,9 @@ The Multi-Material tool defines a list of materials with, for each material, a n
 
 Not all Arch objects can currently make use of multi-materials, and the use they do of it differs. Currently:
 
-- Walls with a MultiMaterial will use the material definitions and thicknesses to create a multi-layer wall - Windows with a MultiMaterial will attribute materials with a given name defined inside the MultiMaterial to window components with a same name or type (see below). Material thickness is not considered. - Panels with a MultiMaterial will use the material definitions and thicknesses to create a multi-layer panel
+- Walls with a MultiMaterial will use the material definitions and thicknesses to create a multi-layer wall
+- Windows with a MultiMaterial will attribute materials with a given name defined inside the MultiMaterial to window components with a same name or type (see below). Material thickness is not considered.
+- Panels with a MultiMaterial will use the material definitions and thicknesses to create a multi-layer panel
 
 ## See also
 

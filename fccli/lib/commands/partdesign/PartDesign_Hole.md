@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Hole feature creates one or more holes from a selected sketch\'s circles and arcs. If arcs are present they must be part of closed contours. All non arc/circle entities are ignored but they still must form closed contours. Many parameters can be set such as threading and size, fit, hole type (countersink, counterbore, straight) and more.
+The Hole feature creates one or more holes from a selected sketch's circles and arcs. If arcs are present they must be part of closed contours. All non arc/circle entities are ignored but they still must form closed contours. Many parameters can be set such as threading and size, fit, hole type (countersink, counterbore, straight) and more.
 
 The centers of the circles and arcs are used to position the holes, but please note that their radii are not taken into account. The generated holes will be identical even if the radii vary.
 

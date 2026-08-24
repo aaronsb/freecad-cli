@@ -27,9 +27,9 @@ creates an App Link (`App::Link` class), a type of object that references or lin
 
 The App Link object was newly introduced in v0.19; in the past, simple duplication of objects could be achieved with [Draft Clone, but this is a less efficient solution due to its implementation, which essentially creates a copy of the internal Shape of the source object. Instead, a Link directly references the original Shape, so it is more memory-efficient.
 
-By itself the Link object can behave like an array, duplicating its base object many times; this can be done by setting its Element Count property to {{Value|1}} or larger. This \"Link Array\" object can also be created with the different array tools of the Draft Workbench, for example, [Draft OrthoArray, [Draft PolarArray, and [Draft CircularArray.
+By itself the Link object can behave like an array, duplicating its base object many times; this can be done by setting its Element Count property to or larger. This "Link Array" object can also be created with the different array tools of the Draft Workbench, for example, [Draft OrthoArray, [Draft PolarArray, and [Draft CircularArray.
 
-When used with the PartDesign Workbench, Links are intended to be used with [PartDesign Bodies, so it is recommended to set Display Mode Body to {{Value|Tip}} to select the features of the entire Body, and not the individual features. To create arrays of the internal PartDesign Features, use [PartDesign LinearPattern, [PartDesign PolarPattern, and [PartDesign MultiTransform.
+When used with the PartDesign Workbench, Links are intended to be used with [PartDesign Bodies, so it is recommended to set Display Mode Body to to select the features of the entire Body, and not the individual features. To create arrays of the internal PartDesign Features, use [PartDesign LinearPattern, [PartDesign PolarPattern, and [PartDesign MultiTransform.
 
 The [Std LinkMake tool is not defined by a particular workbench, but by the base system, thus it is found in the structure toolbar that is available in all workbenches. The Link object, used in conjunction with [Std Part to group various objects, forms the basis of the Assembly3 and Assembly4 Workbenches.
 

@@ -21,4 +21,8 @@ rank: null
 type: null
 ---
 
-Inserts a view of a BIM section plane.
+The TechDraw ArchView tool inserts an Arch View, a view of an Arch SectionPlane, on a TechDraw page. The TechDraw View tool can also create an Arch View.
+
+## See also
+
+- Arch_SectionPlane

@@ -1814,6 +1814,57 @@ def _run():
     check("  the body is the body", _body.strip().splitlines()[0], "A circle.")
     check("  a comment in the frontmatter survives the template",
           "# authored from here down" in _text, True)
+    # The wiki page reader. Every defect the review found in the bodies
+    # was in untested code; each is a line here now.
+    import generate_commands as _gc
+    _page = (
+        "---\n GuiCommand:\n   Name: Acme Thing\n   Shortcut: **G** **C**\n"
+        "   SeeAlso: Acme_Other, Acme_More\n---\n\n# Acme Thing\n\n"
+        "### Description\n\nThe <img src=x.svg> [Acme Thing](Acme_Thing.md) "
+        "tool does " + "'" * 3 + "things" + "'" * 3 + " <small>(v0.21)</small> : and "
+        "\\'\\'more\\'\\'. {{Version|1.0}}\n\n ![](images/Acme.png) \n\n*A caption*\n\n"
+        "-   First item\n-   Second [item](X.md)\n\n"
+        "---\n⏵ [documentation index](../README.md) > Acme > Acme Thing\n")
+    _front, _desc, _redir = _gc.page_parts(_page)
+    check("a page's fields are read a line at a time, not as YAML",
+          (_front.get("Shortcut"), _gc.see_also(_front)),
+          ("**G** **C**", ["Acme_Other", "Acme_More"]))
+    check("  ### Description counts, and the prose comes out clean",
+          _desc.split("\n\n")[0],
+          "The Acme Thing tool does things and more.")
+    check("  a list stays a list, one item per line",
+          _desc.split("\n\n")[1], "- First item\n- Second item")
+    check("  the image, its caption, the template and the footer are gone",
+          (len(_desc.split("\n\n")), "caption" in _desc, "{{" in _desc,
+           "index" in _desc), (2, False, False, False))
+    _r = _gc.page_parts("---\n GuiCommand:\n   Name: X\n---\n\n"
+                        "1.  REDIRECT [Part_Common](Part_Common.md)\n")
+    check("  a redirect names where to look", _r[2], "Part_Common")
+    _i = _gc.page_parts("## Introduction\n\nIntro text.\n\n## Usage\n\nx\n")
+    check("  Introduction serves when there is no Description", _i[1], "Intro text.")
+    # A C1 control in a label wedges YAML unless escaped.
+    _weird = _cf.render("X", {"label": "a\x85b\x7fc"}, {}, "")
+    check("  a control character in a harvested string round-trips",
+          _cf.parse(_weird)[0]["generated"]["label"], "a\x85b\x7fc")
+    # The lint says what is wrong with a wrong-typed field, once.
+    _bad_dir = tempfile.mkdtemp(prefix="fccli-lint-")
+    os.makedirs(os.path.join(_bad_dir, "part"))
+    _gen_pb = {k: _cmds["Part_Box"].get(k) for k in
+               ("label", "tooltip", "toolbar", "menu", "shortcut",
+                "workbench", "wiki")}
+    _gen_pb["freecad"] = _load_desc()["freecad"]
+    with open(os.path.join(_bad_dir, "part", "Part_Box.md"), "w") as _fh:
+        _fh.write(_cf.render("Part_Box", _gen_pb,
+                             {"panel": ["pick"], "requires": "sketch-edit",
+                              "family": False}, "x"))
+    import lint_dictionary as _ld2
+    _n2, _p2 = _ld2.lint(_bad_dir, _ld2.DESCRIPTOR, os.path.join(_bad_dir, "none.json"))
+    _shapes = [p for p in _p2 if "wrong shape" in p]
+    check("  a wrong-typed field is one message, and family: false is allowed",
+          (len(_shapes), any("family" in p and "shape" in p for p in _p2)),
+          (2, False))
+    import shutil as _sh2; _sh2.rmtree(_bad_dir, ignore_errors=True)
+
     # The tree in the repository agrees with the descriptor: every command
     # has a file in its workbench's directory and no file names a command
     # that is not there. This is lint rule 1, run here so a stale tree

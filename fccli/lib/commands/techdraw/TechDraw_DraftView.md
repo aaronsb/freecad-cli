@@ -21,4 +21,8 @@ rank: null
 type: null
 ---
 
-Inserts a view of a Draft object.
+The TechDraw DraftView tool inserts a view of a selected Part-based or Group object into a drawing page. Unlike the standard View tool, views created with this tool are handled by the Draft Workbench, and specially designed for showing 2D objects. See Notes.
+
+## See also
+
+- TechDraw_ArchView

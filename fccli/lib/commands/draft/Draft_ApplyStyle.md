@@ -21,9 +21,7 @@ rank: null
 type: null
 ---
 
-The Draft ApplyStyle command applies the current style settings to selected objects.
-
-{{VersionMinus|0.21}} This command handles only five of the settings the Draft SetStyle command offers. This command changes the view properties of objects. It applies all settings the Draft SetStyle command offers. It also changes these additional properties:
+The Draft ApplyStyle command applies the current style settings to selected objects. This command handles only five of the settings the Draft SetStyle command offers. This command changes the view properties of objects. It applies all settings the Draft SetStyle command offers. It also changes these additional properties:
 
 - Decimals(for dimensions): See Draft Preferences.
 

@@ -23,7 +23,8 @@ type: null
 
 The FEM Analysis could be seen as a container that holds all objects of a Finite Element Analysis. It is mandatory to have an analysis container that holds all the needed objects. At least one of the following objects (apart from the mesh) is necessary for a mechanical analysis:
 
-- solid material, - fixed boundary condition or displacement boundary condition or rigid body constraint.
+- solid material,
+- fixed boundary condition or displacement boundary condition or rigid body constraint.
 
 ## See also
 

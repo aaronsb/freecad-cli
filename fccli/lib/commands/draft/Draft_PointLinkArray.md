@@ -23,8 +23,6 @@ type: null
 
 The Draft PointLinkArray command creates a Link array from a selected object by placing copies at the points from a point compound. Use the Draft PointArray command to create a less efficient regular array instead. Except for the type of array that is created, Link array or regular array, this command is identical to the Draft PointArray command. See there for more information.
 
---- ⏵ documentation index > Draft > Draft PointLinkArray
-
 ## See also
 
 - Draft_OrthoArray

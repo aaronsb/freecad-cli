@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Std RecallWorkingView recalls the active 3D view\'s stored working view. For more information see Std StoreWorkingView.
+The Std RecallWorkingView recalls the active 3D view's stored working view. For more information see Std StoreWorkingView.
 
 ## See also
 

@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The TechDraw ExtensionInsertDiameter tool inserts a \'⌀\' symbol at the beginning of the dimension text.
+The TechDraw ExtensionInsertDiameter tool inserts a '⌀' symbol at the beginning of the dimension text.
 
 ## See also
 

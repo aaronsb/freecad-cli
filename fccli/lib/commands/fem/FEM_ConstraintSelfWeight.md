@@ -21,9 +21,7 @@ rank: null
 type: null
 ---
 
-Defines a gravity acceleration acting on the whole model in the prescribed direction.
-
-{{VersionMinus|0.21}} The acceleration has a fixed value of 9.81 m/s\^2.
+Defines a gravity acceleration acting on the whole model in the prescribed direction. The acceleration has a fixed value of 9.81 m/s\^2.
 
 ## See also
 

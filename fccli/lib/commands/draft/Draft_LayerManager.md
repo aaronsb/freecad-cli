@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The layers manager allows you to manage layers. Layers are a special kind of group that controls the visual properties of objects placed inside of it. By changing the properties of the Layer, such as line width, line color, shape color and transparency, the changes are propagated to its child objects. Layers don\'t interfere with any other FreeCAD structure such as groups or Building parts, so any object can be at the same time part of a layer and part of a group. Layers are always automatically kept in a special \"Layers\" group.
+The layers manager allows you to manage layers. Layers are a special kind of group that controls the visual properties of objects placed inside of it. By changing the properties of the Layer, such as line width, line color, shape color and transparency, the changes are propagated to its child objects. Layers don't interfere with any other FreeCAD structure such as groups or Building parts, so any object can be at the same time part of a layer and part of a group. Layers are always automatically kept in a special "Layers" group.
 
 Layers are imported and exported from/to IFC and DXF/DWG.
 

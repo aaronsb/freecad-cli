@@ -27,8 +27,8 @@ DEFAULT_OUT = os.path.join(ROOT, "fccli", "dictionary.json")
 def compile_tree(tree):
     """The compiled form: authored fields and the body, per command."""
     commands = {}
-    stamps = set()
-    revs = set()
+    stamps = []
+    revs = []
     for rel, full in cf.walk(tree):
         front, body = cf.read(full)
         name = front.get("command")
@@ -37,17 +37,24 @@ def compile_tree(tree):
         if name in commands:
             raise ValueError(f"{rel}: {name} already at {commands[name]['file']}")
         generated = front.get("generated") or {}
-        stamps.add(generated.get("freecad"))
-        revs.add(generated.get("wiki_rev"))
+        stamps.append(generated.get("freecad"))
+        revs.append(generated.get("wiki_rev"))
         entry = {"file": rel.replace(os.sep, "/"), "doc": body.strip()}
         for key, value in cf.authored_of(front).items():
-            if value not in (None, [], {}):
+            if value is False or value not in (None, [], {}):
                 entry[key] = value
         commands[name] = entry
+    from collections import Counter
+
+    def common(values):
+        # The stamp most files carry. A version sorts wrong as a string
+        # (1.9 above 1.10) and a commit hash does not sort at all.
+        counted = Counter(v for v in values if v)
+        return counted.most_common(1)[0][0] if counted else None
     return {
         "generated_by": "tools/compile_dictionary.py",
-        "freecad": sorted(s for s in stamps if s)[-1] if any(stamps) else None,
-        "wiki_rev": sorted(r for r in revs if r)[-1] if any(revs) else None,
+        "freecad": common(stamps),
+        "wiki_rev": common(revs),
         "commands": commands,
     }
 

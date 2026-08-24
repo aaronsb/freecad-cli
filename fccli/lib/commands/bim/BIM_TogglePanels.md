@@ -22,5 +22,3 @@ type: null
 ---
 
 The BIM TogglePanels tool toggles the display of bottom panels (Report view and Python console) on or off.
-
---- ⏵ documentation index > BIM > BIM TogglePanels

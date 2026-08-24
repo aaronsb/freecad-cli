@@ -23,7 +23,7 @@ type: null
 
 The Sketcher BSplineComb tool shows or hides the B-spline curvature comb in all sketches.
 
-The curvature comb indicates the curvature (value of the second-order derivative) along a B-spline. The higher the curvature, the longer the comb\'s teeth are. Where a B-spline curves to the right the comb is on its left side and vice versa.
+The curvature comb indicates the curvature (value of the second-order derivative) along a B-spline. The higher the curvature, the longer the comb's teeth are. Where a B-spline curves to the right the comb is on its left side and vice versa.
 
 ## See also
 

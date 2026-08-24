@@ -23,8 +23,6 @@ type: null
 
 The Draft PathLinkArray command creates a Link array from a selected object by placing copies along a path. Use the Draft PathArray command to create a less efficient regular array instead. Except for the type of array that is created, Link array or regular array, this command is identical to the Draft PathArray command. See there for more information.
 
---- ⏵ documentation index > Draft > Draft PathLinkArray
-
 ## See also
 
 - Draft_OrthoArray

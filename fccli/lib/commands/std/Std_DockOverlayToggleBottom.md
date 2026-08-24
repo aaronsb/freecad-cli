@@ -9,7 +9,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   shortcut: "Ctrl+Down"
   workbench: null
   wiki: "Std_DockOverlayToggleBottom"
-  wiki_rev: "0499378"
+  wiki_rev: null
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

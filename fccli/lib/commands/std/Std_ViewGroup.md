@@ -21,4 +21,6 @@ rank: null
 type: null
 ---
 
-Changes to a standard view.
+The Std View Menu is one of the 7 sub-menus in the standard menu:
+
+The View menu provides tools to change the 3D view and the view properties of objects in the model, and tools related to the display of interface components.

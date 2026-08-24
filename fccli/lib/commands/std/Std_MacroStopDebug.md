@@ -23,8 +23,6 @@ type: null
 
 This command does not work at this time.
 
---- ⏵ documentation index > Std MacroStopDebug
-
 ## See also
 
 - Std_MacroStartDebug

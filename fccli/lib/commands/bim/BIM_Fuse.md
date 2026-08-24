@@ -21,4 +21,12 @@ rank: null
 type: null
 ---
 
-Creates a union of several shapes.
+The !_Part_Fuse tool fuses (unites) selected Part objects into one. This operation is fully parametric and the components can be modified and the result recomputed.
+
+Note: This command is an automated form of the Boolean operation.
+
+## See also
+
+- Part_Boolean
+- Part_Cut
+- Part_Common

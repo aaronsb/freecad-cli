@@ -25,10 +25,6 @@ The TechDraw HorizontalDimension tool adds a horizontal dimension to a View. The
 
 For more information see TechDraw LengthDimension.
 
-{{TechDraw Tools navi}}
-
---- ⏵ documentation index > TechDraw > TechDraw HorizontalDimension
-
 ## See also
 
 - TechDraw_LengthDimension

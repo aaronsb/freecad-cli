@@ -21,4 +21,4 @@ rank: null
 type: null
 ---
 
-Copies the operation in the job.
+The tool Copy creates a copy of a selected path.

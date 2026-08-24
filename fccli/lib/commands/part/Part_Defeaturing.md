@@ -25,7 +25,9 @@ The Defeaturing tool is intended for removal of selected features from the model
 
 The defeaturing tool can be very useful in different contexts:
 
-- To edit an imported solid where no history of operations is available. - Fixing defects in the model, e.g. filling gaps, holes etc. - Model simplification for numeric analysis, display on mobile devices, etc.
+- To edit an imported solid where no history of operations is available.
+- Fixing defects in the model, e.g. filling gaps, holes etc.
+- Model simplification for numeric analysis, display on mobile devices, etc.
 
 The removed features are filled by the extension of the adjacent faces, thus no unexpected parts should appear in the result. Please note that the result is a new shape that is not linked to the original; thus, it is non-parametric.
 

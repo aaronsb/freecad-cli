@@ -25,10 +25,6 @@ The TechDraw StackDown tool moves Views down one level in the stacking order. Th
 
 See TechDraw StackTop.
 
-{{TechDraw_Tools_navi}}
-
---- ⏵ documentation index > TechDraw > TechDraw StackDown
-
 ## See also
 
 - TechDraw_StackTop

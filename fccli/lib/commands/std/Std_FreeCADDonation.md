@@ -21,6 +21,6 @@ rank: null
 type: null
 ---
 
-The Std FreeCADDonation command opens the FreeCAD Donate wiki page in the system\'s default Internet browser. The command requires a working Internet connection.
+The Std FreeCADDonation command opens the FreeCAD Donate wiki page in the system's default Internet browser. The command requires a working Internet connection.
 
 Currently the command points to .

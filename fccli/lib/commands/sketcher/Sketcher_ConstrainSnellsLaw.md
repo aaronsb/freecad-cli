@@ -21,4 +21,4 @@ rank: null
 type: null
 ---
 
-The Sketcher ConstrainSnellsLaw tool constrains two lines to follow the law of refraction of light as it penetrates through an interface where two materials with different refraction indices meet. See Snell\'s law.
+The Sketcher ConstrainSnellsLaw tool constrains two lines to follow the law of refraction of light as it penetrates through an interface where two materials with different refraction indices meet. See Snell's law.

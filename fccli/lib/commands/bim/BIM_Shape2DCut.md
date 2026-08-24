@@ -9,7 +9,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   shortcut: "V, C"
   workbench: "BIMWorkbench"
   wiki: "BIM_Shape2DCut"
-  wiki_rev: "0499378"
+  wiki_rev: null
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

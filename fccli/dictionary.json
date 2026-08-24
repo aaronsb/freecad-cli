@@ -85,7 +85,7 @@
    "file": "bim/Arch_MeshToShape.md"
   },
   "Arch_MultiMaterial": {
-   "doc": "The Multi-Material tool defines a list of materials with, for each material, a name and a thickness value. This multi-materials list can then be added to an Arch object instead of a single Arch Material .\n\nNot all Arch objects can currently make use of multi-materials, and the use they do of it differs. Currently:\n\n- Walls with a MultiMaterial will use the material definitions and thicknesses to create a multi-layer wall - Windows with a MultiMaterial will attribute materials with a given name defined inside the MultiMaterial to window components with a same name or type (see below). Material thickness is not considered. - Panels with a MultiMaterial will use the material definitions and thicknesses to create a multi-layer panel\n\n## See also\n\n- Arch_SetMaterial",
+   "doc": "The Multi-Material tool defines a list of materials with, for each material, a name and a thickness value. This multi-materials list can then be added to an Arch object instead of a single Arch Material .\n\nNot all Arch objects can currently make use of multi-materials, and the use they do of it differs. Currently:\n\n- Walls with a MultiMaterial will use the material definitions and thicknesses to create a multi-layer wall\n- Windows with a MultiMaterial will attribute materials with a given name defined inside the MultiMaterial to window components with a same name or type (see below). Material thickness is not considered.\n- Panels with a MultiMaterial will use the material definitions and thicknesses to create a multi-layer panel\n\n## See also\n\n- Arch_SetMaterial",
    "file": "bim/Arch_MultiMaterial.md"
   },
   "Arch_Nest": {
@@ -149,7 +149,7 @@
    "file": "bim/Arch_Schedule.md"
   },
   "Arch_SectionPlane": {
-   "doc": "The Arch SectionPlane tool places in the current document a section plane \\\"thing\\\", which defines a section or view plane. The \\\"thing\\\" takes its placement according to the current Draft Working Plane and can be relocated and reoriented by moving and rotating it, until it describes the 2D view you want to obtain. The Section plane object will only consider a certain set of objects. Objects that are selected when you create a Section Plane will be added to that set automatically. Other objects can later be added or removed from a SectionPlane object with the Arch Add component and Arch Remove component tools, or by double-clicking the Section Plane in the tree view.\n\nThe Section Plane alone won\\'t create any view of its objects set. For that, you must create a TechDraw ArchView to create a view in a TechDraw page.\n\n## See also\n\n- Draft_Shape2DView",
+   "doc": "The Arch SectionPlane tool places in the current document a section plane \"thing\", which defines a section or view plane. The \"thing\" takes its placement according to the current Draft Working Plane and can be relocated and reoriented by moving and rotating it, until it describes the 2D view you want to obtain. The Section plane object will only consider a certain set of objects. Objects that are selected when you create a Section Plane will be added to that set automatically. Other objects can later be added or removed from a SectionPlane object with the Arch Add component and Arch Remove component tools, or by double-clicking the Section Plane in the tree view.\n\nThe Section Plane alone won't create any view of its objects set. For that, you must create a TechDraw ArchView to create a view in a TechDraw page.\n\n## See also\n\n- Draft_Shape2DView",
    "file": "bim/Arch_SectionPlane.md"
   },
   "Arch_SelectNonSolidMeshes": {
@@ -189,7 +189,7 @@
    "file": "bim/Arch_StructuresFromSelection.md"
   },
   "Arch_Survey": {
-   "doc": "The Arch Survey tool enters a special surveying mode, which allows you to quickly grab measurements and information from a model, and transfer that information to other applications. Once you are in Survey mode, clicking on different subelements of 3D objects gathers the following information (depending on what you click):\n\n- If you click on an edge, you get its length - If you click on a vertex, you get its height (coordinate on the Z axis) - If you click on a face, you get its area - If you double-click anything, therefore select the whole object, you get its volume\n\nWhen such a piece of information is gathered, several things happen:\n\n- A label is placed on top of the element you clicked, that displays the value (with \\\"a\\\" for area, \\\"l\\\" for length, \\\"z\\\" for height, or \\\"v\\\" for volume) - The numeric value is copied to the clipboard, so you can paste it in another application - A line is printed on the FreeCAD output window. After you exit the survey mode, those lines can be copied and pasted in another application (the values are comma-separated, making it easy to convert to spreadsheet data) - The total length or area of the elements you clicked so far is also printed in the output window - Each length or area is also recorded in the task dialog\n\n## See also\n\n- Macro_FCInfo\n- Macro_SimpleProperties",
+   "doc": "The Arch Survey tool enters a special surveying mode, which allows you to quickly grab measurements and information from a model, and transfer that information to other applications. Once you are in Survey mode, clicking on different subelements of 3D objects gathers the following information (depending on what you click):\n\n- If you click on an edge, you get its length\n- If you click on a vertex, you get its height (coordinate on the Z axis)\n- If you click on a face, you get its area\n- If you double-click anything, therefore select the whole object, you get its volume\n\nWhen such a piece of information is gathered, several things happen:\n\n- A label is placed on top of the element you clicked, that displays the value (with \"a\" for area, \"l\" for length, \"z\" for height, or \"v\" for volume)\n- The numeric value is copied to the clipboard, so you can paste it in another application\n- A line is printed on the FreeCAD output window. After you exit the survey mode, those lines can be copied and pasted in another application (the values are comma-separated, making it easy to convert to spreadsheet data)\n- The total length or area of the elements you clicked so far is also printed in the output window\n- Each length or area is also recorded in the task dialog\n\n## See also\n\n- Macro_FCInfo\n- Macro_SimpleProperties",
    "file": "bim/Arch_Survey.md"
   },
   "Arch_ToggleIfcBrepFlag": {
@@ -205,11 +205,11 @@
    "file": "bim/Arch_Truss.md"
   },
   "Arch_Wall": {
-   "doc": "The Arch Wall tool builds a Wall object from scratch or on top of any other shape-based or mesh-based object. A wall can be built without any base object, in which case it behaves as a cubic volume, using length, width and height properties. When built on top of an existing shape, a wall can be based on:\n\n- A linear 2D object, such as lines, wires, arcs or sketches, in which case you can change thickness, alignment (right, left or centered) and height. The length property has no effect. - A flat face, in which case you can only change the height. Length and width properties have no effect. If the base face is vertical, however, the wall will use the width property instead of height, allowing you to build walls from space-like objects or mass studies. - A solid, in which case length, width and height properties have no effect. The wall simply uses the underlying solid as its shape. - A mesh, in which case the underlying mesh must be a closed, manifold solid.\n\nWalls can also have additions or subtractions. Additions are other objects whose shapes are joined in this Wall\\'s shape, while subtractions are subtracted. Additions and subtractions can be added with the Arch Add and Arch Remove tools. Additions and subtractions have no influence over wall parameters such as height and width, which can still be changed. Walls can also have their height automatic, if they are included into a higher-level object such as floors. The height must be kept at 0, then the wall will adopt the height specified in the parent object.\n\nWhen several walls should intersect, you need to place them into a floor to have their geometry intersected.",
+   "doc": "The Arch Wall tool builds a Wall object from scratch or on top of any other shape-based or mesh-based object. A wall can be built without any base object, in which case it behaves as a cubic volume, using length, width and height properties. When built on top of an existing shape, a wall can be based on:\n\n- A linear 2D object, such as lines, wires, arcs or sketches, in which case you can change thickness, alignment (right, left or centered) and height. The length property has no effect.\n- A flat face, in which case you can only change the height. Length and width properties have no effect. If the base face is vertical, however, the wall will use the width property instead of height, allowing you to build walls from space-like objects or mass studies.\n- A solid, in which case length, width and height properties have no effect. The wall simply uses the underlying solid as its shape.\n- A mesh, in which case the underlying mesh must be a closed, manifold solid.\n\nWalls can also have additions or subtractions. Additions are other objects whose shapes are joined in this Wall's shape, while subtractions are subtracted. Additions and subtractions can be added with the Arch Add and Arch Remove tools. Additions and subtractions have no influence over wall parameters such as height and width, which can still be changed. Walls can also have their height automatic, if they are included into a higher-level object such as floors. The height must be kept at 0, then the wall will adopt the height specified in the parent object.\n\nWhen several walls should intersect, you need to place them into a floor to have their geometry intersected.",
    "file": "bim/Arch_Wall.md"
   },
   "Arch_Window": {
-   "doc": "The Arch Window tool creates a base object for all kinds of \\\"embeddable\\\" objects, such as windows and doors. It is designed to be either independent, or \\\"hosted\\\" inside another component such as an Arch Wall, Arch Structure, or Arch Roof. It has its own geometry, that can be made of several solid components (commonly a frame and inner panels), and also defines a volume to be subtracted from the host objects, in order to create an opening.\n\nWindow objects are based on closed 2D objects, such as Draft Rectangles or Sketches, that are used to define their inner components. The base 2D object must therefore contain several closed wires, that can be combined to form filled panels (one wire) or frames (several wires).\n\nThe Window tool features several presets. These allow the user to create common types of windows and doors with certain editable parameters, without the need to create the base 2D objects and components manually.\n\nAll information applicable to an Arch Window also applies to an Arch Door, as it\\'s the same underlying object.",
+   "doc": "The Arch Window tool creates a base object for all kinds of \"embeddable\" objects, such as windows and doors. It is designed to be either independent, or \"hosted\" inside another component such as an Arch Wall, Arch Structure, or Arch Roof. It has its own geometry, that can be made of several solid components (commonly a frame and inner panels), and also defines a volume to be subtracted from the host objects, in order to create an opening.\n\nWindow objects are based on closed 2D objects, such as Draft Rectangles or Sketches, that are used to define their inner components. The base 2D object must therefore contain several closed wires, that can be combined to form filled panels (one wire) or frames (several wires).\n\nThe Window tool features several presets. These allow the user to create common types of windows and doors with certain editable parameters, without the need to create the base 2D objects and components manually.\n\nAll information applicable to an Arch Window also applies to an Arch Door, as it's the same underlying object.",
    "file": "bim/Arch_Window.md"
   },
   "Assembly_ActivateAssembly": {
@@ -333,7 +333,7 @@
    "file": "bim/BIM_Classification.md"
   },
   "BIM_Clone": {
-   "doc": "The BIM Clone tool is a shortcut to the standard Draft Clone tool, but launches a Draft Move command just after cloning, thus allowing you to clone and place the cloned object somewhere else in the model in one go.\n\n--- ⏵ documentation index > BIM > BIM Clone\n\n## See also\n\n- Draft_Clone",
+   "doc": "The BIM Clone tool is a shortcut to the standard Draft Clone tool, but launches a Draft Move command just after cloning, thus allowing you to clone and place the cloned object somewhere else in the model in one go.\n\n## See also\n\n- Draft_Clone",
    "file": "bim/BIM_Clone.md"
   },
   "BIM_Column": {
@@ -341,11 +341,11 @@
    "file": "bim/BIM_Column.md"
   },
   "BIM_Common": {
-   "doc": "Creates an intersection of two shapes.",
+   "doc": "Extracts the common part (intersection) between selected Part objects. This operation is fully parametric and the components can be modified and the result recomputed.\n\n## See also\n\n- Part_Boolean\n- Part_Cut\n- Part_Fuse",
    "file": "bim/BIM_Common.md"
   },
   "BIM_Compound": {
-   "doc": "Create a compound of several shapes.",
+   "doc": "This command creates a compound of objects with a topological shape such as solid objects and other objects with faces and/or edges. It cannot handle meshes as they do not have a topological shape.\n\n## See also\n\n- Part_Fuse\n- Part_CompoundFilter\n- Part_ExplodeCompound",
    "file": "bim/BIM_Compound.md"
   },
   "BIM_Convert": {
@@ -353,7 +353,7 @@
    "file": "bim/BIM_Convert.md"
   },
   "BIM_Copy": {
-   "doc": "The BIM Copy tool is a shortcut to the standard Draft Move tool, but starting with its Copy option turned on, therefore allowing to create a copy of an object and place it at a given location, in one go.\n\n--- ⏵ documentation index > BIM > BIM Copy\n\n## See also\n\n- Draft_Move",
+   "doc": "The BIM Copy tool is a shortcut to the standard Draft Move tool, but starting with its Copy option turned on, therefore allowing to create a copy of an object and place it at a given location, in one go.\n\n## See also\n\n- Draft_Move",
    "file": "bim/BIM_Copy.md"
   },
   "BIM_Create2DViews": {
@@ -361,11 +361,11 @@
    "file": "bim/BIM_Create2DViews.md"
   },
   "BIM_Cut": {
-   "doc": "Creates a difference between two shapes.",
+   "doc": "The Part Cut tool cuts (subtracts) selected Part objects, the last one being subtracted from the first one. This operation is fully parametric and the components can be modified and the result recomputed.\n\nThis tool is an automated form of the Boolean operation.\n\n## See also\n\n- Part_Boolean\n- Part_Fuse\n- Part_Common",
    "file": "bim/BIM_Cut.md"
   },
   "BIM_Diff": {
-   "doc": "The BIM Diff tool takes two open FreeCAD documents, and produces a visual diff between them.\n\n\\\"diff\\\" in programming refers to a utility application that takes two text documents and highlights the lines that are different between them. It usually marks in red the lines that have been removed and in green the lines that have been added. Its main purpose is to quickly grasp what has changed in two different versions of the same document.\n\nThis tool does the same thing, but graphically. It opens a new document, shows the contents of file B, but highlights:\n\nThis tool is primarily suited for IFC files, as it uses the IFC Global ID to make sure one object in one file is still the same in the other file. However, it will also work with two non-IFC FreeCAD files.",
+   "doc": "The BIM Diff tool takes two open FreeCAD documents, and produces a visual diff between them.\n\n\"diff\" in programming refers to a utility application that takes two text documents and highlights the lines that are different between them. It usually marks in red the lines that have been removed and in green the lines that have been added. Its main purpose is to quickly grasp what has changed in two different versions of the same document.\n\nThis tool does the same thing, but graphically. It opens a new document, shows the contents of file B, but highlights:\n\nThis tool is primarily suited for IFC files, as it uses the IFC Global ID to make sure one object in one file is still the same in the other file. However, it will also work with two non-IFC FreeCAD files.",
    "file": "bim/BIM_Diff.md"
   },
   "BIM_DimensionAligned": {
@@ -397,11 +397,11 @@
    "file": "bim/BIM_Examples.md"
   },
   "BIM_Extrude": {
-   "doc": "Extrudes a selected 2D shape.",
+   "doc": "Part Extrude extends a shape by a specified distance, in a specified direction. The output shape type will vary depending on the input shape type and the options selected.\n\nIn most common scenarios, the following lists the expected output shape type from a given input shape type,\n\n- Extrude a Vertex (point), will produce a lineal Edge (Line)\n- Extrude a open edge (e.g. line, arc), will produce a open face (e.g. plane)\n- Extrude a closed edge (e.g. circle), will optionally produce a closed face (e.g. an open ended cylinder) or if the parameter \"solid\" is \"true\" will produce a solid (e.g. a closed solid cylinder)\n- Extrude a open Wire (e.g. a Draft Wire), will produce a open shell (several joined faces)\n- Extrude a closed Wire (e.g. a Draft Wire), will optionally produce a shell (several joined faces) or if the parameter \"solid\" is \"true\" will produce a solid\n- Extrude a face (e.g. plane), will produce a solid (e.g. Cuboid)\n- Extrude a [Draft ShapeString, will produce a compound of solids (the string is a compound of the letters which are each a solid)\n- Extrude a shell of faces, will produce a Compsolid.\n\n## See also\n\n- Draft_Trimex\n- PartDesign_Pad",
    "file": "bim/BIM_Extrude.md"
   },
   "BIM_Fuse": {
-   "doc": "Creates a union of several shapes.",
+   "doc": "The !_Part_Fuse tool fuses (unites) selected Part objects into one. This operation is fully parametric and the components can be modified and the result recomputed.\n\nNote: This command is an automated form of the Boolean operation.\n\n## See also\n\n- Part_Boolean\n- Part_Cut\n- Part_Common",
    "file": "bim/BIM_Fuse.md"
   },
   "BIM_GenericTools": {
@@ -417,19 +417,19 @@
    "file": "bim/BIM_Help.md"
   },
   "BIM_IfcElements": {
-   "doc": "The IFC Elements Manager dialog allows you to manage names, IFC types and materials of the BIM elements of your model. Its purpose is to offer an easy general view of your model and to allow you to make sure everything is as you wish before exporting the model to IFC.\n\nWith it, you can:\n\n- Sort objects alphabetically, by material, by IFC type or according to the model structure. You can also show all or only the currently visible objects - Rename objects by double-clicking their name - Change their IFC type either by clicking an individual type or, if more than one is selected, using the \\\"change type to:\\\" drop-down menu - Change their material either by clicking an individual material or, if more than one is selected, using the \\\"change material to:\\\" drop-down menu\n\n--- ⏵ documentation index > BIM > BIM IfcElements",
+   "doc": "The IFC Elements Manager dialog allows you to manage names, IFC types and materials of the BIM elements of your model. Its purpose is to offer an easy general view of your model and to allow you to make sure everything is as you wish before exporting the model to IFC.\n\nWith it, you can:\n\n- Sort objects alphabetically, by material, by IFC type or according to the model structure. You can also show all or only the currently visible objects\n- Rename objects by double-clicking their name\n- Change their IFC type either by clicking an individual type or, if more than one is selected, using the \"change type to:\" drop-down menu\n- Change their material either by clicking an individual material or, if more than one is selected, using the \"change material to:\" drop-down menu",
    "file": "bim/BIM_IfcElements.md"
   },
   "BIM_IfcExplorer": {
-   "doc": "The BIM IfcExplorer is a simple utility to explore the contents of an IFC file. IFC files are text files, and are therefore readable in a text editor, but the information is condensed, unformatted, and difficult to browse. This utility presents to the user the exact same content, but displayed in an organized and readable method. The \\\"IfcOpenShell\\\" software library must be installed for this utility to work.\n\nThe purpose of this explorer is simply to allow you to check what is really written in an IFC file, in case you want to verify if the contents were correctly imported or exported to and from an IFC-aware application such as FreeCAD.\n\n## See also\n\n- Arch_IFC",
+   "doc": "The BIM IfcExplorer is a simple utility to explore the contents of an IFC file. IFC files are text files, and are therefore readable in a text editor, but the information is condensed, unformatted, and difficult to browse. This utility presents to the user the exact same content, but displayed in an organized and readable method. The \"IfcOpenShell\" software library must be installed for this utility to work.\n\nThe purpose of this explorer is simply to allow you to check what is really written in an IFC file, in case you want to verify if the contents were correctly imported or exported to and from an IFC-aware application such as FreeCAD.\n\n## See also\n\n- Arch_IFC",
    "file": "bim/BIM_IfcExplorer.md"
   },
   "BIM_IfcProperties": {
-   "doc": "The IFC properties manager allows you to edit the IFC properties of one selected object, many selected objects or all objects of the document. IFC properties are pieces of information attached to individual objects. They can only be attached to BIM objects, so any non-BIM object must first be converted to a BIM object using the Component tool before being able to hold IFC properties.\n\nIFC properties can be custom, that is, you can define your own name and value for them, or follow a preset schema defined by the IFC standard. These properties are defined in Property sets and are usually made available for the most common IFC types. For example, the Pset_BeamCommon property set is made to be attached to beams. Predefined property sets usually contains usual properties that the IFC schema has defined for a particular type. For example, the Pset_WallCommon, that should be attached to walls, contains properties that define if the wall is load-bearing or is exterior or interior.\n\nYou can create your own properties and property sets and attribute them to any object. There is no requirement in the IFC schema to add predefined Psets for common types or any restriction to add custom properties. This is a decision left to users. Usually, when working in a team, these things get decided alongside other BIM requirements, to make sure all BIM models produced meet the same requirements.\n\n### Defining your own property sets\n\nThe available predefined property sets are stored in the FreeCAD resource directory which can be found by entering this in the Python console:\n\n```python FreeCAD.getResourceDir() ```\n\nThe predefined property sets are in /Mod/BIM/Presets/pset_definitions.csv.\n\nInside the CSV file, each line represents a different property set, beginning with the name of the set, and any number of Name;Type pairs, defining a property name and its type. For example:\n\n{{Code|lang=text|code= Pset_FreeCAD;Name;IfcLabel;Version;IfcReal }}\n\nThis would define a property set named \\\"FreeCAD\\\" (the \\\"Pset\\_\\\" prefix is not mandatory but is a common practice) that contains two properties: one called \\\"Name\\\" which is an IfcLabel (a piece of text), and another called \\\"Version\\\" which is an IfcReal (a numeric value with decimals).\n\nYou can add a custom csv file with your own property sets. This file must be named CustomPsets.csv and be placed in $USERAPPDATA/BIM.\n\nThe $USERAPPDATA folder depends on your platform/operating system:\n\n- On Windows it is usually: %APPDATA%/FreeCAD - On Linux it is usually: $HOME/.FreeCAD - On macOS it is usually: $HOME/Library/Preferences/FreeCAD\n\nIt can also be found by entering this in the Python console:\n\n```python FreeCAD.getUserAppDataDir() ```\n\n--- ⏵ documentation index > BIM > BIM IfcProperties",
+   "doc": "The IFC properties manager allows you to edit the IFC properties of one selected object, many selected objects or all objects of the document. IFC properties are pieces of information attached to individual objects. They can only be attached to BIM objects, so any non-BIM object must first be converted to a BIM object using the Component tool before being able to hold IFC properties.\n\nIFC properties can be custom, that is, you can define your own name and value for them, or follow a preset schema defined by the IFC standard. These properties are defined in Property sets and are usually made available for the most common IFC types. For example, the Pset_BeamCommon property set is made to be attached to beams. Predefined property sets usually contains usual properties that the IFC schema has defined for a particular type. For example, the Pset_WallCommon, that should be attached to walls, contains properties that define if the wall is load-bearing or is exterior or interior.\n\nYou can create your own properties and property sets and attribute them to any object. There is no requirement in the IFC schema to add predefined Psets for common types or any restriction to add custom properties. This is a decision left to users. Usually, when working in a team, these things get decided alongside other BIM requirements, to make sure all BIM models produced meet the same requirements.",
    "file": "bim/BIM_IfcProperties.md"
   },
   "BIM_IfcQuantities": {
-   "doc": "The IFC Quantities Manager allows you to check the explicit quantities attached to objects, to be exported to IFC.\n\nThe IFC format allows to include, for any object, explicit quantities, that can be things like \\\"Width\\\" or \\\"Height\\\" or \\\"Area\\\". There is no standard that defines which object type must include which kind of quantity, and there is also no guarantee that such explicit quantities actually reflect the geometry of the object. In other words, these quantities could have wrong values or even lie. A wall could have its geometry as a cube with a length of 10 meters, but have an attached \\\"Length\\\" quantity of 8 meters.\n\nThe idea behind explicit quantities is to make them available to applications that are unable to read geometry, such as a spreadsheet application. Such application, when reading an IFC file with explicit quantities, could still get an idea of the dimensions of an object and use them for example for quantities calculations.\n\nBy default, when exporting an IFC file from FreeCAD, no explicit quantities are exported. With the IFC quantities manager, you are able to mark which quantities should be exported, and check their values. Warning signs will be displayed next to zero values, notifying you of possible problems you might want to fix before exporting.\n\nYou can also use the quantities manager to change or fix the actual Height, Width and Length values of objects. But this will affect the object geometry in FreeCAD.\n\n--- ⏵ documentation index > BIM > BIM IfcQuantities",
+   "doc": "The IFC Quantities Manager allows you to check the explicit quantities attached to objects, to be exported to IFC.\n\nThe IFC format allows to include, for any object, explicit quantities, that can be things like \"Width\" or \"Height\" or \"Area\". There is no standard that defines which object type must include which kind of quantity, and there is also no guarantee that such explicit quantities actually reflect the geometry of the object. In other words, these quantities could have wrong values or even lie. A wall could have its geometry as a cube with a length of 10 meters, but have an attached \"Length\" quantity of 8 meters.\n\nThe idea behind explicit quantities is to make them available to applications that are unable to read geometry, such as a spreadsheet application. Such application, when reading an IFC file with explicit quantities, could still get an idea of the dimensions of an object and use them for example for quantities calculations.\n\nBy default, when exporting an IFC file from FreeCAD, no explicit quantities are exported. With the IFC quantities manager, you are able to mark which quantities should be exported, and check their values. Warning signs will be displayed next to zero values, notifying you of possible problems you might want to fix before exporting.\n\nYou can also use the quantities manager to change or fix the actual Height, Width and Length values of objects. But this will affect the object geometry in FreeCAD.",
    "file": "bim/BIM_IfcQuantities.md"
   },
   "BIM_ImagePlane": {
@@ -437,7 +437,7 @@
    "file": "bim/BIM_ImagePlane.md"
   },
   "BIM_Layers": {
-   "doc": "The Layers Manager allows you to manage layers. Layers are a special kind of group that controls the visual properties of objects placed inside of it. By changing the properties of the Layer, such as line width, line color, shape color and transparency, the changes are propagated to its child objects. Layers don\\'t interfere with any other FreeCAD structure such as groups or Building parts, so any object can be at the same time part of a layer and part of a group.\n\nLayers are imported and exported from/to IFC and DXF/DWG.\n\nThe layers manager allow you to manage your layers, add or remove layers, or change their visual properties. To add objects to a layer, simply drag them into the layer in the tree view. To remove them, drag them from the layer and drop them into the document root.",
+   "doc": "The Layers Manager allows you to manage layers. Layers are a special kind of group that controls the visual properties of objects placed inside of it. By changing the properties of the Layer, such as line width, line color, shape color and transparency, the changes are propagated to its child objects. Layers don't interfere with any other FreeCAD structure such as groups or Building parts, so any object can be at the same time part of a layer and part of a group.\n\nLayers are imported and exported from/to IFC and DXF/DWG.\n\nThe layers manager allow you to manage your layers, add or remove layers, or change their visual properties. To add objects to a layer, simply drag them into the layer in the tree view. To remove them, drag them from the layer and drop them into the document root.",
    "file": "bim/BIM_Layers.md"
   },
   "BIM_Leader": {
@@ -449,7 +449,7 @@
    "file": "bim/BIM_Library.md"
   },
   "BIM_Material": {
-   "doc": "Shows the BIM material dialog. The dialog allows to quickly and easily perform material-related operations, with extra focus on efficient working with many objects and many materials.\n\n1. Create new material or multimaterial 2. Attribute an existing material or multimaterial to selected object(s).",
+   "doc": "Shows the BIM material dialog. The dialog allows to quickly and easily perform material-related operations, with extra focus on efficient working with many objects and many materials.\n\n- Create new material or multimaterial\n- Attribute an existing material or multimaterial to selected object(s).",
    "file": "bim/BIM_Material.md"
   },
   "BIM_MoveView": {
@@ -493,7 +493,7 @@
    "file": "bim/BIM_Nudge_Up.md"
   },
   "BIM_Offset2D": {
-   "doc": "Utility to offset planar shapes.",
+   "doc": "The Part Offset2D tool constructs a wire, parallel to the original wire, at a certain distance from it. Or enlarges/shrinks a planar face, similarly.\n\nThe wire/face must be planar. There can be multiple wires in one object, not necessarily coplanar.\n\n## See also\n\n- Part_Offset\n- Part_Thickness\n- Draft_Offset",
    "file": "bim/BIM_Offset2D.md"
   },
   "BIM_Preflight": {
@@ -501,7 +501,7 @@
    "file": "bim/BIM_Preflight.md"
   },
   "BIM_Project": {
-   "doc": "The BIM Project tool creates a native IFC project in the current document. In IFC, a project (IfcProject) is the root object of all the contents of the model. It is mandatory to have one in each IFC file.\n\nIt is not necessary to create a project to export a FreeCAD model to IFC, as a default one will be added each time you export an IFC file. However, when working with NativeIFC, an IFC file is attached to the model, and all the geometry and properties of that model and its components come from the attached IFC file. The project is where the IFC file is attached to the document.\n\nTypically, you create a BIM project to attach an IFC file. When creating the project, the attached IFC file is blank, and not saved. The next time you will save the FreeCAD file, you will also be asked to save the IFC file.\n\nIf you distribute the FreeCAD file, all attached IFC files must be distributed together, otherwise FreeCAD won\\'t be able to extract the geometry. However, if the shape mode property of all objects contained in a project is set to Shape, then the FreeCAD file can be distributed without the accompanying IFC file, and will still open correctly on other computers. The IFC objects, however, won\\'t be editable anymore.\n\nWhen inserting an IFC file, a project object is created, that contains all the contents of the file. Like all NativeIFC objects, the project can be expanded by double-clicking it in the tree.",
+   "doc": "The BIM Project tool creates a native IFC project in the current document. In IFC, a project (IfcProject) is the root object of all the contents of the model. It is mandatory to have one in each IFC file.\n\nIt is not necessary to create a project to export a FreeCAD model to IFC, as a default one will be added each time you export an IFC file. However, when working with NativeIFC, an IFC file is attached to the model, and all the geometry and properties of that model and its components come from the attached IFC file. The project is where the IFC file is attached to the document.\n\nTypically, you create a BIM project to attach an IFC file. When creating the project, the attached IFC file is blank, and not saved. The next time you will save the FreeCAD file, you will also be asked to save the IFC file.\n\nIf you distribute the FreeCAD file, all attached IFC files must be distributed together, otherwise FreeCAD won't be able to extract the geometry. However, if the shape mode property of all objects contained in a project is set to Shape, then the FreeCAD file can be distributed without the accompanying IFC file, and will still open correctly on other computers. The IFC objects, however, won't be editable anymore.\n\nWhen inserting an IFC file, a project object is created, that contains all the contents of the file. Like all NativeIFC objects, the project can be expanded by double-clicking it in the tree.",
    "file": "bim/BIM_Project.md"
   },
   "BIM_ProjectManager": {
@@ -537,7 +537,7 @@
    "file": "bim/BIM_SetWPTop.md"
   },
   "BIM_Setup": {
-   "doc": "The preferences system of FreeCAD, located under menu Edit -\\> Preferences, is very complex. The BIM setup dialog offers a simplified version of it, by gathering some of the preferences settings most commonly used for BIM work under one simple screen. Changing any of the preference options there has the same effect as changing the corresponding setting under Edit -\\> Preferences.\n\nBy hovering the mouse over each setting, you will be shown a tooltip explaining what it is used for, and the location of the corresponding setting in the general FreeCAD preferences system.\n\n--- ⏵ documentation index > BIM > BIM Setup",
+   "doc": "The preferences system of FreeCAD, located under menu Edit -\\> Preferences, is very complex. The BIM setup dialog offers a simplified version of it, by gathering some of the preferences settings most commonly used for BIM work under one simple screen. Changing any of the preference options there has the same effect as changing the corresponding setting under Edit -\\> Preferences.\n\nBy hovering the mouse over each setting, you will be shown a tooltip explaining what it is used for, and the location of the corresponding setting in the general FreeCAD preferences system.",
    "file": "bim/BIM_Setup.md"
   },
   "BIM_Shape2DCut": {
@@ -549,7 +549,7 @@
    "file": "bim/BIM_Shape2DView.md"
   },
   "BIM_SimpleCopy": {
-   "doc": "Creates a simple non-parametric copy.",
+   "doc": "The Part SimpleCopy command creates non-parametric copies of objects.\n\n## See also\n\n- Part_TransformedCopy\n- Std_Copy\n- Std_DuplicateSelection",
    "file": "bim/BIM_SimpleCopy.md"
   },
   "BIM_Sketch": {
@@ -573,11 +573,11 @@
    "file": "bim/BIM_Text.md"
   },
   "BIM_TogglePanels": {
-   "doc": "The BIM TogglePanels tool toggles the display of bottom panels (Report view and Python console) on or off.\n\n--- ⏵ documentation index > BIM > BIM TogglePanels",
+   "doc": "The BIM TogglePanels tool toggles the display of bottom panels (Report view and Python console) on or off.",
    "file": "bim/BIM_TogglePanels.md"
   },
   "BIM_Trash": {
-   "doc": "The BIM Trash tool moves the selected objects to the \\\"Trash\\\" group. The Trash group will be created if not already present in the document. The Trash group is simply a hidden group, that allows you to not permanently delete objects, but still retain them in the document. This is useful when you are unsure if you\\'ll need objects later, or if an object cannot be deleted because other objects depend on it.\n\n--- ⏵ documentation index > BIM > BIM Trash",
+   "doc": "The BIM Trash tool moves the selected objects to the \"Trash\" group. The Trash group will be created if not already present in the document. The Trash group is simply a hidden group, that allows you to not permanently delete objects, but still retain them in the document. This is useful when you are unsure if you'll need objects later, or if an object cannot be deleted because other objects depend on it.",
    "file": "bim/BIM_Trash.md"
   },
   "BIM_Tutorial": {
@@ -597,7 +597,7 @@
    "file": "bim/BIM_Views.md"
   },
   "BIM_WPView": {
-   "doc": "The BIM WPView tool centers the view on the current working plane.\n\n--- ⏵ documentation index > BIM > BIM WPView",
+   "doc": "The BIM WPView tool centers the view on the current working plane.",
    "file": "bim/BIM_WPView.md"
   },
   "BIM_Welcome": {
@@ -653,7 +653,7 @@
    "file": "cam/CAM_DressupDogbone.md"
   },
   "CAM_DressupDragKnife": {
-   "doc": "The tool DressupDragKnife uses a cutting edge on a pivot to cut sheet material like vinyl, cardboard, and leather. The cutting point is not aligned with the center of the spindle but rather follows it as the spindle moves. Because the cutting point is offset, the path must be modified to extend past the endpoint of each segment. Also, the dragknife is incapable of making extremely tight turns. To compensate, a pivot \\'corner action\\' is inserted which momentarily lifts the blade slightly and then pivots into the new position.\n\nThis tool dresses up an existing path to add corner actions and edge extensions for drag knife cutting.\n\n## See also\n\n- CAM_DressupTag\n- CAM_DressupRampEntry\n- CAM_DressupDogbone",
+   "doc": "The tool DressupDragKnife uses a cutting edge on a pivot to cut sheet material like vinyl, cardboard, and leather. The cutting point is not aligned with the center of the spindle but rather follows it as the spindle moves. Because the cutting point is offset, the path must be modified to extend past the endpoint of each segment. Also, the dragknife is incapable of making extremely tight turns. To compensate, a pivot 'corner action' is inserted which momentarily lifts the blade slightly and then pivots into the new position.\n\nThis tool dresses up an existing path to add corner actions and edge extensions for drag knife cutting.\n\n## See also\n\n- CAM_DressupTag\n- CAM_DressupRampEntry\n- CAM_DressupDogbone",
    "file": "cam/CAM_DressupDragKnife.md"
   },
   "CAM_DressupLeadInOut": {
@@ -697,7 +697,7 @@
    "file": "cam/CAM_ExportTemplate.md"
   },
   "CAM_Fixture": {
-   "doc": "The tool Fixture sets the Work Offset Coordinate Fixture of the machine CNC controller.\n\nTarget Work Offset Coordinates typically include: Fixtures G53 to G59. The G-code is simply the Fixture (G53, G54, etc\\...). The coordinate offset fixtures represent:\n\n- G53 → Machine coordinate system. - G54 → Scratchpad coordinate system. - G55 to G59.9 → Coordinate fixtures allowing work offsets, relative to Homing switches located on the CNC machine, to be used.\n\nThe G59 Fixture is used to expand available fixtures. The degree of expansion implemented is CNC machine specific, and this command allows provides for G59.1 to G59.9.",
+   "doc": "The tool Fixture sets the Work Offset Coordinate Fixture of the machine CNC controller.\n\nTarget Work Offset Coordinates typically include: Fixtures G53 to G59. The G-code is simply the Fixture (G53, G54, etc\\...). The coordinate offset fixtures represent:\n\n- G53 → Machine coordinate system.\n- G54 → Scratchpad coordinate system.\n- G55 to G59.9 → Coordinate fixtures allowing work offsets, relative to Homing switches located on the CNC machine, to be used.\n\nThe G59 Fixture is used to expand available fixtures. The degree of expansion implemented is CNC machine specific, and this command allows provides for G59.1 to G59.9.",
    "file": "cam/CAM_Fixture.md"
   },
   "CAM_Helix": {
@@ -709,11 +709,11 @@
    "file": "cam/CAM_Inspect.md"
   },
   "CAM_Job": {
-   "doc": "The Job tool creates a new Job object in the active document. The Job object contains the following information:\n\n1. A list of Tool-Controller definitions, specifying the geometry, Feeds, and Speeds for the Path Operations Tools. 2. A Workflow sequential list of Path Operations. 3. A Base Body---a clone used for offset. 4. A Stock, representing the raw material that will be milled to CAM Workbench. 5. A SetupSheet, containing inputs used by the Path Operations, including static values and formulas. 6. Configuration parameters specifying the output G-Code job\\'s destination path, file name, and extension, and the postprocessor (used to generate the appropriate dialect for the target CNC Controller, and customize Units, Tool Changes, Parking, etc.).\n\n## See also\n\n- CAM_Post\n- CAM_Postprocessor_Customization",
+   "doc": "The Job tool creates a new Job object in the active document. The Job object contains the following information:\n\n- A list of Tool-Controller definitions, specifying the geometry, Feeds, and Speeds for the Path Operations Tools.\n- A Workflow sequential list of Path Operations.\n- A Base Body---a clone used for offset.\n- A Stock, representing the raw material that will be milled to CAM Workbench.\n- A SetupSheet, containing inputs used by the Path Operations, including static values and formulas.\n- Configuration parameters specifying the output G-Code job's destination path, file name, and extension, and the postprocessor (used to generate the appropriate dialect for the target CNC Controller, and customize Units, Tool Changes, Parking, etc.).\n\n## See also\n\n- CAM_Post\n- CAM_Postprocessor_Customization",
    "file": "cam/CAM_Job.md"
   },
   "CAM_MillFace": {
-   "doc": "The Mill Face tool creates a path to perform a facing operation on a horizontal surface. This operation is generally used:\n\n- to smooth out a rough stock surface, - to mill selected face(s) to desired depth in preparation for performing subsequent clearing operations within the boundary of the regions affected by this operation, - or to apply a finishing surface to the selected face(s).\n\nThis operation contains a BoundaryShape property that allows for a modified selection area based upon the selected face(s).",
+   "doc": "The Mill Face tool creates a path to perform a facing operation on a horizontal surface. This operation is generally used:\n\n- to smooth out a rough stock surface,\n- to mill selected face(s) to desired depth in preparation for performing subsequent clearing operations within the boundary of the regions affected by this operation,\n- or to apply a finishing surface to the selected face(s).\n\nThis operation contains a BoundaryShape property that allows for a modified selection area based upon the selected face(s).",
    "file": "cam/CAM_MillFace.md"
   },
   "CAM_OpActiveToggle": {
@@ -721,7 +721,7 @@
    "file": "cam/CAM_OpActiveToggle.md"
   },
   "CAM_OperationCopy": {
-   "doc": "Copies the operation in the job.",
+   "doc": "The tool Copy creates a copy of a selected path.",
    "file": "cam/CAM_OperationCopy.md"
   },
   "CAM_PathShapeTC": {
@@ -729,7 +729,7 @@
    "file": "cam/CAM_PathShapeTC.md"
   },
   "CAM_Pocket3D": {
-   "doc": "Creates a 3D Pocket toolpath from a face or faces.",
+   "doc": "This command inserts a path 3D Pocket object into the Job. This operation takes into account the bottom surface of the pocket, as well as selected walls that are not vertical. In its current state, this operation is used to rough out a pocket with non-vertical walls and/or non-horizontal bottom. A common finishing technique is to use a ball end mill with the experimental 3D Surface operation.",
    "file": "cam/CAM_Pocket3D.md"
   },
   "CAM_Pocket_Shape": {
@@ -737,7 +737,7 @@
    "file": "cam/CAM_Pocket_Shape.md"
   },
   "CAM_Post": {
-   "doc": "The tool Post exports the selected CAM Job to a G-code file.\n\nEach CNC Controller speaks a specific G-code dialect, requiring a Dialect-correct Postprocessor to translate the final output from the agnostic internal FreeCAD G-code dialect.\n\n### Typical functions of the Postprocessor include\n\n- Using a correct Job output G-code file extension. - Selecting the G-code commands. CNC controllers typically support a subset of available G-code commands. The super-set of G-code commands contains powerful and specialized commands that otherwise must be processed using multiple simpler commands. Postprocessors are written to select the best G-code for an Operation, available on the target. - Formatting the G-code syntax by reordering the Feed, X, Y, Z, A, and B inputs, and the precision. - Inserting a Pre-amble to set units, units format, Work plane, coordinate system, etc\\... - Inserting a Post-amble to park the machine, stop it, process any arguments. - Inserting Tool changes, or suppressing them between subsequent operations using the same tool. - Formatting the Feed and Speed rate information to revolutions per minute, or per second. - Formatting Function Call Naming and Calling.\n\n### Postprocessor Customization\n\nIf you want to write your own postprocessor, have a look at the CAM Postprocessor Customization page.\n\nNote: Several provided Postprocessors generate suitable code for many CNC controllers, or can be used as templates for modification\n\nPostprocessors contain configuration flags and are designed to be tuned by adding G-codes and M-codes to provided definitions for:\n\n- Machine initialization - Job finalization - Tool-Changes - Cooling on /off - Etc\\...\n\nPostprocessors use FreeCAD\\'s internal G-code dialect in conjunction with the Postprocessor configuration definitions, to generate Dialect-Correct G-code for target machines. This allows the CAM workbench to generate correct G-code to target various CNC machine controllers by invoking different Postprocessors.\n\nCNC Machine Controller types include:\n\n- CNC mills - CNC lathes - 3D Printers - DragKnife Cutters - Laser Cutters - Engravers - Plasma Torch Cutters - Wire Benders - EDM Cutters - Etc\\...\n\nIf only one CNC machine is used, or if all CNC machines share a common Postprocesor, the CAM workbench would need to include only a single Postprocessor. If a single Postprocessor is inadequate to output G-code for all target CNC controllers, then multiple Postprocessors must be installed.",
+   "doc": "The tool Post exports the selected CAM Job to a G-code file.\n\nEach CNC Controller speaks a specific G-code dialect, requiring a Dialect-correct Postprocessor to translate the final output from the agnostic internal FreeCAD G-code dialect.",
    "file": "cam/CAM_Post.md"
   },
   "CAM_Probe": {
@@ -745,7 +745,7 @@
    "file": "cam/CAM_Probe.md"
   },
   "CAM_Profile": {
-   "doc": "The Profile tool creates a contour operation based on selected features of the model. The tool was introduced in version 0.19. It offers three operations that were handled by separate tools in previous versions.\n\nAll operations create objects that are made to be part of a CAM Job.\n\nThese are the available operations:\n\n### Contour operation\n\nA Contour operation is the default. It creates a simple external contour cut of complex 3D Part-based objects. The entire Job Model serves as the input for the Operation, regardless of whether any Body Geometry is selected when the Contour command is invoked.\n\n### Profile Face operation\n\nA Profile Face operation creates a simple contour path from one or more selected faces of an object.\n\n### Profile Edges operation\n\nA Profile Edges operation creates a simple contour path from selected edges.",
+   "doc": "The Profile tool creates a contour operation based on selected features of the model. The tool was introduced in version 0.19. It offers three operations that were handled by separate tools in previous versions.\n\nAll operations create objects that are made to be part of a CAM Job.\n\nThese are the available operations:",
    "file": "cam/CAM_Profile.md"
   },
   "CAM_PropertyBag": {
@@ -753,7 +753,7 @@
    "file": "cam/CAM_PropertyBag.md"
   },
   "CAM_Sanity": {
-   "doc": "Many CAM users are hobbyists and DIYers. As such, they use their CNC machines to run G-code that they configured and generated themselves. That isn\\'t the case for most professional/commercial users. In professional shops, different people are responsible for creating the G-code (CNC programmers) from those who run it on the machines (CNC operator).\n\nHobbyists usually run the G-code just a few minutes after post-processing it and probably only once or twice. In a professional shop, proven G-code may be run many times for months or years after initially generated.\n\nOne issue that arises in a professional CNC shop is that there are many assumptions made by the programmer that are NOT communicated in the G-code itself. For example, the G-code can call for a tool \\\"T3\\\" but unless its commented, the G-code doesn\\'t say what kind of tool \\\"T3\\\" refers to. It\\'s just assumed that T3 in the CAM system is the same as T3 on the machine. There are many assumptions like this involving machine setup, tooling, material, part orientation, etc. Even if the G-code is perfect, if the operator doesn\\'t set up the machine with the same assumptions, it can crash.\n\nCommercial shops will often create a \\'setup book\\' which documents all these assumptions and gives the operators what they need to configure the machine and produce a part.\n\nCAM Sanity is the tool in CAM workbench to generate this kind of information. The output of this command is a stand-alone .html file with embedded images.",
+   "doc": "Many CAM users are hobbyists and DIYers. As such, they use their CNC machines to run G-code that they configured and generated themselves. That isn't the case for most professional/commercial users. In professional shops, different people are responsible for creating the G-code (CNC programmers) from those who run it on the machines (CNC operator).\n\nHobbyists usually run the G-code just a few minutes after post-processing it and probably only once or twice. In a professional shop, proven G-code may be run many times for months or years after initially generated.\n\nOne issue that arises in a professional CNC shop is that there are many assumptions made by the programmer that are NOT communicated in the G-code itself. For example, the G-code can call for a tool \"T3\" but unless its commented, the G-code doesn't say what kind of tool \"T3\" refers to. It's just assumed that T3 in the CAM system is the same as T3 on the machine. There are many assumptions like this involving machine setup, tooling, material, part orientation, etc. Even if the G-code is perfect, if the operator doesn't set up the machine with the same assumptions, it can crash.\n\nCommercial shops will often create a 'setup book' which documents all these assumptions and gives the operators what they need to configure the machine and produce a part.\n\nCAM Sanity is the tool in CAM workbench to generate this kind of information. The output of this command is a stand-alone .html file with embedded images.",
    "file": "cam/CAM_Sanity.md"
   },
   "CAM_SelectLoop": {
@@ -765,7 +765,7 @@
    "file": "cam/CAM_SetStartPoint.md"
   },
   "CAM_Shape": {
-   "doc": "The tool Shape doesn\\'t match the current CAM workflow. For that reason it\\'s moved to the experimental features.\n\nThis tool generates tool-paths from CAM Object edges.\n\nTool-paths are uncompensated for tool radius. There is no Tool controller associated with the generated tool-paths .",
+   "doc": "The tool Shape doesn't match the current CAM workflow. For that reason it's moved to the experimental features.\n\nThis tool generates tool-paths from CAM Object edges.\n\nTool-paths are uncompensated for tool radius. There is no Tool controller associated with the generated tool-paths .",
    "file": "cam/CAM_Shape.md"
   },
   "CAM_SimTools": {
@@ -781,11 +781,11 @@
    "file": "cam/CAM_Simulator.md"
   },
   "CAM_SimulatorGL": {
-   "doc": "The SimulatorGL tool is a new alternative to CAM Simulator. It\\'s based on low-level OpenGL functions. To eliminate interference with the 3D view of FreeCAD, it works in a separate window with a separate OpenGL context. It\\'s meant to be faster and more precise than the old simulator.\n\n## See also\n\n- CAM_Simulator",
+   "doc": "The SimulatorGL tool is a new alternative to CAM Simulator. It's based on low-level OpenGL functions. To eliminate interference with the 3D view of FreeCAD, it works in a separate window with a separate OpenGL context. It's meant to be faster and more precise than the old simulator.\n\n## See also\n\n- CAM_Simulator",
    "file": "cam/CAM_SimulatorGL.md"
   },
   "CAM_Slot": {
-   "doc": "The Slot tool creates a simple slotting operation using various methods of input.\n\nInputs include:\n\n- selecting one or more faces or edges. - selecting two vertices. - entering two custom points.\n\nThe CAM Slot object is made to be part of a CAM Job.",
+   "doc": "The Slot tool creates a simple slotting operation using various methods of input.\n\nInputs include:\n\n- selecting one or more faces or edges.\n- selecting two vertices.\n- entering two custom points.\n\nThe CAM Slot object is made to be part of a CAM Job.",
    "file": "cam/CAM_Slot.md"
   },
   "CAM_Stop": {
@@ -805,7 +805,7 @@
    "file": "cam/CAM_ToolBitCreate.md"
   },
   "CAM_ToolBitDock": {
-   "doc": "The ToolBit Dock is easily accessible from the main toolbar in the CAM workbench. Pressing the button will toggle the state of the dock. The dock is displayed in the right position by default but may be moved by the user.\n\nThe purpose of the dock is to display the currently selected library and allow the user to quickly add tool controllers to the CAM Job(s).\n\nDouble-clicking on a toolbit will create a single tool controller for the toolbit. Multi-selecting toolbits and pressing the \\'Add to Job\\' button will create tool controllers for all toolbits in the library.\n\nThe user may also select multiple tools and use the \\'add\\...\\' button at the bottom to add tool controllers for the selection.\n\n+++ | | The top of the panel shows the name of the current library (1). All tool libraries from that location are scanned and shown in the dock. The dock will remember the last selection between uses. A manager button at the top right (4) allows the user to launch the library manager. The library manager can be used to maintain the toolbits and to select a different library. | +++\n\n## See also\n\n- CAM_ToolBitLibraryOpen\n- CAM_Tools\n- CAM_ToolBit",
+   "doc": "The ToolBit Dock is easily accessible from the main toolbar in the CAM workbench. Pressing the button will toggle the state of the dock. The dock is displayed in the right position by default but may be moved by the user.\n\nThe purpose of the dock is to display the currently selected library and allow the user to quickly add tool controllers to the CAM Job(s).\n\nDouble-clicking on a toolbit will create a single tool controller for the toolbit. Multi-selecting toolbits and pressing the 'Add to Job' button will create tool controllers for all toolbits in the library.\n\nThe user may also select multiple tools and use the 'add\\...' button at the bottom to add tool controllers for the selection.\n\n+++ | | The top of the panel shows the name of the current library (1). All tool libraries from that location are scanned and shown in the dock. The dock will remember the last selection between uses. A manager button at the top right (4) allows the user to launch the library manager. The library manager can be used to maintain the toolbits and to select a different library. | +++\n\n## See also\n\n- CAM_ToolBitLibraryOpen\n- CAM_Tools\n- CAM_ToolBit",
    "file": "cam/CAM_ToolBitDock.md"
   },
   "CAM_ToolBitLibraryOpen": {
@@ -829,7 +829,7 @@
    "file": "cam/CAM_ToolController.md"
   },
   "CAM_Vcarve": {
-   "doc": "The Vcarve tool is primarily for center-line engraving a Draft ShapeString onto a part. However, it may be useful for other kinds of 2D.\n\nUnlike engraving which follows the lines in the shapestring, V-carving uses a V-shaped cutter and attempts to clear the area by moving the cutter down the center of the region and varying the depth of cut. Since a v-cutter radius varies with the depth, the width of cut varies as well. The result is a more natural looking cut, particularly for serif fonts.\n\nThe V-carve algorithm calculates a path down the center-line of a region using a Voronoi diagram. This center-line is the path the tool will follow in the XY plane. It next calculates a \\'maximum inscribed circle\\' along the path. This is the largest circle that can be drawn at that point and remain entirely inside the clearing area. Using the circle radius and the tip angle of the cutter, the depth of cut is calculated.",
+   "doc": "The Vcarve tool is primarily for center-line engraving a Draft ShapeString onto a part. However, it may be useful for other kinds of 2D.\n\nUnlike engraving which follows the lines in the shapestring, V-carving uses a V-shaped cutter and attempts to clear the area by moving the cutter down the center of the region and varying the depth of cut. Since a v-cutter radius varies with the depth, the width of cut varies as well. The result is a more natural looking cut, particularly for serif fonts.\n\nThe V-carve algorithm calculates a path down the center-line of a region using a Voronoi diagram. This center-line is the path the tool will follow in the XY plane. It next calculates a 'maximum inscribed circle' along the path. This is the largest circle that can be drawn at that point and remain entirely inside the clearing area. Using the circle radius and the tip angle of the cutter, the depth of cut is calculated.",
    "file": "cam/CAM_Vcarve.md"
   },
   "Draft_AddConstruction": {
@@ -853,7 +853,7 @@
    "file": "draft/Draft_AnnotationStyleEditor.md"
   },
   "Draft_ApplyStyle": {
-   "doc": "The Draft ApplyStyle command applies the current style settings to selected objects.\n\n{{VersionMinus|0.21}} This command handles only five of the settings the Draft SetStyle command offers. This command changes the view properties of objects. It applies all settings the Draft SetStyle command offers. It also changes these additional properties:\n\n- Decimals(for dimensions): See Draft Preferences.\n\n- ShowLine(for dimensions): Idem.\n\n## See also\n\n- Draft_SetStyle",
+   "doc": "The Draft ApplyStyle command applies the current style settings to selected objects. This command handles only five of the settings the Draft SetStyle command offers. This command changes the view properties of objects. It applies all settings the Draft SetStyle command offers. It also changes these additional properties:\n\n- Decimals(for dimensions): See Draft Preferences.\n\n- ShowLine(for dimensions): Idem.\n\n## See also\n\n- Draft_SetStyle",
    "file": "draft/Draft_ApplyStyle.md"
   },
   "Draft_Arc": {
@@ -929,7 +929,7 @@
    "file": "draft/Draft_Facebinder.md"
   },
   "Draft_Fillet": {
-   "doc": "The Draft Fillet command creates a fillet, a rounded corner, or a chamfer, a straight edge, between two selected edges.\n\nIn {{VersionMinus|0.21}} the command only works properly if both selected edges are straight.\n\nIn {{VersionMinus|1.0}} if the selected objects have multiple edges, their first edge will be used. This may not be the edge that was picked in the 3D view.\n\n## See also\n\n- Draft_Line\n- Draft_Wire",
+   "doc": "The Draft Fillet command creates a fillet, a rounded corner, or a chamfer, a straight edge, between two selected edges.\n\nIn the command only works properly if both selected edges are straight.\n\nIn if the selected objects have multiple edges, their first edge will be used. This may not be the edge that was picked in the 3D view.\n\n## See also\n\n- Draft_Line\n- Draft_Wire",
    "file": "draft/Draft_Fillet.md"
   },
   "Draft_FlipDimension": {
@@ -957,7 +957,7 @@
    "file": "draft/Draft_Layer.md"
   },
   "Draft_LayerManager": {
-   "doc": "The layers manager allows you to manage layers. Layers are a special kind of group that controls the visual properties of objects placed inside of it. By changing the properties of the Layer, such as line width, line color, shape color and transparency, the changes are propagated to its child objects. Layers don\\'t interfere with any other FreeCAD structure such as groups or Building parts, so any object can be at the same time part of a layer and part of a group. Layers are always automatically kept in a special \\\"Layers\\\" group.\n\nLayers are imported and exported from/to IFC and DXF/DWG.\n\nThe layers manager allows you to manage your layers, add or remove layers, or change their visual properties. To add objects to a layer, simply drag them into the layer in the tree view. To remove them, drag them from the layer and drop them into the document root.\n\n## See also\n\n- BIM_Workbench\n- Draft_Layer",
+   "doc": "The layers manager allows you to manage layers. Layers are a special kind of group that controls the visual properties of objects placed inside of it. By changing the properties of the Layer, such as line width, line color, shape color and transparency, the changes are propagated to its child objects. Layers don't interfere with any other FreeCAD structure such as groups or Building parts, so any object can be at the same time part of a layer and part of a group. Layers are always automatically kept in a special \"Layers\" group.\n\nLayers are imported and exported from/to IFC and DXF/DWG.\n\nThe layers manager allows you to manage your layers, add or remove layers, or change their visual properties. To add objects to a layer, simply drag them into the layer in the tree view. To remove them, drag them from the layer and drop them into the document root.\n\n## See also\n\n- BIM_Workbench\n- Draft_Layer",
    "file": "draft/Draft_LayerManager.md"
   },
   "Draft_Line": {
@@ -985,7 +985,7 @@
    "file": "draft/Draft_PathArray.md"
   },
   "Draft_PathLinkArray": {
-   "doc": "The Draft PathLinkArray command creates a Link array from a selected object by placing copies along a path. Use the Draft PathArray command to create a less efficient regular array instead. Except for the type of array that is created, Link array or regular array, this command is identical to the Draft PathArray command. See there for more information.\n\n--- ⏵ documentation index > Draft > Draft PathLinkArray\n\n## See also\n\n- Draft_OrthoArray\n- Draft_PolarArray\n- Draft_CircularArray\n- Draft_PathArray\n- Draft_PointArray\n- Draft_PointLinkArray",
+   "doc": "The Draft PathLinkArray command creates a Link array from a selected object by placing copies along a path. Use the Draft PathArray command to create a less efficient regular array instead. Except for the type of array that is created, Link array or regular array, this command is identical to the Draft PathArray command. See there for more information.\n\n## See also\n\n- Draft_OrthoArray\n- Draft_PolarArray\n- Draft_CircularArray\n- Draft_PathArray\n- Draft_PointArray\n- Draft_PointLinkArray",
    "file": "draft/Draft_PathLinkArray.md"
   },
   "Draft_PathTwistedArray": {
@@ -1005,7 +1005,7 @@
    "file": "draft/Draft_PointArray.md"
   },
   "Draft_PointLinkArray": {
-   "doc": "The Draft PointLinkArray command creates a Link array from a selected object by placing copies at the points from a point compound. Use the Draft PointArray command to create a less efficient regular array instead. Except for the type of array that is created, Link array or regular array, this command is identical to the Draft PointArray command. See there for more information.\n\n--- ⏵ documentation index > Draft > Draft PointLinkArray\n\n## See also\n\n- Draft_OrthoArray\n- Draft_PolarArray\n- Draft_CircularArray\n- Draft_PathArray\n- Draft_PathLinkArray\n- Draft_PointArray",
+   "doc": "The Draft PointLinkArray command creates a Link array from a selected object by placing copies at the points from a point compound. Use the Draft PointArray command to create a less efficient regular array instead. Except for the type of array that is created, Link array or regular array, this command is identical to the Draft PointArray command. See there for more information.\n\n## See also\n\n- Draft_OrthoArray\n- Draft_PolarArray\n- Draft_CircularArray\n- Draft_PathArray\n- Draft_PathLinkArray\n- Draft_PointArray",
    "file": "draft/Draft_PointLinkArray.md"
   },
   "Draft_PolarArray": {
@@ -1137,7 +1137,7 @@
    "file": "draft/Draft_ToggleConstructionMode.md"
   },
   "Draft_ToggleDisplayMode": {
-   "doc": "The Draft ToggleDisplayMode command switches the Display Mode property of selected objects between {{Value|Flat Lines}} and {{Value|Wireframe}}. When this property is set to {{Value|Wireframe}} only the vertices and edges of an object are visible making it possible to view and select objects behind it.\n\n## See also\n\n- Std_ToggleVisibility",
+   "doc": "The Draft ToggleDisplayMode command switches the Display Mode property of selected objects between and . When this property is set to only the vertices and edges of an object are visible making it possible to view and select objects behind it.\n\n## See also\n\n- Std_ToggleVisibility",
    "file": "draft/Draft_ToggleDisplayMode.md"
   },
   "Draft_ToggleGrid": {
@@ -1165,7 +1165,7 @@
    "file": "draft/Draft_WorkingPlaneProxy.md"
   },
   "FEM_Analysis": {
-   "doc": "The FEM Analysis could be seen as a container that holds all objects of a Finite Element Analysis. It is mandatory to have an analysis container that holds all the needed objects. At least one of the following objects (apart from the mesh) is necessary for a mechanical analysis:\n\n- solid material, - fixed boundary condition or displacement boundary condition or rigid body constraint.\n\n## See also\n\n- FEM_tutorial",
+   "doc": "The FEM Analysis could be seen as a container that holds all objects of a Finite Element Analysis. It is mandatory to have an analysis container that holds all the needed objects. At least one of the following objects (apart from the mesh) is necessary for a mechanical analysis:\n\n- solid material,\n- fixed boundary condition or displacement boundary condition or rigid body constraint.\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_Analysis.md"
   },
   "FEM_ClippingPlaneAdd": {
@@ -1277,7 +1277,7 @@
    "file": "fem/FEM_ConstraintPulley.md"
   },
   "FEM_ConstraintRigidBody": {
-   "doc": "Defines the CalculiX\\'s rigid body constraint that constrains the motion of the nodes of a selected geometrical entity to the motion of a reference node whose location is defined by the user. In practice, this can be used to apply a boundary condition or load that will be propagated to the selected object. Since the reference node has rotational degrees of freedom, it\\'s possible to apply a moment load or a rotational boundary condition to any face this way. The location of the reference node can be selected, if it\\'s offset from a geometrical entity, a remote load (a force acting on a lever) can be applied.\n\n## See also\n\n- FEM_ConstraintDisplacement",
+   "doc": "Defines the CalculiX's rigid body constraint that constrains the motion of the nodes of a selected geometrical entity to the motion of a reference node whose location is defined by the user. In practice, this can be used to apply a boundary condition or load that will be propagated to the selected object. Since the reference node has rotational degrees of freedom, it's possible to apply a moment load or a rotational boundary condition to any face this way. The location of the reference node can be selected, if it's offset from a geometrical entity, a remote load (a force acting on a lever) can be applied.\n\n## See also\n\n- FEM_ConstraintDisplacement",
    "file": "fem/FEM_ConstraintRigidBody.md"
   },
   "FEM_ConstraintSectionPrint": {
@@ -1285,7 +1285,7 @@
    "file": "fem/FEM_ConstraintSectionPrint.md"
   },
   "FEM_ConstraintSelfWeight": {
-   "doc": "Defines a gravity acceleration acting on the whole model in the prescribed direction.\n\n{{VersionMinus|0.21}} The acceleration has a fixed value of 9.81 m/s\\^2.\n\n## See also\n\n- FEM_tutorial",
+   "doc": "Defines a gravity acceleration acting on the whole model in the prescribed direction. The acceleration has a fixed value of 9.81 m/s\\^2.\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_ConstraintSelfWeight.md"
   },
   "FEM_ConstraintSpring": {
@@ -1297,7 +1297,7 @@
    "file": "fem/FEM_ConstraintTemperature.md"
   },
   "FEM_ConstraintTie": {
-   "doc": "Defines a tie constraint that connects the two selected surfaces in such a way that (as opposed to how contact works) they can\\'t separate or slide on each other throughout the analysis. Thus, the surfaces remain permanently bonded all the time. Can be also used to define cyclic symmetry.\n\n## See also\n\n- FEM_ConstraintPressure",
+   "doc": "Defines a tie constraint that connects the two selected surfaces in such a way that (as opposed to how contact works) they can't separate or slide on each other throughout the analysis. Thus, the surfaces remain permanently bonded all the time. Can be also used to define cyclic symmetry.\n\n## See also\n\n- FEM_ConstraintPressure",
    "file": "fem/FEM_ConstraintTie.md"
   },
   "FEM_ConstraintTransform": {
@@ -1349,7 +1349,7 @@
    "file": "fem/FEM_EquationElectricforce.md"
   },
   "FEM_EquationElectrostatic": {
-   "doc": "This equation performs electrostatic analyses using Gauss\\' law.\n\nFor info about the math of the equation, see the Elmer models manual, section *Electrostatics*.\n\n## See also\n\n- FEM_EquationElectricforce\n- FEM_Example_Capacitance_Two_Balls",
+   "doc": "This equation performs electrostatic analyses using Gauss' law.\n\nFor info about the math of the equation, see the Elmer models manual, section *Electrostatics*.\n\n## See also\n\n- FEM_EquationElectricforce\n- FEM_Example_Capacitance_Two_Balls",
    "file": "fem/FEM_EquationElectrostatic.md"
   },
   "FEM_EquationFlow": {
@@ -1365,11 +1365,11 @@
    "file": "fem/FEM_EquationHeat.md"
   },
   "FEM_EquationMagnetodynamic": {
-   "doc": "This equation perform analyses using the Maxwell\\'s equations.\n\nFor info about the math of the equation, see the Elmer models manual, section *Computation of Magnetic Fields in 3D*.\n\nIf it is possible to calculate in 2D, simpler math can be used resulting in faster solving times. For 2D, FreeCAD supports therefore Elmer\\'s Magnetodynamic 2D equation.\n\n## See also\n\n- FEM_EquationMagnetodynamic2D",
+   "doc": "This equation perform analyses using the Maxwell's equations.\n\nFor info about the math of the equation, see the Elmer models manual, section *Computation of Magnetic Fields in 3D*.\n\nIf it is possible to calculate in 2D, simpler math can be used resulting in faster solving times. For 2D, FreeCAD supports therefore Elmer's Magnetodynamic 2D equation.\n\n## See also\n\n- FEM_EquationMagnetodynamic2D",
    "file": "fem/FEM_EquationMagnetodynamic.md"
   },
   "FEM_EquationMagnetodynamic2D": {
-   "doc": "This equation performs analyses using a 2D version of the Maxwell\\'s equations when the unknown is the z-component (or φ-component).\n\nFor info about the math of the equation, see the Elmer models manual, section *Computation of Magnetic Fields in 2D*.\n\nFor more general analyses in 3D using the Maxwell\\'s equations FreeCAD supports Elmer\\'s Magnetodynamic equation. Nevertheless, if it is possible to perform the analysis in 2D, this is recommended since the math behind this is then more simple and the calculation time is therefore faster.\n\n## See also\n\n- FEM_EquationMagnetodynamic",
+   "doc": "This equation performs analyses using a 2D version of the Maxwell's equations when the unknown is the z-component (or φ-component).\n\nFor info about the math of the equation, see the Elmer models manual, section *Computation of Magnetic Fields in 2D*.\n\nFor more general analyses in 3D using the Maxwell's equations FreeCAD supports Elmer's Magnetodynamic equation. Nevertheless, if it is possible to perform the analysis in 2D, this is recommended since the math behind this is then more simple and the calculation time is therefore faster.\n\n## See also\n\n- FEM_EquationMagnetodynamic",
    "file": "fem/FEM_EquationMagnetodynamic2D.md"
   },
   "FEM_EquationStaticCurrent": {
@@ -1413,7 +1413,7 @@
    "file": "fem/FEM_MeshClear.md"
   },
   "FEM_MeshDisplayInfo": {
-   "doc": "Displays basic statistics of existing mesh - number of nodes and elements of each type. Particularly, total number of the following features is shown:\n\n- Nodes, - Edges, - Faces, - Polygons, - Volumes, - Polyhedrons,\n\n\\* Linear edges,\n\n- Linear faces, - Linear volumes,\n\n\\* Quadratic edges,\n\n- Quadratic faces, - Quadratic triangles, - Quadratic quadrangles, - Quadratic volumes, - Quadratic hexahedrons, - Quadratic tetrahedrons, - Quadratic prisms, - Quadratic pyramids.\n\n## See also\n\n- FEM_tutorial",
+   "doc": "Displays basic statistics of existing mesh - number of nodes and elements of each type. Particularly, total number of the following features is shown:\n\n- Nodes,\n- Edges,\n- Faces,\n- Polygons,\n- Volumes,\n- Polyhedrons,\n\n- Linear edges,\n\n- Linear faces,\n- Linear volumes,\n\n- Quadratic edges,\n\n- Quadratic faces,\n- Quadratic triangles,\n- Quadratic quadrangles,\n- Quadratic volumes,\n- Quadratic hexahedrons,\n- Quadratic tetrahedrons,\n- Quadratic prisms,\n- Quadratic pyramids.\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_MeshDisplayInfo.md"
   },
   "FEM_MeshGmshFromShape": {
@@ -1525,11 +1525,11 @@
    "file": "fem/FEM_SolverControl.md"
   },
   "FEM_SolverElmer": {
-   "doc": "Elmer is an open source multiphysical simulation software mainly developed by CSC - IT Center for Science (CSC). Elmer development was started 1995 in collaboration with Finnish Universities, research institutes and industry. After it\\'s open source publication in 2005, the use and development of Elmer has become international.\n\nElmer includes physical models of fluid dynamics, structural mechanics, electromagnetics, heat transfer and acoustics, for example. These are described by partial differential equations which Elmer solves by the Finite Element Method (FEM).\n\nCreating the SolverElmer object in the Analysis container in FreeCAD, gives access to the Elmer Equations for simple or multiphysical analysis.\n\nSince FreeCAD already has an extensive integration of Calculix and Z88 as solvers for mechanical and thermo-mechanical analysis, Elmer will be preferred for computational fluid dynamics (CFD), heat, electrostatics and electrodynamics. It can also be used for mechanical FEA through the Elasticity equation or any combination of the aforementioned equations. This combination makes Elmer the preferred choice for multi-physics analyses.\n\n## See also\n\n- FEM_SolverElmer_SolverSettings\n- FEM_SolverCalculixCxxtools\n- FEM_SolverZ88\n- FEM_tutorial",
+   "doc": "Elmer is an open source multiphysical simulation software mainly developed by CSC - IT Center for Science (CSC). Elmer development was started 1995 in collaboration with Finnish Universities, research institutes and industry. After it's open source publication in 2005, the use and development of Elmer has become international.\n\nElmer includes physical models of fluid dynamics, structural mechanics, electromagnetics, heat transfer and acoustics, for example. These are described by partial differential equations which Elmer solves by the Finite Element Method (FEM).\n\nCreating the SolverElmer object in the Analysis container in FreeCAD, gives access to the Elmer Equations for simple or multiphysical analysis.\n\nSince FreeCAD already has an extensive integration of Calculix and Z88 as solvers for mechanical and thermo-mechanical analysis, Elmer will be preferred for computational fluid dynamics (CFD), heat, electrostatics and electrodynamics. It can also be used for mechanical FEA through the Elasticity equation or any combination of the aforementioned equations. This combination makes Elmer the preferred choice for multi-physics analyses.\n\n## See also\n\n- FEM_SolverElmer_SolverSettings\n- FEM_SolverCalculixCxxtools\n- FEM_SolverZ88\n- FEM_tutorial",
    "file": "fem/FEM_SolverElmer.md"
   },
   "FEM_SolverMystran": {
-   "doc": "The SolverMystran command enables usage of the MYSTRAN solver. It may be used for:\n\n1. Setting analysis parameters. 2. Selecting working directory. 3. Running the MYSTRAN solver.\n\n## See also\n\n- FEM_tutorial",
+   "doc": "The SolverMystran command enables usage of the MYSTRAN solver. It may be used for:\n\n- Setting analysis parameters.\n- Selecting working directory.\n- Running the MYSTRAN solver.\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_SolverMystran.md"
   },
   "FEM_SolverRun": {
@@ -1537,7 +1537,7 @@
    "file": "fem/FEM_SolverRun.md"
   },
   "FEM_SolverZ88": {
-   "doc": "The SolverZ88 command enables usage of the Z88 solver. It may be used for:\n\n1. Setting analysis parameters 2. Selecting working directory 3. Running the Z88 solver\n\n## See also\n\n- FEM_tutorial",
+   "doc": "The SolverZ88 command enables usage of the Z88 solver. It may be used for:\n\n- Setting analysis parameters\n- Selecting working directory\n- Running the Z88 solver\n\n## See also\n\n- FEM_tutorial",
    "file": "fem/FEM_SolverZ88.md"
   },
   "IFC_ConvertDocument": {
@@ -1761,7 +1761,7 @@
    "file": "mesh/Mesh_VertexCurvature.md"
   },
   "OpenSCAD_AddOpenSCADElement": {
-   "doc": "Add an OpenSCAD element by entering OpenSCAD code into the task panel and executing the OpenSCAD binary (requires OpenSCAD)\n\nWhen \\'as mesh\\' is selected, OpenSCAD renders a Mesh.\n\nEach time Add is pressed the OpenSCAD code is executed and elements are imported.\n\nIf OpenSCAD returns successfully, its messages are displayed as warnings in the report window. This will be the case if the path to imported, included and used files is broken. In case of undesired results it is highly recommend to have a look at the report windows, as there might be a lot of other output, created by the importer. If OpenSCAD fails, its messages will be logged as errors.\n\nLibraries should be accessible as usual, whereas example can be reached as stated below.\n\n```python include ; ```\n\nwould include the first examples also known as the OpenSCAD icon.",
+   "doc": "Add an OpenSCAD element by entering OpenSCAD code into the task panel and executing the OpenSCAD binary (requires OpenSCAD)\n\nWhen 'as mesh' is selected, OpenSCAD renders a Mesh.\n\nEach time Add is pressed the OpenSCAD code is executed and elements are imported.\n\nIf OpenSCAD returns successfully, its messages are displayed as warnings in the report window. This will be the case if the path to imported, included and used files is broken. In case of undesired results it is highly recommend to have a look at the report windows, as there might be a lot of other output, created by the importer. If OpenSCAD fails, its messages will be logged as errors.\n\nLibraries should be accessible as usual, whereas example can be reached as stated below.\n\n```python include ; ```\n\nwould include the first examples also known as the OpenSCAD icon.",
    "file": "openscad/OpenSCAD_AddOpenSCADElement.md"
   },
   "OpenSCAD_ColorCodeShape": {
@@ -1793,7 +1793,7 @@
    "file": "openscad/OpenSCAD_MeshBoolean.md"
   },
   "OpenSCAD_Minkowski": {
-   "doc": "Applies a Minkowski sum to selected shapes.\n\n### Mathematical Definition\n\nAdd each element of subset A to each element of subset B to get Minkowski sum.\n\n### Geometrical Definition\n\nSweep element A along all boundaries of element B. Resulting space which is occupied by both elements is Minkowski sum.\n\nExample of Minkowski sum applied to cylinder and cube. Note: that the height of Minkowski sum is height of cylinder plus height of cube.",
+   "doc": "Applies a Minkowski sum to selected shapes.",
    "file": "openscad/OpenSCAD_Minkowski.md"
   },
   "OpenSCAD_MirrorMeshFeature": {
@@ -1837,7 +1837,7 @@
    "file": "partdesign/PartDesign_Body.md"
   },
   "PartDesign_Boolean": {
-   "doc": "PartDesign Boolean imports one or more PartDesign Bodies or PartDesign Clones (designated as \\\"tool bodies\\\") into the active PartDesign Body and applies a Boolean operation (fuse, cut or common).",
+   "doc": "PartDesign Boolean imports one or more PartDesign Bodies or PartDesign Clones (designated as \"tool bodies\") into the active PartDesign Body and applies a Boolean operation (fuse, cut or common).",
    "file": "partdesign/PartDesign_Boolean.md"
   },
   "PartDesign_Chamfer": {
@@ -1845,7 +1845,7 @@
    "file": "partdesign/PartDesign_Chamfer.md"
   },
   "PartDesign_Clone": {
-   "doc": "PartDesign Clone creates a linked copy of a selected object which will follow any future edits to the original object (except placement). For example, one use case is when you want to do PartDesign Boolean on an object created in another workbench. Most types of objects are accepted, as long as they are single solids. If you need to clone multiple objects (i.e., bodies) or a Part Container, you may use Draft Workbench\\'s clone. One caveat is that the Part Design Workbench\\'s clone sets the current placement of the clone as zero (both Cartesian translation and spatial orientations). While the Draft\\'s workbenches clone calculates and sets the numerical values of the current placement and orientation of the cloned objects with respect to the cloned object container.\n\n## See also\n\n- Draft_Clone",
+   "doc": "PartDesign Clone creates a linked copy of a selected object which will follow any future edits to the original object (except placement). For example, one use case is when you want to do PartDesign Boolean on an object created in another workbench. Most types of objects are accepted, as long as they are single solids. If you need to clone multiple objects (i.e., bodies) or a Part Container, you may use Draft Workbench's clone. One caveat is that the Part Design Workbench's clone sets the current placement of the clone as zero (both Cartesian translation and spatial orientations). While the Draft's workbenches clone calculates and sets the numerical values of the current placement and orientation of the cloned objects with respect to the cloned object container.\n\n## See also\n\n- Draft_Clone",
    "file": "partdesign/PartDesign_Clone.md"
   },
   "PartDesign_CompDatums": {
@@ -1885,11 +1885,11 @@
    "file": "partdesign/PartDesign_Groove.md"
   },
   "PartDesign_Hole": {
-   "doc": "The Hole feature creates one or more holes from a selected sketch\\'s circles and arcs. If arcs are present they must be part of closed contours. All non arc/circle entities are ignored but they still must form closed contours. Many parameters can be set such as threading and size, fit, hole type (countersink, counterbore, straight) and more.\n\nThe centers of the circles and arcs are used to position the holes, but please note that their radii are not taken into account. The generated holes will be identical even if the radii vary.\n\n## See also\n\n- PartDesign_Pocket",
+   "doc": "The Hole feature creates one or more holes from a selected sketch's circles and arcs. If arcs are present they must be part of closed contours. All non arc/circle entities are ignored but they still must form closed contours. Many parameters can be set such as threading and size, fit, hole type (countersink, counterbore, straight) and more.\n\nThe centers of the circles and arcs are used to position the holes, but please note that their radii are not taken into account. The generated holes will be identical even if the radii vary.\n\n## See also\n\n- PartDesign_Pocket",
    "file": "partdesign/PartDesign_Hole.md"
   },
   "PartDesign_InvoluteGear": {
-   "doc": "This tool allows you to create a 2D profile of an involute gear or spline. This 2D profile is fully parametric, and can be padded with the PartDesign Pad or PartDesign AdditiveHelix feature.\n\nFor more detailed information see Wikipedia\\'s entries for: Gear and Involute Gear\n\n## See also\n\n- FCGear_Workbench",
+   "doc": "This tool allows you to create a 2D profile of an involute gear or spline. This 2D profile is fully parametric, and can be padded with the PartDesign Pad or PartDesign AdditiveHelix feature.\n\nFor more detailed information see Wikipedia's entries for: Gear and Involute Gear\n\n## See also\n\n- FCGear_Workbench",
    "file": "partdesign/PartDesign_InvoluteGear.md"
   },
   "PartDesign_Line": {
@@ -1909,7 +1909,7 @@
    "file": "partdesign/PartDesign_Mirrored.md"
   },
   "PartDesign_MoveFeature": {
-   "doc": "Move object to other body, as this command is labeled in the context menu, allows moving objects under a Body to another Body. The moved object is placed right below the other Body\\'s tip. Sketches, datum geometry and features are supported.\n\n## See also\n\n- PartDesign_MoveTip\n- PartDesign_MoveFeatureInTree",
+   "doc": "Move object to other body, as this command is labeled in the context menu, allows moving objects under a Body to another Body. The moved object is placed right below the other Body's tip. Sketches, datum geometry and features are supported.\n\n## See also\n\n- PartDesign_MoveTip\n- PartDesign_MoveFeatureInTree",
    "file": "partdesign/PartDesign_MoveFeature.md"
   },
   "PartDesign_MoveFeatureInTree": {
@@ -1917,7 +1917,7 @@
    "file": "partdesign/PartDesign_MoveFeatureInTree.md"
   },
   "PartDesign_MoveTip": {
-   "doc": "Set tip, as this command is labeled in the context menu, redefines the tip, which is the feature exposed outside of the Body. By default, the tip is the last feature added to the Body; but sometimes it can be useful to temporarily set the tip to a feature earlier in the tree. This may be done to add a sketch, datum geometry or a feature which in retrospect should have been created earlier in the Body\\'s history.\n\nThe tip is visually distinguished in the Model tree by a small white down arrow in a green circle overlayed on the feature\\'s icon. For example, the following feature is the tip:\n\n## See also\n\n- PartDesign_MoveFeature\n- PartDesign_MoveFeatureInTree",
+   "doc": "Set tip, as this command is labeled in the context menu, redefines the tip, which is the feature exposed outside of the Body. By default, the tip is the last feature added to the Body; but sometimes it can be useful to temporarily set the tip to a feature earlier in the tree. This may be done to add a sketch, datum geometry or a feature which in retrospect should have been created earlier in the Body's history.\n\nThe tip is visually distinguished in the Model tree by a small white down arrow in a green circle overlayed on the feature's icon. For example, the following feature is the tip:\n\n## See also\n\n- PartDesign_MoveFeature\n- PartDesign_MoveFeatureInTree",
    "file": "partdesign/PartDesign_MoveTip.md"
   },
   "PartDesign_MultiTransform": {
@@ -1941,7 +1941,7 @@
    "file": "partdesign/PartDesign_Pocket.md"
   },
   "PartDesign_Point": {
-   "doc": "Creates a datum point which can be used as reference for sketches or other datum geometry.\n\n*A datum point attached to a sphere with an attachment offset of {{Value|2* in the Z direction.}}\n\n## See also\n\n- PartDesign_Line\n- PartDesign_Plane",
+   "doc": "Creates a datum point which can be used as reference for sketches or other datum geometry.\n\n*A datum point attached to a sphere with an attachment offset of\n\n## See also\n\n- PartDesign_Line\n- PartDesign_Plane",
    "file": "partdesign/PartDesign_Point.md"
   },
   "PartDesign_PolarPattern": {
@@ -1953,7 +1953,7 @@
    "file": "partdesign/PartDesign_Revolution.md"
   },
   "PartDesign_ShapeBinder": {
-   "doc": "The PartDesign ShapeBinder tool creates a shape binder referencing geometry from a single parent object. A ShapeBinder is used inside a PartDesign Body to reference geometry outside the Body. Using external geometry directly in a Body is not allowed and will lead to out of scope errors.\n\nA ShapeBinder will track the relative placement of the referenced geometry, which is useful in the context of creating assemblies, if its Trace Support property is set to {{True}}. See the Example below to understand how this works.\n\nThe referenced geometry can either be a single object (for example a Part Box, a PartDesign Body, or a sketch or Feature inside a Body), or one or more subelements (faces, edges or vertices) belonging to the same parent object. Which geometry should be selected depends on the intended purpose of the ShapeBinder. For a Boolean operation you would need to select a solid. For a Pad operation a face or a sketch can be used. And for the external geometry in a sketch, or to attach a sketch, any combination of subelements may be appropriate. The referenced geometry can also belong to the Body the ShapeBinder is nested in.\n\n## See also\n\n- PartDesign_SubShapeBinder\n- PartDesign_Clone",
+   "doc": "The PartDesign ShapeBinder tool creates a shape binder referencing geometry from a single parent object. A ShapeBinder is used inside a PartDesign Body to reference geometry outside the Body. Using external geometry directly in a Body is not allowed and will lead to out of scope errors.\n\nA ShapeBinder will track the relative placement of the referenced geometry, which is useful in the context of creating assemblies, if its Trace Support property is set to . See the Example below to understand how this works.\n\nThe referenced geometry can either be a single object (for example a Part Box, a PartDesign Body, or a sketch or Feature inside a Body), or one or more subelements (faces, edges or vertices) belonging to the same parent object. Which geometry should be selected depends on the intended purpose of the ShapeBinder. For a Boolean operation you would need to select a solid. For a Pad operation a face or a sketch can be used. And for the external geometry in a sketch, or to attach a sketch, any combination of subelements may be appropriate. The referenced geometry can also belong to the Body the ShapeBinder is nested in.\n\n## See also\n\n- PartDesign_SubShapeBinder\n- PartDesign_Clone",
    "file": "partdesign/PartDesign_ShapeBinder.md"
   },
   "PartDesign_Sprocket": {
@@ -1993,7 +1993,7 @@
    "file": "part/Part_Boolean.md"
   },
   "Part_BooleanFragments": {
-   "doc": "The Part BooleanFragments tool computes all fragments that can result from applying Boolean operations between input shapes. For example, for two intersecting spheres, three non-overlapping but touching solids are generated.\n\nThe output shape is always a compound. The content of the compound depends on input shape types and operation mode. That means, you don\\'t immediately get access to individual pieces of the result - the pieces remain grouped together. The individual pieces can be extracted by exploding the compound (Draft Downgrade).\n\nThe tool has three modes: \\\"Standard\\\", \\\"Split\\\", and \\\"CompSolid\\\".\n\n\\\"Standard\\\" and \\\"Split\\\" differ by the action of the tool on wires, shells and compsolids. If \\\"Split\\\", those are separated. If \\\"Standard\\\", they are kept together (get extra segments).\n\nCompounding structure in \\\"Standard\\\" and \\\"Split\\\" modes follows the compounding structure of inputs. That is, if you feed in two compounds, each containing a sphere like on example above, the result will also contain two compounds, each containing the pieces of the originally contained sphere. That means, the common piece will be repeated twice in the result. Only if the input spheres are both not in compounds, the result will contain the common piece once.\n\nIn \\\"CompSolid\\\" mode, the solids are joined into a compsolid (compsolid is a set of solids connected by faces; they are related to solids like wires are related to edges, and shells are related to faces; the name is probably a shortened phrase \\\"composite solid\\\"). The output is a non-nested compound of compsolids.\n\n## See also\n\n- Part_Slice\n- Part_XOR\n- Part_CompJoinFeatures\n- Part_Boolean",
+   "doc": "The Part BooleanFragments tool computes all fragments that can result from applying Boolean operations between input shapes. For example, for two intersecting spheres, three non-overlapping but touching solids are generated.\n\nThe output shape is always a compound. The content of the compound depends on input shape types and operation mode. That means, you don't immediately get access to individual pieces of the result - the pieces remain grouped together. The individual pieces can be extracted by exploding the compound (Draft Downgrade).\n\nThe tool has three modes: \"Standard\", \"Split\", and \"CompSolid\".\n\n\"Standard\" and \"Split\" differ by the action of the tool on wires, shells and compsolids. If \"Split\", those are separated. If \"Standard\", they are kept together (get extra segments).\n\nCompounding structure in \"Standard\" and \"Split\" modes follows the compounding structure of inputs. That is, if you feed in two compounds, each containing a sphere like on example above, the result will also contain two compounds, each containing the pieces of the originally contained sphere. That means, the common piece will be repeated twice in the result. Only if the input spheres are both not in compounds, the result will contain the common piece once.\n\nIn \"CompSolid\" mode, the solids are joined into a compsolid (compsolid is a set of solids connected by faces; they are related to solids like wires are related to edges, and shells are related to faces; the name is probably a shortened phrase \"composite solid\"). The output is a non-nested compound of compsolids.\n\n## See also\n\n- Part_Slice\n- Part_XOR\n- Part_CompJoinFeatures\n- Part_Boolean",
    "file": "part/Part_BooleanFragments.md"
   },
   "Part_Box": {
@@ -2085,7 +2085,7 @@
    "file": "part/Part_Datums.md"
   },
   "Part_Defeaturing": {
-   "doc": "The Defeaturing tool is intended for removal of selected features from the model. In this context, features are meant as holes, protrusions, gaps, chamfers, fillets etc. found on the model.\n\nThe defeaturing tool can be very useful in different contexts:\n\n- To edit an imported solid where no history of operations is available. - Fixing defects in the model, e.g. filling gaps, holes etc. - Model simplification for numeric analysis, display on mobile devices, etc.\n\nThe removed features are filled by the extension of the adjacent faces, thus no unexpected parts should appear in the result. Please note that the result is a new shape that is not linked to the original; thus, it is non-parametric.\n\nTo be available, this tool requires FreeCAD to be based on Open Cascade 7.3.0 or greater. If it is not available in your version of FreeCAD, you may have a look at the Defeaturing Workbench add-on, which proposes similar functionality even with older versions of OCC or FreeCAD.\n\n## See also\n\n- Defeaturing_Workbench\n- Macro_Parametric_Defeaturing",
+   "doc": "The Defeaturing tool is intended for removal of selected features from the model. In this context, features are meant as holes, protrusions, gaps, chamfers, fillets etc. found on the model.\n\nThe defeaturing tool can be very useful in different contexts:\n\n- To edit an imported solid where no history of operations is available.\n- Fixing defects in the model, e.g. filling gaps, holes etc.\n- Model simplification for numeric analysis, display on mobile devices, etc.\n\nThe removed features are filled by the extension of the adjacent faces, thus no unexpected parts should appear in the result. Please note that the result is a new shape that is not linked to the original; thus, it is non-parametric.\n\nTo be available, this tool requires FreeCAD to be based on Open Cascade 7.3.0 or greater. If it is not available in your version of FreeCAD, you may have a look at the Defeaturing Workbench add-on, which proposes similar functionality even with older versions of OCC or FreeCAD.\n\n## See also\n\n- Defeaturing_Workbench\n- Macro_Parametric_Defeaturing",
    "file": "part/Part_Defeaturing.md"
   },
   "Part_EdgeSelection": {
@@ -2109,7 +2109,7 @@
    "file": "part/Part_Export.md"
   },
   "Part_Extrude": {
-   "doc": "Part Extrude extends a shape by a specified distance, in a specified direction. The output shape type will vary depending on the input shape type and the options selected.\n\nIn most common scenarios, the following lists the expected output shape type from a given input shape type,\n\n- Extrude a Vertex (point), will produce a lineal Edge (Line) - Extrude a open edge (e.g. line, arc), will produce a open face (e.g. plane) - Extrude a closed edge (e.g. circle), will optionally produce a closed face (e.g. an open ended cylinder) or if the parameter \\\"solid\\\" is \\\"true\\\" will produce a solid (e.g. a closed solid cylinder) - Extrude a open Wire (e.g. a Draft Wire), will produce a open shell (several joined faces) - Extrude a closed Wire (e.g. a Draft Wire), will optionally produce a shell (several joined faces) or if the parameter \\\"solid\\\" is \\\"true\\\" will produce a solid - Extrude a face (e.g. plane), will produce a solid (e.g. Cuboid) - Extrude a [Draft ShapeString, will produce a compound of solids (the string is a compound of the letters which are each a solid) - Extrude a shell of faces, will produce a Compsolid.\n\n## See also\n\n- Draft_Trimex\n- PartDesign_Pad",
+   "doc": "Part Extrude extends a shape by a specified distance, in a specified direction. The output shape type will vary depending on the input shape type and the options selected.\n\nIn most common scenarios, the following lists the expected output shape type from a given input shape type,\n\n- Extrude a Vertex (point), will produce a lineal Edge (Line)\n- Extrude a open edge (e.g. line, arc), will produce a open face (e.g. plane)\n- Extrude a closed edge (e.g. circle), will optionally produce a closed face (e.g. an open ended cylinder) or if the parameter \"solid\" is \"true\" will produce a solid (e.g. a closed solid cylinder)\n- Extrude a open Wire (e.g. a Draft Wire), will produce a open shell (several joined faces)\n- Extrude a closed Wire (e.g. a Draft Wire), will optionally produce a shell (several joined faces) or if the parameter \"solid\" is \"true\" will produce a solid\n- Extrude a face (e.g. plane), will produce a solid (e.g. Cuboid)\n- Extrude a [Draft ShapeString, will produce a compound of solids (the string is a compound of the letters which are each a solid)\n- Extrude a shell of faces, will produce a Compsolid.\n\n## See also\n\n- Draft_Trimex\n- PartDesign_Pad",
    "file": "part/Part_Extrude.md"
   },
   "Part_FaceSelection": {
@@ -2209,7 +2209,7 @@
    "file": "part/Part_Scale.md"
   },
   "Part_Section": {
-   "doc": "The Part Section command creates wire geometry at the intersections of two objects. The result is fully parametric.\n\n- An intersection of two solids/faces results in one or more section lines. - An intersection of two lines, or a line and a solid/face, results in one or more points.\n\n## See also\n\n- Part_CrossSections",
+   "doc": "The Part Section command creates wire geometry at the intersections of two objects. The result is fully parametric.\n\n- An intersection of two solids/faces results in one or more section lines.\n- An intersection of two lines, or a line and a solid/face, results in one or more points.\n\n## See also\n\n- Part_CrossSections",
    "file": "part/Part_Section.md"
   },
   "Part_SectionCut": {
@@ -2221,7 +2221,7 @@
    "file": "part/Part_SelectFilter.md"
   },
   "Part_ShapeFromMesh": {
-   "doc": "Creates a shape from the selected mesh.",
+   "doc": "The Part ShapeFromMesh command creates shapes from mesh objects. Mesh objects have limited editing capabilities in FreeCAD, converting them to shapes will allow their use with many more boolean and modification commands.\n\nThe inverse operation is Mesh FromPartShape from the Mesh Workbench.\n\n## See also\n\n- Part_MakeSolid\n- Part_RefineShape\n- Part_PointsFromMesh",
    "file": "part/Part_ShapeFromMesh.md"
   },
   "Part_ShapeInfo": {
@@ -2237,11 +2237,11 @@
    "file": "part/Part_SimpleCylinder.md"
   },
   "Part_Slice": {
-   "doc": "The Part Slice also known as Slice to compound tool is used to split shapes by intersection with other shapes. For example, for a box and a plane, a compound of two solids is created.\n\nThere are two commands to slice a shape: Part Slice apart and Part Slice to compound. They both create a \\'Slice\\' parametric feature, that puts the sliced pieces into a compound. However, Part Slice Apart explodes the resulting compound into separate objects. \\\"Slice to compound\\\" is fully-parametric, and causes no trouble as the number of pieces changes. \\\"Slice apart\\\" will not update the number of objects as the number of pieces changes.\n\nThe output shape occupies the same space as the original. But it is split where it intersects with other shapes. The split pieces are put into a compound (or compsolid), so the object appears to remain in one piece. You need to explode the compound to get the individual pieces. If you want to access the individual pieces in a parametric way you can use Part Compound Filter for this purpose. For quick non-parametric access use Draft Downgrade.\n\nThe tool has three modes: \\\"Standard\\\", \\\"Split\\\", and \\\"CompSolid\\\". There is no selection form, they are predefined but can be accessed after the operation on the resulting slices level.\n\n\\\"Standard\\\" and \\\"Split\\\" differ by the action of the tool on wires, shells and compsolids: if \\\"Split\\\", those are separated; if \\\"Standard\\\", they are kept together (get extra segments).\n\nCompounding structure in \\\"Standard\\\" and \\\"Split\\\" modes follows the compounding structure of shape being sliced.\n\nIn \\\"CompSolid\\\" mode, the output is a compsolid (or a compound of compsolids, if the resulting solids form more than one island of connectedness). Compsolid is a set of solids connected by faces; they are related to solids like wires are related to edges, and shells are related to faces; the name is probably a shortened phrase \\\"composite solid\\\".\n\nThe overall action of the tool is very similar to Part Boolean Fragments, except only the pieces from the first shape are in the result.\n\n## See also\n\n- Part_BooleanFragments\n- Part_XOR\n- Part_CompJoinFeatures\n- Part_Boolean",
+   "doc": "The Part Slice also known as Slice to compound tool is used to split shapes by intersection with other shapes. For example, for a box and a plane, a compound of two solids is created.\n\nThere are two commands to slice a shape: Part Slice apart and Part Slice to compound. They both create a 'Slice' parametric feature, that puts the sliced pieces into a compound. However, Part Slice Apart explodes the resulting compound into separate objects. \"Slice to compound\" is fully-parametric, and causes no trouble as the number of pieces changes. \"Slice apart\" will not update the number of objects as the number of pieces changes.\n\nThe output shape occupies the same space as the original. But it is split where it intersects with other shapes. The split pieces are put into a compound (or compsolid), so the object appears to remain in one piece. You need to explode the compound to get the individual pieces. If you want to access the individual pieces in a parametric way you can use Part Compound Filter for this purpose. For quick non-parametric access use Draft Downgrade.\n\nThe tool has three modes: \"Standard\", \"Split\", and \"CompSolid\". There is no selection form, they are predefined but can be accessed after the operation on the resulting slices level.\n\n\"Standard\" and \"Split\" differ by the action of the tool on wires, shells and compsolids: if \"Split\", those are separated; if \"Standard\", they are kept together (get extra segments).\n\nCompounding structure in \"Standard\" and \"Split\" modes follows the compounding structure of shape being sliced.\n\nIn \"CompSolid\" mode, the output is a compsolid (or a compound of compsolids, if the resulting solids form more than one island of connectedness). Compsolid is a set of solids connected by faces; they are related to solids like wires are related to edges, and shells are related to faces; the name is probably a shortened phrase \"composite solid\".\n\nThe overall action of the tool is very similar to Part Boolean Fragments, except only the pieces from the first shape are in the result.\n\n## See also\n\n- Part_BooleanFragments\n- Part_XOR\n- Part_CompJoinFeatures\n- Part_Boolean",
    "file": "part/Part_Slice.md"
   },
   "Part_SliceApart": {
-   "doc": "Tool to split shapes by intersection with other shapes. For example, for a box and a plane, two solids are created.\n\nSlice apart is the same as Part Slice followed by Part Explode Compound. While \\\"Slice to compound\\\" is fully-parametric, and causes no trouble as the number of pieces changes, \\\"Slice apart\\\" will not update the number of objects as the number of pieces changes. They both create Slice parametric feature, that puts the sliced pieces into a compound, but \\\"Slice apart\\\" explodes the resulting compound into separate objects.\n\nThe output shape occupies the same space as the original. But it is split where it intersects with other shapes. The split pieces are individual pieces.\n\nPlease visit Part Slice page for more info.\n\n### Tree structure of Slice Apart\n\nThe Slice Apart command creates more than only the sliced object. In the following example a cube is sliced by a face.\n\nThe slice is created and for each piece of it there is a Part CompoundFilter created, thus the same slice occurs multiple times below each CompoundFilter. All these CompoundFilters are united in a Compound.\n\n## See also\n\n- Part_Slice\n- Part_ExplodeCompound",
+   "doc": "Tool to split shapes by intersection with other shapes. For example, for a box and a plane, two solids are created.\n\n- Above: the pieces were moved apart manually afterwards, to reveal the slicing.*\n\nSlice apart is the same as Part Slice followed by Part Explode Compound. While \"Slice to compound\" is fully-parametric, and causes no trouble as the number of pieces changes, \"Slice apart\" will not update the number of objects as the number of pieces changes. They both create Slice parametric feature, that puts the sliced pieces into a compound, but \"Slice apart\" explodes the resulting compound into separate objects.\n\nThe output shape occupies the same space as the original. But it is split where it intersects with other shapes. The split pieces are individual pieces.\n\nPlease visit Part Slice page for more info.\n\n## See also\n\n- Part_Slice\n- Part_ExplodeCompound",
    "file": "part/Part_SliceApart.md"
   },
   "Part_Sphere": {
@@ -2417,7 +2417,7 @@
    "file": "sketcher/Sketcher_ArcOverlay.md"
   },
   "Sketcher_BSplineComb": {
-   "doc": "The Sketcher BSplineComb tool shows or hides the B-spline curvature comb in all sketches.\n\nThe curvature comb indicates the curvature (value of the second-order derivative) along a B-spline. The higher the curvature, the longer the comb\\'s teeth are. Where a B-spline curves to the right the comb is on its left side and vice versa.\n\n## See also\n\n- Sketcher_CreateBSpline",
+   "doc": "The Sketcher BSplineComb tool shows or hides the B-spline curvature comb in all sketches.\n\nThe curvature comb indicates the curvature (value of the second-order derivative) along a B-spline. The higher the curvature, the longer the comb's teeth are. Where a B-spline curves to the right the comb is on its left side and vice versa.\n\n## See also\n\n- Sketcher_CreateBSpline",
    "file": "sketcher/Sketcher_BSplineComb.md"
   },
   "Sketcher_BSplineConvertToNURBS": {
@@ -2461,7 +2461,7 @@
    "file": "sketcher/Sketcher_BSplinePolygon.md"
   },
   "Sketcher_CarbonCopy": {
-   "doc": "The Sketcher CarbonCopy tool copies all geometry and constraints from another sketch into the active sketch.\n\nDimensional constraints which exist before the copy function remain linked to the original sketch\\'s dimensional constraints through expressions.",
+   "doc": "The Sketcher CarbonCopy tool copies all geometry and constraints from another sketch into the active sketch.\n\nDimensional constraints which exist before the copy function remain linked to the original sketch's dimensional constraints through expressions.",
    "file": "sketcher/Sketcher_CarbonCopy.md"
   },
   "Sketcher_ChangeDimensionConstraint": {
@@ -2613,7 +2613,7 @@
    "file": "sketcher/Sketcher_ConstrainRadius.md"
   },
   "Sketcher_ConstrainSnellsLaw": {
-   "doc": "The Sketcher ConstrainSnellsLaw tool constrains two lines to follow the law of refraction of light as it penetrates through an interface where two materials with different refraction indices meet. See Snell\\'s law.",
+   "doc": "The Sketcher ConstrainSnellsLaw tool constrains two lines to follow the law of refraction of light as it penetrates through an interface where two materials with different refraction indices meet. See Snell's law.",
    "file": "sketcher/Sketcher_ConstrainSnellsLaw.md"
   },
   "Sketcher_ConstrainSymmetric": {
@@ -2785,7 +2785,7 @@
    "file": "sketcher/Sketcher_Grid.md"
   },
   "Sketcher_Intersection": {
-   "doc": "The Sketcher Intersection tool intersects faces and/or edges belonging to objects outside the sketch with the sketch plane. The intersected geometry is called \\\"external geometry\\\". It stays parametrically linked to its source objects. External geometry is marked with a dedicated color (default magenta) and linetype. It can be defining geometry that is visible outside the sketch or construction geometry that is not visible outside the sketch.\n\n## See also\n\n- Sketcher_ToggleConstruction",
+   "doc": "The Sketcher Intersection tool intersects faces and/or edges belonging to objects outside the sketch with the sketch plane. The intersected geometry is called \"external geometry\". It stays parametrically linked to its source objects. External geometry is marked with a dedicated color (default magenta) and linetype. It can be defining geometry that is visible outside the sketch or construction geometry that is not visible outside the sketch.\n\n## See also\n\n- Sketcher_ToggleConstruction",
    "file": "sketcher/Sketcher_Intersection.md"
   },
   "Sketcher_JoinCurves": {
@@ -2797,7 +2797,7 @@
    "file": "sketcher/Sketcher_LeaveSketch.md"
   },
   "Sketcher_MapSketch": {
-   "doc": "The Sketcher MapSketch tool attaches a sketch to selected geometry.\n\nTypical use cases are:\n\n- The sketch was created on a standard plane (XY, XZ or YZ) and you want to attach it to the face of a solid in order to build a new feature upon it. - The sketch was attached to a specific face of a solid but you need to attached it to a different face. - A broken model needs to be repaired.\n\n## See also\n\n- Sketcher_ReorientSketch\n- Sketcher_NewSketch",
+   "doc": "The Sketcher MapSketch tool attaches a sketch to selected geometry.\n\nTypical use cases are:\n\n- The sketch was created on a standard plane (XY, XZ or YZ) and you want to attach it to the face of a solid in order to build a new feature upon it.\n- The sketch was attached to a specific face of a solid but you need to attached it to a different face.\n- A broken model needs to be repaired.\n\n## See also\n\n- Sketcher_ReorientSketch\n- Sketcher_NewSketch",
    "file": "sketcher/Sketcher_MapSketch.md"
   },
   "Sketcher_MergeSketches": {
@@ -2829,7 +2829,7 @@
    "file": "sketcher/Sketcher_ProfilesHexagon1.md"
   },
   "Sketcher_Projection": {
-   "doc": "The Sketcher Projection tool projects edges and/or vertices belonging to objects outside the sketch onto the sketch plane. The projected geometry is called \\\"external geometry\\\". It stays parametrically linked to its source objects. External geometry is marked with a dedicated color (default magenta) and linetype. It can be defining geometry that is visible outside the sketch or construction geometry that is not visible outside the sketch.\n\n## See also\n\n- Sketcher_ToggleConstruction",
+   "doc": "The Sketcher Projection tool projects edges and/or vertices belonging to objects outside the sketch onto the sketch plane. The projected geometry is called \"external geometry\". It stays parametrically linked to its source objects. External geometry is marked with a dedicated color (default magenta) and linetype. It can be defining geometry that is visible outside the sketch or construction geometry that is not visible outside the sketch.\n\n## See also\n\n- Sketcher_ToggleConstruction",
    "file": "sketcher/Sketcher_Projection.md"
   },
   "Sketcher_RectangularArray": {
@@ -2981,11 +2981,11 @@
    "file": "spreadsheet/Spreadsheet_CreateSheet.md"
   },
   "Spreadsheet_Export": {
-   "doc": "The Spreadsheet Export tool exports a spreadsheet as a CSV file, which can be used in other applications. Note that the {{Value|tab}} character, and not the {{Value|comma}}, is the default field delimiter. But this can be changed in the Spreadsheet Preferences ( ).\n\n## See also\n\n- Spreadsheet_Import",
+   "doc": "The Spreadsheet Export tool exports a spreadsheet as a CSV file, which can be used in other applications. Note that the character, and not the , is the default field delimiter. But this can be changed in the Spreadsheet Preferences ( ).\n\n## See also\n\n- Spreadsheet_Import",
    "file": "spreadsheet/Spreadsheet_Export.md"
   },
   "Spreadsheet_Import": {
-   "doc": "The Spreadsheet Import tool imports a CSV file into a new spreadsheet. Note that the {{Value|tab}} character, and not the {{Value|comma}}, is the default field delimiter. But this can be changed in the Spreadsheet Preferences ( ).\n\n## See also\n\n- Spreadsheet_Export",
+   "doc": "The Spreadsheet Import tool imports a CSV file into a new spreadsheet. Note that the character, and not the , is the default field delimiter. But this can be changed in the Spreadsheet Preferences ( ).\n\n## See also\n\n- Spreadsheet_Export",
    "file": "spreadsheet/Spreadsheet_Import.md"
   },
   "Spreadsheet_MergeCells": {
@@ -3017,7 +3017,7 @@
    "file": "std/Start_Start.md"
   },
   "Std_About": {
-   "doc": "The Std About command opens a dialog box that shows information about the FreeCAD program.\n\n'''ATTENTION''': Do not take a screenshot of this dialog box! Instead press the Copy to clipboard button and then paste the information in your help request.",
+   "doc": "The Std About command opens a dialog box that shows information about the FreeCAD program.\n\nATTENTION: Do not take a screenshot of this dialog box! Instead press the Copy to clipboard button and then paste the information in your help request.",
    "file": "std/Std_About.md"
   },
   "Std_AboutQt": {
@@ -3093,7 +3093,7 @@
    "file": "std/Std_DemoMode.md"
   },
   "Std_DependencyGraph": {
-   "doc": "The Std DependencyGraph command displays the dependencies between objects in the active document in a graph. As opposed to the Tree view, objects are listed in reverse chronological order, with the first created object at the bottom.\n\nIt can be useful in analyzing a FreeCAD document and locating forks in a tree. The dependency graph layout will depend on which workbench was used to create the objects in the document. For example a model made exclusively in the PartDesign workbench can display a linear dependency graph with a single vertical branch. A model made with Part operations will have many branches, but for a single part they will join up at the top after Boolean operations. If they don\\'t, it means that they are separate objects.\n\nThe dependency graph is purely a visualization tool, therefore it cannot be edited. It automatically updates if changes are made to the model.\n\n## See also\n\n- Std_ExportDependencyGraph",
+   "doc": "The Std DependencyGraph command displays the dependencies between objects in the active document in a graph. As opposed to the Tree view, objects are listed in reverse chronological order, with the first created object at the bottom.\n\nIt can be useful in analyzing a FreeCAD document and locating forks in a tree. The dependency graph layout will depend on which workbench was used to create the objects in the document. For example a model made exclusively in the PartDesign workbench can display a linear dependency graph with a single vertical branch. A model made with Part operations will have many branches, but for a single part they will join up at the top after Boolean operations. If they don't, it means that they are separate objects.\n\nThe dependency graph is purely a visualization tool, therefore it cannot be edited. It automatically updates if changes are made to the model.\n\n## See also\n\n- Std_ExportDependencyGraph",
    "file": "std/Std_DependencyGraph.md"
   },
   "Std_DevHandbook": {
@@ -3177,7 +3177,7 @@
    "file": "std/Std_DuplicateSelection.md"
   },
   "Std_Edit": {
-   "doc": "The Std Edit command activates or deactivates an object\\'s edit mode.\n\n## See also\n\n- Std_UserEditMode",
+   "doc": "The Std Edit command activates or deactivates an object's edit mode.\n\n## See also\n\n- Std_UserEditMode",
    "file": "std/Std_Edit.md"
   },
   "Std_Export": {
@@ -3189,27 +3189,27 @@
    "file": "std/Std_ExportDependencyGraph.md"
   },
   "Std_Expressions": {
-   "doc": "The Std Expressions command copies expression data to and from the Clipboard. The data references the names of objects and documents and can only be used in that context.\n\n{{Code|lang=text|code= ##@@ Height Unnamed#Cylinder.ExpressionEngine (Cylinder) ##@@ Box.Width\n\n##@@ Radius Unnamed#Cylinder.ExpressionEngine (Cylinder) ##@@ Box.Length }} *Example Clipboard data*",
+   "doc": "The Std Expressions command copies expression data to and from the Clipboard. The data references the names of objects and documents and can only be used in that context.",
    "file": "std/Std_Expressions.md"
   },
   "Std_FreeCADDonation": {
-   "doc": "The Std FreeCADDonation command opens the FreeCAD Donate wiki page in the system\\'s default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .",
+   "doc": "The Std FreeCADDonation command opens the FreeCAD Donate wiki page in the system's default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .",
    "file": "std/Std_FreeCADDonation.md"
   },
   "Std_FreeCADForum": {
-   "doc": "The Std FreeCADForum command opens the FreeCAD forum website in the system\\'s default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .\n\n## See also\n\n- Std_FreeCADWebsite\n- Std_FreeCADUserHub\n- Std_FreeCADPowerUserHub\n- Std_FreeCADFAQ",
+   "doc": "The Std FreeCADForum command opens the FreeCAD forum website in the system's default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .\n\n## See also\n\n- Std_FreeCADWebsite\n- Std_FreeCADUserHub\n- Std_FreeCADPowerUserHub\n- Std_FreeCADFAQ",
    "file": "std/Std_FreeCADForum.md"
   },
   "Std_FreeCADUserHub": {
-   "doc": "The Std FreeCADUserHub command opens the FreeCAD Users documentation page in the system\\'s default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .\n\n## See also\n\n- Std_FreeCADWebsite\n- Std_FreeCADPowerUserHub\n- Std_FreeCADForum\n- Std_FreeCADFAQ",
+   "doc": "The Std FreeCADUserHub command opens the FreeCAD Users documentation page in the system's default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .\n\n## See also\n\n- Std_FreeCADWebsite\n- Std_FreeCADPowerUserHub\n- Std_FreeCADForum\n- Std_FreeCADFAQ",
    "file": "std/Std_FreeCADUserHub.md"
   },
   "Std_FreeCADWebsite": {
-   "doc": "The Std FreeCADWebsite command opens the main website of the FreeCAD project in the system\\'s default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .\n\n## See also\n\n- Std_FreeCADUserHub\n- Std_FreeCADPowerUserHub\n- Std_FreeCADForum\n- Std_FreeCADFAQ",
+   "doc": "The Std FreeCADWebsite command opens the main website of the FreeCAD project in the system's default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .\n\n## See also\n\n- Std_FreeCADUserHub\n- Std_FreeCADPowerUserHub\n- Std_FreeCADForum\n- Std_FreeCADFAQ",
    "file": "std/Std_FreeCADWebsite.md"
   },
   "Std_FreezeViews": {
-   "doc": "Freezes the current view position.",
+   "doc": "FreeCAD can store camera settings in up to 50 'frozen views'. The menu options that deal with frozen views can be found in the View → Freeze display submenu. Frozen views are not stored in the document and, if not saved with the Save views\\... menu option, will be lost when the FreeCAD application closes.\n\n## See also\n\n- Std_StoreWorkingView\n- Std_RecallWorkingView\n- Std_ViewIvIssueCamPos",
    "file": "std/Std_FreezeViews.md"
   },
   "Std_Group": {
@@ -3241,7 +3241,7 @@
    "file": "std/Std_LinkImportAll.md"
   },
   "Std_LinkMake": {
-   "doc": "[Std LinkMake\n\ncreates an App Link (`App::Link` class), a type of object that references or links to another object in the same document, or in another document. It is especially designed to efficiently duplicate a single object multiple times, which helps with the creation of complex assemblies from smaller subassemblies, and from multiple reusable components like screws, nuts, and similar fasteners.\n\nThe App Link object was newly introduced in v0.19; in the past, simple duplication of objects could be achieved with [Draft Clone, but this is a less efficient solution due to its implementation, which essentially creates a copy of the internal Shape of the source object. Instead, a Link directly references the original Shape, so it is more memory-efficient.\n\nBy itself the Link object can behave like an array, duplicating its base object many times; this can be done by setting its Element Count property to {{Value|1}} or larger. This \\\"Link Array\\\" object can also be created with the different array tools of the Draft Workbench, for example, [Draft OrthoArray, [Draft PolarArray, and [Draft CircularArray.\n\nWhen used with the PartDesign Workbench, Links are intended to be used with [PartDesign Bodies, so it is recommended to set Display Mode Body to {{Value|Tip}} to select the features of the entire Body, and not the individual features. To create arrays of the internal PartDesign Features, use [PartDesign LinearPattern, [PartDesign PolarPattern, and [PartDesign MultiTransform.\n\nThe [Std LinkMake tool is not defined by a particular workbench, but by the base system, thus it is found in the structure toolbar that is available in all workbenches. The Link object, used in conjunction with [Std Part to group various objects, forms the basis of the Assembly3 and Assembly4 Workbenches.\n\n## See also\n\n- Std_Part\n- Std_Group\n- PartDesign_Body",
+   "doc": "[Std LinkMake\n\ncreates an App Link (`App::Link` class), a type of object that references or links to another object in the same document, or in another document. It is especially designed to efficiently duplicate a single object multiple times, which helps with the creation of complex assemblies from smaller subassemblies, and from multiple reusable components like screws, nuts, and similar fasteners.\n\nThe App Link object was newly introduced in v0.19; in the past, simple duplication of objects could be achieved with [Draft Clone, but this is a less efficient solution due to its implementation, which essentially creates a copy of the internal Shape of the source object. Instead, a Link directly references the original Shape, so it is more memory-efficient.\n\nBy itself the Link object can behave like an array, duplicating its base object many times; this can be done by setting its Element Count property to or larger. This \"Link Array\" object can also be created with the different array tools of the Draft Workbench, for example, [Draft OrthoArray, [Draft PolarArray, and [Draft CircularArray.\n\nWhen used with the PartDesign Workbench, Links are intended to be used with [PartDesign Bodies, so it is recommended to set Display Mode Body to to select the features of the entire Body, and not the individual features. To create arrays of the internal PartDesign Features, use [PartDesign LinearPattern, [PartDesign PolarPattern, and [PartDesign MultiTransform.\n\nThe [Std LinkMake tool is not defined by a particular workbench, but by the base system, thus it is found in the structure toolbar that is available in all workbenches. The Link object, used in conjunction with [Std Part to group various objects, forms the basis of the Assembly3 and Assembly4 Workbenches.\n\n## See also\n\n- Std_Part\n- Std_Group\n- PartDesign_Body",
    "file": "std/Std_LinkMake.md"
   },
   "Std_LinkMakeGroup": {
@@ -3253,7 +3253,7 @@
    "file": "std/Std_LinkMakeRelative.md"
   },
   "Std_LinkReplace": {
-   "doc": "[Std LinkReplace\n\nreplaces an object that is inside another for an App Link version of the former.\n\nThis operation acts on the \\\"children\\\" of a \\\"parent\\\" object as seen in the tree view. For example, given two objects (A and B) that participate in a [Part Boolean operation, say, C = A + B, the A object can be replaced by a Link, so that C = A_link + B.\n\nThis operation can be done to replace nested objects that are in a complex assembly for a Link, which may be more efficient if that nested object is used many times in different sub-assemblies. The inverse operation is [Std LinkUnlink. To create a generic Link see [Std LinkMake.\n\n## See also\n\n- Std_LinkMake\n- Std_LinkMakeRelative\n- Std_LinkUnlink",
+   "doc": "[Std LinkReplace\n\nreplaces an object that is inside another for an App Link version of the former.\n\nThis operation acts on the \"children\" of a \"parent\" object as seen in the tree view. For example, given two objects (A and B) that participate in a [Part Boolean operation, say, C = A + B, the A object can be replaced by a Link, so that C = A_link + B.\n\nThis operation can be done to replace nested objects that are in a complex assembly for a Link, which may be more efficient if that nested object is used many times in different sub-assemblies. The inverse operation is [Std LinkUnlink. To create a generic Link see [Std LinkMake.\n\n## See also\n\n- Std_LinkMake\n- Std_LinkMakeRelative\n- Std_LinkUnlink",
    "file": "std/Std_LinkReplace.md"
   },
   "Std_LinkSelectActions": {
@@ -3293,23 +3293,23 @@
    "file": "std/Std_MacroAttachDebugger.md"
   },
   "Std_MacroStartDebug": {
-   "doc": "This command does not work at this time.\n\n--- ⏵ documentation index > Std MacroStartDebug\n\n## See also\n\n- Std_MacroStopDebug",
+   "doc": "This command does not work at this time.\n\n## See also\n\n- Std_MacroStopDebug",
    "file": "std/Std_MacroStartDebug.md"
   },
   "Std_MacroStepInto": {
-   "doc": "This command does not work at this time.\n\n--- ⏵ documentation index > Std MacroStepInto\n\n## See also\n\n- Std_MacroStepOver\n- Std_ToggleBreakpoint",
+   "doc": "This command does not work at this time.\n\n## See also\n\n- Std_MacroStepOver\n- Std_ToggleBreakpoint",
    "file": "std/Std_MacroStepInto.md"
   },
   "Std_MacroStepOver": {
-   "doc": "This command does not work at this time.\n\n--- ⏵ documentation index > Std MacroStepOver\n\n## See also\n\n- Std_MacroStepInto\n- Std_ToggleBreakpoint",
+   "doc": "This command does not work at this time.\n\n## See also\n\n- Std_MacroStepInto\n- Std_ToggleBreakpoint",
    "file": "std/Std_MacroStepOver.md"
   },
   "Std_MacroStopDebug": {
-   "doc": "This command does not work at this time.\n\n--- ⏵ documentation index > Std MacroStopDebug\n\n## See also\n\n- Std_MacroStartDebug",
+   "doc": "This command does not work at this time.\n\n## See also\n\n- Std_MacroStartDebug",
    "file": "std/Std_MacroStopDebug.md"
   },
   "Std_MainFullscreen": {
-   "doc": "The Std MainFullscreen command toggles FreeCAD\\'s main window fullscreen mode.\n\n## See also\n\n- Std_ViewFullscreen",
+   "doc": "The Std MainFullscreen command toggles FreeCAD's main window fullscreen mode.\n\n## See also\n\n- Std_ViewFullscreen",
    "file": "std/Std_MainFullscreen.md"
   },
   "Std_Measure": {
@@ -3333,7 +3333,7 @@
    "file": "std/Std_OnlineHelpWebsite.md"
   },
   "Std_Open": {
-   "doc": "The Std Open command opens a file. If the file is not a native FreeCAD file (\\*.FCStd) its geometry will be imported into a new document. See Std Import for more information.\n\n## See also\n\n- Std_Import\n- Std_New",
+   "doc": "The Std Open command opens a file. If the file is not a native FreeCAD file (*.FCStd) its geometry will be imported into a new document. See Std Import for more information.\n\n## See also\n\n- Std_Import\n- Std_New",
    "file": "std/Std_Open.md"
   },
   "Std_OpenMacrosFolder": {
@@ -3381,11 +3381,11 @@
    "file": "std/Std_ProjectUtil.md"
   },
   "Std_Properties": {
-   "doc": "The Std Properties command displays the Property view panel. This panel is only available if the Tree view and Property view mode preference is set to {{Value|Independent}}. If the preference is set to {{Value|Combined}}, or if the panel is already visible, this command has no effect.",
+   "doc": "The Std Properties command displays the Property view panel. This panel is only available if the Tree view and Property view mode preference is set to . If the preference is set to , or if the panel is already visible, this command has no effect.",
    "file": "std/Std_Properties.md"
   },
   "Std_PythonHelp": {
-   "doc": "The Std PythonHelp command starts a web server that communicates with the system\\'s default Internet browser over a local socket. The web server displays information about the available Python modules, classes and functions of FreeCAD. The required pages are generated automatically.\n\nThe web server is based on Python\\'s pydoc module, and thus extracts the docstrings of Python files (*.py), and textual documentation defined in the Python wrappers (*.xml) which expose the underlying C++ code.\n\n## See also\n\n- Std_FreeCADPowerUserHub",
+   "doc": "The Std PythonHelp command starts a web server that communicates with the system's default Internet browser over a local socket. The web server displays information about the available Python modules, classes and functions of FreeCAD. The required pages are generated automatically.\n\nThe web server is based on Python's pydoc module, and thus extracts the docstrings of Python files (*.py), and textual documentation defined in the Python wrappers (*.xml) which expose the underlying C++ code.\n\n## See also\n\n- Std_FreeCADPowerUserHub",
    "file": "std/Std_PythonHelp.md"
   },
   "Std_Quit": {
@@ -3397,7 +3397,7 @@
    "file": "std/Std_RandomColor.md"
   },
   "Std_RecallWorkingView": {
-   "doc": "The Std RecallWorkingView recalls the active 3D view\\'s stored working view. For more information see Std StoreWorkingView.\n\n## See also\n\n- Std_StoreWorkingView\n- Std_FreezeViews",
+   "doc": "The Std RecallWorkingView recalls the active 3D view's stored working view. For more information see Std StoreWorkingView.\n\n## See also\n\n- Std_StoreWorkingView\n- Std_FreezeViews",
    "file": "std/Std_RecallWorkingView.md"
   },
   "Std_RecentFiles": {
@@ -3425,7 +3425,7 @@
    "file": "std/Std_ReloadStyleSheet.md"
   },
   "Std_ReportBug": {
-   "doc": "The Std ReportBug command opens the FreeCAD GitHub issues page in the system\\'s default Internet browser. This page should be used to report bug and submit feature requests. The command requires a working Internet connection.\n\nCurrently the command points to .",
+   "doc": "The Std ReportBug command opens the FreeCAD GitHub issues page in the system's default Internet browser. This page should be used to report bug and submit feature requests. The command requires a working Internet connection.\n\nCurrently the command points to .",
    "file": "std/Std_ReportBug.md"
   },
   "Std_RestartInSafeMode": {
@@ -3453,7 +3453,7 @@
    "file": "std/Std_SaveCopy.md"
   },
   "Std_SceneInspector": {
-   "doc": "The Std SceneInspector command opens a dialog box displaying an overview of all nodes in the scenegraph of the active 3D view. It is more a utility for programmers than for average users. It can be used to find out why the rendering is slow or why something isn\\'t rendered properly.",
+   "doc": "The Std SceneInspector command opens a dialog box displaying an overview of all nodes in the scenegraph of the active 3D view. It is more a utility for programmers than for average users. It can be used to find out why the rendering is slow or why something isn't rendered properly.",
    "file": "std/Std_SceneInspector.md"
   },
   "Std_SelBack": {
@@ -3461,7 +3461,7 @@
    "file": "std/Std_SelBack.md"
   },
   "Std_SelBoundingBox": {
-   "doc": "The Std SelBoundingBox command toggles the global bounding box highlighting mode. If this mode is switched on, selected objects are marked in a 3D view with a highlighted bounding box even if their Selection Style is set to \\'Shape\\'.\n\n## See also\n\n- Std_DrawStyle",
+   "doc": "The Std SelBoundingBox command toggles the global bounding box highlighting mode. If this mode is switched on, selected objects are marked in a 3D view with a highlighted bounding box even if their Selection Style is set to 'Shape'.\n\n## See also\n\n- Std_DrawStyle",
    "file": "std/Std_SelBoundingBox.md"
   },
   "Std_SelForward": {
@@ -3477,7 +3477,7 @@
    "file": "std/Std_SelectVisibleObjects.md"
   },
   "Std_SendToPythonConsole": {
-   "doc": "The Std SendToPythonConsole command creates variables in the Python console referencing a selected object and its selected subshapes, along with some other useful references. The variables and the code involved can be used in the development of Python code.\n\nDepending on the selected object and its selected subshapes, if any, the following variables are created:\n\n+++ | Variable name | Referenced object(s) | +=================+=========================================================================================================================================================+ | | The document containing the selected object | | {{Incode|doc}} | | | | | +++ | | The selected Link object (only created if the selected object is a Link) | | {{Incode|lnk}} | | | | | +++ | | Depending on the selected object: | | {{Incode|obj}} | The selected object itself (if the selected object is not a Link) | | | The Linked object (if the selected object is a Link) | +++ | | Depending on the type of {{Incode|obj}}: | | {{Incode|shp}} | The {{Incode|Shape}} property of {{Incode|obj}} (for objects derived from the {{Incode|Part::Feature}} class) | | | The {{Incode|Mesh}} property of {{Incode|obj}} (for Mesh objects) | | | The {{Incode|Points}} property of {{Incode|obj}} (for Points objects) | +++ | | The first selected subshape (only created if at least one subshape is selected) | | {{Incode|sub}} | | | | | +++ | | A list containing all subshapes (only created if two or more subshapes are selected) | | {{Incode|subs}} | | | | | +++\n\n>>> ### Begin command Std_SendToPythonConsole >>> try: >>> del(doc,lnk,obj,shp,sub,subs) >>> except Exception: >>> pass >>> >>> doc = App.getDocument(\"Unnamed\") >>> lnk = doc.getObject(\"Link\") >>> obj = lnk.getLinkedObject() >>> shp = obj.Shape >>> sub = obj.getSubObject(\"Edge10\") >>> subs = [obj.getSubObject(\"Edge10\"),obj.getSubObject(\"Face3\"),obj.getSubObject(\"Vertex5\"),] >>> ### End command Std_SendToPythonConsole",
+   "doc": "The Std SendToPythonConsole command creates variables in the Python console referencing a selected object and its selected subshapes, along with some other useful references. The variables and the code involved can be used in the development of Python code.\n\nDepending on the selected object and its selected subshapes, if any, the following variables are created:\n\n+++ | Variable name | Referenced object(s) | +=================+=========================================================================================================================================================+ | | The document containing the selected object | | | | | | | +++ | | The selected Link object (only created if the selected object is a Link) | | | | | | | +++ | | Depending on the selected object: | | | The selected object itself (if the selected object is not a Link) | | | The Linked object (if the selected object is a Link) | +++ | | Depending on the type of | | | The property of (for objects derived from the class) | | | The property of (for Mesh objects) | | | The property of (for Points objects) | +++ | | The first selected subshape (only created if at least one subshape is selected) | | | | | | | +++ | | A list containing all subshapes (only created if two or more subshapes are selected) | | | | | | | +++\n\n>>> ### Begin command Std_SendToPythonConsole >>> try: >>> del(doc,lnk,obj,shp,sub,subs) >>> except Exception: >>> pass >>> >>> doc = App.getDocument(\"Unnamed\") >>> lnk = doc.getObject(\"Link\") >>> obj = lnk.getLinkedObject() >>> shp = obj.Shape >>> sub = obj.getSubObject(\"Edge10\") >>> subs = [obj.getSubObject(\"Edge10\"),obj.getSubObject(\"Face3\"),obj.getSubObject(\"Vertex5\"),] >>> ### End command Std_SendToPythonConsole",
    "file": "std/Std_SendToPythonConsole.md"
   },
   "Std_SetAppearance": {
@@ -3573,7 +3573,7 @@
    "file": "std/Std_TileWindows.md"
   },
   "Std_ToggleBreakpoint": {
-   "doc": "This command does not work at this time.\n\n--- ⏵ documentation index > Std ToggleBreakpoint\n\n## See also\n\n- Std_MacroStepOver\n- Std_MacroStepInto",
+   "doc": "This command does not work at this time.\n\n## See also\n\n- Std_MacroStepOver\n- Std_MacroStepInto",
    "file": "std/Std_ToggleBreakpoint.md"
   },
   "Std_ToggleClipPlane": {
@@ -3585,7 +3585,7 @@
    "file": "std/Std_ToggleFreeze.md"
   },
   "Std_ToggleNavigation": {
-   "doc": "The Std ToggleNavigation command is intended for certain inspection operations and certain interactive mesh editing operations. These operations are quite \\'expensive\\' and therefore rely on an edit mode during which most navigation options are disabled. With this command it is possible to temporarily switch from edit mode to navigation mode, and, after changing the 3D view, switch back to edit mode.\n\nDo not confuse this command with the Std Edit command.",
+   "doc": "The Std ToggleNavigation command is intended for certain inspection operations and certain interactive mesh editing operations. These operations are quite 'expensive' and therefore rely on an edit mode during which most navigation options are disabled. With this command it is possible to temporarily switch from edit mode to navigation mode, and, after changing the 3D view, switch back to edit mode.\n\nDo not confuse this command with the Std Edit command.",
    "file": "std/Std_ToggleNavigation.md"
   },
   "Std_ToggleObjects": {
@@ -3617,7 +3617,7 @@
    "file": "std/Std_ToolBarMenu.md"
   },
   "Std_Transform": {
-   "doc": "Transforms the selected object.",
+   "doc": "The Std TransformManip command allows you to apply rotation increments and translation increments to an object.\n\n## See also\n\n- Std_UserEditMode",
    "file": "std/Std_Transform.md"
   },
   "Std_TransformManip": {
@@ -3645,7 +3645,7 @@
    "file": "std/Std_TreeMultiDocument.md"
   },
   "Std_TreePreSelection": {
-   "doc": "The Std TreePreSelection command toggles the Tree view PreSelection mode. If this mode is on, an object that the mouse is over in the Tree view will be pre-selectected (temporarily highlighted) in all 3D views belonging to that object\\'s document.",
+   "doc": "The Std TreePreSelection command toggles the Tree view PreSelection mode. If this mode is on, an object that the mouse is over in the Tree view will be pre-selectected (temporarily highlighted) in all 3D views belonging to that object's document.",
    "file": "std/Std_TreePreSelection.md"
   },
   "Std_TreeRecordSelection": {
@@ -3657,7 +3657,7 @@
    "file": "std/Std_TreeSelectAllInstances.md"
   },
   "Std_TreeSelection": {
-   "doc": "The Std TreeSelection command scrolls the Tree view to the first created object in a 3D view selection.\n\nIf the Tree view SyncSelection mode is off, the Tree view is scrolled to the first created object in the selection whose parent is already expanded in the Tree view. If none of the objects\\' parents are expanded the command will have no effect in that mode.",
+   "doc": "The Std TreeSelection command scrolls the Tree view to the first created object in a 3D view selection.\n\nIf the Tree view SyncSelection mode is off, the Tree view is scrolled to the first created object in the selection whose parent is already expanded in the Tree view. If none of the objects' parents are expanded the command will have no effect in that mode.",
    "file": "std/Std_TreeSelection.md"
   },
   "Std_TreeSingleDocument": {
@@ -3677,7 +3677,7 @@
    "file": "std/Std_TreeSyncView.md"
   },
   "Std_TreeViewActions": {
-   "doc": "Tree view behavior options and actions.",
+   "doc": "The Std TreeSyncView command toggles the Tree view SyncView mode. If this mode is on, selecting an object from a different document in the Tree view automatically activates that document's last used docked 3D view.",
    "file": "std/Std_TreeViewActions.md"
   },
   "Std_Undo": {
@@ -3721,7 +3721,7 @@
    "file": "std/Std_ViewDock.md"
   },
   "Std_ViewDockUndockFullscreen": {
-   "doc": "Displays the active view either in fullscreen, undocked, or docked mode.",
+   "doc": "3D views can be undocked from the main FreeCAD interface and moved to a different display for example.\n\n## See also\n\n- Std_ViewFullscreen\n- Std_MainFullscreen",
    "file": "std/Std_ViewDockUndockFullscreen.md"
   },
   "Std_ViewExample1": {
@@ -3741,7 +3741,7 @@
    "file": "std/Std_ViewFitAll.md"
   },
   "Std_ViewFitSelection": {
-   "doc": "The Std ViewFitSelection command zooms and pans the camera so that all selected objects fit inside the active 3D view. This command is useful if for some reason objects are beyond the boundaries of the current 3D View or can\\'t easily be found using 3D navigation.\n\n## See also\n\n- Std_ViewFitAll",
+   "doc": "The Std ViewFitSelection command zooms and pans the camera so that all selected objects fit inside the active 3D view. This command is useful if for some reason objects are beyond the boundaries of the current 3D View or can't easily be found using 3D navigation.\n\n## See also\n\n- Std_ViewFitAll",
    "file": "std/Std_ViewFitSelection.md"
   },
   "Std_ViewFront": {
@@ -3753,7 +3753,7 @@
    "file": "std/Std_ViewFullscreen.md"
   },
   "Std_ViewGroup": {
-   "doc": "Changes to a standard view.",
+   "doc": "The Std View Menu is one of the 7 sub-menus in the standard menu:\n\nThe View menu provides tools to change the 3D view and the view properties of objects in the model, and tools related to the display of interface components.",
    "file": "std/Std_ViewGroup.md"
   },
   "Std_ViewHome": {
@@ -3925,11 +3925,11 @@
    "file": "techdraw/TechDraw_AngleDimension.md"
   },
   "TechDraw_Annotation": {
-   "doc": "Inserts an editable text block annotation to the current page.",
+   "doc": "The TechDraw Annotation tool adds a text block to a drawing page.\n\n## See also\n\n- TechDraw_RichTextAnnotation",
    "file": "techdraw/TechDraw_Annotation.md"
   },
   "TechDraw_ArchView": {
-   "doc": "Inserts a view of a BIM section plane.",
+   "doc": "The TechDraw ArchView tool inserts an Arch View, a view of an Arch SectionPlane, on a TechDraw page. The TechDraw View tool can also create an Arch View.\n\n## See also\n\n- Arch_SectionPlane",
    "file": "techdraw/TechDraw_ArchView.md"
   },
   "TechDraw_AreaDimension": {
@@ -3945,7 +3945,7 @@
    "file": "techdraw/TechDraw_Balloon.md"
   },
   "TechDraw_BrokenView": {
-   "doc": "The TechDraw BrokenView tool inserts a \\\"broken view\\\" that is either based on an existing part view, or one or more objects, such as Bodies or Parts. The broken view also requires one or more sketches that define the location and size of the areas to be removed. The BrokenView behaves similarly to other Views. The projection direction is taken from the existing part view, the 3D camera direction or the normal of a selected face.\n\n## See also\n\n- TechDraw_View",
+   "doc": "The TechDraw BrokenView tool inserts a \"broken view\" that is either based on an existing part view, or one or more objects, such as Bodies or Parts. The broken view also requires one or more sketches that define the location and size of the areas to be removed. The BrokenView behaves similarly to other Views. The projection direction is taken from the existing part view, the 3D camera direction or the normal of a selected face.\n\n## See also\n\n- TechDraw_View",
    "file": "techdraw/TechDraw_BrokenView.md"
   },
   "TechDraw_CenterLineGroup": {
@@ -4005,7 +4005,7 @@
    "file": "techdraw/TechDraw_DetailView.md"
   },
   "TechDraw_DiameterDimension": {
-   "doc": "The TechDraw DiameterDimension tool adds a diameter dimension to a View. The dimension may be applied to any edge which is a circle or circular arc.\n\nFor more information see TechDraw RadiusDimension.\n\n{{TechDraw Tools navi}}\n\n--- ⏵ documentation index > TechDraw > TechDraw DiameterDimension\n\n## See also\n\n- TechDraw_RadiusDimension",
+   "doc": "The TechDraw DiameterDimension tool adds a diameter dimension to a View. The dimension may be applied to any edge which is a circle or circular arc.\n\nFor more information see TechDraw RadiusDimension.\n\n## See also\n\n- TechDraw_RadiusDimension",
    "file": "techdraw/TechDraw_DiameterDimension.md"
   },
   "TechDraw_Dimension": {
@@ -4013,11 +4013,11 @@
    "file": "techdraw/TechDraw_Dimension.md"
   },
   "TechDraw_DimensionRepair": {
-   "doc": "The TechDraw DimensionRepair tool can adjust the 2D or 3D geometry references of a dimension. These references may become incorrect due to the \\\"topological naming problem\\\" or Hidden Line Removal.\n\nSee TechDraw LengthDimension for more on dimensions and the topological naming problem.\n\n## See also\n\n- TechDraw_LengthDimension",
+   "doc": "The TechDraw DimensionRepair tool can adjust the 2D or 3D geometry references of a dimension. These references may become incorrect due to the \"topological naming problem\" or Hidden Line Removal.\n\nSee TechDraw LengthDimension for more on dimensions and the topological naming problem.\n\n## See also\n\n- TechDraw_LengthDimension",
    "file": "techdraw/TechDraw_DimensionRepair.md"
   },
   "TechDraw_DraftView": {
-   "doc": "Inserts a view of a Draft object.",
+   "doc": "The TechDraw DraftView tool inserts a view of a selected Part-based or Group object into a drawing page. Unlike the standard View tool, views created with this tool are handled by the Draft Workbench, and specially designed for showing 2D objects. See Notes.\n\n## See also\n\n- TechDraw_ArchView",
    "file": "techdraw/TechDraw_DraftView.md"
   },
   "TechDraw_ExportPageDXF": {
@@ -4157,7 +4157,7 @@
    "file": "techdraw/TechDraw_ExtensionIncreaseDecreaseGroup.md"
   },
   "TechDraw_ExtensionInsertDiameter": {
-   "doc": "The TechDraw ExtensionInsertDiameter tool inserts a \\'⌀\\' symbol at the beginning of the dimension text.\n\n## See also\n\n- TechDraw_ExtensionInsertSquare\n- TechDraw_ExtensionInsertRepetition",
+   "doc": "The TechDraw ExtensionInsertDiameter tool inserts a '⌀' symbol at the beginning of the dimension text.\n\n## See also\n\n- TechDraw_ExtensionInsertSquare\n- TechDraw_ExtensionInsertRepetition",
    "file": "techdraw/TechDraw_ExtensionInsertDiameter.md"
   },
   "TechDraw_ExtensionInsertPrefixGroup": {
@@ -4169,7 +4169,7 @@
    "file": "techdraw/TechDraw_ExtensionInsertRepetition.md"
   },
   "TechDraw_ExtensionInsertSquare": {
-   "doc": "The TechDraw ExtensionInsertSquare tool inserts a \\'□\\' symbol at the beginning of the dimension text.\n\n## See also\n\n- TechDraw_ExtensionInsertDiameter\n- TechDraw_ExtensionInsertRepetition",
+   "doc": "The TechDraw ExtensionInsertSquare tool inserts a '□' symbol at the beginning of the dimension text.\n\n## See also\n\n- TechDraw_ExtensionInsertDiameter\n- TechDraw_ExtensionInsertRepetition",
    "file": "techdraw/TechDraw_ExtensionInsertSquare.md"
   },
   "TechDraw_ExtensionLinePPGroup": {
@@ -4269,7 +4269,7 @@
    "file": "techdraw/TechDraw_HoleShaftFit.md"
   },
   "TechDraw_HorizontalDimension": {
-   "doc": "The TechDraw HorizontalDimension tool adds a horizontal dimension to a View. The dimension may be the horizontal distance between two points or the horizontal length of a straight edge. As with the TechDraw LengthDimension tool it is also possible to select two edges or a point and an edge, but these options make less sense for this tool.\n\nFor more information see TechDraw LengthDimension.\n\n{{TechDraw Tools navi}}\n\n--- ⏵ documentation index > TechDraw > TechDraw HorizontalDimension\n\n## See also\n\n- TechDraw_LengthDimension\n- TechDraw_VerticalDimension",
+   "doc": "The TechDraw HorizontalDimension tool adds a horizontal dimension to a View. The dimension may be the horizontal distance between two points or the horizontal length of a straight edge. As with the TechDraw LengthDimension tool it is also possible to select two edges or a point and an edge, but these options make less sense for this tool.\n\nFor more information see TechDraw LengthDimension.\n\n## See also\n\n- TechDraw_LengthDimension\n- TechDraw_VerticalDimension",
    "file": "techdraw/TechDraw_HorizontalDimension.md"
   },
   "TechDraw_HorizontalExtentDimension": {
@@ -4345,7 +4345,7 @@
    "file": "techdraw/TechDraw_ShareView.md"
   },
   "TechDraw_ShowAll": {
-   "doc": "The TechDraw ShowAll tool is intended to temporarily show, and then hide, invisible lines in a View. Lines can be made invisible with the TechDraw DecorateLine tool. Note that \\\"invisible\\\" is a cosmetic state, not to be confused with hidden lines which are geometric constructs.\n\n## See also\n\n- TechDraw_DecorateLine",
+   "doc": "The TechDraw ShowAll tool is intended to temporarily show, and then hide, invisible lines in a View. Lines can be made invisible with the TechDraw DecorateLine tool. Note that \"invisible\" is a cosmetic state, not to be confused with hidden lines which are geometric constructs.\n\n## See also\n\n- TechDraw_DecorateLine",
    "file": "techdraw/TechDraw_ShowAll.md"
   },
   "TechDraw_SpreadsheetView": {
@@ -4353,11 +4353,11 @@
    "file": "techdraw/TechDraw_SpreadsheetView.md"
   },
   "TechDraw_StackBottom": {
-   "doc": "The TechDraw StackBottom tool moves Views to the bottom of the stacking order. The stacking order controls the apparent depth of Views on a page.\n\nSee TechDraw StackTop.\n\n{{TechDraw Tools navi}}\n\n--- ⏵ documentation index > TechDraw > TechDraw StackBottom\n\n## See also\n\n- TechDraw_StackTop\n- TechDraw_StackUp\n- TechDraw_StackDown",
+   "doc": "The TechDraw StackBottom tool moves Views to the bottom of the stacking order. The stacking order controls the apparent depth of Views on a page.\n\nSee TechDraw StackTop.\n\n## See also\n\n- TechDraw_StackTop\n- TechDraw_StackUp\n- TechDraw_StackDown",
    "file": "techdraw/TechDraw_StackBottom.md"
   },
   "TechDraw_StackDown": {
-   "doc": "The TechDraw StackDown tool moves Views down one level in the stacking order. The stacking order controls the apparent depth of Views on a page.\n\nSee TechDraw StackTop.\n\n{{TechDraw_Tools_navi}}\n\n--- ⏵ documentation index > TechDraw > TechDraw StackDown\n\n## See also\n\n- TechDraw_StackTop\n- TechDraw_StackBottom\n- TechDraw_StackUp",
+   "doc": "The TechDraw StackDown tool moves Views down one level in the stacking order. The stacking order controls the apparent depth of Views on a page.\n\nSee TechDraw StackTop.\n\n## See also\n\n- TechDraw_StackTop\n- TechDraw_StackBottom\n- TechDraw_StackUp",
    "file": "techdraw/TechDraw_StackDown.md"
   },
   "TechDraw_StackGroup": {
@@ -4369,7 +4369,7 @@
    "file": "techdraw/TechDraw_StackTop.md"
   },
   "TechDraw_StackUp": {
-   "doc": "The TechDraw StackUp tool moves Views up one level in the stacking order. The stacking order controls the apparent depth of Views on a page.\n\nSee TechDraw StackTop.\n\n{{TechDraw Tools navi}}\n\n--- ⏵ documentation index > TechDraw > TechDraw StackUp\n\n## See also\n\n- TechDraw_StackTop\n- TechDraw_StackBottom\n- TechDraw_StackDown",
+   "doc": "The TechDraw StackUp tool moves Views up one level in the stacking order. The stacking order controls the apparent depth of Views on a page.\n\nSee TechDraw StackTop.\n\n## See also\n\n- TechDraw_StackTop\n- TechDraw_StackBottom\n- TechDraw_StackDown",
    "file": "techdraw/TechDraw_StackUp.md"
   },
   "TechDraw_SurfaceFinishSymbols": {
@@ -4377,23 +4377,23 @@
    "file": "techdraw/TechDraw_SurfaceFinishSymbols.md"
   },
   "TechDraw_Symbol": {
-   "doc": "The TechDraw Symbol tool inserts a Symbol object. A Symbol is a stripped down view that contains only a single SVG file complying with the svg-tiny specification (see TechDraw Templates).\n\nA Symbol can be anything that helps annotate a drawing and that doesn\\'t need to be further modified, it may however contain editable texts. The TechDraw View tool can also create a Symbol.\n\n## See also\n\n- TechDraw_Templates\n- Draft_SVG",
+   "doc": "The TechDraw Symbol tool inserts a Symbol object. A Symbol is a stripped down view that contains only a single SVG file complying with the svg-tiny specification (see TechDraw Templates).\n\nA Symbol can be anything that helps annotate a drawing and that doesn't need to be further modified, it may however contain editable texts. The TechDraw View tool can also create a Symbol.\n\n## See also\n\n- TechDraw_Templates\n- Draft_SVG",
    "file": "techdraw/TechDraw_Symbol.md"
   },
   "TechDraw_ToggleFrame": {
-   "doc": "Toggles visibility of view frames and vertices.",
+   "doc": "The TechDraw ToggleFrame tool turns the display of View frames, labels and vertices on or off.\n\n## See also\n\n- TechDraw_View",
    "file": "techdraw/TechDraw_ToggleFrame.md"
   },
   "TechDraw_VerticalDimension": {
-   "doc": "The TechDraw VerticalDimension tool adds a vertical dimension to a View. The dimension may be the vertical distance between two points or the vertical length of a straight edge. As with the TechDraw LengthDimension tool it is also possible to select two edges or a point and an edge, but these options make less sense for this tool.\n\nFor more information see TechDraw LengthDimension.\n\n{{TechDraw Tools navi}}\n\n--- ⏵ documentation index > TechDraw > TechDraw VerticalDimension\n\n## See also\n\n- TechDraw_LengthDimension\n- TechDraw_HorizontalDimension",
+   "doc": "The TechDraw VerticalDimension tool adds a vertical dimension to a View. The dimension may be the vertical distance between two points or the vertical length of a straight edge. As with the TechDraw LengthDimension tool it is also possible to select two edges or a point and an edge, but these options make less sense for this tool.\n\nFor more information see TechDraw LengthDimension.\n\n## See also\n\n- TechDraw_LengthDimension\n- TechDraw_HorizontalDimension",
    "file": "techdraw/TechDraw_VerticalDimension.md"
   },
   "TechDraw_VerticalExtentDimension": {
-   "doc": "The TechDraw VerticalExtentDimension tool adds a linear dimension to a View. The dimension extends from the bottom most point on the selected objects to the top most point.\n\nFor more information see TechDraw HorizontalExtentDimension.\n\n{{TechDraw_Tools_navi}}\n\n--- ⏵ documentation index > TechDraw > TechDraw VerticalExtentDimension\n\n## See also\n\n- TechDraw_LengthDimension\n- TechDraw_HorizontalExtentDimension",
+   "doc": "The TechDraw VerticalExtentDimension tool adds a linear dimension to a View. The dimension extends from the bottom most point on the selected objects to the top most point.\n\nFor more information see TechDraw HorizontalExtentDimension.\n\n## See also\n\n- TechDraw_LengthDimension\n- TechDraw_HorizontalExtentDimension",
    "file": "techdraw/TechDraw_VerticalExtentDimension.md"
   },
   "TechDraw_View": {
-   "doc": "The TechDraw View tool adds a representation of one or more objects to a Drawing page. It can create a Projection Group Item (a single view), a Projection Group, a Spreadsheet View, an Arch View, a Symbol or an Image View.\n\nIn {{VersionMinus|0.21}} the tool can only create a Part View, which is very similar to a Projection Group Item.\n\n## See also\n\n- TechDraw_ProjectionGroup\n- TechDraw_SpreadsheetView\n- TechDraw_ArchView\n- TechDraw_Symbol\n- TechDraw_Image",
+   "doc": "The TechDraw View tool adds a representation of one or more objects to a Drawing page. It can create a Projection Group Item (a single view), a Projection Group, a Spreadsheet View, an Arch View, a Symbol or an Image View.\n\nIn the tool can only create a Part View, which is very similar to a Projection Group Item.\n\n## See also\n\n- TechDraw_ProjectionGroup\n- TechDraw_SpreadsheetView\n- TechDraw_ArchView\n- TechDraw_Symbol\n- TechDraw_Image",
    "file": "techdraw/TechDraw_View.md"
   },
   "TechDraw_WeldSymbol": {

@@ -23,8 +23,6 @@ type: null
 
 The BIM Copy tool is a shortcut to the standard Draft Move tool, but starting with its Copy option turned on, therefore allowing to create a copy of an object and place it at a given location, in one go.
 
---- ⏵ documentation index > BIM > BIM Copy
-
 ## See also
 
 - Draft_Move

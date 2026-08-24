@@ -23,7 +23,8 @@ type: null
 
 The Part Section command creates wire geometry at the intersections of two objects. The result is fully parametric.
 
-- An intersection of two solids/faces results in one or more section lines. - An intersection of two lines, or a line and a solid/face, results in one or more points.
+- An intersection of two solids/faces results in one or more section lines.
+- An intersection of two lines, or a line and a solid/face, results in one or more points.
 
 ## See also
 

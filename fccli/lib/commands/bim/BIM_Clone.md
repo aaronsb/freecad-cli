@@ -23,8 +23,6 @@ type: null
 
 The BIM Clone tool is a shortcut to the standard Draft Clone tool, but launches a Draft Move command just after cloning, thus allowing you to clone and place the cloned object somewhere else in the model in one go.
 
---- ⏵ documentation index > BIM > BIM Clone
-
 ## See also
 
 - Draft_Clone

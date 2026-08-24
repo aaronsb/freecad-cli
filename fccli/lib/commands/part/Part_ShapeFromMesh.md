@@ -21,4 +21,12 @@ rank: null
 type: null
 ---
 
-Creates a shape from the selected mesh.
+The Part ShapeFromMesh command creates shapes from mesh objects. Mesh objects have limited editing capabilities in FreeCAD, converting them to shapes will allow their use with many more boolean and modification commands.
+
+The inverse operation is Mesh FromPartShape from the Mesh Workbench.
+
+## See also
+
+- Part_MakeSolid
+- Part_RefineShape
+- Part_PointsFromMesh

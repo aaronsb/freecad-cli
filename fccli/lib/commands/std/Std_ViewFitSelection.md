@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Std ViewFitSelection command zooms and pans the camera so that all selected objects fit inside the active 3D view. This command is useful if for some reason objects are beyond the boundaries of the current 3D View or can\'t easily be found using 3D navigation.
+The Std ViewFitSelection command zooms and pans the camera so that all selected objects fit inside the active 3D view. This command is useful if for some reason objects are beyond the boundaries of the current 3D View or can't easily be found using 3D navigation.
 
 ## See also
 

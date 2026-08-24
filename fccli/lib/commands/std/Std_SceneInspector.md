@@ -21,4 +21,4 @@ rank: null
 type: null
 ---
 
-The Std SceneInspector command opens a dialog box displaying an overview of all nodes in the scenegraph of the active 3D view. It is more a utility for programmers than for average users. It can be used to find out why the rendering is slow or why something isn\'t rendered properly.
+The Std SceneInspector command opens a dialog box displaying an overview of all nodes in the scenegraph of the active 3D view. It is more a utility for programmers than for average users. It can be used to find out why the rendering is slow or why something isn't rendered properly.

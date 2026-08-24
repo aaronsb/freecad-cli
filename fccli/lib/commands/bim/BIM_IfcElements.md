@@ -25,6 +25,7 @@ The IFC Elements Manager dialog allows you to manage names, IFC types and materi
 
 With it, you can:
 
-- Sort objects alphabetically, by material, by IFC type or according to the model structure. You can also show all or only the currently visible objects - Rename objects by double-clicking their name - Change their IFC type either by clicking an individual type or, if more than one is selected, using the \"change type to:\" drop-down menu - Change their material either by clicking an individual material or, if more than one is selected, using the \"change material to:\" drop-down menu
-
---- ⏵ documentation index > BIM > BIM IfcElements
+- Sort objects alphabetically, by material, by IFC type or according to the model structure. You can also show all or only the currently visible objects
+- Rename objects by double-clicking their name
+- Change their IFC type either by clicking an individual type or, if more than one is selected, using the "change type to:" drop-down menu
+- Change their material either by clicking an individual material or, if more than one is selected, using the "change material to:" drop-down menu

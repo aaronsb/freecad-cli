@@ -22,5 +22,3 @@ type: null
 ---
 
 The BIM WPView tool centers the view on the current working plane.
-
---- ⏵ documentation index > BIM > BIM WPView

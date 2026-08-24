@@ -23,4 +23,4 @@ type: null
 
 The Std About command opens a dialog box that shows information about the FreeCAD program.
 
-'''ATTENTION''': Do not take a screenshot of this dialog box! Instead press the Copy to clipboard button and then paste the information in your help request.
+ATTENTION: Do not take a screenshot of this dialog box! Instead press the Copy to clipboard button and then paste the information in your help request.

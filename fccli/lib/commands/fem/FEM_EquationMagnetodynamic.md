@@ -21,11 +21,11 @@ rank: null
 type: null
 ---
 
-This equation perform analyses using the Maxwell\'s equations.
+This equation perform analyses using the Maxwell's equations.
 
 For info about the math of the equation, see the Elmer models manual, section *Computation of Magnetic Fields in 3D*.
 
-If it is possible to calculate in 2D, simpler math can be used resulting in faster solving times. For 2D, FreeCAD supports therefore Elmer\'s Magnetodynamic 2D equation.
+If it is possible to calculate in 2D, simpler math can be used resulting in faster solving times. For 2D, FreeCAD supports therefore Elmer's Magnetodynamic 2D equation.
 
 ## See also
 

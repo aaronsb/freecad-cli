@@ -36,7 +36,7 @@ test:  ## Run the test suite (offscreen, no FreeCAD GUI needed)
 	@QT_QPA_PLATFORM=offscreen python3 tests/offscreen.py
 
 .PHONY: lint
-lint:  ## Byte-compile everything, and check the decision records
+lint:  ## Byte-compile, check the decision records, lint the command tree
 	@python3 -m compileall -q fccli tools tests InitGui.py Init.py bin/fccli \
 	  && echo "compiles clean"
 	@docs/scripts/adr lint --check

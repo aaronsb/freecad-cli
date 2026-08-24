@@ -21,6 +21,6 @@ rank: null
 type: null
 ---
 
-The Std ReportBug command opens the FreeCAD GitHub issues page in the system\'s default Internet browser. This page should be used to report bug and submit feature requests. The command requires a working Internet connection.
+The Std ReportBug command opens the FreeCAD GitHub issues page in the system's default Internet browser. This page should be used to report bug and submit feature requests. The command requires a working Internet connection.
 
 Currently the command points to .

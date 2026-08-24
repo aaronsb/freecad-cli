@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The TechDraw DimensionRepair tool can adjust the 2D or 3D geometry references of a dimension. These references may become incorrect due to the \"topological naming problem\" or Hidden Line Removal.
+The TechDraw DimensionRepair tool can adjust the 2D or 3D geometry references of a dimension. These references may become incorrect due to the "topological naming problem" or Hidden Line Removal.
 
 See TechDraw LengthDimension for more on dimensions and the topological naming problem.
 

@@ -25,7 +25,9 @@ The Sketcher MapSketch tool attaches a sketch to selected geometry.
 
 Typical use cases are:
 
-- The sketch was created on a standard plane (XY, XZ or YZ) and you want to attach it to the face of a solid in order to build a new feature upon it. - The sketch was attached to a specific face of a solid but you need to attached it to a different face. - A broken model needs to be repaired.
+- The sketch was created on a standard plane (XY, XZ or YZ) and you want to attach it to the face of a solid in order to build a new feature upon it.
+- The sketch was attached to a specific face of a solid but you need to attached it to a different face.
+- A broken model needs to be repaired.
 
 ## See also
 

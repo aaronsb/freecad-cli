@@ -23,4 +23,4 @@ type: null
 
 The Sketcher CarbonCopy tool copies all geometry and constraints from another sketch into the active sketch.
 
-Dimensional constraints which exist before the copy function remain linked to the original sketch\'s dimensional constraints through expressions.
+Dimensional constraints which exist before the copy function remain linked to the original sketch's dimensional constraints through expressions.

@@ -22,7 +22,3 @@ type: null
 ---
 
 The Std Expressions command copies expression data to and from the Clipboard. The data references the names of objects and documents and can only be used in that context.
-
-{{Code|lang=text|code= ##@@ Height Unnamed#Cylinder.ExpressionEngine (Cylinder) ##@@ Box.Width
-
-##@@ Radius Unnamed#Cylinder.ExpressionEngine (Cylinder) ##@@ Box.Length }} *Example Clipboard data*

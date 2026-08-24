@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Std FreeCADUserHub command opens the FreeCAD Users documentation page in the system\'s default Internet browser. The command requires a working Internet connection.
+The Std FreeCADUserHub command opens the FreeCAD Users documentation page in the system's default Internet browser. The command requires a working Internet connection.
 
 Currently the command points to .
 

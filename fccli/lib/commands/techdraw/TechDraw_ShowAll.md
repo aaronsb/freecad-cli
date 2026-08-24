@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The TechDraw ShowAll tool is intended to temporarily show, and then hide, invisible lines in a View. Lines can be made invisible with the TechDraw DecorateLine tool. Note that \"invisible\" is a cosmetic state, not to be confused with hidden lines which are geometric constructs.
+The TechDraw ShowAll tool is intended to temporarily show, and then hide, invisible lines in a View. Lines can be made invisible with the TechDraw DecorateLine tool. Note that "invisible" is a cosmetic state, not to be confused with hidden lines which are geometric constructs.
 
 ## See also
 

@@ -25,10 +25,6 @@ The TechDraw DiameterDimension tool adds a diameter dimension to a View. The dim
 
 For more information see TechDraw RadiusDimension.
 
-{{TechDraw Tools navi}}
-
---- ⏵ documentation index > TechDraw > TechDraw DiameterDimension
-
 ## See also
 
 - TechDraw_RadiusDimension

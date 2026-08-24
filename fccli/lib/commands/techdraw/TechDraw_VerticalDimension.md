@@ -25,10 +25,6 @@ The TechDraw VerticalDimension tool adds a vertical dimension to a View. The dim
 
 For more information see TechDraw LengthDimension.
 
-{{TechDraw Tools navi}}
-
---- ⏵ documentation index > TechDraw > TechDraw VerticalDimension
-
 ## See also
 
 - TechDraw_LengthDimension

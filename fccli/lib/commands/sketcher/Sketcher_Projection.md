@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Sketcher Projection tool projects edges and/or vertices belonging to objects outside the sketch onto the sketch plane. The projected geometry is called \"external geometry\". It stays parametrically linked to its source objects. External geometry is marked with a dedicated color (default magenta) and linetype. It can be defining geometry that is visible outside the sketch or construction geometry that is not visible outside the sketch.
+The Sketcher Projection tool projects edges and/or vertices belonging to objects outside the sketch onto the sketch plane. The projected geometry is called "external geometry". It stays parametrically linked to its source objects. External geometry is marked with a dedicated color (default magenta) and linetype. It can be defining geometry that is visible outside the sketch or construction geometry that is not visible outside the sketch.
 
 ## See also
 

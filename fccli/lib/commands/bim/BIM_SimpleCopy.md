@@ -21,4 +21,10 @@ rank: null
 type: null
 ---
 
-Creates a simple non-parametric copy.
+The Part SimpleCopy command creates non-parametric copies of objects.
+
+## See also
+
+- Part_TransformedCopy
+- Std_Copy
+- Std_DuplicateSelection

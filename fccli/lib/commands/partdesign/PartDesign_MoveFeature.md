@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-Move object to other body, as this command is labeled in the context menu, allows moving objects under a Body to another Body. The moved object is placed right below the other Body\'s tip. Sketches, datum geometry and features are supported.
+Move object to other body, as this command is labeled in the context menu, allows moving objects under a Body to another Body. The moved object is placed right below the other Body's tip. Sketches, datum geometry and features are supported.
 
 ## See also
 

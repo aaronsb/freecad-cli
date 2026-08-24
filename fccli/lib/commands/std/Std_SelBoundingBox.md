@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Std SelBoundingBox command toggles the global bounding box highlighting mode. If this mode is switched on, selected objects are marked in a 3D view with a highlighted bounding box even if their Selection Style is set to \'Shape\'.
+The Std SelBoundingBox command toggles the global bounding box highlighting mode. If this mode is switched on, selected objects are marked in a 3D view with a highlighted bounding box even if their Selection Style is set to 'Shape'.
 
 ## See also
 

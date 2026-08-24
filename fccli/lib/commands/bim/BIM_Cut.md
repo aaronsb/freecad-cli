@@ -21,4 +21,12 @@ rank: null
 type: null
 ---
 
-Creates a difference between two shapes.
+The Part Cut tool cuts (subtracts) selected Part objects, the last one being subtracted from the first one. This operation is fully parametric and the components can be modified and the result recomputed.
+
+This tool is an automated form of the Boolean operation.
+
+## See also
+
+- Part_Boolean
+- Part_Fuse
+- Part_Common

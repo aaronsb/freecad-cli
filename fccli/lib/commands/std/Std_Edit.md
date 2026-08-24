@@ -21,7 +21,7 @@ rank: null
 type: null
 ---
 
-The Std Edit command activates or deactivates an object\'s edit mode.
+The Std Edit command activates or deactivates an object's edit mode.
 
 ## See also
 

@@ -27,7 +27,7 @@ AUTHORED = {
     "aliases": [],
     "requires": [],
     "panel": None,
-    "family": None,
+    "family": None,     # a name joins that family; false keeps it out of any
     "choice": None,
     "rank": None,
     "type": None,
@@ -65,7 +65,11 @@ def _scalar(value):
         return "true" if value else "false"
     if isinstance(value, (int, float)):
         return str(value)
-    return json.dumps(value, ensure_ascii=False)
+    text = json.dumps(value, ensure_ascii=False)
+    # JSON leaves C1 controls and the two non-characters raw; YAML refuses
+    # them. Escape what json.dumps did not.
+    return re.sub(r"[\x7f-\x9f\ufffe\uffff]",
+                  lambda m: "\\u%04x" % ord(m.group()), text)
 
 
 def render(command, generated, authored, body):
@@ -121,6 +125,8 @@ def walk(root):
 
 
 def authored_of(front):
-    """The authored fields of a parsed frontmatter, defaults filled in."""
-    return {k: front.get(k, d) if front.get(k) is not None else d
+    """The authored fields of a parsed frontmatter, defaults filled in.
+    `family: false` is a value -- it keeps the command out of any family
+    -- so only None falls to the default."""
+    return {k: front.get(k) if front.get(k) is not None else d
             for k, d in AUTHORED.items()}

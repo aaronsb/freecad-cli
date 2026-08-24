@@ -21,4 +21,10 @@ rank: null
 type: null
 ---
 
-Create a compound of several shapes.
+This command creates a compound of objects with a topological shape such as solid objects and other objects with faces and/or edges. It cannot handle meshes as they do not have a topological shape.
+
+## See also
+
+- Part_Fuse
+- Part_CompoundFilter
+- Part_ExplodeCompound

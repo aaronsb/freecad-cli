@@ -23,11 +23,18 @@ type: null
 
 The Arch Survey tool enters a special surveying mode, which allows you to quickly grab measurements and information from a model, and transfer that information to other applications. Once you are in Survey mode, clicking on different subelements of 3D objects gathers the following information (depending on what you click):
 
-- If you click on an edge, you get its length - If you click on a vertex, you get its height (coordinate on the Z axis) - If you click on a face, you get its area - If you double-click anything, therefore select the whole object, you get its volume
+- If you click on an edge, you get its length
+- If you click on a vertex, you get its height (coordinate on the Z axis)
+- If you click on a face, you get its area
+- If you double-click anything, therefore select the whole object, you get its volume
 
 When such a piece of information is gathered, several things happen:
 
-- A label is placed on top of the element you clicked, that displays the value (with \"a\" for area, \"l\" for length, \"z\" for height, or \"v\" for volume) - The numeric value is copied to the clipboard, so you can paste it in another application - A line is printed on the FreeCAD output window. After you exit the survey mode, those lines can be copied and pasted in another application (the values are comma-separated, making it easy to convert to spreadsheet data) - The total length or area of the elements you clicked so far is also printed in the output window - Each length or area is also recorded in the task dialog
+- A label is placed on top of the element you clicked, that displays the value (with "a" for area, "l" for length, "z" for height, or "v" for volume)
+- The numeric value is copied to the clipboard, so you can paste it in another application
+- A line is printed on the FreeCAD output window. After you exit the survey mode, those lines can be copied and pasted in another application (the values are comma-separated, making it easy to convert to spreadsheet data)
+- The total length or area of the elements you clicked so far is also printed in the output window
+- Each length or area is also recorded in the task dialog
 
 ## See also
 
