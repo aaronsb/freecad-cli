@@ -7,7 +7,8 @@
 - **239 commands get their workbench.** The harvest snapshots
   `listCommands()` before activating anything, so whatever the startup
   workbench had already loaded -- Sketcher, Part and Part Design on a
-  machine that starts in Part Design -- was credited to no workbench, and
+  machine that starts in Part Design, and one Material command -- was
+  credited to no workbench, and
   the stem repair that fixes misattribution only ran over commands the loop
   had attributed. It now runs over every command. Std keeps none, which is
   true. The test that asserted `Part_Box` had no workbench was asserting

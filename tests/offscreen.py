@@ -1406,7 +1406,7 @@ def _run():
                 and (_by_stem.get(n.split("_", 1)[0].lower() + "workbench")
                      or _by_stem.get(n.split("_", 1)[0].lower()))]
     check("  every command whose stem names a workbench carries it",
-          _orphans[:5], [])
+          (len(_orphans), _orphans[:5]), (0, []))
 
     # The check that would have caught it. 148 commands reached the
     # descriptor carrying only a name, because the harvest read everything
