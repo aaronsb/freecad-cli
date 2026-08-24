@@ -722,6 +722,28 @@ def _run():
     check("choices are not offered for a name a verb does not own",
           curated.choice_groups("close", REGISTRY.get("close")), [])
 
+    # `made by` used to take the first claimant in registry order, so every
+    # Draft line was reported as made by point -- both are hand-written and
+    # both build a Part::FeaturePython, and nothing about the type says
+    # which. A verb somebody wrote answers over one the factory generated
+    # for the same type; where that still leaves several, it says nothing.
+    check("a hand-written verb is recognised as authored",
+          _cur.authored(REGISTRY.get("box")), True)
+    check("  and a generated one is not",
+          _cur.authored(REGISTRY.get("sketcher_bsplinedegree")), False)
+    from fccli.shell import _verb_for_type as _made_by
+    check("an unambiguous type names its verb",
+          _made_by("Part::Box"), "box")
+    _shared = [n for n in REGISTRY.names()
+               if REGISTRY.get(n).creates == "Part::FeaturePython"
+               and _cur.authored(REGISTRY.get(n))]
+    check("more than one hand-written verb builds Part::FeaturePython",
+          len(_shared) > 1, True)
+    check("  so the type does not name one", _made_by("Part::FeaturePython"),
+          None)
+    check("an unknown type names nothing", _made_by("No::Such"), None)
+    check("and neither does no type at all", _made_by(None), None)
+
     # An addon's own verb. Patches are imported by path under a synthetic
     # module name, so the old test for one -- "patches" in the module --
     # matched nothing the loader has ever produced, and a verb an addon

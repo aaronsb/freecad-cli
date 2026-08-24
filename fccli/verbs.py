@@ -110,7 +110,10 @@ def _diameter(engine):
 # ------------------------------------------------------------------- verbs
 
 REGISTRY.add(Verb(
-    name="line", creates="Part::Part2DObjectPython", aliases=["l"], gui_command="Draft_Line",
+    # Draft wraps a line in a Part::FeaturePython, not the 2D object type
+    # this used to declare -- which no object it makes has ever had, so
+    # `check line` named a type that never appears in a document.
+    name="line", creates="Part::FeaturePython", aliases=["l"], gui_command="Draft_Line",
     doc="Draw a line between two points.",
     steps=[
         Step("start", POINT, "Start of line"),

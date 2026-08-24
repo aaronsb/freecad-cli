@@ -21,6 +21,19 @@ having run one command, the neighbours are what FreeCAD put next to it.
 """
 
 # How prominently FreeCAD presents a command, lowest first.
+def authored(verb):
+    """Whether a person wrote this verb, rather than the factory generating it.
+
+    Rank cannot answer this: a generated launcher for a command FreeCAD
+    puts in a toolbar ranks PROMOTED too, so `box` and the re-homed
+    `part_box` beside it are indistinguishable by rank alone.
+    """
+    if verb is None:
+        return False
+    module = getattr(verb.emit, "__module__", "")
+    return module.endswith((".verbs", ".shell")) or _authored(module)
+
+
 def _authored(module):
     """Whether a patch module wrote this verb, rather than the factory.
 
@@ -91,8 +104,7 @@ class Curation:
         """
         if verb is None:
             return REGISTRY
-        module = getattr(verb.emit, "__module__", "")
-        if module.endswith((".verbs", ".shell")) or _authored(module):
+        if authored(verb):
             return PROMOTED
         command = getattr(verb, "gui_command", None)
         if command:

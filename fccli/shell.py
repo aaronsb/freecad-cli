@@ -301,8 +301,12 @@ def _emit_shortcuts(v):
                              sorted(accepted.items())][:60], width=68):
             say(f"  {row}", "quiet")
         if rejected:
-            say(f"{len(rejected)} skipped -- shortcuts import --why "
-                f"says which", "quiet")
+            # `shortcuts why`. The hint used to name `shortcuts import
+            # --why`, and the CHOICE step takes `import` and discards the
+            # rest -- so somebody trying to read why a chord was skipped
+            # changed what a hundred and sixty words mean instead.
+            say(f"{len(rejected)} skipped -- shortcuts why says which",
+                "quiet")
         say("shortcuts import adds them; shortcuts drop removes them again")
         return None
 
@@ -403,14 +407,42 @@ def _emit_describe(v):
     return None
 
 
+_BY_TYPE = None
+
+
 def _verb_for_type(type_id):
-    """The verb that builds this type, if one does."""
-    if not type_id:
-        return None
-    for name in REGISTRY.names():
-        if REGISTRY.get(name).creates == type_id:
-            return name
-    return None
+    """The verb that builds this type, when the type says which.
+
+    Only when exactly one verb claims it. A Draft line, a Draft point and
+    anything else Draft wraps are all Part::FeaturePython, so picking the
+    first claimant in registry order reported every Draft line as made by
+    point. A type that several verbs build does not identify one, and
+    saying nothing is the honest answer.
+
+    Built once. This was a linear scan of the whole registry -- 1258 verbs
+    -- for every object described.
+    """
+    global _BY_TYPE
+    if _BY_TYPE is None:
+        curated = _curation.current()
+        claims = {}
+        for name in REGISTRY.names():
+            creates = REGISTRY.get(name).creates
+            if creates:
+                claims.setdefault(creates, []).append(name)
+        _BY_TYPE = {}
+        for creates, names in claims.items():
+            # A verb somebody wrote answers for the type over one the
+            # factory generated for it -- `box` over the re-homed
+            # `part_box`, which ranks PROMOTED just the same. Where that
+            # leaves more than one, nothing about the type says which:
+            # line and point are both hand-written and both build a
+            # Part::FeaturePython.
+            written = [n for n in names if _curation.authored(REGISTRY.get(n))]
+            best = written or names
+            if len(best) == 1:
+                _BY_TYPE[creates] = best[0]
+    return _BY_TYPE.get(type_id) if type_id else None
 
 
 def _did_you_mean_from(names, token):
