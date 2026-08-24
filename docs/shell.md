@@ -3,7 +3,7 @@
 A terminal client that talks to a running FreeCAD, so a session can be
 inspected and driven from outside the application.
 
-Status: **steps 1–4 built** — history off the widget, the floor, the server,
+Status: **steps 1–7 built** — history off the widget, the floor, the server,
 and a one-shot client. `make socket` drives a real FreeCAD from outside and
 asserts on it, 32 checks. Steps 5–8 (follow mode is partly there, the shared
 buffer, the REPL) remain.

@@ -511,6 +511,49 @@ def cmd_docs(client, args):
     return EX_OK
 
 
+def cmd_watch(client, args):
+    """A live view of the session: what is being typed, and what ran.
+
+    The REPL cannot show someone else's half-typed line, because readline
+    owns that row of the terminal. A pane whose only job is watching can.
+    """
+    warn_protocol(client)
+    # Ask everything that expects a reply before subscribing. Once
+    # broadcasts are flowing, a reply and a broadcast are the same shape on
+    # the wire and the next read may take the wrong one.
+    state = client.ask(op="state")
+    client.ask(op="subscribe")
+    holder = (state.get("floor") or {}).get("holder")
+    print(paint(f"watching FreeCAD {client.hello.get('pid')}"
+                f"{'  floor: ' + holder if holder else ''}",
+                "quiet", sys.stdout))
+    typing = ""
+    try:
+        while True:
+            msg = client.read()
+            kind = msg.get("kind")
+            if kind == "buffer":
+                typing = msg.get("text", "")
+                who = msg.get("who", "?")
+                sys.stdout.write("\r\033[K" + paint(f"{who} typing: ", "quiet",
+                                                    sys.stdout) + typing)
+                sys.stdout.flush()
+            elif kind in ("result", "error", "info"):
+                text = msg.get("text", "")
+                if not text:
+                    continue
+                role = msg.get("role", kind)
+                body = paint_spans(text, msg.get("spans"), role, sys.stdout) \
+                    if msg.get("spans") else paint(text, role, sys.stdout)
+                prefix = {"error": "error: ", "result": "= "}.get(kind, "")
+                sys.stdout.write("\r\033[K" + prefix + body + "\n")
+                sys.stdout.flush()
+                typing = ""
+    except (KeyboardInterrupt, ConnectionError):
+        print()
+    return EX_OK
+
+
 def cmd_state(client, args):
     warn_protocol(client)
     reply = client.ask(op="state")
@@ -634,6 +677,7 @@ def main():
     sub.add_parser("attach", help="an interactive session (aliases: repl, i)")
     sub.add_parser("repl", help=argparse.SUPPRESS)
     sub.add_parser("i", help=argparse.SUPPRESS)
+    sub.add_parser("watch", help="live view of what the session is doing")
     sub.add_parser("ls", help="running instances and what they have open")
     sub.add_parser("docs", help="documents open in one instance")
 
@@ -699,7 +743,7 @@ def main():
         handler = {"exec": cmd_exec, "check": cmd_check, "docs": cmd_docs,
                    "history": cmd_history, "state": cmd_state,
                    "attach": cmd_repl, "repl": cmd_repl,
-                   "i": cmd_repl}.get(args.op)
+                   "i": cmd_repl, "watch": cmd_watch}.get(args.op)
         if handler is None:
             handler = cmd_exec          # stdin was a script
         return handler(client, args)

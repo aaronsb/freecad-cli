@@ -84,6 +84,7 @@ class CliDock(QtWidgets.QDockWidget):
         from .shell import load_aliases
         self.alias_count = load_aliases()
         self.server = None
+        self._applying_remote = False
         self.factory_counts = _load_factory()
         self.picker = make_picker("snap", notify=self._notify)
         self.engine = Engine(self.bus, REGISTRY, picker=self.picker)
@@ -96,6 +97,7 @@ class CliDock(QtWidgets.QDockWidget):
         self.setWidget(self._build(self.console))
         self.bus.subscribe(self._on_message)
         self.console.submitted.connect(self.session.submit)
+        self.console.inputEdited.connect(self._push_buffer)
         self.console.cancelled.connect(self.engine.cancel)
         self.console.write(_banner(self.factory_counts), "info")
         if (self.factory_counts or {}).get("error"):
@@ -210,6 +212,31 @@ class CliDock(QtWidgets.QDockWidget):
         self.show()
         QtCore.QTimer.singleShot(0, lambda: _resize(mw, self))
 
+    def _push_buffer(self, text=None):
+        """Tell the session what is being typed here.
+
+        Only a person editing the input line reaches this. Rendering a
+        client's command is not typing, and claiming the floor for it would
+        lock every other client out of a session nobody is using.
+        """
+        if self._applying_remote:
+            return
+        from .session import DOCK
+        self.session.set_buffer(
+            DOCK, self.console.input_text() if text is None else text)
+
+    def _on_buffer(self, msg):
+        """Somebody else is typing. Show it, and stop taking keys."""
+        from .session import DOCK
+        if msg.data.get("who") == DOCK:
+            return
+        self._applying_remote = True
+        try:
+            self.console.set_input(msg.text)
+        finally:
+            self._applying_remote = False
+        self._paint_focus_state()
+
     def _notify(self, text):
         self.bus.emit(_bus.INFO, text)
 
@@ -223,6 +250,8 @@ class CliDock(QtWidgets.QDockWidget):
     def _on_message(self, msg):
         if msg.kind == _bus.PROMPT:
             self._on_prompt(msg)
+        elif msg.kind == _bus.BUFFER:
+            self._on_buffer(msg)
         elif msg.kind == _bus.CLEAR:
             self.console.clear_scrollback()
         elif msg.kind == _bus.LIVE:
@@ -279,9 +308,13 @@ class CliDock(QtWidgets.QDockWidget):
 
     def input_state(self):
         """Whether keys typed anywhere would reach this widget."""
+        from .session import DOCK
         app = QtWidgets.QApplication.instance()
         if app is not None and app.activeModalWidget():
             return "blocked", self._dialog_name()
+        holder = self.session.floor.holder
+        if holder is not None and holder != DOCK:
+            return "observing", holder
         if self.keyfilter.enabled:
             return "usurping", ""
         if self.console.hasFocus():
@@ -355,6 +388,7 @@ class CliDock(QtWidgets.QDockWidget):
             import FreeCAD as App
             App.Console.PrintWarning(f"[fccli] socket: {exc}\n")
             self.server = None
+        self._applying_remote = False
 
     def closeEvent(self, ev):
         self.keyfilter.remove()

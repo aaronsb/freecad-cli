@@ -187,6 +187,18 @@ class Session:
             self.history.commit(msg.data.get("replay") or msg.text,
                                 typed=msg.data.get("typed"))
 
+    def set_buffer(self, who, text):
+        """Record what someone is typing, and tell everyone watching.
+
+        One session has one line being typed, the same as it has one prompt.
+        A client that cannot render it can still see who is holding it.
+        """
+        if not self.floor.set_buffer(who, text):
+            return False
+        self.bus.emit(_bus.BUFFER, text, who=who,
+                      holder=self.floor.holder)
+        return True
+
     def submit(self, text, who=DOCK):
         """Run a line, recording it provisionally so a typo can be recalled."""
         if self.engine.state == "idle":

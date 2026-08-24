@@ -9,7 +9,7 @@ over the socket.
 | Rule | |
 |---|---|
 | First token is a **verb** | Everything after a space is an argument. |
-| Trailing `!` **forces** | `close!`, `quit!` — past a refusal, never past an error. |
+| Trailing `!` **forces** | `close!`, `quit!` — past a refusal, never past an error. It also takes the floor, or a session whose floor is stuck could not be told to quit. |
 | A unique **prefix** runs | `pol` + Enter is `polyline`. Tab is for discovery; prefix is for speed. |
 | Bare **Enter** finishes a repeating step | `polyline` takes points until you stop. |
 | **Esc** / **Ctrl+C** cancels | The command, not the session. |
@@ -117,6 +117,24 @@ candidates.
   family verbs always complete; the scope narrows the launchers.
 - `use` alone lists the domains and says which is active; `use off` clears.
 - `commands` lists the domains, `commands <domain>` lists what is in one.
+
+## The shared line
+
+One session has one line being typed, the same as it has one prompt.
+
+- **The dock broadcasts what a person types there**, so a `fccli watch` pane
+  shows it live. Rendering a client's command is not typing: only a real
+  edit claims the floor, or the dock would lock every client out of a
+  session nobody is using.
+- **The floor is busy when the engine is collecting or a line is
+  half-typed** — not whenever the dock has focus. An idle dock with an empty
+  line holds nothing, so a one-shot lands in the gaps.
+- **A client without the floor is ignored with a reply**, never silently
+  dropped.
+- **Read-only operations are never blocked.** `history`, `state`, `watch`
+  and `docs` work whoever is typing.
+- **`fccli watch` is where a terminal renders the shared line.** The REPL
+  cannot: readline owns that row of the terminal.
 
 ## Completion
 

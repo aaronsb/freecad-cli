@@ -30,6 +30,11 @@ ROLE_COLOURS = {
 class Console(QtWidgets.QPlainTextEdit):
     submitted = QtCore.Signal(str)
     cancelled = QtCore.Signal()
+    # Emitted when a person edits the input line. Not on every document
+    # change: writing to the scrollback is not someone typing, and treating
+    # it as such makes the dock claim the floor for rendering what a client
+    # did.
+    inputEdited = QtCore.Signal(str)
 
     def __init__(self, engine, parent=None, session=None):
         super().__init__(parent)
@@ -393,7 +398,10 @@ class Console(QtWidgets.QPlainTextEdit):
                 return
 
         self._clamp()
+        before = self.input_text()
         super().keyPressEvent(ev)
+        if self.input_text() != before:
+            self.inputEdited.emit(self.input_text())
         self._hist_index = None
         # Editing a recalled line makes it yours: the picked part stops
         # being up for grabs and Enter runs what is written.

@@ -170,6 +170,13 @@ class Server(QtCore.QObject):
             return {"kind": "state", **session.state(),
                     "clients": len(self._clients)}
 
+        if op == "buffer":
+            text = request.get("text", "")
+            if not session.set_buffer(who, text):
+                return {"kind": "ignored", "reason": "floor",
+                        "holder": floor.holder}
+            return {"kind": "buffered", "holder": floor.holder}
+
         if op == "complete":
             from .completion import candidates
             head, tail, hits = candidates(session.engine,
@@ -213,13 +220,19 @@ class Server(QtCore.QObject):
             busy = self._busy()
             if busy:
                 return busy
-            ok, holder = floor.claim(who, steal=request.get("steal", False))
+            # A trailing ! forces past a refusal, and a held floor is a
+            # refusal. Otherwise a session whose floor is stuck cannot even
+            # be told to quit.
+            text = request.get("text", "")
+            forced = text.split()[0].endswith("!") if text.split() else False
+            ok, holder = floor.claim(
+                who, steal=request.get("steal", False) or forced)
             if not ok:
                 return {"kind": "busy", "reason": "floor", "holder": holder,
                         "retryable": True}
             collected = _Collector(session.bus, session.engine.registry)
             try:
-                session.submit(request.get("text", ""), who=who)
+                session.submit(text, who=who)
             finally:
                 collected.stop()
                 if session.engine.state == "idle":

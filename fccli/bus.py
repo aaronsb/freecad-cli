@@ -19,6 +19,7 @@ ERROR = "error"      # something did not parse or did not resolve
 RESULT = "result"    # a command completed; payload includes replay text
 STATE = "state"      # engine idle/collecting transitions
 CLEAR = "clear"      # a console builtin asking for a wiped scrollback
+BUFFER = "buffer"    # the line someone is typing, and who is typing it
 
 
 @dataclass

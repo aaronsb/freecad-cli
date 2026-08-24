@@ -184,6 +184,21 @@ def main():
         truthy("a watching client saw another client's command",
                "sphere" in watched)
 
+        print("\n8b. the line being typed is shared")
+        code, out, _ = fccli("--json", "state")
+        before = json.loads(out)
+        truthy("the session reports a floor", "floor" in before)
+        watcher = subprocess.Popen([sys.executable, CLIENT, "watch"],
+                                   stdout=subprocess.PIPE, text=True,
+                                   stdin=subprocess.DEVNULL)
+        time.sleep(2.0)
+        fccli("exec", "cylinder 7 21")
+        time.sleep(2.0)
+        watcher.terminate()
+        seen = watcher.stdout.read() if watcher.stdout else ""
+        truthy("a watching pane sees what another client ran",
+               "cylinder" in seen)
+
         print("\n9. instances identify themselves by what they have open")
         fccli("exec", "save " + os.path.join(tempfile.gettempdir(),
                                              "fccli-sock.FCStd"))
@@ -191,7 +206,8 @@ def main():
         docs = json.loads(out)
         truthy("docs lists something", docs)
         first = docs[0]
-        truthy("  with a file path", first.get("file", "").endswith(".FCStd"))
+        truthy("  with a file path",
+               (first.get("file") or "").endswith(".FCStd"))
         truthy("  an object count", isinstance(first.get("objects"), int))
         truthy("  and which one is active",
                any(d.get("active") for d in docs))
