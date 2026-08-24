@@ -150,6 +150,26 @@ one keeps a qualified name instead — `Part::Box` becomes `part_box` because
 hand-written because it gathers commands across two name stems the family
 splitter cannot join.
 
+## Undo
+
+**One typed line is one undo step**, labelled with the line. FreeCAD's Edit
+menu reads *Undo box 10mm 10mm 10mm*.
+
+Objects created outside a transaction never reach the undo stack, and
+`UndoMode` is off by default on a document nobody has told otherwise, so
+both are set by the engine rather than left to each verb. A verb that
+manages documents rather than editing them declares `transactional=False`.
+
+## Screenshots
+
+**`screenshot` prints where it wrote.** A person can open the file; an agent
+driving the session over the socket can find it without guessing the name.
+
+Default is the 3D view through FreeCAD's `saveImage`, auto-numbered under the
+document name. `window` grabs the whole application, which needs real
+hardware GL — a widget grab of an OpenGL viewport on a virtual display comes
+back as flat colour.
+
 ## Dialogs
 
 **A command takes its arguments inline and never raises a modal.** `save`
@@ -201,6 +221,53 @@ for a busy result, because nothing went wrong.
   output is text.
 - **stderr** carries failures and progress. `-v` adds the running echo.
 - A one-shot **answers, it does not narrate.**
+
+## The declarative surface
+
+A verb and its steps are data. Everything below is read by the engine, the
+completer, the highlighter, `man`, the socket and `check` — declared once,
+honoured everywhere.
+
+### Verb
+
+| | |
+|---|---|
+| `name`, `aliases` | what it is called |
+| `steps` | what it asks for, in the order it reads |
+| `emit` | what it does |
+| `creates` | the document type it produces, so `check` can say so |
+| `gui_command` | the QAction it corresponds to |
+| `transactional` | wrap it in an undo step (default true) |
+| `record` | put it in history (default true) |
+
+### Step
+
+| | |
+|---|---|
+| `id`, `kind`, `prompt` | what it is, and what it asks |
+| `optional` | bare Enter skips it |
+| `default` | what it takes when skipped |
+| `repeat`, `min_count` | takes values until Enter, at least this many |
+| `unit` | how a quantity is echoed and what a bare number means |
+| `choices` | a closed set, offered on Tab |
+| `options` | inline keywords accepted alongside the value |
+| `completes` | where else candidates come from: `verbs`, `objects`, `aliases`, `schemas`, `domains` |
+| `raw` | take the rest of the line verbatim, not one token |
+| `prompt_order` | where it sits when asked for; points default last |
+
+## The verbs written by hand
+
+Everything else is generated. These exist because they pick points, manage
+documents, or read better than what a machine would derive.
+
+| | |
+|---|---|
+| Drawing | `line` `polyline` `circle` `box` `point` `move` |
+| Documents | `new` `open` `save` `close` `quit` |
+| Editing | `undo` `redo` `delete` |
+| Looking | `zoom` `screenshot` |
+| Asking | `man` `check` `commands` `units` `use` |
+| The session | `history` `alias` `unalias` `clear` |
 
 ## Naming
 
