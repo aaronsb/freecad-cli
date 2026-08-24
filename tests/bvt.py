@@ -762,6 +762,22 @@ def suite_panels_generic(dock):
     dock.engine.submit("primitive")
     settle()
     truthy("primitive opens a panel", panels.is_open())
+
+    # Buttons by role, never by label. Qt translates a QDialogButtonBox's
+    # standard buttons, so pressing "ok" by its text worked in English and
+    # nowhere else. This panel is also the one whose accept button reads
+    # "Create" rather than "OK", so the label never sufficed anyway.
+    roles = panels.by_role()
+    truthy("the panel's buttons carry roles", bool(roles))
+    truthy("  including one that means yes",
+           bool(set(roles) & set(panels.ACCEPTING)))
+    truthy("  and one that means no",
+           bool(set(roles) & set(panels.REFUSING)))
+    accepting = roles.get("AcceptRole")
+    truthy("  and yes is Create here, not OK",
+           accepting is not None
+           and "create" in (accepting.text() or "").replace("&", "").lower())
+    truthy("so it can be finished", panels.can_finish())
     first = {panels.key_for(f.name) for f in panels.fields()}
     truthy("  showing the plane page to begin with", "planelength" in first)
     dock.engine.submit("primitivetype=Cylinder")

@@ -47,6 +47,12 @@ GENERIC = {"qt_spinbox_lineedit", "qt_scrollarea_viewport", ""}
 # The buttons a panel finishes with, in the order we would rather press
 # them. Read off the panel rather than assumed: Part_Primitives creates
 # repeatedly and closes separately, Part_Boolean applies.
+# What a button means, in the order we would rather press one. Read off
+# the panel's own QDialogButtonBox, which carries a role per button and
+# translates only the text.
+ACCEPTING = ("AcceptRole", "ApplyRole", "YesRole")
+REFUSING = ("RejectRole", "DestructiveRole", "NoRole")
+# For a panel that puts a plain QPushButton on itself, outside any box.
 COMMIT = ("ok", "create", "apply")
 DISMISS = ("cancel", "close")
 
@@ -257,22 +263,60 @@ def fields():
     return found
 
 
-def buttons():
-    """The panel's own buttons, by lowercased label.
+def _button_scope():
+    """The dock the panel lives in.
 
-    Scoped to the dock it lives in. Searching the main window swept in the
-    Start page's "open first start setup" and the status bar's dimension
-    readout, and one of these clicks is what commits.
+    Searching the main window swept in the Start page's "open first start
+    setup" and the status bar's dimension readout, and one of these clicks
+    is what commits.
     """
     found = roots()
     if not found:
-        return {}
-    scope, walk = found[0], found[0]
+        return None
+    walk = found[0]
     while walk is not None:
         if isinstance(walk, QtWidgets.QDockWidget):
-            scope = walk
-            break
+            return walk
         walk = walk.parentWidget()
+    return found[0]
+
+
+def _role(box, button):
+    return str(box.buttonRole(button)).rsplit(".", 1)[-1]
+
+
+def by_role():
+    """The panel's buttons, by what each one means.
+
+    Roles, never labels. Qt translates a QDialogButtonBox's standard
+    buttons, so pressing "ok" by its text worked in English and nowhere
+    else -- every panel verb on a localized FreeCAD would have ended in
+    "the panel offered no way to finish". modals.py states the rule this
+    was breaking: icon and roles, never button text.
+
+    Part_Primitives is the one that shows why it matters either way. Its
+    accept button reads "Create", not "OK", and its role is AcceptRole.
+    """
+    scope = _button_scope()
+    if scope is None:
+        return {}
+    out = {}
+    for box in scope.findChildren(QtWidgets.QDialogButtonBox):
+        for button in box.buttons():
+            if button.isVisible():
+                out.setdefault(_role(box, button), button)
+    return out
+
+
+def buttons():
+    """The panel's buttons by lowercased label, for what has no role.
+
+    A panel is free to put a plain QPushButton on itself, outside any
+    button box, and some do.
+    """
+    scope = _button_scope()
+    if scope is None:
+        return {}
     out = {}
     for b in scope.findChildren(QtWidgets.QPushButton):
         if not b.isVisible():
@@ -283,8 +327,24 @@ def buttons():
     return out
 
 
+def press_role(*wanted):
+    """Press the first of these roles the panel offers."""
+    available = by_role()
+    for role in wanted:
+        button = available.get(role)
+        if button is None:
+            continue
+        try:
+            button.click()
+        except RuntimeError:
+            return None
+        _pump(16)
+        return role
+    return None
+
+
 def press(*labels):
-    """Press the first of these the panel offers. Returns which, or None."""
+    """Press the first of these labels the panel offers. A fallback."""
     available = buttons()
     for label in labels:
         button = available.get(label)
@@ -299,9 +359,23 @@ def press(*labels):
     return None
 
 
+def can_finish():
+    """Whether the panel offers a way to say yes.
+
+    A panel with only a Reject is not a form to fill in -- it is a mode
+    somebody is in. Sketcher's edit panels are the ones that matter: they
+    are .ui boxes with filter combos and search fields, so they read as
+    full of parameters, and driving one ends by pressing the only button
+    there is and dropping the operator out of edit mode. Before this they
+    were entered and left alone, which is what they are for.
+    """
+    return bool(set(by_role()) & set(ACCEPTING)) or any(
+        label in buttons() for label in COMMIT)
+
+
 def commit():
     """Finish the panel the way its own button does."""
-    return press(*COMMIT)
+    return press_role(*ACCEPTING) or press(*COMMIT)
 
 
 def dismiss():
@@ -311,7 +385,7 @@ def dismiss():
     is pressed -- so cancelling is what puts it back. FreeCAD owns that,
     which is why this verb keeps no transaction of its own.
     """
-    pressed = press(*DISMISS)
+    pressed = press_role(*REFUSING) or press(*DISMISS)
     try:
         import FreeCADGui as Gui
         Gui.Control.closeDialog()
@@ -426,7 +500,20 @@ def resolve(token, found):
                   f"{', '.join(sorted(key_for(f.name) for f in hits))}")
 
 
-ASSIGNMENT = re.compile(r"(?:^|\s)([A-Za-z_][A-Za-z0-9_]*)\s*=")
+# No space before the `=`. That is what tells `nosuch=1`, which is meant
+# as an assignment and should be reported as an unknown name, from the
+# `A = north` inside `label=Wall A = north`, which is prose. Requiring a
+# name the panel already has instead would have been tighter and wrong:
+# it refused `xpos=` for x position, and answered a typo with "not an
+# assignment" rather than naming the field it could not find.
+ASSIGNMENT = re.compile(r"(?:^|\s)([A-Za-z_][A-Za-z0-9_]*)=")
+QUOTED = re.compile(r"^([\"'])(.*)\1$", re.S)
+
+
+def _unquote(value):
+    """A value may be quoted, for when it holds something that reads as a name."""
+    hit = QUOTED.match(value.strip())
+    return hit.group(2) if hit else value.strip()
 
 
 def split_assignments(text):
@@ -437,14 +524,21 @@ def split_assignments(text):
     value runs to the next name= or to the end of the line. Splitting on
     whitespace dropped the unit and put 0.75mm where 19.05 belonged, which
     parses, which is the kind that does not announce itself.
+
+    A value can also contain something that reads as an assignment.
+    `label=Wall A = north` split at `A =` and left `Wall` in the label.
+    A split point has no space before its `=`, which is what tells an
+    assignment somebody meant from prose that happens to contain one, and
+    a value may be quoted for when it contains one anyway.
     """
-    marks = list(ASSIGNMENT.finditer(text or ""))
+    text = text or ""
+    marks = list(ASSIGNMENT.finditer(text))
     if not marks:
-        return [], (text or "").strip()
+        return [], text.strip()
     pairs, leading = [], text[:marks[0].start()].strip()
     for i, mark in enumerate(marks):
         end = marks[i + 1].start() if i + 1 < len(marks) else len(text)
-        pairs.append((mark.group(1), text[mark.end():end].strip()))
+        pairs.append((mark.group(1), _unquote(text[mark.end():end])))
     return pairs, leading
 
 
@@ -564,19 +658,6 @@ def wait_for_panel(before=frozenset(), rounds=12):
             return True
         _pump(1)
     return bool(names_on_screen() - set(before)) if _dialog_up() else False
-
-
-def can_finish():
-    """Whether the panel offers a way to say yes.
-
-    A panel with only a Close is not a form to fill in -- it is a mode
-    somebody is in. Sketcher's edit panels are the ones that matter: they
-    are .ui boxes with filter combos and search fields, so they read as
-    full of parameters, and driving one ends by pressing the only button
-    there is and dropping the operator out of edit mode. Before this they
-    were entered and left alone, which is what they are for.
-    """
-    return any(label in buttons() for label in COMMIT)
 
 
 def _open_panel(command):

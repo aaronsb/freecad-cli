@@ -1338,6 +1338,33 @@ def _run():
     for _b in (_reject, _notice, _ask, _dupe, _long, _chooser):
         _b.deleteLater()
 
+    print("\n5y. a panel line is cut at the names, not the spaces")
+    from fccli.panels import split_assignments as _split
+
+    # A value holds spaces -- 3/4 in, Center of mass / centroid -- so a
+    # name=value line cannot be read a whitespace token at a time.
+    check("two assignments, values intact",
+          _split("xposition=25 mm zposition=3/4 in")[0],
+          [("xposition", "25 mm"), ("zposition", "3/4 in")])
+
+    # And a value can hold something that reads as an assignment. What
+    # tells them apart is the space before the `=`.
+    check("prose inside a value is not a split point",
+          _split("label=Wall A = north")[0], [("label", "Wall A = north")])
+    check("  even when it is a whole clause",
+          _split("name=set x = 3")[0], [("name", "set x = 3")])
+    check("a name meant as one still splits, so it can be reported",
+          [n for n, _ in _split("xposition=6 nosuch=1 zposition=8")[0]],
+          ["xposition", "nosuch", "zposition"])
+    check("quoting settles what is left",
+          _split('label="a = b"')[0], [("label", "a = b")])
+    check("a prefix name splits like any other",
+          _split("xpos=5 mm")[0], [("xpos", "5 mm")])
+    check("and a typo does too, so it can be named",
+          _split("xpositon=25")[0], [("xpositon", "25")])
+    check("something that is not an assignment says so",
+          _split("justaword"), ([], "justaword"))
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])
