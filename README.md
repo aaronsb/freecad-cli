@@ -137,6 +137,7 @@ toolbars and the 3D view. `` Ctrl+` `` toggles it, and it is listed under
 | → | accept the ghost suggestion |
 | Enter on an empty line | finish a repeating step — or, when idle, repeat the last command |
 | Tab on an empty line | recent commands |
+| Right-click | repeat the last command, or pick from recent |
 | Esc / Ctrl+C | cancel |
 | trailing `!` | force past a refusal — `close!` |
 | `check <command>` | validate it without running it (`whatif`, `ck`) |

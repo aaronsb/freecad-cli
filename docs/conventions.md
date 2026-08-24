@@ -14,6 +14,8 @@ over the socket.
 | Bare **Enter** finishes a repeating step | `polyline` takes points until you stop. |
 | **Esc** / **Ctrl+C** cancels | The command, not the session. |
 | **Enter** on an empty prompt repeats | The last command, minus anything a click supplied — so it waits for a fresh one. Rhino and AutoCAD do the same. |
+| **Right-click** repeats, or picks from recent | Rhino repeats on a right-click here; AutoCAD offers a Recent Commands menu. Both are on it — the top item repeats, the rest are what came before. |
+| **Space** is a separator, not Enter | Rhino and AutoCAD submit on Space, because they take one value per prompt. This grammar takes a whole command on one line, so Space separates arguments and passes through to FreeCAD when idle. Enter, right-click and Tab already reach the repeat. |
 | A verb typed **mid-command** restarts | Only when the token cannot be read as input for the open step, so `c` stays `Close` inside `polyline`. |
 
 ## Arguments

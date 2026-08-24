@@ -305,6 +305,38 @@ class Console(QtWidgets.QPlainTextEdit):
 
     # -------------------------------------------------------------- keymap
 
+    def contextMenuEvent(self, ev):
+        """Right-click: repeat, or pick from recent.
+
+        Rhino repeats the last command on a right-click here; AutoCAD offers
+        a Recent Commands menu. They are the same gesture at different
+        depths, so both are on it -- the top item repeats, the rest are the
+        commands behind it.
+        """
+        from .completion import recent_commands
+        menu = QtWidgets.QMenu(self)
+        recent = recent_commands(self.session.history, limit=8)
+        if recent:
+            first = menu.addAction(f"Repeat:  {recent[0]}")
+            first.triggered.connect(
+                lambda _=False, line=recent[0]: self._run_recalled(line))
+            if len(recent) > 1:
+                menu.addSeparator()
+                for line in recent[1:]:
+                    action = menu.addAction(line)
+                    action.triggered.connect(
+                        lambda _=False, l=line: self._run_recalled(l))
+            menu.addSeparator()
+        for label, slot in (("Copy", self.copy), ("Paste", self.paste),
+                            ("Clear scrollback", self.clear_scrollback)):
+            menu.addAction(label).triggered.connect(slot)
+        menu.exec(ev.globalPos())
+
+    def _run_recalled(self, line):
+        """Run a line from the menu, placing it fresh if it was clicked."""
+        self.set_input(self.session.history.recall(line))
+        self._submit()
+
     def keyPressEvent(self, ev):
         key, mods = ev.key(), ev.modifiers()
         ctrl = bool(mods & Qt.ControlModifier)
