@@ -131,11 +131,13 @@ def _by_habit(names, history, now=None):
 
     The tally is rebuilt only when the ring has changed, because ghosting
     asks for candidates on every keystroke and there is no reason to count
-    two thousand lines again between two of them.
+    two thousand lines again between two of them. The ring's revision
+    counter is what says it changed -- its length stops moving once the
+    ring is full, which would freeze the ranking there.
     """
     if history is None or not getattr(history, "entries", None):
         return names
-    key = (id(history), len(history.entries))
+    key = (id(history), getattr(history, "revision", len(history.entries)))
     if _TALLY["key"] != key:
         _TALLY["key"] = key
         _TALLY["stats"] = frecency.tally(history.usage())

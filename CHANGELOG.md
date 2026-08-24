@@ -57,6 +57,12 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
 
 ### Fixed
 
+- **Ranking stopped learning once the history ring filled.** The frecency
+  tally was cached against the ring's length, and an add past the limit
+  trims as it appends -- so at 2000 entries the length stopped moving while
+  the contents did not, and the cache never rebuilt. `History.revision`
+  counts mutations instead. Timestamps for trimmed lines are dropped with
+  them, which they were not.
 - **The version banner froze at the last release.** `make release` stamps
   `_build.py`, and the stamp was read before live git -- so from then on a
   working tree reported the released commit no matter what was committed

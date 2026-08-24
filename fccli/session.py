@@ -46,6 +46,11 @@ class History:
         # than in it, so `entries` stays a list of strings and everything
         # that reads it is unaffected.
         self.stamps = {}
+        # Bumped on every mutation. Readers that cache a derivation of the
+        # ring -- the frecency tally -- key on this. Length cannot serve:
+        # once the ring is at its limit an add trims an entry as it appends
+        # one, so the count stops changing while the contents do not.
+        self.revision = 0
         self.load()
 
     @staticmethod
@@ -63,6 +68,7 @@ class History:
 
     def load(self):
         self.entries, self.stamps = [], {}
+        self.revision = getattr(self, "revision", 0) + 1
         try:
             with open(_paths.readable(self.path, "history"),
                       encoding="utf-8") as fh:
@@ -84,7 +90,13 @@ class History:
             return False
         self.entries.append(line)
         self.stamps[line] = when if when is not None else int(time.time())
-        del self.entries[:-self.limit]
+        if len(self.entries) > self.limit:
+            del self.entries[:-self.limit]
+            # Drop timestamps for lines that fell off the end, so the map
+            # does not grow for the life of the process.
+            live = set(self.entries)
+            self.stamps = {k: v for k, v in self.stamps.items() if k in live}
+        self.revision += 1
         if persist:
             self._write(line)
         return True
@@ -111,6 +123,7 @@ class History:
         self.entries = []
         self.typed = {}
         self.stamps = {}
+        self.revision += 1
         try:
             os.makedirs(os.path.dirname(self.path), exist_ok=True)
             open(self.path, "w", encoding="utf-8").close()
@@ -122,6 +135,7 @@ class History:
         for i in range(len(self.entries) - 1, -1, -1):
             if self.entries[i] == line:
                 del self.entries[i]
+                self.revision += 1
                 return True
         return False
 

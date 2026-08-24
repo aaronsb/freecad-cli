@@ -758,6 +758,23 @@ def main():
     _bridge._suggest(REGISTRY.get("box"))
     check("the cue can be turned off outright", _con2.lines, [])
 
+    print("\n5q2. a full ring keeps learning")
+    _ring = _History(path=os.path.join(tempfile.mkdtemp(), "history"), limit=5)
+    for i in range(5):
+        _ring.add(f"box 0,0,{i} 1mm", when=_now)
+    _full = _ring.revision
+    check("the ring is at its limit", len(_ring.entries), 5)
+    _ring.add("circle 0,0,0 2mm", when=_now)
+    check("  adding past it does not change the length",
+          len(_ring.entries), 5)
+    check("  but the revision moves, so a cache keyed on it rebuilds",
+          _ring.revision > _full, True)
+    check("  the oldest line is gone", "box 0,0,0 1mm" in _ring.entries, False)
+    check("  and its timestamp went with it",
+          "box 0,0,0 1mm" in _ring.stamps, False)
+    check("  the tally reflects what is left",
+          _frec.tally(_ring.usage()).get("circle"), (1, _now))
+
     print("\n5r. the version banner reports where the code came from")
     from fccli import build_info as _bi
     _bi._CACHE = None
