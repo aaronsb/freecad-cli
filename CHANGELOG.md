@@ -75,9 +75,9 @@
   the hand-owned layer the command line is missing -- a versioned record of
   where its vocabulary departs from what the factory derives, keyed by
   command, linted in `make check`, reconciled by a tool rather than by
-  reading a descriptor diff. `docs/design-notes/state.md` writes down the
-  engine's two states and the six machines around it as the code holds
-  them, including the gap that task #3 names.
+  reading a descriptor diff. `docs/design-notes/state.md` is a reference
+  for the engine's two states and the six machines around it: states,
+  transitions, and the invariants the rest of the code depends on.
 
 ### Changed
 
