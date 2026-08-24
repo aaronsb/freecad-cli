@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LGPL-2.1-or-later
 """End-to-end test of the socket, from outside FreeCAD.
 
 Launches a real FreeCAD under its own virtual display, waits for the socket

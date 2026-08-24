@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """What completes here, computed once.
 
 The widget used to work this out for itself, which meant a terminal client

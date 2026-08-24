@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """FreeCAD CLI -- a command line for FreeCAD.
 
 The version here is the single source of truth. package.xml carries a copy

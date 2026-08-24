@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Spike verification. Runs offscreen, no FreeCAD GUI required.
 
     QT_QPA_PLATFORM=offscreen python3 tests/test_spike.py

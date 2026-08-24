@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """The toggle command.
 
 This lives in the package rather than in InitGui.py: FreeCAD executes

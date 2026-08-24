@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LGPL-2.1-or-later
 """Print one version's section from CHANGELOG.md.
 
 The changelog is already the release notes; extracting them keeps the tag,

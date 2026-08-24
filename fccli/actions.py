@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """GUI invocations, echoed into the command line.
 
 FreeCAD exposes no command observer -- libFreeCADGui.so has

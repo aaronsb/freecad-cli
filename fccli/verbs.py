@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """The seed verb set.
 
 Six verbs chosen to exercise every shape the grammar has to support:

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Application-level key usurping.
 
 195 of FreeCAD's 940 default shortcuts are unmodified keys, so claiming bare

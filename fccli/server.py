@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """A unix socket onto the running session.
 
 Not a second copy of the command language reached over a wire: the server

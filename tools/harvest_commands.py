@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Pass B: the command registry. Needs a GUI, so it runs under Xvfb.
 
 Gui.listCommands() returns bare strings -- there is no getCommandInfo and no

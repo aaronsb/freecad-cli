@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Patch discovery and composition.
 
 A generated verb is functional and generic. A patch makes it feel like the

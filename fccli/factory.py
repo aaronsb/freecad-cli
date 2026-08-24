@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Build verbs from the generated descriptor.
 
 Three tiers, in rising order of how much someone had to write by hand:

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Collapse families of commands into one verb with a choice.
 
 FreeCAD spreads a single idea across many commands with no shared name.

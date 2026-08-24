@@ -421,4 +421,6 @@ obvious.
 
 ## License
 
-MIT
+LGPL-2.1-or-later -- see [LICENSE](LICENSE). The same license FreeCAD
+itself uses, so this code can move into FreeCAD without a relicensing
+step, and a fork that changes it has to publish the changes.

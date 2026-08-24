@@ -11,7 +11,7 @@
   <version>0.2.0</version>
   <date>2026-08-23</date>
   <maintainer email="aaronsb@gmail.com">Aaron Bockelie</maintainer>
-  <license file="LICENSE">MIT</license>
+  <license file="LICENSE">LGPL-2.1-or-later</license>
   <url type="repository" branch="main">https://github.com/aaronsb/freecad-cli</url>
   <url type="bugtracker">https://github.com/aaronsb/freecad-cli/issues</url>
   <url type="readme">https://github.com/aaronsb/freecad-cli/blob/main/README.md</url>

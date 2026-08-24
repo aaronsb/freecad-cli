@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Assembly: dock widget, wiring, and the spike's control strip."""
 
 from . import bus as _bus

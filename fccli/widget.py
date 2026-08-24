@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """The terminal masquerade.
 
 A QPlainTextEdit whose last block is the live input line and whose earlier

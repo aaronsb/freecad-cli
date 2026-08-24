@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Unsaved-changes tracking.
 
 FreeCAD exposes no unsaved-changes flag to Python. ``Document.isSaved()``

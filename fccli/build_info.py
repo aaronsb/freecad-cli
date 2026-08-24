@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Where the running code actually came from.
 
 A semantic version alone cannot answer "is this the build with the fix?" for

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LGPL-2.1-or-later
 """Build fccli/descriptor.json from FreeCAD's two registries.
 
 FreeCAD has no Discovery API. It has a command registry that knows names,

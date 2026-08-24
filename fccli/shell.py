@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Shell builtins.
 
 Document and application verbs that a terminal user reaches for without

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Build verification against a real FreeCAD GUI.
 
 The offscreen suite covers the grammar. It cannot cover the dock, the

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LGPL-2.1-or-later
 """Run the GUI build verification test and turn its result into an exit code.
 
 A FreeCAD macro cannot set the process exit code, so the test writes JSON and

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LGPL-2.1-or-later
 """Read, check and write the version across the files that carry it.
 
 fccli/__init__.py is authoritative. package.xml holds a copy because the

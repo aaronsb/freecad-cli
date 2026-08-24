@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Boot FreeCAD and hold it open for the socket test to drive."""
 
 import FreeCAD as App

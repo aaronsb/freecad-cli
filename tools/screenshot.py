@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """Capture the screenshots the README uses.
 
     xvfb-run -a freecad tools/screenshot.py

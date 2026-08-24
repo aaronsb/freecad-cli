@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 """What a FreeCAD process holds: one engine, one history, one floor.
 
 The dock used to own history, which made `fccli history` impossible to
