@@ -2185,6 +2185,13 @@ def _run():
         check("  a file named bin is said once and the rest is still made",
               (any("bin is a file" in n for n in _notes2),
                os.path.isdir(os.path.join(_r2, "etc"))), (True, True))
+        # The root itself as a link is the operator's: followed, not refused.
+        _elsewhere = tempfile.mkdtemp(prefix="fccli-git-")
+        _r4 = os.path.join(_xdg, "fccli4"); os.symlink(_elsewhere, _r4)
+        _n4 = _root.layout(_r4)
+        check("  a root that is itself a link is followed",
+              (os.path.isdir(os.path.join(_elsewhere, "bin")),
+               any("link" in n for n in _n4)), (True, False))
         _r3 = os.path.join(_xdg, "fccli3"); os.makedirs(_r3); _n3 = []
         _root._link(os.path.join(_r3, "macros"), "Macro", _n3)
         check("  a relative macro path makes no link",

@@ -53,28 +53,29 @@ def _macro_path():
         return DEFAULT_MACROS
 
 
-def _mkdir(path, notes):
+def _mkdir(path, notes, base=None):
     """A real directory at path. Returns whether there is one.
 
-    A symlink where the directory should be is somebody's, and nothing
-    is made inside it: makedirs would follow it and write into whatever
-    it points at. A file where the directory should be is said once.
+    A symlink inside the root where a directory should be is somebody's,
+    and nothing is made inside it: makedirs would follow it and write
+    into whatever it points at. The root itself may be a link -- that is
+    the operator saying where their root lives, to keep it in git -- and
+    is followed. A file where a directory should be is said once.
     """
-    if os.path.islink(path):
-        notes.append(f"{os.path.relpath(path, root())} is a link; nothing "
-                     f"is made inside it")
+    name = os.path.relpath(path, base) if base else "the root"
+    if os.path.islink(path) and base is not None:
+        notes.append(f"{name} is a link; nothing is made inside it")
         return False
     if os.path.isdir(path):
         return True
     if os.path.exists(path):
-        notes.append(f"{os.path.relpath(path, root())} is a file where a "
-                     f"directory should be")
+        notes.append(f"{name} is a file where a directory should be")
         return False
     try:
         os.makedirs(path)
         return True
     except OSError as exc:
-        notes.append(f"{os.path.relpath(path, root())}: {exc}")
+        notes.append(f"{name}: {exc}")
         return False
 
 
@@ -107,13 +108,13 @@ def layout(base=None):
     notes = []
     if not _mkdir(base, notes):
         return notes
-    _mkdir(os.path.join(base, "bin"), notes)
-    _mkdir(os.path.join(base, "etc"), notes)
-    if _mkdir(os.path.join(base, "lib"), notes):
+    _mkdir(os.path.join(base, "bin"), notes, base)
+    _mkdir(os.path.join(base, "etc"), notes, base)
+    if _mkdir(os.path.join(base, "lib"), notes, base):
         here = os.path.dirname(os.path.abspath(__file__))
         _link(os.path.join(base, "lib", "commands"),
               os.path.join(here, "lib", "commands"), notes)
-        if _mkdir(os.path.join(base, "lib", "addons"), notes):
+        if _mkdir(os.path.join(base, "lib", "addons"), notes, base):
             for mod in MOD_DIRS:
                 if not os.path.isdir(mod):
                     continue
