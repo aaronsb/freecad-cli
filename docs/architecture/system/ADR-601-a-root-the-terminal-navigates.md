@@ -39,9 +39,18 @@ Standard, that the terminal treats as `/`:
   <anything>/                    the operator's own directories
 ```
 
-`lib`, `lib/addons/*` and `macros` are symlinks the tool creates on first
-run, targets read from the addon's install path and FreeCAD's `MacroPath`
-preference. Nothing is written to FreeCAD's directories.
+`lib/commands`, `lib/addons/*` and `macros` are symlinks the tool creates
+on first run, targets read from the addon's install path and FreeCAD's
+`MacroPath` preference. `lib` itself is a real directory: the addon links
+are per machine and cannot live inside the repository. A directory the
+tool would make that is already a link, or a file, is left as it is and
+said once. Nothing is written to FreeCAD's directories.
+
+`cd`, `ls`, `pwd` and `cat` are not recorded: a replayed `cd` would move
+a later session, and Up does not recall them.
+
+*Amended 2026-08-24 on building it: `lib` is a directory of links, not
+one link; the four navigation verbs stay out of history.*
 
 **The working directory is session state.** One session, one cwd; `cd`
 in the dock moves the socket client too, in lockstep, the same way `use`

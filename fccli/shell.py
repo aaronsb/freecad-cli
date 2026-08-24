@@ -1126,6 +1126,91 @@ REGISTRY.add(Verb(
     emit=_emit_screenshot,
 ))
 
+def _session(v):
+    engine = v.get("_engine")
+    return getattr(engine, "session", None) if engine else None
+
+
+def _emit_cd(v):
+    """Move the session in the root. Both terminals move with it."""
+    from . import root as _root
+    session = _session(v)
+    if session is None:
+        return None
+    target = _root.resolve(session.cwd, v.get("path") or "/")
+    if not os.path.isdir(_root.real(target)):
+        raise RuntimeError(f"{target}: no such directory")
+    session.cwd = target
+    return None
+
+
+def _emit_ls(v):
+    from . import root as _root
+    session = _session(v)
+    cwd = session.cwd if session else "/"
+    target = _root.resolve(cwd, v.get("path") or "")
+    try:
+        names = _root.listing(target)
+    except FileNotFoundError as exc:
+        raise RuntimeError(str(exc))
+    if not names:
+        _say(v, "(empty)")
+        return None
+    for row in _columns(names):
+        _say(v, row)
+    return None
+
+
+def _emit_pwd(v):
+    session = _session(v)
+    _say(v, session.cwd if session else "/")
+    return None
+
+
+def _emit_cat(v):
+    from . import root as _root
+    session = _session(v)
+    cwd = session.cwd if session else "/"
+    target = _root.resolve(cwd, v.get("path") or "")
+    try:
+        text, truncated = _root.read(target)
+    except (FileNotFoundError, IsADirectoryError) as exc:
+        raise RuntimeError(str(exc))
+    for line in text.rstrip("\n").splitlines():
+        _say(v, line)
+    if truncated:
+        _say(v, f"({target}: cut at {_root.LIMIT} characters)")
+    return None
+
+
+REGISTRY.add(Verb(
+    name="cd", transactional=False, record=False,
+    doc="Move to a directory in the root. Bare, back to /.",
+    steps=[Step("path", TEXT, "Directory", optional=True, completes="paths")],
+    emit=_emit_cd,
+))
+
+REGISTRY.add(Verb(
+    name="ls", transactional=False, record=False, aliases=["dir"],
+    doc="List a directory in the root. Directories end in /, scripts in *.",
+    steps=[Step("path", TEXT, "Directory", optional=True, completes="paths")],
+    emit=_emit_ls,
+))
+
+REGISTRY.add(Verb(
+    name="pwd", transactional=False, record=False,
+    doc="Where the session is in the root.",
+    steps=[],
+    emit=_emit_pwd,
+))
+
+REGISTRY.add(Verb(
+    name="cat", transactional=False, record=False,
+    doc="Print a file in the root: a note, a script, a macro.",
+    steps=[Step("path", TEXT, "File", completes="paths")],
+    emit=_emit_cat,
+))
+
 REGISTRY.add(Verb(
     name="use", transactional=False, aliases=["scope"],
     doc="Narrow what Tab offers to one domain. 'use off' clears it.",

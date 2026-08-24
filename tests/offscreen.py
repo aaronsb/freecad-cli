@@ -2108,6 +2108,117 @@ def _run():
           (True, [], True))
     _shutil.rmtree(_tmp, ignore_errors=True)
 
+    print("\n5af. the root the terminal navigates")
+    # ADR-601. A real directory laid out after the FHS, a working directory
+    # on the session, and cd/ls/pwd/cat as verbs on it. Under a temporary
+    # XDG_DATA_HOME so nothing here touches the operator's root.
+    from fccli import root as _root
+    _xdg_was = os.environ.get("XDG_DATA_HOME")
+    _xdg = tempfile.mkdtemp(prefix="fccli-root-")
+    os.environ["XDG_DATA_HOME"] = _xdg
+    try:
+        _notes = _root.layout()
+        _r = _root.root()
+        check("the root is under XDG_DATA_HOME", _r, os.path.join(_xdg, "fccli"))
+        check("  bin, etc and lib exist",
+              all(os.path.isdir(os.path.join(_r, d)) for d in ("bin", "etc", "lib")),
+              True)
+        check("  lib/commands links to the shipped tree",
+              os.path.realpath(os.path.join(_r, "lib", "commands")),
+              os.path.realpath(_cd.DEFAULT_TREE))
+        check("  macros links to FreeCAD's macro directory, or says why not",
+              os.path.islink(os.path.join(_r, "macros"))
+              or any(n.startswith("macros:") for n in _notes), True)
+        _again = _root.layout()
+        check("  a second layout changes nothing and says nothing new",
+              _again, _notes)
+        # The jail.
+        check("  .. above / stays at /",
+              [_root.resolve("/", ".."), _root.resolve("/a", "../../.."),
+               _root.resolve("/a/b", "../c"), _root.resolve("/a", "/x/./y/")],
+              ["/", "/", "/a/c", "/x/y"])
+        # Verbs on it, through the engine, with a session.
+        os.makedirs(os.path.join(_r, "plinth", "notes"))
+        open(os.path.join(_r, "plinth", "tower.fccli"), "w").write("box 0,0,0 10 10 10\n")
+        open(os.path.join(_r, "plinth", "README.md"), "w").write("# Plinth\n\nA tower.\n")
+        from fccli.session import Session as _Session
+        _rbus = Bus(); _rseen = []
+        _rbus.subscribe(_rseen.append)
+        _reng = Engine(_rbus, REGISTRY)
+        _rsess = _Session(_reng, _rbus, history=_History(os.path.join(_xdg, "h")))
+        def _lines():
+            return [m.text for m in _rseen if m.kind == _INFO]
+        _reng.submit("ls")
+        check("  ls at / shows the layout, directories first",
+              [l.strip() for l in _lines() if "bin/" in l][:1] != [], True)
+        _rseen.clear(); _reng.submit("cd plinth")
+        check("  cd moves the session", _rsess.cwd, "/plinth")
+        check("    and the socket state carries it", _rsess.state()["cwd"], "/plinth")
+        _rseen.clear(); _reng.submit("ls")
+        check("  ls in it marks a directory and a script",
+              sorted(n for row in _lines() for n in row.split()),
+              ["README.md", "notes/", "tower.fccli*"])
+        _rseen.clear(); _reng.submit("pwd")
+        check("  pwd says where", _lines(), ["/plinth"])
+        _rseen.clear(); _reng.submit("cat README.md")
+        check("  cat prints a note", _lines(), ["# Plinth", "", "A tower."])
+        _rseen.clear(); _reng.submit("cd nowhere")
+        check("  cd to nothing is an error and stays put",
+              ([m.text for m in _rseen if m.kind == ERROR] != [], _rsess.cwd),
+              (True, "/plinth"))
+        _rseen.clear(); _reng.submit("cd ../../..")
+        check("  cd cannot leave the root", _rsess.cwd, "/")
+        _reng.submit("cd plinth")
+        from fccli.completion import path_entries as _pe
+        check("  path completion lists the working directory, names only",
+              _pe(_reng), ["notes/", "README.md", "tower.fccli"])
+        # What layout must never do: write through a link, or give up.
+        _other = tempfile.mkdtemp(prefix="fccli-elsewhere-")
+        _r2 = os.path.join(_xdg, "fccli2")
+        os.makedirs(_r2)
+        os.symlink(_other, os.path.join(_r2, "lib"))
+        open(os.path.join(_r2, "bin"), "w").write("a file")
+        _notes2 = _root.layout(_r2)
+        check("  a linked lib is left alone and nothing is made inside it",
+              (sorted(os.listdir(_other)), any("lib is a link" in n for n in _notes2)),
+              ([], True))
+        check("  a file named bin is said once and the rest is still made",
+              (any("bin is a file" in n for n in _notes2),
+               os.path.isdir(os.path.join(_r2, "etc"))), (True, True))
+        # The root itself as a link is the operator's: followed, not refused.
+        _elsewhere = tempfile.mkdtemp(prefix="fccli-git-")
+        _r4 = os.path.join(_xdg, "fccli4"); os.symlink(_elsewhere, _r4)
+        _n4 = _root.layout(_r4)
+        check("  a root that is itself a link is followed",
+              (os.path.isdir(os.path.join(_elsewhere, "bin")),
+               any("link" in n for n in _n4)), (True, False))
+        _r3 = os.path.join(_xdg, "fccli3"); os.makedirs(_r3); _n3 = []
+        _root._link(os.path.join(_r3, "macros"), "Macro", _n3)
+        check("  a relative macro path makes no link",
+              (os.path.lexists(os.path.join(_r3, "macros")), len(_n3)), (False, 1))
+        # cat on what is not text, and on what is too long.
+        with open(os.path.join(_r, "plinth", "big.txt"), "w") as _fh:
+            _fh.write("x" * (_root.LIMIT + 10))
+        with open(os.path.join(_r, "plinth", "odd.txt"), "w") as _fh:
+            _fh.write("a\x1b]0;title\x07b\n")
+        _rseen.clear(); _reng.submit("cat /plinth/odd.txt")
+        check("  cat shows only printable characters", _lines(), ["a?]0;title?b"])
+        _rseen.clear(); _reng.submit("cat /plinth/big.txt")
+        check("  and says when it cut a file short",
+              _lines()[-1].startswith("(/plinth/big.txt: cut at"), True)
+        _rseen.clear(); _reng.submit("ls /plinth/nothing")
+        check("  an error names the virtual path, never the disk",
+              ([m.text for m in _rseen if m.kind == ERROR][-1].startswith("ls failed: /plinth/nothing"),
+               _xdg in [m.text for m in _rseen if m.kind == ERROR][-1]), (True, False))
+        check("  the idle prompt carries the path",
+              _rsess.state()["cwd"], "/plinth")
+    finally:
+        if _xdg_was is None:
+            os.environ.pop("XDG_DATA_HOME", None)
+        else:
+            os.environ["XDG_DATA_HOME"] = _xdg_was
+        import shutil as _sh3; _sh3.rmtree(_xdg, ignore_errors=True)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

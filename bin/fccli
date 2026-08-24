@@ -343,6 +343,12 @@ def cmd_repl(client, args):
     state = client.hello
 
     while True:
+        # Asked fresh: the dock may have moved the session since the last
+        # reply, and the prompt shows where the session is now.
+        try:
+            state = client.ask(op="state") or state
+        except Exception:
+            pass
         prompt = _prompt_for(state)
         try:
             line = input(prompt)
@@ -397,7 +403,8 @@ def cmd_repl(client, args):
 def _prompt_for(state):
     """The engine's own prompt, so the terminal shows what the dock shows."""
     if state.get("engine") == "idle" or not state.get("prompt"):
-        return "> "
+        cwd = state.get("cwd") or "/"
+        return "> " if cwd == "/" else f"{cwd} > "
     options = state.get("options") or []
     tail = f" [{'/'.join(options)}]" if options else ""
     return f"{state['prompt']}{tail}: "
