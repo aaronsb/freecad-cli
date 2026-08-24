@@ -7,7 +7,12 @@ Python-visible listToolbars. Everything else comes off the QAction, and the
 grouping comes from the toolbar or menu the action was placed in, which is
 where FreeCAD already asserts what belongs with what.
 
-    FCCLI_OUT=commands.json xvfb-run -a freecad tools/harvest_commands.py
+    FCCLI_OUT=commands.json QT_QPA_PLATFORM=xcb \
+        xvfb-run -a freecad tools/harvest_commands.py
+
+Qt6 picks its platform from XDG_SESSION_TYPE, so on a Wayland session
+xvfb-run's display goes unused and this opens on the operator's screen.
+tools/generate_descriptor.py pins it; a hand run has to as well.
 """
 
 import json

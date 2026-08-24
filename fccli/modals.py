@@ -10,27 +10,37 @@ instance went on answering every other request.
 
 A dialog already says what it is, so nothing here is written per command:
 
-    one button, AcceptRole      a rejection -- text to print, nothing to
-                                decide. "Select a shape for revolution."
+    Information                 a notice. Say it and carry on -- the
+                                command worked. "No errors found."
+    one button, otherwise       a rejection. Say it and fail.
+                                "Select a shape for revolution."
     several buttons             a question. The ButtonRoles say which
                                 answer is which.
+    a file chooser              a request for something a socket cannot
+                                give. Refused, with the reason.
 
-Roles, never button text: the text is translated and the roles are not.
-DestructiveRole is the answer ``!`` already means -- ``close!`` discards --
-so a question is refused unless the line carried the bang, and then the
-destructive answer is the one it asked for.
+Icon and roles, never button text: the text is translated and neither of
+the others is. DestructiveRole is the answer ``!`` already means --
+``close!`` discards -- so a question is refused unless the line carried the
+bang, and then the destructive answer is the one it asked for.
 
-Armed only around a verb's own emit. A dialog someone raised by clicking a
-toolbar never passes through here, and stays a dialog.
+One filter for the process, refcounted, answering the innermost armed
+block. Installing one per block let a nested arm claim a dialog its outer
+neighbour raised, and the outer one then committed a command it should
+have failed.
 """
 
 import contextlib
 
 from .qt import QtCore, QtWidgets
 
-
 # PySide6 scopes its enums; older bindings expose the short name.
 _SHOW = getattr(QtCore.QEvent, "Type", QtCore.QEvent).Show
+HANDLED = "_fccli_answered"
+LIMIT = 240
+
+# Answers that mean "no". A lone one of these is the whole dialog saying no.
+_REFUSING = ("AcceptRole", "YesRole")
 
 
 def _role(name):
@@ -38,58 +48,8 @@ def _role(name):
     return str(name).rsplit(".", 1)[-1]
 
 
-class Caught:
-    """What the dialogs raised during one emit said."""
-
-    def __init__(self):
-        self.faults = []     # rejections: text meant for the operator
-        self.questions = []  # (text, [option names]) we declined to answer
-
-    @property
-    def fault(self):
-        if self.faults:
-            return " -- ".join(self.faults)
-        if self.questions:
-            text, options, undoable = self.questions[0]
-            answer = (f" Re-run with ! for {undoable}." if undoable else "")
-            return (f"{text} -- cancelled: FreeCAD wanted one of "
-                    f"{', '.join(options)}, and a command line has nobody to "
-                    f"ask mid-command.{answer}")
-        return None
-
-    def __bool__(self):
-        return bool(self.faults or self.questions)
-
-
-def read(dialog):
-    """Everything a dialog says about itself, and the ways out of it."""
-    buttons = []
-    if isinstance(dialog, QtWidgets.QFileDialog):
-        # Scraping a file chooser's labels yields "File name:" and "Files of
-        # type:", which tells nobody anything. It has one useful answer.
-        return ("this command wants a file chooser, which the command line "
-                "cannot answer -- give the path as an argument instead",
-                [(dialog, "RejectRole")])
-    if isinstance(dialog, QtWidgets.QMessageBox):
-        text = dialog.text()
-        extra = dialog.informativeText()
-        for b in dialog.buttons():
-            buttons.append((b, _role(dialog.buttonRole(b))))
-    else:
-        box = dialog.findChild(QtWidgets.QDialogButtonBox)
-        if box is None:
-            return None
-        labels = [w.text() for w in dialog.findChildren(QtWidgets.QLabel)
-                  if w.isVisible() and w.text()]
-        text, extra = " ".join(labels[:2]), ""
-        for b in box.buttons():
-            buttons.append((b, _role(box.buttonRole(b))))
-    if not buttons:
-        return None
-    return _phrase(dialog.windowTitle(), text, extra), buttons
-
-
-LIMIT = 240
+def _icon(box):
+    return str(box.icon()).rsplit(".", 1)[-1]
 
 
 def _phrase(*parts):
@@ -104,7 +64,71 @@ def _phrase(*parts):
         if part and not any(part in seen or seen in part for seen in kept):
             kept.append(part)
     line = " -- ".join(kept)
-    return line if len(line) <= LIMIT else line[:LIMIT - 1].rstrip() + "\u2026"
+    return line if len(line) <= LIMIT else line[:LIMIT - 1].rstrip() + "…"
+
+
+class Caught:
+    """What the dialogs raised during one emit said."""
+
+    def __init__(self):
+        self.faults = []     # rejections: the command did not happen
+        self.notices = []    # the command happened, and had something to say
+        self.questions = []  # (text, [option names], destructive option)
+
+    @property
+    def fault(self):
+        if self.faults:
+            return " -- ".join(self.faults)
+        if self.questions:
+            text, options, undoable = self.questions[0]
+            answer = f" Re-run with ! for {undoable}." if undoable else ""
+            return (f"{text} -- cancelled: FreeCAD wanted one of "
+                    f"{', '.join(options)}, and a command line has nobody to "
+                    f"ask mid-command.{answer}")
+        return None
+
+    def __bool__(self):
+        """Whether the command failed. A notice on its own is not a failure."""
+        return bool(self.faults or self.questions)
+
+
+def read(dialog):
+    """What kind of dialog this is, its words, and the ways out of it.
+
+    Returns (kind, text, buttons). A file chooser has no buttons worth
+    reading -- scraping its labels yields "File name:" and "Files of type:"
+    -- and calling .text() on one raised out of the event filter, which
+    left the chooser up and the caller hanging, which is the whole bug.
+    """
+    if isinstance(dialog, QtWidgets.QFileDialog):
+        return ("chooser",
+                "this command wants a file chooser, which the command line "
+                "cannot answer -- give the path as an argument instead", [])
+
+    buttons = []
+    if isinstance(dialog, QtWidgets.QMessageBox):
+        text = _phrase(dialog.windowTitle(), dialog.text(),
+                       dialog.informativeText())
+        for b in dialog.buttons():
+            buttons.append((b, _role(dialog.buttonRole(b))))
+        kind = "notice" if _icon(dialog) == "Information" else "message"
+    else:
+        box = dialog.findChild(QtWidgets.QDialogButtonBox)
+        if box is None:
+            return None
+        labels = [w.text() for w in dialog.findChildren(QtWidgets.QLabel)
+                  if w.isVisible() and w.text()]
+        text = _phrase(dialog.windowTitle(), *labels[:2])
+        for b in box.buttons():
+            buttons.append((b, _role(box.buttonRole(b))))
+        kind = "message"
+    if not buttons:
+        return None
+    if len(buttons) > 1:
+        kind = "question"
+    elif kind == "message":
+        kind = "rejection" if buttons[0][1] in _REFUSING else "question"
+    return kind, text, buttons
 
 
 def _pick(buttons, force):
@@ -125,9 +149,6 @@ def _pick(buttons, force):
     return buttons[0][0]
 
 
-HANDLED = "_fccli_answered"
-
-
 def _click(widget):
     """Press it, unless it is already gone."""
     try:
@@ -138,67 +159,74 @@ def _click(widget):
 
 
 class _Filter(QtCore.QObject):
-    """Catches a modal as it is shown, reads it, and answers it."""
+    """The one filter. Answers whichever block is innermost right now."""
 
-    def __init__(self, caught, force):
+    def __init__(self):
         super().__init__()
-        self.caught = caught
-        self.force = force
+        self.targets = []       # a stack of Caught, innermost last
+        self.forced = []        # whether each of those carried the bang
 
     def eventFilter(self, obj, event):
-        if event.type() != _SHOW:
+        if event.type() != _SHOW or not self.targets:
             return False
         if not isinstance(obj, QtWidgets.QDialog) or not obj.isModal():
             return False
-        # Marked on the dialog rather than remembered here. A Show event
-        # arrives again every time a dialog is hidden and reshown, and a
-        # verb whose emit runs another verb installs a second filter --
-        # both would answer, and the second click would land on a widget
-        # the first one already destroyed. id() cannot carry the mark:
-        # CPython reuses an address as soon as the dialog is freed.
+        # Marked on the dialog, not remembered here: a Show event arrives
+        # again every time a dialog is hidden and reshown, and id() cannot
+        # carry the mark because CPython reuses a freed address.
         if obj.property(HANDLED):
             return False
-        obj.setProperty(HANDLED, True)
         parsed = read(obj)
         if parsed is None:
             return False
-        text, buttons = parsed
-        roles = [role for _, role in buttons]
-        if len(buttons) == 1 and roles[0] in ("AcceptRole", "YesRole"):
-            self.caught.faults.append(text)
+        kind, text, buttons = parsed
+        obj.setProperty(HANDLED, True)
+        caught = self.targets[-1]
+
+        if kind == "chooser":
+            caught.faults.append(text)
+            QtCore.QTimer.singleShot(0, lambda: _click(obj))
+            return False
+        if kind == "notice":
+            # "No errors found in the mesh." is the command reporting that
+            # it worked. Treating every one-button box as a rejection rolled
+            # the transaction back and called a success a failure.
+            caught.notices.append(text)
+        elif kind == "rejection":
+            caught.faults.append(text)
         else:
             undoable = next(((b.text() or "").replace("&", "")
                              for b, role in buttons
                              if role == "DestructiveRole"), None)
-            self.caught.questions.append(
+            caught.questions.append(
                 (text, [(b.text() or "").replace("&", "") for b, _ in buttons],
                  undoable))
-        if isinstance(obj, QtWidgets.QFileDialog):
-            QtCore.QTimer.singleShot(0, lambda: _click(obj))
-            return False
-        chosen = _pick(buttons, self.force)
+        chosen = _pick(buttons, self.forced[-1])
         # Deferred: the dialog is still inside its own show handler, and
-        # exec() has not started the loop that a click has to unwind. By
-        # the time the timer fires the dialog may have closed on its own,
-        # and a bound method of a freed widget raises rather than no-ops.
+        # exec() has not started the loop that a click has to unwind.
         QtCore.QTimer.singleShot(0, lambda: _click(chosen))
         return False
+
+
+_FILTER = None
 
 
 @contextlib.contextmanager
 def intercepted(force=False):
     """Route modals to the caller for the length of one emit."""
+    global _FILTER
     caught = Caught()
     app = QtWidgets.QApplication.instance()
     if app is None:
         yield caught
         return
-    handler = _Filter(caught, force)
-    app.installEventFilter(handler)
+    if _FILTER is None:
+        _FILTER = _Filter()
+        app.installEventFilter(_FILTER)
+    _FILTER.targets.append(caught)
+    _FILTER.forced.append(bool(force))
     try:
         yield caught
     finally:
-        app.removeEventFilter(handler)
-        # The filter is the only thing referencing itself; PySide collects
-        # an unreferenced QObject, and a collected filter catches nothing.
-        handler.deleteLater()
+        _FILTER.targets.pop()
+        _FILTER.forced.pop()

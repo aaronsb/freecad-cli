@@ -103,8 +103,19 @@ def harvest_types(workdir, verbose):
 def harvest_commands(workdir, verbose):
     path = os.path.join(workdir, "commands.json")
     env = dict(os.environ, FCCLI_OUT=path)
-    runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"] \
-        if shutil.which("xvfb-run") and not os.environ.get("DISPLAY") else []
+    # harvest_commands activates every workbench to read its QActions, so
+    # this is a full GUI. Two ways it used to land on the operator's screen:
+    # falling back to their DISPLAY whenever one was set, and -- once that
+    # was fixed elsewhere -- not pinning the Qt platform, since Qt6 picks
+    # its plugin from XDG_SESSION_TYPE and a Wayland session ignores the
+    # virtual display entirely.
+    runner = []
+    if shutil.which("xvfb-run"):
+        runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"]
+        env["QT_QPA_PLATFORM"] = "xcb"
+    elif not os.environ.get("DISPLAY"):
+        print("  commands: needs xvfb-run, or a DISPLAY", file=sys.stderr)
+        return {}
     proc = sh(runner + ["freecad", os.path.join(HERE, "harvest_commands.py")],
               env=env)
     if not os.path.exists(path):

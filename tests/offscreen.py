@@ -1084,33 +1084,40 @@ def main():
     from fccli import modals as _modals
     from fccli.qt import QtWidgets as _QW
 
-    def _box(icon, text, buttons):
+    def _box(icon, text, buttons, title="Revolve"):
         b = _QW.QMessageBox()
         b.setIcon(icon)
-        b.setWindowTitle("Revolve")
+        b.setWindowTitle(title)
         b.setText(text)
         b.setStandardButtons(buttons)
         return b
 
     _reject = _box(_QW.QMessageBox.Critical, "Select a shape for revolution.",
                    _QW.QMessageBox.Ok)
-    _text, _buttons = _modals.read(_reject)
-    check("a lone OK is read as one button", len(_buttons), 1)
-    check("  and its role is what marks it a rejection",
-          _buttons[0][1], "AcceptRole")
+    _kind, _text, _buttons = _modals.read(_reject)
+    check("a lone OK on a complaint is a rejection", _kind, "rejection")
+    check("  and its role is what marks it", _buttons[0][1], "AcceptRole")
     check("the words come through", "revolution" in _text, True)
     check("  with the title folded in", _text.startswith("Revolve"), True)
+
+    # An Information box is the command reporting that it worked. Reading
+    # every one-button box as a rejection rolled the transaction back and
+    # called a success a failure.
+    _notice = _box(_QW.QMessageBox.Information, "No errors found in the mesh.",
+                   _QW.QMessageBox.Ok, title="Mesh check")
+    check("an informational box is a notice, not a rejection",
+          _modals.read(_notice)[0], "notice")
 
     _ask = _box(_QW.QMessageBox.Question, "Save changes before closing?",
                 _QW.QMessageBox.Save | _QW.QMessageBox.Discard
                 | _QW.QMessageBox.Cancel)
-    _text2, _buttons2 = _modals.read(_ask)
-    _roles = sorted(role for _, role in _buttons2)
-    check("a question offers three ways out", len(_buttons2), 3)
-    check("  and Discard is the destructive one", _roles,
+    _k2, _text2, _buttons2 = _modals.read(_ask)
+    check("several buttons make a question", _k2, "question")
+    check("  offering three ways out", len(_buttons2), 3)
+    check("  with Discard as the destructive one",
+          sorted(r for _, r in _buttons2),
           ["AcceptRole", "DestructiveRole", "RejectRole"])
 
-    # Reject by default. Cancelling is the answer that cannot lose work.
     check("without the bang, a question is cancelled",
           _modals._pick(_buttons2, force=False).text().replace("&", ""),
           "Cancel")
@@ -1120,16 +1127,43 @@ def main():
     check("the bang changes nothing when there is nothing to discard",
           _modals._pick(_buttons, force=True).text().replace("&", ""), "OK")
 
-    # Titles that merely repeat the body are folded, not printed twice.
+    # A file chooser has no buttons worth reading, and calling .text() on
+    # one raised out of the event filter -- which left the chooser up and
+    # the caller hanging, which is the bug this module exists for.
+    _chooser = _QW.QFileDialog()
+    _kc, _tc, _bc = _modals.read(_chooser)
+    check("a file chooser is its own kind", _kc, "chooser")
+    check("  with no buttons to read", _bc, [])
+    check("  and an answer that says what to do instead",
+          "path as an argument" in _tc, True)
+
     _dupe = _box(_QW.QMessageBox.Warning, "Revolve", _QW.QMessageBox.Ok)
     check("a title the body repeats appears once",
-          _modals.read(_dupe)[0], "Revolve")
-
+          _modals.read(_dupe)[1], "Revolve")
     _long = _box(_QW.QMessageBox.Critical, "x " * 400, _QW.QMessageBox.Ok)
     check("a wall of text is capped",
-          len(_modals.read(_long)[0]) <= _modals.LIMIT, True)
+          len(_modals.read(_long)[1]) <= _modals.LIMIT, True)
 
-    for _b in (_reject, _ask, _dupe, _long):
+    # Caught: a notice alone is not a failure, so the command still commits.
+    _c = _modals.Caught()
+    _c.notices.append("done")
+    check("a notice on its own does not fail the command", bool(_c), False)
+    _c.faults.append("nope")
+    check("  a rejection does", bool(_c), True)
+
+    # Nested arming. One filter per block let the inner one claim a dialog
+    # the outer had raised, and the outer then committed a command it
+    # should have failed.
+    with _modals.intercepted() as _outer:
+        with _modals.intercepted() as _inner:
+            check("the innermost block is the one armed",
+                  _modals._FILTER.targets[-1] is _inner, True)
+        check("  and the outer one is armed again after it",
+              _modals._FILTER.targets[-1] is _outer, True)
+    check("nothing stays armed once the blocks are done",
+          _modals._FILTER.targets, [])
+
+    for _b in (_reject, _notice, _ask, _dupe, _long, _chooser):
         _b.deleteLater()
 
     print("\n6. filter overhead")

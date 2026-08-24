@@ -333,60 +333,67 @@ def suite_check(dock, doc):
 def suite_modals(dock):
     """A command that rejects the request must say so, not wait for a click.
 
-    Part_Revolve on a solid puts up "Select a shape for revolution." and
-    blocks on a button nobody is there to press. Over the socket that hung
-    the caller outright, while the same instance went on answering
-    everything else, so it did not even look broken.
+    Over the socket this hung the caller outright: the dialog waited for a
+    click nobody was there to make, while the same instance went on
+    answering everything else, so it did not even look broken.
+
+    Driven through engine.submit rather than modals.intercepted, so it
+    asserts what the operator sees -- an error on the bus, no object, and
+    the transaction rolled back -- rather than only what the filter caught.
     """
     print("\n7b. a rejected request answers on the command line")
-    import FreeCADGui as Gui
     from fccli import modals
 
-    errors = []
+    errors, infos = [], []
     stop = dock.bus.subscribe(
-        lambda m: errors.append(m.text) if m.kind == "error" else None)
+        lambda m: errors.append(m.text) if m.kind == "error"
+        else (infos.append(m.text) if m.kind == "info" else None))
 
     dock.engine.submit("new modals")
     doc = App.ActiveDocument
-    slab = doc.addObject("Part::Box", "Slab")
-    slab.Length, slab.Width, slab.Height = 100, 60, 20
+    doc.addObject("Part::Box", "Slab")
     doc.recompute()
-    before = len(doc.Objects)
+    before, undo_before = len(doc.Objects), len(doc.UndoNames)
 
-    Gui.Selection.clearSelection()
-    Gui.Selection.addSelection(doc.Name, "Slab")
-    QtWidgets.QApplication.processEvents()
-
-    # A solid is not a profile, so the command refuses.
-    with modals.intercepted() as caught:
-        Gui.runCommand("Part_Revolve")
-        for _ in range(20):
-            QtWidgets.QApplication.processEvents()
-        for b in Gui.getMainWindow().findChildren(QtWidgets.QPushButton):
-            if b.isVisible() and (b.text() or "").replace("&", "").strip().lower() == "ok":
-                b.click()
-                break
-        for _ in range(25):
-            QtWidgets.QApplication.processEvents()
-
-    truthy("the refusal was caught, not left on screen", bool(caught))
-    truthy("and it carries what FreeCAD said",
-           "revolution" in (caught.fault or "").lower())
-    check("no modal is left waiting",
-          QtWidgets.QApplication.activeModalWidget(), None)
-    check("nothing was created", len(doc.Objects), before)
-
-    try:
-        Gui.Control.closeDialog()
-    except Exception:
-        pass
-    for _ in range(10):
+    # PartDesign_Revolution wants an active body and says so in a modal.
+    dock.engine.submit("revolve")
+    for _ in range(30):
         QtWidgets.QApplication.processEvents()
 
-    # Unarmed, the same dialog is nobody's business but the operator's.
-    truthy("the filter is gone once the verb is done",
-           not isinstance(QtWidgets.QApplication.activeModalWidget(),
-                          QtWidgets.QDialog))
+    truthy("the refusal reaches the bus as an error", bool(errors))
+    truthy("  naming the verb that was typed",
+           any(e.startswith("revolve") for e in errors))
+    truthy("  and carrying what FreeCAD said",
+           any("body" in e.lower() or "select" in e.lower() for e in errors))
+    check("nothing was created", len(doc.Objects), before)
+    check("no undo step was left behind", len(doc.UndoNames), undo_before)
+    check("no modal is left waiting",
+          QtWidgets.QApplication.activeModalWidget(), None)
+    check("the engine is idle again", dock.engine.state, "idle")
+
+    # A notice is the command reporting that it worked. Reading every
+    # one-button box as a rejection rolled the transaction back and called
+    # a success a failure.
+    errors.clear()
+    with modals.intercepted() as caught:
+        box = QtWidgets.QMessageBox(Gui.getMainWindow())
+        box.setIcon(QtWidgets.QMessageBox.Information)
+        box.setWindowTitle("Mesh check")
+        box.setText("No errors found in the mesh.")
+        box.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        QtCore.QTimer.singleShot(0, box.exec)
+        for _ in range(30):
+            QtWidgets.QApplication.processEvents()
+    truthy("an informational box is caught", bool(caught.notices))
+    check("  and does not fail the command", bool(caught), False)
+    check("  nor is it left on screen",
+          QtWidgets.QApplication.activeModalWidget(), None)
+
+    # Nobody clicked anything above: the filter's own deferred press is
+    # what dismissed both, which the hand-clicked version never exercised.
+    truthy("the filter dismissed them itself",
+           QtWidgets.QApplication.activeModalWidget() is None)
+
     stop()
     dock.engine.submit("close!")
 

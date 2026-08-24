@@ -464,6 +464,10 @@ class Engine:
             self._announce()
             return
         _commit_transaction(doc)
+        for notice in caught.notices:
+            # The command worked and had something to say. It said it in a
+            # box nobody could click, so say it here instead.
+            self.bus.emit(_bus.INFO, notice)
         self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
                       object=obj, picked=picked, typed=typed,
                       record=verb.record)
