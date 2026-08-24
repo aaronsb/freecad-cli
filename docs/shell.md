@@ -202,11 +202,12 @@ uses it; with several it lists them and requires `--pid`. `fccli ls
 --instances` enumerates.
 
 **Modal dialogs.** A tier-0 verb that opens a Task panel blocks the command
-line the same way it blocks the dock. The server stays responsive (a modal
-runs a nested event loop that still services sockets) but `submit` is
-refused while `Gui.Control.activeDialog()` is set, with an error saying
-which dialog is open. Better a clear refusal than a command executing into a
-half-open dialog.
+line the same way it blocks the dock. The server stays responsive — a modal
+runs a nested event loop that still services sockets — but `submit` is
+declined while `Gui.Control.activeDialog()` is set, naming the dialog. A
+command executing into a half-open dialog is worse than one that waits.
+
+That decline is **not an error**, and the distinction is load-bearing.
 
 **Security.** 0600 in `XDG_RUNTIME_DIR`. Anyone who can read that socket can
 already read the user's files and attach a debugger to their FreeCAD, so the
@@ -256,6 +257,42 @@ non-empty — is what makes this safe to run against a session someone is
 using. An agent's one-shot lands in the gaps, and refuses rather than
 interleaving into a half-typed command.
 
+## "Not now" is not "wrong"
+
+A one-shot meets two different kinds of no, and a caller does different
+things about them:
+
+| | Meaning | Caller's move |
+|---|---|---|
+| **rejected** | the command was wrong — unknown verb, missing argument, the emit failed | fix it |
+| **busy** | the session is mid-something — a modal dialog is open, or someone holds the floor | wait and try again |
+
+Busy is an ordinary condition, not a fault. Someone using FreeCAD will have
+a dialog open a good fraction of the time, and an agent polling a live
+session should expect it. So it reads as information:
+
+```
+$ fccli exec 'box 0,0,0 40 30 20'
+not now: a task panel is open (Pad). The command was not run.
+$ echo $?
+75
+```
+
+Exit **75** is `EX_TEMPFAIL` from `sysexits.h` — the conventional "temporary
+failure, retry later". It is deliberately far away from 1, so a script that
+checks `if ! fccli exec ...` does not treat a busy session as a broken
+command. Under `--json`:
+
+```json
+{"kind": "busy", "reason": "modal", "detail": "Pad", "retryable": true}
+{"kind": "busy", "reason": "floor", "holder": "dock", "retryable": true}
+```
+
+Nothing is written to stderr for a busy result, because nothing went wrong.
+`--wait` converts it into patience; `--steal` converts a floor hold into a
+takeover. Neither applies to a modal dialog, which only the person clicking
+it can clear.
+
 ## Client surface
 
 Pure stdlib — FreeCAD ships the system Python, so the client imports nothing
@@ -282,15 +319,16 @@ terminal rather than being reimplemented.
 
 ## Failure modes worth naming
 
-| Situation | Behaviour |
-|---|---|
-| FreeCAD not running | exit 3, "no running instance" |
-| Several instances | exit 4, list them, require `--pid` |
-| Stale socket file | removed and reported, not silently ignored |
-| Modal dialog open | exit 5, naming the dialog |
-| Floor held elsewhere | exit 6, naming the holder; `--steal` overrides |
-| FreeCAD exits mid-session | client reports the disconnect and exits non-zero |
-| Command errors | server sends `error`, client exits non-zero |
+| Situation | Exit | Behaviour |
+|---|---|---|
+| Done | 0 | result on stdout |
+| Command rejected | 1 | the reason on stderr — this one is a fault |
+| FreeCAD not running | 3 | "no running instance" |
+| Several instances | 4 | list them, require `--pid` |
+| Modal dialog open | 75 | informational, naming the dialog; nothing on stderr |
+| Floor held elsewhere | 75 | informational, naming the holder; `--wait`, `--steal` |
+| FreeCAD exits mid-session | 3 | the disconnect is reported |
+| Stale socket file | — | removed and reported, not silently ignored |
 
 ## What it is not
 
