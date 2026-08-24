@@ -4224,7 +4224,8 @@
    "shortcut": null,
    "status": "Edits material properties",
    "toolbar": "Material",
-   "tooltip": "Edits material properties"
+   "tooltip": "Edits material properties",
+   "workbench": "MaterialWorkbench"
   },
   "Materials_InspectAppearance": {
    "icon": false,
@@ -4853,7 +4854,8 @@
    "shortcut": null,
    "status": "Sweeps the selected sketch or profile along a helix and adds it to the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Sweeps the selected sketch or profile along a helix and adds it to the body"
+   "tooltip": "Sweeps the selected sketch or profile along a helix and adds it to the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_AdditiveLoft": {
    "icon": true,
@@ -4863,7 +4865,8 @@
    "shortcut": null,
    "status": "Lofts the selected sketch or profile along a path and adds it to the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Lofts the selected sketch or profile along a path and adds it to the body"
+   "tooltip": "Lofts the selected sketch or profile along a path and adds it to the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_AdditivePipe": {
    "icon": true,
@@ -4873,7 +4876,8 @@
    "shortcut": null,
    "status": "Sweeps the selected sketch or profile along a path and adds it to the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Sweeps the selected sketch or profile along a path and adds it to the body"
+   "tooltip": "Sweeps the selected sketch or profile along a path and adds it to the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Body": {
    "icon": true,
@@ -4883,7 +4887,8 @@
    "shortcut": null,
    "status": "Creates a new body and activates it",
    "toolbar": "Part Design Helper Features",
-   "tooltip": "Creates a new body and activates it"
+   "tooltip": "Creates a new body and activates it",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Boolean": {
    "icon": true,
@@ -4893,7 +4898,8 @@
    "shortcut": null,
    "status": "Applies boolean operations with the selected objects and the active body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Applies boolean operations with the selected objects and the active body"
+   "tooltip": "Applies boolean operations with the selected objects and the active body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Chamfer": {
    "icon": true,
@@ -4903,7 +4909,8 @@
    "shortcut": null,
    "status": "Applies a chamfer to the selected edges or faces",
    "toolbar": "Part Design Dress-Up Features",
-   "tooltip": "Applies a chamfer to the selected edges or faces"
+   "tooltip": "Applies a chamfer to the selected edges or faces",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Clone": {
    "icon": true,
@@ -4913,14 +4920,16 @@
    "shortcut": null,
    "status": "Copies a solid object parametrically as the base feature of a new body",
    "toolbar": "Part Design Helper Features",
-   "tooltip": "Copies a solid object parametrically as the base feature of a new body"
+   "tooltip": "Copies a solid object parametrically as the base feature of a new body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_CompDatums": {
    "label": "Create Datum",
    "name": "PartDesign_CompDatums",
    "shortcut": null,
    "status": "Creates a datum object or local coordinate system",
-   "tooltip": "Creates a datum object or local coordinate system"
+   "tooltip": "Creates a datum object or local coordinate system",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_CompPrimitiveAdditive": {
    "icon": true,
@@ -4930,7 +4939,8 @@
    "shortcut": null,
    "status": "Creates an additive primitive",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Creates an additive primitive"
+   "tooltip": "Creates an additive primitive",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_CompPrimitiveSubtractive": {
    "icon": true,
@@ -4940,7 +4950,8 @@
    "shortcut": null,
    "status": "Creates a subtractive primitive",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Creates a subtractive primitive"
+   "tooltip": "Creates a subtractive primitive",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_CompSketches": {
    "icon": true,
@@ -4950,7 +4961,8 @@
    "shortcut": null,
    "status": "Creates a datum object or local coordinate system",
    "toolbar": "Part Design Helper Features",
-   "tooltip": "Creates a datum object or local coordinate system"
+   "tooltip": "Creates a datum object or local coordinate system",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_CoordinateSystem": {
    "icon": true,
@@ -4960,7 +4972,8 @@
    "shortcut": null,
    "status": "Creates a new local coordinate system",
    "toolbar": null,
-   "tooltip": "Creates a new local coordinate system"
+   "tooltip": "Creates a new local coordinate system",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Draft": {
    "icon": true,
@@ -4970,7 +4983,8 @@
    "shortcut": null,
    "status": "Applies a draft to the selected faces",
    "toolbar": "Part Design Dress-Up Features",
-   "tooltip": "Applies a draft to the selected faces"
+   "tooltip": "Applies a draft to the selected faces",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_DuplicateSelection": {
    "icon": false,
@@ -4980,7 +4994,8 @@
    "shortcut": null,
    "status": "Duplicates the selected object and adds it to the active body",
    "toolbar": null,
-   "tooltip": "Duplicates the selected object and adds it to the active body"
+   "tooltip": "Duplicates the selected object and adds it to the active body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Fillet": {
    "icon": true,
@@ -4990,7 +5005,8 @@
    "shortcut": null,
    "status": "Applies a fillet to the selected edges or faces",
    "toolbar": "Part Design Dress-Up Features",
-   "tooltip": "Applies a fillet to the selected edges or faces"
+   "tooltip": "Applies a fillet to the selected edges or faces",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Groove": {
    "icon": true,
@@ -5000,7 +5016,8 @@
    "shortcut": null,
    "status": "Revolves the sketch or profile around a line or axis and removes it from the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Revolves the sketch or profile around a line or axis and removes it from the body"
+   "tooltip": "Revolves the sketch or profile around a line or axis and removes it from the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Hole": {
    "icon": true,
@@ -5010,7 +5027,8 @@
    "shortcut": null,
    "status": "Creates holes in the active body at the center points of circles or arcs of the selected sketch or profile",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Creates holes in the active body at the center points of circles or arcs of the selected sketch or profile"
+   "tooltip": "Creates holes in the active body at the center points of circles or arcs of the selected sketch or profile",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_InvoluteGear": {
    "icon": true,
@@ -5020,7 +5038,8 @@
    "shortcut": null,
    "status": "Creates or edits the involute gear definition",
    "toolbar": null,
-   "tooltip": "Creates or edits the involute gear definition"
+   "tooltip": "Creates or edits the involute gear definition",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Line": {
    "icon": true,
@@ -5030,7 +5049,8 @@
    "shortcut": null,
    "status": "Creates a new datum line",
    "toolbar": null,
-   "tooltip": "Creates a new datum line"
+   "tooltip": "Creates a new datum line",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_LinearPattern": {
    "icon": true,
@@ -5040,14 +5060,16 @@
    "shortcut": null,
    "status": "Duplicates the selected features or the active body in a linear pattern",
    "toolbar": "Part Design Transformation Features",
-   "tooltip": "Duplicates the selected features or the active body in a linear pattern"
+   "tooltip": "Duplicates the selected features or the active body in a linear pattern",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Migrate": {
    "label": "Migrate",
    "name": "PartDesign_Migrate",
    "shortcut": null,
    "status": "Migrates the document to the modern Part Design workflow",
-   "tooltip": "Migrates the document to the modern Part Design workflow"
+   "tooltip": "Migrates the document to the modern Part Design workflow",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Mirrored": {
    "icon": true,
@@ -5057,28 +5079,32 @@
    "shortcut": null,
    "status": "Mirrors the selected features or active body",
    "toolbar": "Part Design Transformation Features",
-   "tooltip": "Mirrors the selected features or active body"
+   "tooltip": "Mirrors the selected features or active body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_MoveFeature": {
    "label": "Move Object To\u2026",
    "name": "PartDesign_MoveFeature",
    "shortcut": null,
    "status": "Moves the selected object to another body",
-   "tooltip": "Moves the selected object to another body"
+   "tooltip": "Moves the selected object to another body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_MoveFeatureInTree": {
    "label": "Move Feature After\u2026",
    "name": "PartDesign_MoveFeatureInTree",
    "shortcut": null,
    "status": "Moves the selected feature after another feature in the same body",
-   "tooltip": "Moves the selected feature after another feature in the same body"
+   "tooltip": "Moves the selected feature after another feature in the same body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_MoveTip": {
    "label": "Set Tip",
    "name": "PartDesign_MoveTip",
    "shortcut": null,
    "status": "Moves the tip of the body to the selected feature",
-   "tooltip": "Moves the tip of the body to the selected feature"
+   "tooltip": "Moves the tip of the body to the selected feature",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_MultiTransform": {
    "icon": true,
@@ -5088,7 +5114,8 @@
    "shortcut": null,
    "status": "Applies multiple transformations to the selected features or active body",
    "toolbar": "Part Design Transformation Features",
-   "tooltip": "Applies multiple transformations to the selected features or active body"
+   "tooltip": "Applies multiple transformations to the selected features or active body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_NewSketch": {
    "icon": true,
@@ -5098,7 +5125,8 @@
    "shortcut": null,
    "status": "Creates a new sketch",
    "toolbar": null,
-   "tooltip": "Creates a new sketch"
+   "tooltip": "Creates a new sketch",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Pad": {
    "icon": true,
@@ -5108,7 +5136,8 @@
    "shortcut": null,
    "status": "Extrudes the selected sketch or profile and adds it to the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Extrudes the selected sketch or profile and adds it to the body"
+   "tooltip": "Extrudes the selected sketch or profile and adds it to the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Plane": {
    "icon": true,
@@ -5118,7 +5147,8 @@
    "shortcut": null,
    "status": "Creates a new datum plane",
    "toolbar": null,
-   "tooltip": "Creates a new datum plane"
+   "tooltip": "Creates a new datum plane",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Pocket": {
    "icon": true,
@@ -5128,7 +5158,8 @@
    "shortcut": null,
    "status": "Extrudes the selected sketch or profile and removes it from the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Extrudes the selected sketch or profile and removes it from the body"
+   "tooltip": "Extrudes the selected sketch or profile and removes it from the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Point": {
    "icon": true,
@@ -5138,7 +5169,8 @@
    "shortcut": null,
    "status": "Creates a new datum point",
    "toolbar": null,
-   "tooltip": "Creates a new datum point"
+   "tooltip": "Creates a new datum point",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_PolarPattern": {
    "icon": true,
@@ -5148,7 +5180,8 @@
    "shortcut": null,
    "status": "Duplicates the selected features or the active body in a circular pattern",
    "toolbar": "Part Design Transformation Features",
-   "tooltip": "Duplicates the selected features or the active body in a circular pattern"
+   "tooltip": "Duplicates the selected features or the active body in a circular pattern",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Revolution": {
    "icon": true,
@@ -5158,7 +5191,8 @@
    "shortcut": null,
    "status": "Revolves the selected sketch or profile around a line or axis and adds it to the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Revolves the selected sketch or profile around a line or axis and adds it to the body"
+   "tooltip": "Revolves the selected sketch or profile around a line or axis and adds it to the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_ShapeBinder": {
    "icon": true,
@@ -5168,7 +5202,8 @@
    "shortcut": null,
    "status": "Creates a new shape binder",
    "toolbar": null,
-   "tooltip": "Creates a new shape binder"
+   "tooltip": "Creates a new shape binder",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Sprocket": {
    "icon": true,
@@ -5178,7 +5213,8 @@
    "shortcut": null,
    "status": "Creates or edits the sprocket definition.",
    "toolbar": null,
-   "tooltip": "Creates or edits the sprocket definition."
+   "tooltip": "Creates or edits the sprocket definition.",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_SubShapeBinder": {
    "icon": true,
@@ -5188,7 +5224,8 @@
    "shortcut": null,
    "status": "Creates a reference to geometry from one or more objects, allowing it to be used inside or outside a body. It tracks relative placements, supports multiple geometry types (solids, faces, edges, vertices), and can work with objects in the same or external documents.",
    "toolbar": "Part Design Helper Features",
-   "tooltip": "Creates a reference to geometry from one or more objects, allowing it to be used inside or outside a body. It tracks relative placements, supports multiple geometry types (solids, faces, edges, vertices), and can work with objects in the same or external documents."
+   "tooltip": "Creates a reference to geometry from one or more objects, allowing it to be used inside or outside a body. It tracks relative placements, supports multiple geometry types (solids, faces, edges, vertices), and can work with objects in the same or external documents.",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_SubtractiveHelix": {
    "icon": true,
@@ -5198,7 +5235,8 @@
    "shortcut": null,
    "status": "Sweeps the selected sketch or profile along a helix and removes it from the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Sweeps the selected sketch or profile along a helix and removes it from the body"
+   "tooltip": "Sweeps the selected sketch or profile along a helix and removes it from the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_SubtractiveLoft": {
    "icon": true,
@@ -5208,7 +5246,8 @@
    "shortcut": null,
    "status": "Lofts the selected sketch or profile along a path and removes it from the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Lofts the selected sketch or profile along a path and removes it from the body"
+   "tooltip": "Lofts the selected sketch or profile along a path and removes it from the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_SubtractivePipe": {
    "icon": true,
@@ -5218,7 +5257,8 @@
    "shortcut": null,
    "status": "Sweeps the selected sketch or profile along a path and removes it from the body",
    "toolbar": "Part Design Modeling Features",
-   "tooltip": "Sweeps the selected sketch or profile along a path and removes it from the body"
+   "tooltip": "Sweeps the selected sketch or profile along a path and removes it from the body",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_Thickness": {
    "icon": true,
@@ -5228,7 +5268,8 @@
    "shortcut": null,
    "status": "Applies thickness and removes the selected faces",
    "toolbar": "Part Design Dress-Up Features",
-   "tooltip": "Applies thickness and removes the selected faces"
+   "tooltip": "Applies thickness and removes the selected faces",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_WizardShaft": {
    "icon": true,
@@ -5238,14 +5279,16 @@
    "shortcut": null,
    "status": "Starts the shaft design wizard",
    "toolbar": null,
-   "tooltip": "Starts the shaft design wizard"
+   "tooltip": "Starts the shaft design wizard",
+   "workbench": "PartDesignWorkbench"
   },
   "PartDesign_WizardShaftCallBack": {
    "label": "Shaft design wizard...",
    "name": "PartDesign_WizardShaftCallBack",
    "shortcut": null,
    "status": "",
-   "tooltip": "Start the shaft design wizard"
+   "tooltip": "Start the shaft design wizard",
+   "workbench": "PartDesignWorkbench"
   },
   "Part_Boolean": {
    "icon": true,
@@ -5255,7 +5298,8 @@
    "shortcut": null,
    "status": "Applies a boolean operations with the selected shapes",
    "toolbar": "Boolean Tools",
-   "tooltip": "Applies a boolean operations with the selected shapes"
+   "tooltip": "Applies a boolean operations with the selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_BooleanFragments": {
    "icon": true,
@@ -5276,7 +5320,8 @@
    "shortcut": null,
    "status": "Creates a solid cube",
    "toolbar": "Solids",
-   "tooltip": "Creates a solid cube"
+   "tooltip": "Creates a solid cube",
+   "workbench": "PartWorkbench"
   },
   "Part_BoxSelection": {
    "icon": true,
@@ -5286,7 +5331,8 @@
    "shortcut": null,
    "status": "Box selection",
    "toolbar": null,
-   "tooltip": "Selects elements in the 3D view using a box selection"
+   "tooltip": "Selects elements in the 3D view using a box selection",
+   "workbench": "PartWorkbench"
   },
   "Part_Builder": {
    "icon": true,
@@ -5296,7 +5342,8 @@
    "shortcut": null,
    "status": "Advanced utility to create shapes",
    "toolbar": "Frequently-used Part WB tools",
-   "tooltip": "Advanced utility to create shapes"
+   "tooltip": "Advanced utility to create shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_Chamfer": {
    "icon": true,
@@ -5306,7 +5353,8 @@
    "shortcut": null,
    "status": "Chamfers the selected edges of a shape",
    "toolbar": "Part Tools",
-   "tooltip": "Chamfers the selected edges of a shape"
+   "tooltip": "Chamfers the selected edges of a shape",
+   "workbench": "PartWorkbench"
   },
   "Part_CheckGeometry": {
    "icon": true,
@@ -5316,7 +5364,8 @@
    "shortcut": null,
    "status": "Analyzes the selected shapes for errors",
    "toolbar": "Part Design Helper Features",
-   "tooltip": "Analyzes the selected shapes for errors"
+   "tooltip": "Analyzes the selected shapes for errors",
+   "workbench": "PartWorkbench"
   },
   "Part_ColorPerFace": {
    "icon": true,
@@ -5326,7 +5375,8 @@
    "shortcut": null,
    "status": "Sets the appearance of individual faces of the selected object",
    "toolbar": "Part Tools",
-   "tooltip": "Sets the appearance of individual faces of the selected object"
+   "tooltip": "Sets the appearance of individual faces of the selected object",
+   "workbench": "PartWorkbench"
   },
   "Part_Common": {
    "icon": true,
@@ -5336,7 +5386,8 @@
    "shortcut": null,
    "status": "Intersects the selected shapes",
    "toolbar": "Frequently-used Part WB tools",
-   "tooltip": "Intersects the selected shapes"
+   "tooltip": "Intersects the selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_CompCompoundTools": {
    "icon": true,
@@ -5346,7 +5397,8 @@
    "shortcut": null,
    "status": "Compound tools for working with multiple shapes",
    "toolbar": "Boolean Tools",
-   "tooltip": "Compound tools for working with multiple shapes"
+   "tooltip": "Compound tools for working with multiple shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_CompJoinFeatures": {
    "icon": true,
@@ -5356,7 +5408,8 @@
    "shortcut": null,
    "status": "Joins the selected walled shapes",
    "toolbar": "Boolean Tools",
-   "tooltip": "Joins the selected walled shapes"
+   "tooltip": "Joins the selected walled shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_CompOffset": {
    "icon": true,
@@ -5366,7 +5419,8 @@
    "shortcut": null,
    "status": "Tools to offset shapes (construct parallel shapes)",
    "toolbar": "Part Tools",
-   "tooltip": "Tools to offset shapes (construct parallel shapes)"
+   "tooltip": "Tools to offset shapes (construct parallel shapes)",
+   "workbench": "PartWorkbench"
   },
   "Part_CompSplitFeatures": {
    "icon": true,
@@ -5376,7 +5430,8 @@
    "shortcut": null,
    "status": "Shape splitting and compsolid creation tools",
    "toolbar": "Boolean Tools",
-   "tooltip": "Shape splitting and compsolid creation tools"
+   "tooltip": "Shape splitting and compsolid creation tools",
+   "workbench": "PartWorkbench"
   },
   "Part_Compound": {
    "icon": true,
@@ -5386,7 +5441,8 @@
    "shortcut": null,
    "status": "Compounds the selected shapes",
    "toolbar": null,
-   "tooltip": "Compounds the selected shapes"
+   "tooltip": "Compounds the selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_CompoundFilter": {
    "icon": true,
@@ -5407,7 +5463,8 @@
    "shortcut": null,
    "status": "Creates a solid cone",
    "toolbar": "Solids",
-   "tooltip": "Creates a solid cone"
+   "tooltip": "Creates a solid cone",
+   "workbench": "PartWorkbench"
   },
   "Part_CoordinateSystem": {
    "icon": true,
@@ -5417,7 +5474,8 @@
    "shortcut": null,
    "status": "Creates a coordinate system that can be attached to other objects",
    "toolbar": null,
-   "tooltip": "Creates a coordinate system that can be attached to other objects"
+   "tooltip": "Creates a coordinate system that can be attached to other objects",
+   "workbench": "PartWorkbench"
   },
   "Part_CrossSections": {
    "icon": true,
@@ -5427,7 +5485,8 @@
    "shortcut": null,
    "status": "Creates cross-sections",
    "toolbar": "Part Tools",
-   "tooltip": "Creates cross-sections"
+   "tooltip": "Creates cross-sections",
+   "workbench": "PartWorkbench"
   },
   "Part_Cut": {
    "icon": true,
@@ -5437,7 +5496,8 @@
    "shortcut": null,
    "status": "Cuts 2 selected shapes",
    "toolbar": "Frequently-used Part WB tools",
-   "tooltip": "Cuts 2 selected shapes"
+   "tooltip": "Cuts 2 selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_Cylinder": {
    "icon": true,
@@ -5447,7 +5507,8 @@
    "shortcut": null,
    "status": "Creates a solid cylinder",
    "toolbar": "Solids",
-   "tooltip": "Creates a solid cylinder"
+   "tooltip": "Creates a solid cylinder",
+   "workbench": "PartWorkbench"
   },
   "Part_DatumLine": {
    "icon": true,
@@ -5457,7 +5518,8 @@
    "shortcut": null,
    "status": "Creates a datum line that can be attached to other objects",
    "toolbar": null,
-   "tooltip": "Creates a datum line that can be attached to other objects"
+   "tooltip": "Creates a datum line that can be attached to other objects",
+   "workbench": "PartWorkbench"
   },
   "Part_DatumPlane": {
    "icon": true,
@@ -5467,7 +5529,8 @@
    "shortcut": null,
    "status": "Creates a datum plane that can be attached to other objects",
    "toolbar": null,
-   "tooltip": "Creates a datum plane that can be attached to other objects"
+   "tooltip": "Creates a datum plane that can be attached to other objects",
+   "workbench": "PartWorkbench"
   },
   "Part_DatumPoint": {
    "icon": true,
@@ -5477,7 +5540,8 @@
    "shortcut": null,
    "status": "Creates a datum point that can be attached to other objects",
    "toolbar": null,
-   "tooltip": "Creates a datum point that can be attached to other objects"
+   "tooltip": "Creates a datum point that can be attached to other objects",
+   "workbench": "PartWorkbench"
   },
   "Part_Datums": {
    "icon": true,
@@ -5487,7 +5551,8 @@
    "shortcut": null,
    "status": "Creates a datum object (coordinate system, plane, line, or point) that can be attached to other objects",
    "toolbar": "Structure",
-   "tooltip": "Creates a datum object (coordinate system, plane, line, or point) that can be attached to other objects"
+   "tooltip": "Creates a datum object (coordinate system, plane, line, or point) that can be attached to other objects",
+   "workbench": "PartWorkbench"
   },
   "Part_Defeaturing": {
    "icon": true,
@@ -5497,14 +5562,16 @@
    "shortcut": null,
    "status": "Removes the selected features from a shape",
    "toolbar": "Boolean Tools",
-   "tooltip": "Removes the selected features from a shape"
+   "tooltip": "Removes the selected features from a shape",
+   "workbench": "PartWorkbench"
   },
   "Part_EdgeSelection": {
    "label": "Edge Selection",
    "name": "Part_EdgeSelection",
    "shortcut": null,
    "status": "Only allows the selection of edges",
-   "tooltip": "Only allows the selection of edges"
+   "tooltip": "Only allows the selection of edges",
+   "workbench": "PartWorkbench"
   },
   "Part_EditAttachment": {
    "icon": true,
@@ -5514,7 +5581,8 @@
    "shortcut": null,
    "status": "Opens the attachment editor to change the attachment of the selected object",
    "toolbar": null,
-   "tooltip": "Opens the attachment editor to change the attachment of the selected object"
+   "tooltip": "Opens the attachment editor to change the attachment of the selected object",
+   "workbench": "PartWorkbench"
   },
   "Part_ElementCopy": {
    "icon": true,
@@ -5524,7 +5592,8 @@
    "shortcut": null,
    "status": "Creates a non-parametric copy of the selected shape element",
    "toolbar": null,
-   "tooltip": "Creates a non-parametric copy of the selected shape element"
+   "tooltip": "Creates a non-parametric copy of the selected shape element",
+   "workbench": "PartWorkbench"
   },
   "Part_ExplodeCompound": {
    "icon": true,
@@ -5542,7 +5611,8 @@
    "name": "Part_Export",
    "shortcut": null,
    "status": "Exports to a CAD file",
-   "tooltip": "Exports to a CAD file"
+   "tooltip": "Exports to a CAD file",
+   "workbench": "PartWorkbench"
   },
   "Part_Extrude": {
    "icon": true,
@@ -5552,14 +5622,16 @@
    "shortcut": null,
    "status": "Extrudes the selected sketch or profile",
    "toolbar": "Frequently-used Part WB tools",
-   "tooltip": "Extrudes the selected sketch or profile"
+   "tooltip": "Extrudes the selected sketch or profile",
+   "workbench": "PartWorkbench"
   },
   "Part_FaceSelection": {
    "label": "Face Selection",
    "name": "Part_FaceSelection",
    "shortcut": null,
    "status": "Only allows the selection of faces",
-   "tooltip": "Only allows the selection of faces"
+   "tooltip": "Only allows the selection of faces",
+   "workbench": "PartWorkbench"
   },
   "Part_Fillet": {
    "icon": true,
@@ -5569,7 +5641,8 @@
    "shortcut": null,
    "status": "Fillets the selected edges of a shape",
    "toolbar": "Part Tools",
-   "tooltip": "Fillets the selected edges of a shape"
+   "tooltip": "Fillets the selected edges of a shape",
+   "workbench": "PartWorkbench"
   },
   "Part_Fuse": {
    "icon": true,
@@ -5579,21 +5652,24 @@
    "shortcut": null,
    "status": "Unites the selected shapes",
    "toolbar": "Frequently-used Part WB tools",
-   "tooltip": "Unites the selected shapes"
+   "tooltip": "Unites the selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_Import": {
    "label": "Import CAD File",
    "name": "Part_Import",
    "shortcut": null,
    "status": "Imports a CAD file",
-   "tooltip": "Imports a CAD file"
+   "tooltip": "Imports a CAD file",
+   "workbench": "PartWorkbench"
   },
   "Part_ImportCurveNet": {
    "label": "Import Curve Network",
    "name": "Part_ImportCurveNet",
    "shortcut": null,
    "status": "Imports a curve network",
-   "tooltip": "Imports a curve network"
+   "tooltip": "Imports a curve network",
+   "workbench": "PartWorkbench"
   },
   "Part_JoinConnect": {
    "icon": true,
@@ -5636,7 +5712,8 @@
    "shortcut": null,
    "status": "Lofts the selected profiles",
    "toolbar": "Part Tools",
-   "tooltip": "Lofts the selected profiles"
+   "tooltip": "Lofts the selected profiles",
+   "workbench": "PartWorkbench"
   },
   "Part_MakeFace": {
    "icon": true,
@@ -5646,7 +5723,8 @@
    "shortcut": null,
    "status": "Creates a face from the selected wires (e.g. from a sketch)",
    "toolbar": "Part Tools",
-   "tooltip": "Creates a face from the selected wires (e.g. from a sketch)"
+   "tooltip": "Creates a face from the selected wires (e.g. from a sketch)",
+   "workbench": "PartWorkbench"
   },
   "Part_MakeSolid": {
    "icon": true,
@@ -5656,7 +5734,8 @@
    "shortcut": null,
    "status": "Converts the selected shell or compound to a solid",
    "toolbar": null,
-   "tooltip": "Converts the selected shell or compound to a solid"
+   "tooltip": "Converts the selected shell or compound to a solid",
+   "workbench": "PartWorkbench"
   },
   "Part_Mirror": {
    "icon": true,
@@ -5666,7 +5745,8 @@
    "shortcut": null,
    "status": "Mirrors the selected shape",
    "toolbar": "Part Tools",
-   "tooltip": "Mirrors the selected shape"
+   "tooltip": "Mirrors the selected shape",
+   "workbench": "PartWorkbench"
   },
   "Part_Offset": {
    "icon": true,
@@ -5676,7 +5756,8 @@
    "shortcut": null,
    "status": "Offsets shapes in 3D",
    "toolbar": null,
-   "tooltip": "Offsets shapes in 3D"
+   "tooltip": "Offsets shapes in 3D",
+   "workbench": "PartWorkbench"
   },
   "Part_Offset2D": {
    "icon": true,
@@ -5686,14 +5767,16 @@
    "shortcut": null,
    "status": "Offsets planar shapes in 2D",
    "toolbar": null,
-   "tooltip": "Offsets planar shapes in 2D"
+   "tooltip": "Offsets planar shapes in 2D",
+   "workbench": "PartWorkbench"
   },
   "Part_PickCurveNet": {
    "label": "Pick Curve Network",
    "name": "Part_PickCurveNet",
    "shortcut": null,
    "status": "Picks a curve network",
-   "tooltip": "Picks a curve network"
+   "tooltip": "Picks a curve network",
+   "workbench": "PartWorkbench"
   },
   "Part_PointsFromMesh": {
    "icon": true,
@@ -5703,7 +5786,8 @@
    "shortcut": null,
    "status": "Creates distributed points from the selected shape",
    "toolbar": null,
-   "tooltip": "Creates distributed points from the selected shape"
+   "tooltip": "Creates distributed points from the selected shape",
+   "workbench": "PartWorkbench"
   },
   "Part_Primitives": {
    "icon": true,
@@ -5713,7 +5797,8 @@
    "shortcut": null,
    "status": "Creates solid geometric primitives parametrically",
    "toolbar": "Frequently-used Part WB tools",
-   "tooltip": "Creates solid geometric primitives parametrically"
+   "tooltip": "Creates solid geometric primitives parametrically",
+   "workbench": "PartWorkbench"
   },
   "Part_ProjectionOnSurface": {
    "icon": true,
@@ -5723,7 +5808,8 @@
    "shortcut": null,
    "status": "Projects edges, wires, or faces of one shape onto a face of another shape. The camera view determines the direction of the projection.",
    "toolbar": "Part Tools",
-   "tooltip": "Projects edges, wires, or faces of one shape onto a face of another shape. The camera view determines the direction of the projection."
+   "tooltip": "Projects edges, wires, or faces of one shape onto a face of another shape. The camera view determines the direction of the projection.",
+   "workbench": "PartWorkbench"
   },
   "Part_RefineShape": {
    "icon": true,
@@ -5733,14 +5819,16 @@
    "shortcut": null,
    "status": "Creates a refined copy of the selected shapes",
    "toolbar": null,
-   "tooltip": "Creates a refined copy of the selected shapes"
+   "tooltip": "Creates a refined copy of the selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_RemoveSelectionGate": {
    "label": "No Selection Filters",
    "name": "Part_RemoveSelectionGate",
    "shortcut": null,
    "status": "Clears all selection filters",
-   "tooltip": "Clears all selection filters"
+   "tooltip": "Clears all selection filters",
+   "workbench": "PartWorkbench"
   },
   "Part_ReverseShape": {
    "icon": true,
@@ -5750,7 +5838,8 @@
    "shortcut": null,
    "status": "Reverses the orientation of the selected shapes",
    "toolbar": null,
-   "tooltip": "Reverses the orientation of the selected shapes"
+   "tooltip": "Reverses the orientation of the selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_Revolve": {
    "icon": true,
@@ -5760,7 +5849,8 @@
    "shortcut": null,
    "status": "Revolves the selected shape",
    "toolbar": "Frequently-used Part WB tools",
-   "tooltip": "Revolves the selected shape"
+   "tooltip": "Revolves the selected shape",
+   "workbench": "PartWorkbench"
   },
   "Part_RuledSurface": {
    "icon": true,
@@ -5770,7 +5860,8 @@
    "shortcut": null,
    "status": "Creates a ruled surface between 2 selected wires",
    "toolbar": "Part Tools",
-   "tooltip": "Creates a ruled surface between 2 selected wires"
+   "tooltip": "Creates a ruled surface between 2 selected wires",
+   "workbench": "PartWorkbench"
   },
   "Part_Scale": {
    "icon": true,
@@ -5780,7 +5871,8 @@
    "shortcut": null,
    "status": "Scales the selected shape",
    "toolbar": "Part Tools",
-   "tooltip": "Scales the selected shape"
+   "tooltip": "Scales the selected shape",
+   "workbench": "PartWorkbench"
   },
   "Part_Section": {
    "icon": true,
@@ -5790,7 +5882,8 @@
    "shortcut": null,
    "status": "Sections 2 selected shapes",
    "toolbar": "Part Tools",
-   "tooltip": "Sections 2 selected shapes"
+   "tooltip": "Sections 2 selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_SectionCut": {
    "icon": true,
@@ -5800,7 +5893,8 @@
    "shortcut": null,
    "status": "Creates a new object as a boolean intersection of all visible shapes and the selected axis planes",
    "toolbar": null,
-   "tooltip": "Creates a new object as a boolean intersection of all visible shapes and the selected axis planes"
+   "tooltip": "Creates a new object as a boolean intersection of all visible shapes and the selected axis planes",
+   "workbench": "PartWorkbench"
   },
   "Part_SelectFilter": {
    "icon": true,
@@ -5810,7 +5904,8 @@
    "shortcut": null,
    "status": "Changes the selection filter",
    "toolbar": "View",
-   "tooltip": "Changes the selection filter"
+   "tooltip": "Changes the selection filter",
+   "workbench": "PartWorkbench"
   },
   "Part_ShapeFromMesh": {
    "icon": true,
@@ -5820,14 +5915,16 @@
    "shortcut": null,
    "status": "Creates a shape from the selected mesh",
    "toolbar": null,
-   "tooltip": "Creates a shape from the selected mesh"
+   "tooltip": "Creates a shape from the selected mesh",
+   "workbench": "PartWorkbench"
   },
   "Part_ShapeInfo": {
    "label": "Shape Info",
    "name": "Part_ShapeInfo",
    "shortcut": null,
    "status": "Displays information about the selected shape",
-   "tooltip": "Displays information about the selected shape"
+   "tooltip": "Displays information about the selected shape",
+   "workbench": "PartWorkbench"
   },
   "Part_SimpleCopy": {
    "icon": true,
@@ -5837,14 +5934,16 @@
    "shortcut": null,
    "status": "Creates a simple non-parametric copy of the selected shapes",
    "toolbar": null,
-   "tooltip": "Creates a simple non-parametric copy of the selected shapes"
+   "tooltip": "Creates a simple non-parametric copy of the selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_SimpleCylinder": {
    "label": "Cylinder",
    "name": "Part_SimpleCylinder",
    "shortcut": null,
    "status": "Creates a solid cylinder",
-   "tooltip": "Creates a solid cylinder"
+   "tooltip": "Creates a solid cylinder",
+   "workbench": "PartWorkbench"
   },
   "Part_Slice": {
    "icon": true,
@@ -5876,7 +5975,8 @@
    "shortcut": null,
    "status": "Creates a solid sphere",
    "toolbar": "Solids",
-   "tooltip": "Creates a solid sphere"
+   "tooltip": "Creates a solid sphere",
+   "workbench": "PartWorkbench"
   },
   "Part_Sweep": {
    "icon": true,
@@ -5886,7 +5986,8 @@
    "shortcut": null,
    "status": "Sweeps profiles along a wire",
    "toolbar": "Part Tools",
-   "tooltip": "Sweeps profiles along a wire"
+   "tooltip": "Sweeps profiles along a wire",
+   "workbench": "PartWorkbench"
   },
   "Part_Thickness": {
    "icon": true,
@@ -5896,7 +5997,8 @@
    "shortcut": null,
    "status": "Removes the selected faces and offsets the remaining shape outward to add thickness",
    "toolbar": "Part Tools",
-   "tooltip": "Removes the selected faces and offsets the remaining shape outward to add thickness"
+   "tooltip": "Removes the selected faces and offsets the remaining shape outward to add thickness",
+   "workbench": "PartWorkbench"
   },
   "Part_ToleranceSet": {
    "icon": true,
@@ -5917,7 +6019,8 @@
    "shortcut": null,
    "status": "Creates a solid torus",
    "toolbar": "Solids",
-   "tooltip": "Creates a solid torus"
+   "tooltip": "Creates a solid torus",
+   "workbench": "PartWorkbench"
   },
   "Part_TransformedCopy": {
    "icon": true,
@@ -5927,7 +6030,8 @@
    "shortcut": null,
    "status": "Creates a non-parametric copy with transformed placement of the selected shapes",
    "toolbar": null,
-   "tooltip": "Creates a non-parametric copy with transformed placement of the selected shapes"
+   "tooltip": "Creates a non-parametric copy with transformed placement of the selected shapes",
+   "workbench": "PartWorkbench"
   },
   "Part_Tube": {
    "icon": true,
@@ -5945,7 +6049,8 @@
    "name": "Part_VertexSelection",
    "shortcut": null,
    "status": "Only allows the selection of vertices",
-   "tooltip": "Only allows the selection of vertices"
+   "tooltip": "Only allows the selection of vertices",
+   "workbench": "PartWorkbench"
   },
   "Part_XOR": {
    "icon": true,
@@ -6329,14 +6434,16 @@
    "shortcut": null,
    "status": "Toggles the visibility of the circular helpers for all arcs",
    "toolbar": "Visual Helpers",
-   "tooltip": "Toggles the visibility of the circular helpers for all arcs"
+   "tooltip": "Toggles the visibility of the circular helpers for all arcs",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplineComb": {
    "label": "Toggle B-Spline Curvature Comb",
    "name": "Sketcher_BSplineComb",
    "shortcut": null,
    "status": "Toggles the visibility of the curvature comb for all B-splines",
-   "tooltip": "Toggles the visibility of the curvature comb for all B-splines"
+   "tooltip": "Toggles the visibility of the curvature comb for all B-splines",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplineConvertToNURBS": {
    "icon": true,
@@ -6346,7 +6453,8 @@
    "shortcut": null,
    "status": "Converts the selected geometry to B-splines",
    "toolbar": "B-Spline Tools",
-   "tooltip": "Converts the selected geometry to B-splines"
+   "tooltip": "Converts the selected geometry to B-splines",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplineDecreaseDegree": {
    "icon": true,
@@ -6356,7 +6464,8 @@
    "shortcut": null,
    "status": "Decreases the degree of the B-spline",
    "toolbar": "B-Spline Tools",
-   "tooltip": "Decreases the degree of the B-spline"
+   "tooltip": "Decreases the degree of the B-spline",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplineDecreaseKnotMultiplicity": {
    "icon": true,
@@ -6366,14 +6475,16 @@
    "shortcut": null,
    "status": "Decreases the multiplicity of the selected knot of a B-spline",
    "toolbar": null,
-   "tooltip": "Decreases the multiplicity of the selected knot of a B-spline"
+   "tooltip": "Decreases the multiplicity of the selected knot of a B-spline",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplineDegree": {
    "label": "Toggle B-Spline Degree",
    "name": "Sketcher_BSplineDegree",
    "shortcut": null,
    "status": "Toggles the visibility of the degree for all B-splines",
-   "tooltip": "Toggles the visibility of the degree for all B-splines"
+   "tooltip": "Toggles the visibility of the degree for all B-splines",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplineIncreaseDegree": {
    "icon": true,
@@ -6383,7 +6494,8 @@
    "shortcut": null,
    "status": "Increases the degree of the B-spline",
    "toolbar": "B-Spline Tools",
-   "tooltip": "Increases the degree of the B-spline"
+   "tooltip": "Increases the degree of the B-spline",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplineIncreaseKnotMultiplicity": {
    "icon": true,
@@ -6393,7 +6505,8 @@
    "shortcut": null,
    "status": "Increases the multiplicity of the selected knot of a B-spline",
    "toolbar": null,
-   "tooltip": "Increases the multiplicity of the selected knot of a B-spline"
+   "tooltip": "Increases the multiplicity of the selected knot of a B-spline",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplineInsertKnot": {
    "icon": true,
@@ -6403,28 +6516,32 @@
    "shortcut": null,
    "status": "Inserts a knot at a given parameter. If a knot already exists at that parameter, its multiplicity is increased by 1.",
    "toolbar": "B-Spline Tools",
-   "tooltip": "Inserts a knot at a given parameter. If a knot already exists at that parameter, its multiplicity is increased by 1."
+   "tooltip": "Inserts a knot at a given parameter. If a knot already exists at that parameter, its multiplicity is increased by 1.",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplineKnotMultiplicity": {
    "label": "Toggle B-spline knot multiplicity",
    "name": "Sketcher_BSplineKnotMultiplicity",
    "shortcut": null,
    "status": "Toggles the visibility of the knot multiplicity for all B-splines",
-   "tooltip": "Toggles the visibility of the knot multiplicity for all B-splines"
+   "tooltip": "Toggles the visibility of the knot multiplicity for all B-splines",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplinePoleWeight": {
    "label": "Toggle B-Spline Control Point Weight",
    "name": "Sketcher_BSplinePoleWeight",
    "shortcut": null,
    "status": "Toggles the visibility of control point weights for all B-splines",
-   "tooltip": "Toggles the visibility of control point weights for all B-splines"
+   "tooltip": "Toggles the visibility of control point weights for all B-splines",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_BSplinePolygon": {
    "label": "Toggle B-Spline Control Polygon",
    "name": "Sketcher_BSplinePolygon",
    "shortcut": null,
    "status": "Toggles the visibility of the control polygons for all B-splines",
-   "tooltip": "Toggles the visibility of the control polygons for all B-splines"
+   "tooltip": "Toggles the visibility of the control polygons for all B-splines",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CarbonCopy": {
    "icon": true,
@@ -6434,21 +6551,24 @@
    "shortcut": "G, W",
    "status": "Copies the geometry of another sketch",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Copies the geometry of another sketch"
+   "tooltip": "Copies the geometry of another sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ChangeDimensionConstraint": {
    "label": "Edit Value",
    "name": "Sketcher_ChangeDimensionConstraint",
    "shortcut": null,
    "status": "Edits the value of a dimensional constraint",
-   "tooltip": "Edits the value of a dimensional constraint"
+   "tooltip": "Edits the value of a dimensional constraint",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Clone": {
    "label": "Clone",
    "name": "Sketcher_Clone",
    "shortcut": null,
    "status": "Creates a clone of the geometry taking as reference the last selected point",
-   "tooltip": "Creates a clone of the geometry taking as reference the last selected point"
+   "tooltip": "Creates a clone of the geometry taking as reference the last selected point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompBSplineShowHideGeometryInformation": {
    "icon": true,
@@ -6458,28 +6578,32 @@
    "shortcut": null,
    "status": "Toggles the visibility of the information layer for all B-splines",
    "toolbar": "Visual Helpers",
-   "tooltip": "Toggles the visibility of the information layer for all B-splines"
+   "tooltip": "Toggles the visibility of the information layer for all B-splines",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompConstrainRadDia": {
    "label": "Radius/Diameter Dimension",
    "name": "Sketcher_CompConstrainRadDia",
    "shortcut": null,
    "status": "Constrains the radius or diameter of an arc or a circle",
-   "tooltip": "Constrains the radius or diameter of an arc or a circle"
+   "tooltip": "Constrains the radius or diameter of an arc or a circle",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompConstrainTools": {
    "label": "Constrain",
    "name": "Sketcher_CompConstrainTools",
    "shortcut": null,
    "status": "Constrain tools",
-   "tooltip": "Constrain tools"
+   "tooltip": "Constrain tools",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompCopy": {
    "label": "Clone",
    "name": "Sketcher_CompCopy",
    "shortcut": null,
    "status": "Creates a clone of the geometry taking as reference the last selected point",
-   "tooltip": "Creates a clone of the geometry taking as reference the last selected point"
+   "tooltip": "Creates a clone of the geometry taking as reference the last selected point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompCreateArc": {
    "icon": true,
@@ -6489,7 +6613,8 @@
    "shortcut": "G, A",
    "status": "Creates an arc",
    "toolbar": "Geometries",
-   "tooltip": "Creates an arc"
+   "tooltip": "Creates an arc",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompCreateBSpline": {
    "icon": true,
@@ -6499,7 +6624,8 @@
    "shortcut": "G, B, B",
    "status": "Creates a B-spline curve defined by control points",
    "toolbar": "Geometries",
-   "tooltip": "Creates a B-spline curve defined by control points"
+   "tooltip": "Creates a B-spline curve defined by control points",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompCreateConic": {
    "icon": true,
@@ -6509,7 +6635,8 @@
    "shortcut": "G, C",
    "status": "Creates a conic",
    "toolbar": "Geometries",
-   "tooltip": "Creates a conic"
+   "tooltip": "Creates a conic",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompCreateFillets": {
    "icon": true,
@@ -6519,7 +6646,8 @@
    "shortcut": "G, F, F",
    "status": "Creates a fillet or chamfer between 2 lines",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Creates a fillet or chamfer between 2 lines"
+   "tooltip": "Creates a fillet or chamfer between 2 lines",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompCreateRectangles": {
    "icon": true,
@@ -6529,7 +6657,8 @@
    "shortcut": "G, R",
    "status": "Creates a rectangle",
    "toolbar": "Geometries",
-   "tooltip": "Creates a rectangle"
+   "tooltip": "Creates a rectangle",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompCreateRegularPolygon": {
    "icon": true,
@@ -6539,7 +6668,8 @@
    "shortcut": "G, P, 3",
    "status": "Creates a regular polygon from a center and corner point",
    "toolbar": "Geometries",
-   "tooltip": "Creates a regular polygon from a center and corner point"
+   "tooltip": "Creates a regular polygon from a center and corner point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompCurveEdition": {
    "icon": true,
@@ -6549,7 +6679,8 @@
    "shortcut": "G, T",
    "status": "Edge editing tools",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Edge editing tools"
+   "tooltip": "Edge editing tools",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompDimensionTools": {
    "icon": true,
@@ -6559,7 +6690,8 @@
    "shortcut": null,
    "status": "Dimension tools",
    "toolbar": "Constraints",
-   "tooltip": "Dimension tools"
+   "tooltip": "Dimension tools",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompExternal": {
    "icon": true,
@@ -6569,7 +6701,8 @@
    "shortcut": "G, X",
    "status": "Creates sketch elements linked to geometry defined outside the sketch",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Creates sketch elements linked to geometry defined outside the sketch"
+   "tooltip": "Creates sketch elements linked to geometry defined outside the sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompHorVer": {
    "icon": true,
@@ -6579,14 +6712,16 @@
    "shortcut": null,
    "status": "Constrains the selected elements either horizontally or vertically",
    "toolbar": "Constraints",
-   "tooltip": "Constrains the selected elements either horizontally or vertically"
+   "tooltip": "Constrains the selected elements either horizontally or vertically",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompLine": {
    "label": "Polyline",
    "name": "Sketcher_CompLine",
    "shortcut": null,
    "status": "Creates a continuous polyline",
-   "tooltip": "Creates a continuous polyline"
+   "tooltip": "Creates a continuous polyline",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompModifyKnotMultiplicity": {
    "icon": true,
@@ -6596,7 +6731,8 @@
    "shortcut": null,
    "status": "Modifies the multiplicity of the selected knot of a B-spline",
    "toolbar": "B-Spline Tools",
-   "tooltip": "Modifies the multiplicity of the selected knot of a B-spline"
+   "tooltip": "Modifies the multiplicity of the selected knot of a B-spline",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompSlot": {
    "icon": true,
@@ -6606,7 +6742,8 @@
    "shortcut": "G, S",
    "status": "Slot tools",
    "toolbar": "Geometries",
-   "tooltip": "Slot tools"
+   "tooltip": "Slot tools",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CompToggleConstraints": {
    "icon": true,
@@ -6616,7 +6753,8 @@
    "shortcut": null,
    "status": "Toggle constrain tools",
    "toolbar": "Constraints",
-   "tooltip": "Toggle constrain tools"
+   "tooltip": "Toggle constrain tools",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainAngle": {
    "icon": true,
@@ -6626,7 +6764,8 @@
    "shortcut": "K, A",
    "status": "Constrains the angle between two straight lines or between one line and the X-axis of the sketch if only one is selected",
    "toolbar": null,
-   "tooltip": "Constrains the angle between two straight lines or between one line and the X-axis of the sketch if only one is selected"
+   "tooltip": "Constrains the angle between two straight lines or between one line and the X-axis of the sketch if only one is selected",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainBlock": {
    "icon": true,
@@ -6636,14 +6775,16 @@
    "shortcut": "K, B",
    "status": "Constrains the selected edges as fixed",
    "toolbar": "Constraints",
-   "tooltip": "Constrains the selected edges as fixed"
+   "tooltip": "Constrains the selected edges as fixed",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainCoincident": {
    "label": "Coincident Constraint",
    "name": "Sketcher_ConstrainCoincident",
    "shortcut": null,
    "status": "Constrains the selected elements to be coincident",
-   "tooltip": "Constrains the selected elements to be coincident"
+   "tooltip": "Constrains the selected elements to be coincident",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainCoincidentUnified": {
    "icon": true,
@@ -6653,7 +6794,8 @@
    "shortcut": "C",
    "status": "Constrains the selected elements to be coincident",
    "toolbar": "Constraints",
-   "tooltip": "Constrains the selected elements to be coincident"
+   "tooltip": "Constrains the selected elements to be coincident",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainDiameter": {
    "icon": true,
@@ -6663,7 +6805,8 @@
    "shortcut": "K, O",
    "status": "Constrains the diameter of the selected circle or arc",
    "toolbar": null,
-   "tooltip": "Constrains the diameter of the selected circle or arc"
+   "tooltip": "Constrains the diameter of the selected circle or arc",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainDistance": {
    "icon": true,
@@ -6673,7 +6816,8 @@
    "shortcut": "K, D",
    "status": "Constrains the vertical distance between two points, or from a point to the origin if one is selected",
    "toolbar": null,
-   "tooltip": "Constrains the vertical distance between two points, or from a point to the origin if one is selected"
+   "tooltip": "Constrains the vertical distance between two points, or from a point to the origin if one is selected",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainDistanceX": {
    "icon": true,
@@ -6683,7 +6827,8 @@
    "shortcut": "L",
    "status": "Constrains the horizontal distance between two points, or from a point to the origin if only one is selected",
    "toolbar": null,
-   "tooltip": "Constrains the horizontal distance between two points, or from a point to the origin if only one is selected"
+   "tooltip": "Constrains the horizontal distance between two points, or from a point to the origin if only one is selected",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainDistanceY": {
    "icon": true,
@@ -6693,7 +6838,8 @@
    "shortcut": "I",
    "status": "Constrains the vertical distance between the selected elements",
    "toolbar": null,
-   "tooltip": "Constrains the vertical distance between the selected elements"
+   "tooltip": "Constrains the vertical distance between the selected elements",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainEqual": {
    "icon": true,
@@ -6703,7 +6849,8 @@
    "shortcut": "E",
    "status": "Constrains the selected edges or circles to be equal",
    "toolbar": "Constraints",
-   "tooltip": "Constrains the selected edges or circles to be equal"
+   "tooltip": "Constrains the selected edges or circles to be equal",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainHorVer": {
    "icon": true,
@@ -6713,7 +6860,8 @@
    "shortcut": "A",
    "status": "Constrains the selected elements either horizontally or vertically, based on their closest alignment",
    "toolbar": null,
-   "tooltip": "Constrains the selected elements either horizontally or vertically, based on their closest alignment"
+   "tooltip": "Constrains the selected elements either horizontally or vertically, based on their closest alignment",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainHorizontal": {
    "icon": true,
@@ -6723,7 +6871,8 @@
    "shortcut": "H",
    "status": "Constrains the selected elements horizontally",
    "toolbar": null,
-   "tooltip": "Constrains the selected elements horizontally"
+   "tooltip": "Constrains the selected elements horizontally",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainLock": {
    "icon": true,
@@ -6733,7 +6882,8 @@
    "shortcut": "K, L",
    "status": "Constrains the selected vertices by adding horizontal and vertical distance constraints",
    "toolbar": null,
-   "tooltip": "Constrains the selected vertices by adding horizontal and vertical distance constraints"
+   "tooltip": "Constrains the selected vertices by adding horizontal and vertical distance constraints",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainParallel": {
    "icon": true,
@@ -6743,7 +6893,8 @@
    "shortcut": "P",
    "status": "Constrains the selected lines to be parallel",
    "toolbar": "Constraints",
-   "tooltip": "Constrains the selected lines to be parallel"
+   "tooltip": "Constrains the selected lines to be parallel",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainPerpendicular": {
    "icon": true,
@@ -6753,14 +6904,16 @@
    "shortcut": "N",
    "status": "Constrains the selected lines to be perpendicular",
    "toolbar": "Constraints",
-   "tooltip": "Constrains the selected lines to be perpendicular"
+   "tooltip": "Constrains the selected lines to be perpendicular",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainPointOnObject": {
    "label": "Point-On-Object Constraint",
    "name": "Sketcher_ConstrainPointOnObject",
    "shortcut": null,
    "status": "Constrains the selected point onto the selected object",
-   "tooltip": "Constrains the selected point onto the selected object"
+   "tooltip": "Constrains the selected point onto the selected object",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainRadiam": {
    "icon": true,
@@ -6770,7 +6923,8 @@
    "shortcut": "K, S",
    "status": "Constrains the radius of the selected arc or the diameter of the selected circle",
    "toolbar": null,
-   "tooltip": "Constrains the radius of the selected arc or the diameter of the selected circle"
+   "tooltip": "Constrains the radius of the selected arc or the diameter of the selected circle",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainRadius": {
    "icon": true,
@@ -6780,7 +6934,8 @@
    "shortcut": "K, R",
    "status": "Constrains the radius of the selected circle or arc",
    "toolbar": null,
-   "tooltip": "Constrains the radius of the selected circle or arc"
+   "tooltip": "Constrains the radius of the selected circle or arc",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainSnellsLaw": {
    "icon": true,
@@ -6790,7 +6945,8 @@
    "shortcut": "K, W",
    "status": "Constrains the selected elements based on the refraction law (Snell's Law)",
    "toolbar": null,
-   "tooltip": "Constrains the selected elements based on the refraction law (Snell's Law)"
+   "tooltip": "Constrains the selected elements based on the refraction law (Snell's Law)",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainSymmetric": {
    "icon": true,
@@ -6800,7 +6956,8 @@
    "shortcut": "S",
    "status": "Constrains the selected elements to be symmetric",
    "toolbar": "Constraints",
-   "tooltip": "Constrains the selected elements to be symmetric"
+   "tooltip": "Constrains the selected elements to be symmetric",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainTangent": {
    "icon": true,
@@ -6810,7 +6967,8 @@
    "shortcut": "T",
    "status": "Constrains the selected elements to be tangent or collinear",
    "toolbar": "Constraints",
-   "tooltip": "Constrains the selected elements to be tangent or collinear"
+   "tooltip": "Constrains the selected elements to be tangent or collinear",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ConstrainVertical": {
    "icon": true,
@@ -6820,14 +6978,16 @@
    "shortcut": "V",
    "status": "Constrains the selected elements vertically",
    "toolbar": null,
-   "tooltip": "Constrains the selected elements vertically"
+   "tooltip": "Constrains the selected elements vertically",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Copy": {
    "label": "Copy",
    "name": "Sketcher_Copy",
    "shortcut": null,
    "status": "Creates a simple copy of the geometry taking as reference the last selected point",
-   "tooltip": "Creates a simple copy of the geometry taking as reference the last selected point"
+   "tooltip": "Creates a simple copy of the geometry taking as reference the last selected point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CopyClipboard": {
    "icon": true,
@@ -6837,7 +6997,8 @@
    "shortcut": "Ctrl+C",
    "status": "Copies the selected geometries and constraints to the clipboard",
    "toolbar": null,
-   "tooltip": "Copies the selected geometries and constraints to the clipboard"
+   "tooltip": "Copies the selected geometries and constraints to the clipboard",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Create3PointArc": {
    "icon": true,
@@ -6847,7 +7008,8 @@
    "shortcut": "G, 3, A",
    "status": "Creates an arc defined by 2 end points and 1 point on the arc",
    "toolbar": null,
-   "tooltip": "Creates an arc defined by 2 end points and 1 point on the arc"
+   "tooltip": "Creates an arc defined by 2 end points and 1 point on the arc",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Create3PointCircle": {
    "icon": true,
@@ -6857,7 +7019,8 @@
    "shortcut": "G, 3, C",
    "status": "Creates a circle from 3 perimeter points",
    "toolbar": null,
-   "tooltip": "Creates a circle from 3 perimeter points"
+   "tooltip": "Creates a circle from 3 perimeter points",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateArc": {
    "icon": true,
@@ -6867,7 +7030,8 @@
    "shortcut": "G, A",
    "status": "Creates an arc defined by a center point and an end point",
    "toolbar": null,
-   "tooltip": "Creates an arc defined by a center point and an end point"
+   "tooltip": "Creates an arc defined by a center point and an end point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateArcOfEllipse": {
    "icon": true,
@@ -6877,7 +7041,8 @@
    "shortcut": "G, E, A",
    "status": "Creates an elliptical arc",
    "toolbar": null,
-   "tooltip": "Creates an elliptical arc"
+   "tooltip": "Creates an elliptical arc",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateArcOfHyperbola": {
    "icon": true,
@@ -6887,7 +7052,8 @@
    "shortcut": "G, H",
    "status": "Creates a hyperbolic arc",
    "toolbar": null,
-   "tooltip": "Creates a hyperbolic arc"
+   "tooltip": "Creates a hyperbolic arc",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateArcOfParabola": {
    "icon": true,
@@ -6897,7 +7063,8 @@
    "shortcut": "G, J",
    "status": "Creates a parabolic arc",
    "toolbar": null,
-   "tooltip": "Creates a parabolic arc"
+   "tooltip": "Creates a parabolic arc",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateArcSlot": {
    "icon": true,
@@ -6907,7 +7074,8 @@
    "shortcut": "G, S, 2",
    "status": "Creates an arc slot",
    "toolbar": null,
-   "tooltip": "Creates an arc slot"
+   "tooltip": "Creates an arc slot",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateBSpline": {
    "icon": true,
@@ -6917,7 +7085,8 @@
    "shortcut": "G, B, B",
    "status": "Creates a B-spline curve defined by control points",
    "toolbar": null,
-   "tooltip": "Creates a B-spline curve defined by control points"
+   "tooltip": "Creates a B-spline curve defined by control points",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateBSplineByInterpolation": {
    "icon": true,
@@ -6927,7 +7096,8 @@
    "shortcut": "G, B, I",
    "status": "Creates a B-spline from knots, i.e. from interpolation",
    "toolbar": null,
-   "tooltip": "Creates a B-spline from knots, i.e. from interpolation"
+   "tooltip": "Creates a B-spline from knots, i.e. from interpolation",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateChamfer": {
    "icon": true,
@@ -6937,7 +7107,8 @@
    "shortcut": "G, F, C",
    "status": "Creates a chamfer between 2 selected lines or at coincident points",
    "toolbar": null,
-   "tooltip": "Creates a chamfer between 2 selected lines or at coincident points"
+   "tooltip": "Creates a chamfer between 2 selected lines or at coincident points",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateCircle": {
    "icon": true,
@@ -6947,7 +7118,8 @@
    "shortcut": "G, C",
    "status": "Creates a circle from a center and rim point",
    "toolbar": null,
-   "tooltip": "Creates a circle from a center and rim point"
+   "tooltip": "Creates a circle from a center and rim point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateEllipseBy3Points": {
    "icon": true,
@@ -6957,7 +7129,8 @@
    "shortcut": "G, 3, E",
    "status": "Creates an ellipse from 3 points on its perimeter",
    "toolbar": null,
-   "tooltip": "Creates an ellipse from 3 points on its perimeter"
+   "tooltip": "Creates an ellipse from 3 points on its perimeter",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateEllipseByCenter": {
    "icon": true,
@@ -6967,7 +7140,8 @@
    "shortcut": "G, E, E",
    "status": "Creates an ellipse from a center and rim point",
    "toolbar": null,
-   "tooltip": "Creates an ellipse from a center and rim point"
+   "tooltip": "Creates an ellipse from a center and rim point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateFillet": {
    "icon": true,
@@ -6977,7 +7151,8 @@
    "shortcut": "G, F, F",
    "status": "Creates a fillet between 2 selected lines or at coincident points",
    "toolbar": null,
-   "tooltip": "Creates a fillet between 2 selected lines or at coincident points"
+   "tooltip": "Creates a fillet between 2 selected lines or at coincident points",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateHeptagon": {
    "icon": true,
@@ -6987,7 +7162,8 @@
    "shortcut": "G, P, 7",
    "status": "Creates a heptagon from a center and corner point",
    "toolbar": null,
-   "tooltip": "Creates a heptagon from a center and corner point"
+   "tooltip": "Creates a heptagon from a center and corner point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateHexagon": {
    "icon": true,
@@ -6997,7 +7173,8 @@
    "shortcut": "G, P, 6",
    "status": "Creates a hexagon from a center and corner point",
    "toolbar": null,
-   "tooltip": "Creates a hexagon from a center and corner point"
+   "tooltip": "Creates a hexagon from a center and corner point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateLine": {
    "icon": true,
@@ -7007,7 +7184,8 @@
    "shortcut": "G, L",
    "status": "Creates a line",
    "toolbar": "Geometries",
-   "tooltip": "Creates a line"
+   "tooltip": "Creates a line",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateOblong": {
    "icon": true,
@@ -7017,7 +7195,8 @@
    "shortcut": "G, O",
    "status": "Creates a rounded rectangle from 2 corner points",
    "toolbar": null,
-   "tooltip": "Creates a rounded rectangle from 2 corner points"
+   "tooltip": "Creates a rounded rectangle from 2 corner points",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateOctagon": {
    "icon": true,
@@ -7027,7 +7206,8 @@
    "shortcut": "G, P, 8",
    "status": "Creates an octagon from a center and corner point",
    "toolbar": null,
-   "tooltip": "Creates an octagon from a center and corner point"
+   "tooltip": "Creates an octagon from a center and corner point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreatePentagon": {
    "icon": true,
@@ -7037,7 +7217,8 @@
    "shortcut": "G, P, 5",
    "status": "Creates a pentagon from a center and corner point",
    "toolbar": null,
-   "tooltip": "Creates a pentagon from a center and corner point"
+   "tooltip": "Creates a pentagon from a center and corner point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreatePeriodicBSpline": {
    "icon": true,
@@ -7047,7 +7228,8 @@
    "shortcut": "G, B, P",
    "status": "Creates a periodic B-spline curve defined by control points",
    "toolbar": null,
-   "tooltip": "Creates a periodic B-spline curve defined by control points"
+   "tooltip": "Creates a periodic B-spline curve defined by control points",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreatePeriodicBSplineByInterpolation": {
    "icon": true,
@@ -7057,7 +7239,8 @@
    "shortcut": "G, B, O",
    "status": "Creates a periodic B-spline defined by knots using interpolation",
    "toolbar": null,
-   "tooltip": "Creates a periodic B-spline defined by knots using interpolation"
+   "tooltip": "Creates a periodic B-spline defined by knots using interpolation",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreatePoint": {
    "icon": true,
@@ -7067,7 +7250,8 @@
    "shortcut": "G, Y",
    "status": "Creates a point",
    "toolbar": "Geometries",
-   "tooltip": "Creates a point"
+   "tooltip": "Creates a point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreatePolyline": {
    "icon": true,
@@ -7077,7 +7261,8 @@
    "shortcut": "G, M",
    "status": "Creates a continuous polyline. Press the 'M' key to switch segment modes",
    "toolbar": "Geometries",
-   "tooltip": "Creates a continuous polyline. Press the 'M' key to switch segment modes"
+   "tooltip": "Creates a continuous polyline. Press the 'M' key to switch segment modes",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateRectangle": {
    "icon": true,
@@ -7087,7 +7272,8 @@
    "shortcut": "G, R",
    "status": "Creates a rectangle from 2 corner points",
    "toolbar": null,
-   "tooltip": "Creates a rectangle from 2 corner points"
+   "tooltip": "Creates a rectangle from 2 corner points",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateRectangle_Center": {
    "icon": true,
@@ -7097,7 +7283,8 @@
    "shortcut": "G, V",
    "status": "Creates a centered rectangle from a center and a corner point",
    "toolbar": null,
-   "tooltip": "Creates a centered rectangle from a center and a corner point"
+   "tooltip": "Creates a centered rectangle from a center and a corner point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateRegularPolygon": {
    "icon": true,
@@ -7107,7 +7294,8 @@
    "shortcut": "G, P, R",
    "status": "Creates a regular polygon from a center and corner point",
    "toolbar": null,
-   "tooltip": "Creates a regular polygon from a center and corner point"
+   "tooltip": "Creates a regular polygon from a center and corner point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateSlot": {
    "icon": true,
@@ -7117,7 +7305,8 @@
    "shortcut": "G, S",
    "status": "Creates a slot",
    "toolbar": null,
-   "tooltip": "Creates a slot"
+   "tooltip": "Creates a slot",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateSquare": {
    "icon": true,
@@ -7127,7 +7316,8 @@
    "shortcut": "G, P, 4",
    "status": "Creates a square from a center and corner point",
    "toolbar": null,
-   "tooltip": "Creates a square from a center and corner point"
+   "tooltip": "Creates a square from a center and corner point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_CreateTriangle": {
    "icon": true,
@@ -7137,7 +7327,8 @@
    "shortcut": "G, P, 3",
    "status": "Creates an equilateral triangle from a center and corner point",
    "toolbar": null,
-   "tooltip": "Creates an equilateral triangle from a center and corner point"
+   "tooltip": "Creates an equilateral triangle from a center and corner point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Cut": {
    "icon": true,
@@ -7147,7 +7338,8 @@
    "shortcut": "Ctrl+X",
    "status": "Cuts the selected geometries and constraints to the clipboard",
    "toolbar": null,
-   "tooltip": "Cuts the selected geometries and constraints to the clipboard"
+   "tooltip": "Cuts the selected geometries and constraints to the clipboard",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_DeleteAllConstraints": {
    "icon": true,
@@ -7157,7 +7349,8 @@
    "shortcut": null,
    "status": "Deletes all constraints in the sketch",
    "toolbar": null,
-   "tooltip": "Deletes all constraints in the sketch"
+   "tooltip": "Deletes all constraints in the sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_DeleteAllGeometry": {
    "icon": true,
@@ -7167,7 +7360,8 @@
    "shortcut": null,
    "status": "Deletes all geometry and their constraints in the current sketch, with the exception of external geometry",
    "toolbar": null,
-   "tooltip": "Deletes all geometry and their constraints in the current sketch, with the exception of external geometry"
+   "tooltip": "Deletes all geometry and their constraints in the current sketch, with the exception of external geometry",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Dimension": {
    "icon": true,
@@ -7177,7 +7371,8 @@
    "shortcut": "D",
    "status": "Constrains contextually based on the selection. The type can be changed with the M key.",
    "toolbar": null,
-   "tooltip": "Constrains contextually based on the selection. The type can be changed with the M key."
+   "tooltip": "Constrains contextually based on the selection. The type can be changed with the M key.",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_EditSketch": {
    "icon": true,
@@ -7187,7 +7382,8 @@
    "shortcut": null,
    "status": "Opens the selected sketch for editing",
    "toolbar": "Sketcher",
-   "tooltip": "Opens the selected sketch for editing"
+   "tooltip": "Opens the selected sketch for editing",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Extend": {
    "icon": true,
@@ -7197,14 +7393,16 @@
    "shortcut": "G, Q",
    "status": "Extends an edge with respect to the selected position",
    "toolbar": null,
-   "tooltip": "Extends an edge with respect to the selected position"
+   "tooltip": "Extends an edge with respect to the selected position",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Grid": {
    "label": "Toggle Grid",
    "name": "Sketcher_Grid",
    "shortcut": null,
    "status": "Toggles the grid display in the active sketch",
-   "tooltip": "Toggles the grid display in the active sketch"
+   "tooltip": "Toggles the grid display in the active sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Intersection": {
    "icon": true,
@@ -7214,7 +7412,8 @@
    "shortcut": "G, I",
    "status": "Creates the intersection of external geometry with the sketch plane",
    "toolbar": null,
-   "tooltip": "Creates the intersection of external geometry with the sketch plane"
+   "tooltip": "Creates the intersection of external geometry with the sketch plane",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_JoinCurves": {
    "icon": true,
@@ -7224,7 +7423,8 @@
    "shortcut": null,
    "status": "Joins 2 curves at selected end points",
    "toolbar": "B-Spline Tools",
-   "tooltip": "Joins 2 curves at selected end points"
+   "tooltip": "Joins 2 curves at selected end points",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_LeaveSketch": {
    "icon": true,
@@ -7234,7 +7434,8 @@
    "shortcut": null,
    "status": "Exits the active sketch",
    "toolbar": "Edit Mode",
-   "tooltip": "Exits the active sketch"
+   "tooltip": "Exits the active sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_MapSketch": {
    "icon": true,
@@ -7244,7 +7445,8 @@
    "shortcut": null,
    "status": "Attaches a sketch to the selected geometry element",
    "toolbar": "Sketcher",
-   "tooltip": "Attaches a sketch to the selected geometry element"
+   "tooltip": "Attaches a sketch to the selected geometry element",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_MergeSketches": {
    "icon": true,
@@ -7254,7 +7456,8 @@
    "shortcut": null,
    "status": "Creates a new sketch by merging at least 2 selected sketches",
    "toolbar": "Sketcher",
-   "tooltip": "Creates a new sketch by merging at least 2 selected sketches"
+   "tooltip": "Creates a new sketch by merging at least 2 selected sketches",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_MirrorSketch": {
    "icon": true,
@@ -7264,14 +7467,16 @@
    "shortcut": null,
    "status": "Creates a new mirrored sketch for each selected sketch by using the X or Y axes, or the origin point, as mirroring reference",
    "toolbar": "Sketcher",
-   "tooltip": "Creates a new mirrored sketch for each selected sketch by using the X or Y axes, or the origin point, as mirroring reference"
+   "tooltip": "Creates a new mirrored sketch for each selected sketch by using the X or Y axes, or the origin point, as mirroring reference",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Move": {
    "label": "Move",
    "name": "Sketcher_Move",
    "shortcut": null,
    "status": "Moves the geometry taking as reference the last selected point",
-   "tooltip": "Moves the geometry taking as reference the last selected point"
+   "tooltip": "Moves the geometry taking as reference the last selected point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_NewSketch": {
    "icon": true,
@@ -7281,7 +7486,8 @@
    "shortcut": null,
    "status": "Creates a new sketch",
    "toolbar": "Part Tools",
-   "tooltip": "Creates a new sketch"
+   "tooltip": "Creates a new sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Offset": {
    "icon": true,
@@ -7291,7 +7497,8 @@
    "shortcut": "Z, T",
    "status": "Adds an equidistant closed contour around selected geometry: positive values offset outward, negative values inward",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Adds an equidistant closed contour around selected geometry: positive values offset outward, negative values inward"
+   "tooltip": "Adds an equidistant closed contour around selected geometry: positive values offset outward, negative values inward",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Paste": {
    "icon": true,
@@ -7301,7 +7508,8 @@
    "shortcut": "Ctrl+V",
    "status": "Pastes the geometries and constraints from the clipboard into the sketch",
    "toolbar": null,
-   "tooltip": "Pastes the geometries and constraints from the clipboard into the sketch"
+   "tooltip": "Pastes the geometries and constraints from the clipboard into the sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ProfilesHexagon1": {
    "label": "Creates a hexagonal profile",
@@ -7319,14 +7527,16 @@
    "shortcut": "G, X",
    "status": "Creates the projection of external geometry in the sketch plane",
    "toolbar": null,
-   "tooltip": "Creates the projection of external geometry in the sketch plane"
+   "tooltip": "Creates the projection of external geometry in the sketch plane",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_RectangularArray": {
    "label": "Rectangular Array",
    "name": "Sketcher_RectangularArray",
    "shortcut": null,
    "status": "Creates a rectangular array pattern of the geometry taking as reference the last selected point",
-   "tooltip": "Creates a rectangular array pattern of the geometry taking as reference the last selected point"
+   "tooltip": "Creates a rectangular array pattern of the geometry taking as reference the last selected point",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_RemoveAxesAlignment": {
    "icon": true,
@@ -7336,14 +7546,16 @@
    "shortcut": "Z, R",
    "status": "Modifies the constraints to remove axes alignment while trying to preserve the constraint relationship of the selection",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Modifies the constraints to remove axes alignment while trying to preserve the constraint relationship of the selection"
+   "tooltip": "Modifies the constraints to remove axes alignment while trying to preserve the constraint relationship of the selection",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_RenderingOrder": {
    "label": "Rendering Order",
    "name": "Sketcher_RenderingOrder",
    "shortcut": null,
    "status": "Reorders items in the rendering order",
-   "tooltip": "Reorders items in the rendering order"
+   "tooltip": "Reorders items in the rendering order",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ReorientSketch": {
    "icon": true,
@@ -7353,7 +7565,8 @@
    "shortcut": null,
    "status": "Places the selected sketch on one of the global coordinate planes. This will clear the AttachmentSupport property.",
    "toolbar": "Sketcher",
-   "tooltip": "Places the selected sketch on one of the global coordinate planes. This will clear the AttachmentSupport property."
+   "tooltip": "Places the selected sketch on one of the global coordinate planes. This will clear the AttachmentSupport property.",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_RestoreInternalAlignmentGeometry": {
    "icon": true,
@@ -7363,7 +7576,8 @@
    "shortcut": "Z, I",
    "status": "Toggles the visibility of all internal geometry",
    "toolbar": "Visual Helpers",
-   "tooltip": "Toggles the visibility of all internal geometry"
+   "tooltip": "Toggles the visibility of all internal geometry",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Rotate": {
    "icon": true,
@@ -7373,7 +7587,8 @@
    "shortcut": "Z, P",
    "status": "Rotates the selected geometry by creating 'n' copies, enabling circular pattern creation",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Rotates the selected geometry by creating 'n' copies, enabling circular pattern creation"
+   "tooltip": "Rotates the selected geometry by creating 'n' copies, enabling circular pattern creation",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Scale": {
    "icon": true,
@@ -7383,7 +7598,8 @@
    "shortcut": "Z, P, S",
    "status": "Scales the selected geometries",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Scales the selected geometries"
+   "tooltip": "Scales the selected geometries",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectConflictingConstraints": {
    "icon": true,
@@ -7393,7 +7609,8 @@
    "shortcut": "Z, P, C",
    "status": "Selects all conflicting constraints",
    "toolbar": null,
-   "tooltip": "Selects all conflicting constraints"
+   "tooltip": "Selects all conflicting constraints",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectConstraints": {
    "icon": true,
@@ -7403,7 +7620,8 @@
    "shortcut": "Z, K",
    "status": "Selects the constraints associated with the selected geometrical elements",
    "toolbar": "Visual Helpers",
-   "tooltip": "Selects the constraints associated with the selected geometrical elements"
+   "tooltip": "Selects the constraints associated with the selected geometrical elements",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectElementsAssociatedWithConstraints": {
    "icon": true,
@@ -7413,7 +7631,8 @@
    "shortcut": "Z, E",
    "status": "Selects the geometrical elements associated with the selected constraints",
    "toolbar": "Visual Helpers",
-   "tooltip": "Selects the geometrical elements associated with the selected constraints"
+   "tooltip": "Selects the geometrical elements associated with the selected constraints",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectElementsWithDoFs": {
    "icon": true,
@@ -7423,7 +7642,8 @@
    "shortcut": "Z, F",
    "status": "Selects geometrical elements where the solver still detects unconstrained degrees of freedom",
    "toolbar": null,
-   "tooltip": "Selects geometrical elements where the solver still detects unconstrained degrees of freedom"
+   "tooltip": "Selects geometrical elements where the solver still detects unconstrained degrees of freedom",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectHorizontalAxis": {
    "icon": true,
@@ -7433,14 +7653,16 @@
    "shortcut": "Z, H",
    "status": "Selects the local horizontal axis of the sketch",
    "toolbar": null,
-   "tooltip": "Selects the local horizontal axis of the sketch"
+   "tooltip": "Selects the local horizontal axis of the sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectMalformedConstraints": {
    "label": "Select Malformed Constraints",
    "name": "Sketcher_SelectMalformedConstraints",
    "shortcut": null,
    "status": "Selects all malformed constraints",
-   "tooltip": "Selects all malformed constraints"
+   "tooltip": "Selects all malformed constraints",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectOrigin": {
    "icon": true,
@@ -7450,14 +7672,16 @@
    "shortcut": "Z, O",
    "status": "Selects the local origin point of the sketch",
    "toolbar": null,
-   "tooltip": "Selects the local origin point of the sketch"
+   "tooltip": "Selects the local origin point of the sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectPartiallyRedundantConstraints": {
    "label": "Select Partially Redundant Constraints",
    "name": "Sketcher_SelectPartiallyRedundantConstraints",
    "shortcut": null,
    "status": "Selects all partially redundant constraints",
-   "tooltip": "Selects all partially redundant constraints"
+   "tooltip": "Selects all partially redundant constraints",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectRedundantConstraints": {
    "icon": true,
@@ -7467,7 +7691,8 @@
    "shortcut": "Z, P, R",
    "status": "Selects all redundant constraints",
    "toolbar": null,
-   "tooltip": "Selects all redundant constraints"
+   "tooltip": "Selects all redundant constraints",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SelectVerticalAxis": {
    "icon": true,
@@ -7477,14 +7702,16 @@
    "shortcut": "Z, V",
    "status": "Selects the local vertical axis of the sketch",
    "toolbar": null,
-   "tooltip": "Selects the local vertical axis of the sketch"
+   "tooltip": "Selects the local vertical axis of the sketch",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Snap": {
    "label": "Toggle Snap",
    "name": "Sketcher_Snap",
    "shortcut": null,
    "status": "Toggles snapping",
-   "tooltip": "Toggles snapping"
+   "tooltip": "Toggles snapping",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Split": {
    "icon": true,
@@ -7494,7 +7721,8 @@
    "shortcut": "G, Z",
    "status": "Splits an edge into 2 segments while preserving constraints",
    "toolbar": null,
-   "tooltip": "Splits an edge into 2 segments while preserving constraints"
+   "tooltip": "Splits an edge into 2 segments while preserving constraints",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_StopOperation": {
    "icon": true,
@@ -7504,7 +7732,8 @@
    "shortcut": null,
    "status": "Stops the active operation while in edit mode",
    "toolbar": null,
-   "tooltip": "Stops the active operation while in edit mode"
+   "tooltip": "Stops the active operation while in edit mode",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_SwitchVirtualSpace": {
    "icon": true,
@@ -7514,7 +7743,8 @@
    "shortcut": "Z, Z",
    "status": "Switches the selected constraints or the view to the other virtual space",
    "toolbar": "Visual Helpers",
-   "tooltip": "Switches the selected constraints or the view to the other virtual space"
+   "tooltip": "Switches the selected constraints or the view to the other virtual space",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Symmetry": {
    "icon": true,
@@ -7524,7 +7754,8 @@
    "shortcut": "Z, S",
    "status": "Creates a mirrored copy of the selected geometry",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Creates a mirrored copy of the selected geometry"
+   "tooltip": "Creates a mirrored copy of the selected geometry",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ToggleActiveConstraint": {
    "icon": true,
@@ -7534,7 +7765,8 @@
    "shortcut": "K, Z",
    "status": "Toggles the state of the selected constraints",
    "toolbar": null,
-   "tooltip": "Toggles the state of the selected constraints"
+   "tooltip": "Toggles the state of the selected constraints",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ToggleConstruction": {
    "icon": true,
@@ -7544,7 +7776,8 @@
    "shortcut": "G, N",
    "status": "Toggles between defining geometry and construction geometry modes",
    "toolbar": "Geometries",
-   "tooltip": "Toggles between defining geometry and construction geometry modes"
+   "tooltip": "Toggles between defining geometry and construction geometry modes",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ToggleDrivingConstraint": {
    "icon": true,
@@ -7554,7 +7787,8 @@
    "shortcut": "K, X",
    "status": "Toggles between driving and reference mode of the selected constraints and commands",
    "toolbar": null,
-   "tooltip": "Toggles between driving and reference mode of the selected constraints and commands"
+   "tooltip": "Toggles between driving and reference mode of the selected constraints and commands",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Translate": {
    "icon": true,
@@ -7564,7 +7798,8 @@
    "shortcut": "W",
    "status": "Translates the selected geometries and enables the creation of 'i' * 'j' copies",
    "toolbar": "Sketcher Tools",
-   "tooltip": "Translates the selected geometries and enables the creation of 'i' * 'j' copies"
+   "tooltip": "Translates the selected geometries and enables the creation of 'i' * 'j' copies",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_Trimming": {
    "icon": true,
@@ -7574,7 +7809,8 @@
    "shortcut": "G, T",
    "status": "Trims an edge with respect to the selected position",
    "toolbar": null,
-   "tooltip": "Trims an edge with respect to the selected position"
+   "tooltip": "Trims an edge with respect to the selected position",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ValidateSketch": {
    "icon": true,
@@ -7584,7 +7820,8 @@
    "shortcut": null,
    "status": "Validates a sketch by checking for missing coincidences, invalid constraints, and degenerate geometry",
    "toolbar": "Part Design Helper Features",
-   "tooltip": "Validates a sketch by checking for missing coincidences, invalid constraints, and degenerate geometry"
+   "tooltip": "Validates a sketch by checking for missing coincidences, invalid constraints, and degenerate geometry",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ViewSection": {
    "icon": true,
@@ -7594,7 +7831,8 @@
    "shortcut": "Q, S",
    "status": "Toggles between section view and full view",
    "toolbar": "Edit Mode",
-   "tooltip": "Toggles between section view and full view"
+   "tooltip": "Toggles between section view and full view",
+   "workbench": "SketcherWorkbench"
   },
   "Sketcher_ViewSketch": {
    "icon": true,
@@ -7604,7 +7842,8 @@
    "shortcut": "Q, P",
    "status": "Aligns the camera orientation perpendicular to the active sketch plane",
    "toolbar": "Edit Mode",
-   "tooltip": "Aligns the camera orientation perpendicular to the active sketch plane"
+   "tooltip": "Aligns the camera orientation perpendicular to the active sketch plane",
+   "workbench": "SketcherWorkbench"
   },
   "Spreadsheet_AlignBottom": {
    "icon": true,
