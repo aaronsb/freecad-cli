@@ -30,6 +30,8 @@ def authored(verb):
     """
     if verb is None:
         return False
+    if getattr(verb, "generated", False):
+        return False        # the factory says so itself
     module = getattr(verb.emit, "__module__", "")
     return module.endswith((".verbs", ".shell")) or _authored(module)
 

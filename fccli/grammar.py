@@ -101,6 +101,12 @@ class Verb:
     # whose whole job is the ring itself -- "history clear" recorded into
     # the history it just emptied is noise.
     record: bool = True
+    # Whether the factory made this rather than a person writing it. Said
+    # outright, because it stopped being visible from the outside: every
+    # generated verb now shares its emit with the hand-written panel verbs,
+    # so the module that emit came from answers a different question than
+    # it used to.
+    generated: bool = False
     # Steps a verb only learns once it has started. A task panel names its
     # own parameters, and which ones it is showing depends on what has been
     # chosen in it, so they cannot be declared here. Called with the engine,

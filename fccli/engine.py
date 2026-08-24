@@ -257,13 +257,29 @@ class Engine:
             # A verb that finds out what to ask for by starting. A task
             # panel names its own parameters, and which it shows depends on
             # what has been chosen in it, so there is nothing to declare.
+            name = self.verb.name
             try:
-                found = self.verb.open(self)
+                # Armed here as well as around emit. open() is where a
+                # command actually runs now, so it is where a command that
+                # refuses the request says so -- and a modal raised with
+                # nothing armed waits for a click nobody is there to make,
+                # which is the whole of what modals.py exists to stop.
+                with modals.intercepted(force=force) as caught:
+                    found = self.verb.open(self)
             except Exception as exc:
+                self._abort_verb()
                 self._reset()
-                self.bus.emit(_bus.ERROR, f"{token}: {exc}")
+                self.bus.emit(_bus.ERROR, f"{name}: {exc}")
                 self._announce()
                 return
+            if caught:
+                self._abort_verb()
+                self._reset()
+                self.bus.emit(_bus.ERROR, f"{name}: {caught.fault}")
+                self._announce()
+                return
+            for notice in caught.notices:
+                self.bus.emit(_bus.INFO, notice)
             if found:
                 self.steps = list(found)
         while rest and self.state == COLLECTING:

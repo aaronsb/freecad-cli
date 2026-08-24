@@ -34,6 +34,53 @@ RESULT = os.environ.get("FCCLI_BVT_RESULT",
 CHECKS = []
 
 
+# ------------------------------------------------------- dialog watchdog
+
+ESCAPED = []       # raised while the command line was driving
+EXPECTED = []      # raised at any other time, which is FreeCAD being itself
+_WATCHDOG = []
+
+
+def watch_for_dialogs(dock):
+    """Catch a modal the command line let through.
+
+    A dialog is only a fault when the command line raised it. FreeCAD puts
+    dialogs up all the time and that is what it is for; the claim this
+    suite makes is narrower -- that a command typed on the command line is
+    answered there. So the test is whether the engine was mid-command.
+
+    Everything is dismissed either way, because a modal with nobody to
+    click it blocks the Qt loop: the failure mode was a four-minute wait
+    and then a timeout naming nothing. Only what appeared under a command
+    is counted as a failure.
+    """
+    from fccli.modals import HANDLED
+
+    def tick():
+        w = QtWidgets.QApplication.activeModalWidget()
+        if w is None or w.property(HANDLED):
+            return          # nothing up, or the command line is handling it
+        seen = "%s %r" % (type(w).__name__, w.windowTitle())
+        driving = dock is not None and dock.engine.state != "idle"
+        (ESCAPED if driving else EXPECTED).append(seen)
+        try:
+            w.reject()
+        except Exception:
+            try:
+                w.close()
+            except Exception:
+                pass
+
+    timer = QtCore.QTimer()
+    timer.setInterval(400)
+    timer.timeout.connect(tick)
+    timer.start()
+    # PySide collects an unreferenced QTimer, and a stopped watchdog looks
+    # exactly like a run where no dialog ever appeared.
+    _WATCHDOG.append(timer)
+    return timer
+
+
 def check(label, got, want):
     ok = got == want
     CHECKS.append({"label": label, "ok": ok,
@@ -493,6 +540,110 @@ def suite_panel(dock):
     dock.engine.submit("close!")
 
 
+def suite_panels_generic(dock):
+    """Panels nobody wrote code for.
+
+    transform proves the mechanism; these prove it is a mechanism. Same
+    three callables, a different command each time -- a panel names its
+    own fields, so there is nothing per command to write.
+    """
+    print("\n7d. the same machinery, on panels nobody wrote for")
+    from fccli import panels
+
+    dock.engine.submit("new panels")
+    doc = App.ActiveDocument
+    slab = doc.addObject("Part::Box", "Slab")
+    slab.Length, slab.Width, slab.Height = 100, 60, 20
+    doc.recompute()
+
+    def settle(n=30):
+        for _ in range(n):
+            QtWidgets.QApplication.processEvents()
+
+    def select(*names):
+        Gui.Selection.clearSelection()
+        for n in names:
+            Gui.Selection.addSelection(doc.Name, n)
+        settle(6)
+
+    def answer(pairs):
+        """Skip to each field by name, answer it, then finish."""
+        for target, value in pairs:
+            for _ in range(18):
+                step = dock.engine.current_step()
+                if step is None or step.id == target:
+                    break
+                dock.engine.submit("")
+                settle(4)
+            step = dock.engine.current_step()
+            if step is None or step.id != target:
+                return f"never reached {target}"
+            dock.engine.submit(value)
+            settle(8)
+        dock.engine.submit("done")
+        settle(35)
+        return None
+
+    # Std_Placement -- fourteen fields, and a quantity that has to survive
+    # the trip through FreeCAD's parser to mean anything.
+    select("Slab")
+    dock.engine.submit("placement")
+    settle()
+    truthy("placement opens a panel", panels.is_open())
+    truthy("  offering more fields than transform does",
+           len(dock.engine.prompt_sequence()) >= 12)
+    check("answering it", answer([("xPos", "30 mm"), ("zPos", "3/4 in")]), None)
+    check("  moves the object it was aimed at",
+          [round(v, 3) for v in slab.Placement.Base], [30.0, 0.0, 19.05])
+    check("  and closes", panels.is_open(), False)
+
+    # A choice among the steps, answered as a choice. Std_Placement's
+    # rotation input switches between an axis-and-angle and Euler angles,
+    # and swaps the fields under it either way.
+    kinds = {st.kind for st in dock.engine.prompt_sequence()}
+    select("Slab")
+    dock.engine.submit("placement")
+    settle()
+    kinds = {st.kind for st in dock.engine.prompt_sequence()}
+    truthy("a panel's combo box becomes a choice step", "choice" in kinds)
+    combo = next((st for st in dock.engine.prompt_sequence()
+                  if st.kind == "choice"), None)
+    truthy("  offering what the combo offers",
+           combo is not None and len(combo.choices) >= 2)
+    dock.engine.cancel()
+    settle(20)
+    check("cancelling closes it", panels.is_open(), False)
+
+    # FreeCAD shows one task dialog at a time and refuses a second, so a
+    # panel we finished but left registered would block every panel
+    # command after it.
+    check("FreeCAD agrees no dialog is left registered",
+          bool(Gui.Control.activeDialog()), False)
+
+    Gui.activateWorkbench("PartWorkbench")
+    settle(8)
+    before = {o.Name for o in doc.Objects}
+
+    # Part_Primitives -- the one that matters. Its combo swaps a whole
+    # QStackedWidget page, so the fields after it are not the fields
+    # before it. A step that held its widget would write into a page
+    # nobody is looking at.
+    before = {o.Name for o in doc.Objects}
+    Gui.Selection.clearSelection()
+    dock.engine.submit("primitive")
+    settle()
+    truthy("primitive opens a panel", panels.is_open())
+    first = [f.name for f in panels.fields()]
+    truthy("  showing the plane page to begin with", "planeLength" in first)
+    check("choosing a different primitive",
+          answer([("PrimitiveTypeCB", "Cylinder")]), None)
+    made = sorted({o.Name for o in doc.Objects} - before)
+    check("  builds the one that was chosen", made, ["Cylinder"])
+    check("  and closes", panels.is_open(), False)
+
+    dock.engine.submit("close!")
+
+
 def suite_roundtrip(dock):
     print("\n8. save, close and reopen, with no dialogs")
     path = os.path.join(tempfile.gettempdir(), "fccli-bvt-doc.FCStd")
@@ -580,6 +731,7 @@ def run():
     try:
         from fccli import dock as D
         dock = D.instance()
+        watch_for_dialogs(dock)
         if dock is not None:
             dock.persist = False       # this window's shape is not a setting
         suite_dock(dock)
@@ -594,6 +746,7 @@ def run():
         suite_check(dock, doc)
         suite_modals(dock)
         suite_panel(dock)
+        suite_panels_generic(dock)
         suite_roundtrip(dock)
         suite_shutdown(dock)
     except Exception:
@@ -605,6 +758,11 @@ def run():
         restore_geometry(entry_geometry, _D.instance())
     except Exception:
         restore_geometry(entry_geometry)   # the tests must not move a setting
+
+    check("no dialog escaped a command", ESCAPED, [])
+    if EXPECTED:
+        print(f"  note  {len(EXPECTED)} dialog(s) outside any command, "
+              f"which is FreeCAD's business: {EXPECTED[:3]}")
 
     passed = sum(1 for c in CHECKS if c["ok"])
     payload = {

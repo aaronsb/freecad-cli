@@ -35,6 +35,7 @@ PySide as a bare `QAbstractSpinBox` with no `setValue`, so the text is the
 only door as well as the better one.
 """
 
+from . import bus as _bus
 from .grammar import CHOICE, QUANTITY, TEXT, Option, Step
 from .qt import QtCore, QtWidgets
 
@@ -367,3 +368,93 @@ def steps_from(found):
             on_accept=_writer(field.name),
         ))
     return steps
+
+
+# ------------------------------------------------------- a panel, driven
+
+def wait_for_panel(rounds=40):
+    """Give the panel time to appear, and stop as soon as it has.
+
+    A task panel is put up from the command's own event handling rather
+    than by the call that started it, so how long it takes is FreeCAD's
+    business. A fixed number of pumps is a race: Part_Offset built its
+    object and showed its panel one round after the reading stopped, so
+    the command looked like one that opens nothing.
+    """
+    for _ in range(rounds):
+        if is_open():
+            return True
+        _pump(2)
+    return is_open()
+
+
+def _open_panel(command):
+    """Run the command, and ask whatever panel it opens what it wants.
+
+    Tier 0 runs the command and leaves the panel to a mouse. This reads it
+    and offers its parameters on the command line instead. If nothing
+    opens, or nothing in what opened is readable, the command has already
+    run and there is nothing left to ask.
+    """
+    def start(engine):
+        import FreeCADGui as Gui
+        Gui.runCommand(command)
+        if not wait_for_panel():
+            return None
+        found = fields()
+        if not found:
+            engine.bus.emit(_bus.INFO,
+                            "the panel offers nothing this can type into "
+                            "-- it is open for the mouse")
+            return None
+        engine.flags["panel"] = True
+        return steps_from(found)
+    return start
+
+
+def _abort_panel(engine):
+    """Cancelling the command cancels the panel, and FreeCAD puts it back.
+
+    A panel applies as each field is written, so by the time somebody
+    cancels, the model has already moved. Pressing the panel's own Cancel
+    is what undoes it -- which is why this verb opens no transaction.
+    """
+    if engine.flags.get("panel") and is_open():
+        dismiss()
+
+
+def _emit_panel(v):
+    engine = v.get("_engine")
+    if not v["_flags"].get("panel"):
+        return None             # no panel opened; the command has run
+    if not is_open():
+        # Somebody pressed the panel's own button while the command line
+        # was still asking. Both are ways to finish it, and this one is
+        # already done.
+        if engine is not None:
+            engine.bus.emit(_bus.INFO, "the panel was closed in the panel")
+        _refresh_view()
+        return None
+    # The steps wrote as they were answered; this only finishes it.
+    pressed = commit()
+    if pressed is None:
+        dismiss()
+        raise RuntimeError("the panel offered no way to finish -- cancelled")
+    if is_open():
+        # Part_Primitives creates repeatedly and closes separately.
+        press(*DISMISS)
+    if engine is not None:
+        engine.bus.emit(_bus.INFO, f"{pressed} -- panel closed")
+    _refresh_view()
+    return None
+
+
+def _refresh_view():
+    """Push the change to the screen now, the way the seed verbs do."""
+    try:
+        import FreeCADGui as Gui
+        if Gui.ActiveDocument is not None:
+            Gui.ActiveDocument.update()
+        Gui.updateGui()
+    except Exception:
+        pass

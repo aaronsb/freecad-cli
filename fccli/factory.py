@@ -147,31 +147,48 @@ def build_type_verb(name, entry, meta=None):
         emit=_emit_type(entry["type"], params),
         doc=_clean_doc(meta, entry["type"]),
         gui_command=meta.get("name"),
-        creates=entry["type"],
+        creates=entry["type"], generated=True,
     )
 
 
 # ---------------------------------------------------------------- tier 0
 
 def build_command_verb(command):
-    """A zero-step verb that just runs the command, dialogs and all."""
+    """Every registered command, as a verb.
+
+    It runs the command, and if a task panel opens it reads that panel and
+    offers its parameters as prompts rather than leaving them to a mouse.
+    Nothing is written per command: a panel names its own fields, so the
+    same three callables drive Transform, Mirror, Offset, Cross-sections,
+    Placement and Primitives without knowing any of them.
+
+    A command that opens nothing, or opens something with no named input
+    in it, has already run by the time open() returns -- which is what
+    every one of these did before.
+    """
     name = command["name"]
-
-    def emit(values):
-        import FreeCADGui as Gui
-        Gui.runCommand(name)
-        return None
-
     label = command.get("label") or name
-    return Verb(name=_slug(label), steps=[], emit=emit,
+    from .panels import _abort_panel, _emit_panel, _open_panel
+    return Verb(name=_slug(label), steps=[],
+                open=_open_panel(name),
+                emit=_emit_panel,
+                abort=_abort_panel,
                 doc=command.get("tooltip") or label,
-                gui_command=name)
+                gui_command=name, generated=True,
+                # A panel keeps its own undo and puts everything back on
+                # Cancel. A transaction wrapped around one would nest.
+                transactional=False)
 
 
 def _claimed(registry, name):
-    """Whether a verb somebody wrote by hand already owns this name."""
+    """Whether a verb somebody wrote by hand already owns this name.
+
+    Asked of the verb rather than of where its emit came from: every
+    generated command verb now shares one emit with the hand-written panel
+    verbs, so the module stopped answering this question.
+    """
     sitting = registry.get(name)
-    return sitting is not None and not sitting.emit.__module__.endswith("factory")
+    return sitting is not None and not getattr(sitting, "generated", False)
 
 
 def _qualify(verb, tid, registry):
@@ -226,7 +243,7 @@ def build_family_verb(name, members):
                     choices=choices)],
         emit=_emit_family(members),
         doc=f"{len(choices)} commands FreeCAD spreads apart: {labels}...",
-        family=name,
+        family=name, generated=True,
     )
 
 

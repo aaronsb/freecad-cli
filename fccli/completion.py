@@ -180,9 +180,7 @@ def _starter_verbs(engine):
     pick points, and the ones that manage a document."""
     names = []
     for name in engine.registry.names():
-        verb = engine.registry.get(name)
-        module = getattr(verb.emit, "__module__", "")
-        if module.endswith((".verbs", ".shell")):
+        if curation.authored(engine.registry.get(name)):
             names.append(name)
     return names or engine.registry.names()[:RECENT_LIMIT]
 
@@ -224,9 +222,8 @@ def in_scope(registry, name, scope):
     verb = registry.get(name)
     if verb is None:
         return True
-    module = getattr(verb.emit, "__module__", "")
-    if module.endswith((".verbs", ".shell")) or "patches" in module:
-        return True
+    if curation.authored(verb):
+        return True         # a verb somebody wrote is never out of scope
     domain = domain_of(verb)
     return domain is None or domain.lower() == scope.lower()
 
