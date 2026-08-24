@@ -56,14 +56,19 @@ def _resolve_names(text):
         return []
 
 
-def _open_transaction(verb, label):
+def _open_transaction(verb, label, panel=False):
     """One typed line, one undo step.
 
     Objects created outside a transaction never reach the undo stack, and
     UndoMode is off by default on a document nobody has told otherwise, so
     both are set here rather than left to each emitter.
+
+    A panel keeps its own undo and puts everything back on Cancel, so one
+    wrapped around it would nest -- but only when a panel actually opened.
+    Declaring every command verb non-transactional to cover that took undo
+    grouping away from the 970 of them that open nothing.
     """
-    if not verb.transactional:
+    if not verb.transactional or panel:
         return None
     import FreeCAD as App
     doc = App.ActiveDocument
@@ -113,6 +118,16 @@ class Engine:
         self.step_index = 0
         self.done: set = set()
         self.values: Dict[str, Any] = {}
+        # Steps for this invocation, when the verb only learned them by
+        # starting. None means the verb's own declared steps stand.
+        self.steps: Optional[List[Step]] = None
+        # Whether a command typed here is running right now. Not the same
+        # as state: _finish resets to IDLE before calling emit, so for the
+        # whole of the part that actually runs a command the engine reads
+        # idle. Anything asking "did the command line cause this?" -- the
+        # test suite's dialog watchdog, the socket's busy check -- wants
+        # this rather than state.
+        self.driving = False
         self.replay: List[str] = []
         # Which replay tokens came from the viewport rather than the
         # keyboard. A command driven half by mouse can then hand back the
@@ -134,7 +149,8 @@ class Engine:
         """
         if self.verb is None:
             return []
-        return sorted(self.verb.steps, key=order_of)
+        return sorted(self.steps if self.steps is not None else self.verb.steps,
+                      key=order_of)
 
     def pending(self) -> List[Step]:
         """Steps still to fill, in prompt order."""
@@ -210,6 +226,7 @@ class Engine:
         if self.state == IDLE:
             return
         name = self.verb.name if self.verb else "?"
+        self._abort_verb()
         self._stop_picking()
         self._reset()
         self.bus.emit(_bus.INFO, f"{name} cancelled")
@@ -243,10 +260,48 @@ class Engine:
         self.step_index = 0
         self.done = set()
         self.values = {}
+        self.steps = None
         self.flags = {"force": force}
         self.replay = [self.verb.name + ("!" if force else "")]
         self.picked = []
         self._emit_live()
+        if self.verb.open is not None and not self.dry:
+            # A verb that finds out what to ask for by starting. A task
+            # panel names its own parameters, and which it shows depends on
+            # what has been chosen in it, so there is nothing to declare.
+            # Not under `check`. open() runs the command, so checking one
+            # would move the model, print "nothing was run", and leave a
+            # task dialog registered -- which blocks every panel command
+            # after it. `check` reports on the verb it can see instead.
+            name = self.verb.name
+            try:
+                # Armed here as well as around emit. open() is where a
+                # command actually runs now, so it is where a command that
+                # refuses the request says so -- and a modal raised with
+                # nothing armed waits for a click nobody is there to make,
+                # which is the whole of what modals.py exists to stop.
+                self.driving = True
+                with modals.intercepted(force=force) as caught:
+                    found = self.verb.open(self)
+            except Exception as exc:
+                self.driving = False
+                self._abort_verb()
+                self._reset()
+                self.bus.emit(_bus.ERROR, f"{name}: {exc}")
+                self._announce()
+                return
+            finally:
+                self.driving = False
+            if caught:
+                self._abort_verb()
+                self._reset()
+                self.bus.emit(_bus.ERROR, f"{name}: {caught.fault}")
+                self._announce()
+                return
+            for notice in caught.notices:
+                self.bus.emit(_bus.INFO, notice)
+            if found:
+                self.steps = list(found)
         while rest and self.state == COLLECTING:
             step = self.current_step()
             if step is not None and step.raw:
@@ -258,10 +313,21 @@ class Engine:
             # "circle 0,0,0 20" and "circle 20 0,0,0" both work and a
             # remembered line replays whatever order it was typed in.
             self._feed_text(token, step=self._step_for_token(token))
-        if self.state == COLLECTING and self._only_optional_left():
+        if (self.state == COLLECTING and self.steps is not None
+                and self.values):
+            # A line that named its parameters is a whole command, the way
+            # `circle 0,0,0 5` is. Given none, it prompts.
+            self._finish()
+            return
+        if (self.state == COLLECTING and self.steps is None
+                and self._only_optional_left()):
             # Nothing required remains, so the command is already complete.
             # "save", "new" and "help" run on Enter rather than stopping to
             # prompt for an argument the caller chose not to give.
+            #
+            # Not for steps a verb found by starting. Every field a panel
+            # offers is optional -- ten parameters, and a command usually
+            # means two -- so this would commit the panel unread.
             self._finish()
             return
         self._announce()
@@ -302,7 +368,8 @@ class Engine:
             return
         for opt in step.options:
             if opt.name.lower().startswith(text.lower()):
-                self.replay.append(opt.name.lower())
+                if opt.record:
+                    self.replay.append(opt.name.lower())
                 done = opt.action(self) if opt.action else False
                 self._emit_live()
                 if done:
@@ -376,6 +443,7 @@ class Engine:
         if len(hits) != 1:
             return False
         self.bus.emit(_bus.INFO, f"{self.verb.name} cancelled")
+        self._abort_verb()
         self._stop_picking()
         self._reset()
         self._start(text)
@@ -391,6 +459,28 @@ class Engine:
             self.values[step.id] = value
             self.done.add(step.id)
         self.replay.append(typed)
+        if step.on_accept is not None and not self.dry:
+            complaint = step.on_accept(self, step, value, typed)
+            if complaint:
+                # Taken back. values is what says a line was answered, and
+                # a line that was refused had not been -- a typo'd field
+                # name reported its error and then pressed the panel's OK,
+                # because the value was already recorded by the time the
+                # complaint arrived.
+                self.replay.pop()
+                if step.repeat:
+                    held = self.values.get(step.id) or []
+                    if held:
+                        held.pop()
+                    if not held:
+                        self.values.pop(step.id, None)
+                else:
+                    self.values.pop(step.id, None)
+                    self.done.discard(step.id)
+                self.bus.emit(_bus.ERROR, complaint)
+                self._emit_live()
+                self._announce()
+                return
         self._emit_live()
         if not self.pending():
             self._finish()
@@ -454,15 +544,22 @@ class Engine:
                           typed=typed)
             self._announce()
             return
-        doc = _open_transaction(verb, replay)
+        doc = _open_transaction(verb, replay, panel=flags.get("panel"))
         try:
+            self.driving = True
             with modals.intercepted(force=flags.get("force")) as caught:
                 obj = verb.emit({**values, "_flags": flags, "_engine": self})
         except Exception as exc:
             _abort_transaction(doc)
+            # _reset already cleared self.verb, so the verb has to be told
+            # to clean up by name -- a panel verb whose commit raised left
+            # its panel on screen with the engine idle behind it.
+            self._abort_as(verb)
             self.bus.emit(_bus.ERROR, f"{verb.name} failed: {exc}")
             self._announce()
             return
+        finally:
+            self.driving = False
         if caught:
             # FreeCAD rejected the request. That is the same kind of answer
             # as a bad quantity, and it travels the same way -- rather than
@@ -501,12 +598,30 @@ class Engine:
         self.bus.emit(_bus.LIVE, " ".join(self.replay),
                       picked=list(self.picked))
 
+    def _abort_as(self, verb) -> None:
+        """Let a named verb undo what starting it set up."""
+        if verb is None or verb.abort is None:
+            return
+        try:
+            verb.abort(self)
+        except Exception as exc:
+            self.bus.emit(_bus.ERROR, f"{verb.name}: {exc}")
+
+    def _abort_verb(self) -> None:
+        """Let a verb undo what starting it set up.
+
+        A panel left on screen holding half a command is worse than one
+        that was never opened, and the operator has already said stop.
+        """
+        self._abort_as(self.verb)
+
     def _reset(self) -> None:
         self.state = IDLE
         self.verb = None
         self.step_index = 0
         self.done = set()
         self.values = {}
+        self.steps = None
         self.replay = []
         self.picked = []
         self.flags = {}

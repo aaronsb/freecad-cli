@@ -748,22 +748,44 @@ def _run():
     # module name, so the old test for one -- "patches" in the module --
     # matched nothing the loader has ever produced, and a verb an addon
     # author wrote by hand ranked below every generated launcher.
-    from fccli.patches import MODULE_PREFIX as _PREFIX
     from fccli.grammar import Verb as _Verb
 
-    def _addon_emit(values):
-        return None
-    _addon_emit.__module__ = _PREFIX + "addon_Whatever"
-    _declared = _Verb(name="whatever", steps=[], emit=_addon_emit)
+    # Authorship is stated, not inferred. It used to be read off
+    # verb.emit.__module__, which stopped answering once every generated
+    # command verb came to share one emit with the hand-written panel
+    # verbs -- hand-written `transform` then read as generated, lost
+    # promoted rank, and `use <domain>` hid it.
+    _declared = _Verb(name="whatever", steps=[], emit=lambda v: None)
     check("a verb an addon wrote ranks promoted",
           curated.rank_of(_declared), _cur.PROMOTED)
     check("  above anything the factory generated",
           curated.rank_of(_declared)
           < curated.rank_of(REGISTRY.get("sketcher_bsplinedegree")), True)
-    _generated = _Verb(name="whatever2", steps=[], emit=lambda v: None)
-    _generated.emit.__module__ = "fccli.factory"
-    check("a generated verb is not promoted by the same test",
-          curated.rank_of(_generated) > _cur.PROMOTED, True)
+    _generated = _Verb(name="whatever2", steps=[], emit=lambda v: None,
+                       generated=True)
+    check("a generated verb is not promoted", curated.rank_of(_generated)
+          > _cur.PROMOTED, True)
+    check("  whatever module its emit came from",
+          _cur.authored(_generated), False)
+    check("transform is hand-written and says so",
+          _cur.authored(REGISTRY.get("transform")), True)
+    check("  and ranks promoted like the rest of them",
+          curated.rank_of(REGISTRY.get("transform")), _cur.PROMOTED)
+
+    # Undo grouping is not a tier's business. Declaring every command verb
+    # non-transactional so that a panel would not nest its own undo inside
+    # ours took one-line-one-undo away from the 970 of them that open no
+    # panel. The transaction is skipped when a panel opened, which is a
+    # fact about the invocation rather than the verb.
+    _loose = [n for n in REGISTRY.names()
+              if REGISTRY.get(n).generated and not REGISTRY.get(n).transactional]
+    check("a generated verb still gets its own undo step", _loose, [])
+    _session_verbs = [n for n in REGISTRY.names()
+                      if not REGISTRY.get(n).transactional]
+    check("only the session verbs opt out", len(_session_verbs) < 40, True)
+    from fccli.engine import _open_transaction as _txn
+    check("and a panel is what skips it, not a tier",
+          _txn(REGISTRY.get("box"), "box", panel=True), None)
     check("an accented label slugs to a typeable name",
           REGISTRY.get("bezier_curve") is not None, True)
 
@@ -1315,6 +1337,33 @@ def _run():
 
     for _b in (_reject, _notice, _ask, _dupe, _long, _chooser):
         _b.deleteLater()
+
+    print("\n5y. a panel line is cut at the names, not the spaces")
+    from fccli.panels import split_assignments as _split
+
+    # A value holds spaces -- 3/4 in, Center of mass / centroid -- so a
+    # name=value line cannot be read a whitespace token at a time.
+    check("two assignments, values intact",
+          _split("xposition=25 mm zposition=3/4 in")[0],
+          [("xposition", "25 mm"), ("zposition", "3/4 in")])
+
+    # And a value can hold something that reads as an assignment. What
+    # tells them apart is the space before the `=`.
+    check("prose inside a value is not a split point",
+          _split("label=Wall A = north")[0], [("label", "Wall A = north")])
+    check("  even when it is a whole clause",
+          _split("name=set x = 3")[0], [("name", "set x = 3")])
+    check("a name meant as one still splits, so it can be reported",
+          [n for n, _ in _split("xposition=6 nosuch=1 zposition=8")[0]],
+          ["xposition", "nosuch", "zposition"])
+    check("quoting settles what is left",
+          _split('label="a = b"')[0], [("label", "a = b")])
+    check("a prefix name splits like any other",
+          _split("xpos=5 mm")[0], [("xpos", "5 mm")])
+    check("and a typo does too, so it can be named",
+          _split("xpositon=25")[0], [("xpositon", "25")])
+    check("something that is not an assignment says so",
+          _split("justaword"), ([], "justaword"))
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

@@ -34,6 +34,58 @@ RESULT = os.environ.get("FCCLI_BVT_RESULT",
 CHECKS = []
 
 
+# ------------------------------------------------------- dialog watchdog
+
+ESCAPED = []       # raised while the command line was driving
+EXPECTED = []      # raised at any other time, which is FreeCAD being itself
+_WATCHDOG = []
+
+
+def watch_for_dialogs(dock):
+    """Catch a modal the command line let through.
+
+    A dialog is only a fault when the command line raised it. FreeCAD puts
+    dialogs up all the time and that is what it is for; the claim this
+    suite makes is narrower -- that a command typed on the command line is
+    answered there. So the test is whether the engine was mid-command.
+
+    Everything is dismissed either way, because a modal with nobody to
+    click it blocks the Qt loop: the failure mode was a four-minute wait
+    and then a timeout naming nothing. Only what appeared under a command
+    is counted as a failure.
+    """
+    from fccli.modals import HANDLED
+
+    def tick():
+        w = QtWidgets.QApplication.activeModalWidget()
+        if w is None or w.property(HANDLED):
+            return          # nothing up, or the command line is handling it
+        seen = "%s %r" % (type(w).__name__, w.windowTitle())
+        # engine.driving, not engine.state: _finish resets to IDLE before
+        # calling emit, so for the whole of the part that runs a command
+        # the engine reads idle -- every escaped modal during emit was
+        # filed as FreeCAD's business and could never fail the suite.
+        driving = dock is not None and (
+            dock.engine.driving or dock.engine.state != "idle")
+        (ESCAPED if driving else EXPECTED).append(seen)
+        try:
+            w.reject()
+        except Exception:
+            try:
+                w.close()
+            except Exception:
+                pass
+
+    timer = QtCore.QTimer()
+    timer.setInterval(400)
+    timer.timeout.connect(tick)
+    timer.start()
+    # PySide collects an unreferenced QTimer, and a stopped watchdog looks
+    # exactly like a run where no dialog ever appeared.
+    _WATCHDOG.append(timer)
+    return timer
+
+
 def check(label, got, want):
     ok = got == want
     CHECKS.append({"label": label, "ok": ok,
@@ -103,6 +155,36 @@ def suite_keys(dock):
         app.processEvents()
     check("and keeps landing, so focus followed",
           dock.console.input_text(), "boxes")
+
+    # A command is a verb and then its arguments, and the thing between
+    # them is a space. Space is also FreeCAD's visibility toggle, so it sat
+    # in the passthrough allowlist unconditionally and never reached the
+    # command line -- typing from the viewport got as far as the first
+    # word. `new file` worked because the console still had focus; once a
+    # document opened, the 3D view took it back.
+    dock.console.set_input("")
+    view.setFocus(QtCore.Qt.OtherFocusReason)
+    app.processEvents()
+    for ch in "circle 0,0,0 5":
+        target = app.focusWidget() or view
+        key = (QtCore.Qt.Key_Space if ch == " "
+               else QtGui.QKeySequence(ch)[0].key())
+        app.sendEvent(target, QtGui.QKeyEvent(
+            QtCore.QEvent.KeyPress, key, QtCore.Qt.NoModifier, ch))
+        app.processEvents()
+    check("a space mid-command reaches the command line",
+          dock.console.input_text(), "circle 0,0,0 5")
+
+    # Idle with an empty line, it is FreeCAD's key again.
+    dock.console.set_input("")
+    app.processEvents()
+    ev_space = QtGui.QKeyEvent(QtCore.QEvent.KeyPress, QtCore.Qt.Key_Space,
+                               QtCore.Qt.NoModifier, " ")
+    check("idle, space is still FreeCAD's", dock.keyfilter.should_usurp(ev_space), False)
+    dock.console.set_input("c")
+    check("  and the command line's once a line is started",
+          dock.keyfilter.should_usurp(ev_space), True)
+
     dock.console.set_input("")
     dock.engine.submit("close!")
 
@@ -404,6 +486,324 @@ def suite_modals(dock):
     dock.engine.submit("close!")
 
 
+def suite_panel(dock):
+    """A task panel, answered by naming its fields.
+
+    Tier 0 ran Std_TransformManip and left the panel to a mouse. This
+    reads what it is asking for, lists it, takes name=value, and presses
+    the panel's own button.
+    """
+    print("\n7c. a task panel answers on the command line")
+    from fccli import panels
+
+    dock.engine.submit("new panel")
+    doc = App.ActiveDocument
+    slab = doc.addObject("Part::Box", "Slab")
+    slab.Length, slab.Width, slab.Height = 100, 60, 20
+    doc.recompute()
+
+    def settle(n=25):
+        for _ in range(n):
+            QtWidgets.QApplication.processEvents()
+
+    def select():
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, "Slab")
+        settle(6)
+
+    said = []
+    stop = dock.bus.subscribe(
+        lambda m: said.append(m.text) if m.kind in ("info", "error") else None)
+
+    select()
+    dock.engine.submit("transform")
+    settle()
+
+    truthy("the panel opened", panels.is_open())
+    check("and the engine is collecting", dock.engine.state, "collecting")
+    truthy("it says what it will answer to",
+           any("to set:" in ln for ln in said))
+    truthy("  listing the names, not the widgets",
+           any("xposition" in ln for ln in said))
+    truthy("  and how to use them",
+           any("name=value" in ln for ln in said))
+    step = dock.engine.current_step()
+    truthy("one step, taken as often as there are answers",
+           step is not None and step.repeat)
+    # Tab has to be able to name a field, since naming one is the whole
+    # design. It used to offer `done` and nothing else.
+    from fccli import completion as _comp
+    offered_now = _comp.from_source(dock.engine, "fields")
+    truthy("Tab can name a field", any(o.startswith("xposition=")
+                                       for o in offered_now))
+    truthy("  offering every one the panel has",
+           len(offered_now) == len(panels.fields()))
+    check("  and the step says where they come from",
+          dock.engine.current_step().completes, "fields")
+
+    # The status line counts the steps this invocation has, not the ones
+    # the verb declared -- a panel verb declares none and read "step 1/0".
+    truthy("the status line counts real steps",
+           len(dock.engine.prompt_sequence()) >= 1)
+
+
+    # Named, so order does not matter and nothing is skipped past.
+    dock.engine.submit("zposition=3/4 in")
+    settle(10)
+    dock.engine.submit("xposition=25 mm")
+    settle(10)
+    truthy("a panel applies as it is written, before any commit",
+           [round(v, 3) for v in slab.Placement.Base] == [25.0, 0.0, 19.05])
+    dock.engine.submit("done")
+    settle(30)
+
+    check("what was named is what moved",
+          [round(v, 3) for v in slab.Placement.Base], [25.0, 0.0, 19.05])
+    check("the panel closed itself", panels.is_open(), False)
+    check("and the engine is idle", dock.engine.state, "idle")
+    no_dialog("nothing is waiting for a click")
+
+    # The line it recorded has to mean the same thing typed again -- the
+    # premise the whole project rests on. A run of skipped prompts used to
+    # record a bare value that replayed into whichever field came first.
+    line = dock.console._history[-1] if dock.console._history else ""
+    truthy("history records the names it was given", "xposition=" in line)
+    truthy("  and the other one", "zposition=" in line)
+
+    slab.Placement.Base = App.Vector(0, 0, 0)
+    doc.recompute()
+    select()
+    dock.engine.submit(line)
+    settle(35)
+    check("replaying it lands in the same place",
+          [round(v, 3) for v in slab.Placement.Base], [25.0, 0.0, 19.05])
+    check("  and closes behind itself", panels.is_open(), False)
+
+    # A whole command on one line, the way `circle 0,0,0 5` is.
+    slab.Placement.Base = App.Vector(0, 0, 0)
+    doc.recompute()
+    select()
+    dock.engine.submit("transform yposition=40 mm")
+    settle(35)
+    check("a line that named its parameters needs no done",
+          [round(v, 3) for v in slab.Placement.Base], [0.0, 40.0, 0.0])
+    check("  and left nothing open", panels.is_open(), False)
+
+    # An angle is not a length. Every panel quantity used to take Step's
+    # default unit of mm, so a bare number at a rotation prompt was read
+    # as a distance.
+    select()
+    dock.engine.submit("transform zrotation=30")
+    settle(35)
+    truthy("a bare number at a rotation is degrees",
+           abs(slab.Placement.Rotation.Angle - 0.5236) < 0.01)
+    truthy("  about the axis it was named on",
+           abs(abs(slab.Placement.Rotation.Axis.z) - 1.0) < 0.01)
+
+    # Names resolve the way verb names do. Placement reset first: the
+    # rotation above turns the panel's local axes, so x stops being x.
+    slab.Placement = App.Placement()
+    doc.recompute()
+    said.clear()
+    select()
+    dock.engine.submit("transform")
+    settle()
+    dock.engine.submit("xpos=5 mm")
+    settle(10)
+    truthy("a unique prefix reaches its field",
+           abs(slab.Placement.Base.x - 5.0) < 0.001)
+    dock.engine.submit("x=1 mm")
+    settle(8)
+    truthy("an ambiguous one says what it is torn between",
+           any("could be" in ln and "xposition" in ln for ln in said))
+    dock.engine.submit("nosuch=1")
+    settle(8)
+    truthy("  and an unknown one says so",
+           any("not on this panel" in ln for ln in said))
+    dock.engine.submit("justaword")
+    settle(8)
+    truthy("something that is not an assignment says that",
+           any("is not an assignment" in ln for ln in said))
+    dock.engine.cancel()
+    settle(25)
+    check("cancelling closes the panel", panels.is_open(), False)
+
+    # A line the panel refused is not a line it was answered with. values
+    # is what says a command is complete, and _accept recorded the value
+    # before asking on_accept whether it was any good -- so a typo'd field
+    # name printed its error and then pressed the panel's OK.
+    slab.Placement = App.Placement()
+    doc.recompute()
+    said.clear()
+    select()
+    dock.engine.submit("transform xpositon=25 mm")
+    settle(30)
+    truthy("a typo says so", any("not on this panel" in ln for ln in said))
+    truthy("  and does not commit the panel", panels.is_open())
+    check("  nor move anything",
+          [round(v, 3) for v in slab.Placement.Base], [0.0, 0.0, 0.0])
+
+    # A value the parser cannot read is not a value.
+    said.clear()
+    dock.engine.submit("xposition=oops")
+    settle(12)
+    truthy("a value that will not parse says so", bool(said))
+    check("  and moves nothing",
+          [round(v, 3) for v in slab.Placement.Base], [0.0, 0.0, 0.0])
+
+    # An empty one clears a field without meaning to.
+    said.clear()
+    dock.engine.submit("xposition=")
+    settle(12)
+    truthy("an empty value is refused",
+           any("give it a value" in ln for ln in said))
+
+    # Every pair on the line is attempted, not just those before the first
+    # complaint -- the whole line went into history either way, so
+    # replaying it used to do more than running it had.
+    said.clear()
+    dock.engine.submit("xposition=6 mm nosuch=1 zposition=8 mm")
+    settle(15)
+    truthy("a bad name in the middle is reported",
+           any("not on this panel" in ln for ln in said))
+    check("  and the pairs around it still land",
+          [round(v, 3) for v in slab.Placement.Base], [6.0, 0.0, 8.0])
+
+    dock.engine.cancel()
+    settle(25)
+
+    # check runs nothing. open() is where a command runs now, so without a
+    # guard `check transform` moved the object, printed "nothing was run",
+    # and left a task dialog registered -- which blocks every panel
+    # command after it.
+    was = [round(v, 3) for v in slab.Placement.Base]
+    select()
+    dock.engine.submit("check transform")
+    settle(25)
+    check("check opens no panel", panels.is_open(), False)
+    check("  and leaves nothing registered for FreeCAD",
+          bool(Gui.Control.activeDialog()), False)
+    check("  and moves nothing",
+          [round(v, 3) for v in slab.Placement.Base], was)
+    check("  and the engine is idle after it", dock.engine.state, "idle")
+
+    stop()
+    dock.engine.submit("close!")
+
+
+def suite_panels_generic(dock):
+    """Panels nobody wrote code for.
+
+    transform proves the mechanism; these prove it is a mechanism. Same
+    three callables, a different command each time -- a panel names its
+    own fields, so there is nothing per command to write.
+    """
+    print("\n7d. the same machinery, on panels nobody wrote for")
+    from fccli import panels
+
+    dock.engine.submit("new panels")
+    doc = App.ActiveDocument
+    slab = doc.addObject("Part::Box", "Slab")
+    slab.Length, slab.Width, slab.Height = 100, 60, 20
+    doc.recompute()
+
+    def settle(n=30):
+        for _ in range(n):
+            QtWidgets.QApplication.processEvents()
+
+    def select(*names):
+        Gui.Selection.clearSelection()
+        for n in names:
+            Gui.Selection.addSelection(doc.Name, n)
+        settle(6)
+
+    # Std_Placement -- fourteen fields, and a quantity that has to survive
+    # the trip through FreeCAD's parser to mean anything.
+    select("Slab")
+    dock.engine.submit("placement")
+    settle()
+    truthy("placement opens a panel", panels.is_open())
+    names = {panels.key_for(f.name) for f in panels.fields()}
+    truthy("  offering more fields than transform does", len(names) >= 12)
+    truthy("  named the same way", "xpos" in names or "xposition" in names)
+    dock.engine.submit("xpos=30 mm zpos=3/4 in")
+    settle(12)
+    dock.engine.submit("done")
+    settle(35)
+    check("both landed, from one line",
+          [round(v, 3) for v in slab.Placement.Base], [30.0, 0.0, 19.05])
+    check("  and it closed", panels.is_open(), False)
+
+    # A combo is set by naming it, and its choices are what it offers.
+    select("Slab")
+    dock.engine.submit("placement")
+    settle()
+    combos = [f for f in panels.fields() if f.kind == "choice"]
+    truthy("a panel's combo boxes are readable", bool(combos))
+    truthy("  offering what the combo offers", len(combos[0].choices) >= 2)
+    dock.engine.cancel()
+    settle(20)
+    check("cancelling closes it", panels.is_open(), False)
+
+    # FreeCAD shows one task dialog at a time and refuses a second, so a
+    # panel we finished but left registered would block every panel
+    # command after it.
+    check("FreeCAD agrees no dialog is left registered",
+          bool(Gui.Control.activeDialog()), False)
+
+    # Part_Primitives -- the one that matters. Its combo swaps a whole
+    # QStackedWidget page, so the fields after it are not the fields
+    # before it. A step that held its widget would write into a page
+    # nobody is looking at.
+    Gui.activateWorkbench("PartWorkbench")
+    settle(8)
+    before = {o.Name for o in doc.Objects}
+    Gui.Selection.clearSelection()
+    dock.engine.submit("primitive")
+    settle()
+    truthy("primitive opens a panel", panels.is_open())
+
+    # Buttons by role, never by label. Qt translates a QDialogButtonBox's
+    # standard buttons, so pressing "ok" by its text worked in English and
+    # nowhere else. This panel is also the one whose accept button reads
+    # "Create" rather than "OK", so the label never sufficed anyway.
+    roles = panels.by_role()
+    truthy("the panel's buttons carry roles", bool(roles))
+    truthy("  including one that means yes",
+           bool(set(roles) & set(panels.ACCEPTING)))
+    truthy("  and one that means no",
+           bool(set(roles) & set(panels.REFUSING)))
+    accepting = roles.get("AcceptRole")
+    truthy("  and yes is Create here, not OK",
+           accepting is not None
+           and "create" in (accepting.text() or "").replace("&", "").lower())
+    truthy("so it can be finished", panels.can_finish())
+    first = {panels.key_for(f.name) for f in panels.fields()}
+    truthy("  showing the plane page to begin with", "planelength" in first)
+    dock.engine.submit("primitivetype=Cylinder")
+    settle(20)
+    after_choice = {panels.key_for(f.name) for f in panels.fields()}
+    truthy("  and the page under it swaps to match",
+           any(k.startswith("cylinder") for k in after_choice))
+
+    # The number behind the text, not the text. setText changed what the
+    # box showed and left its value where it was, so the panel read 4 mm
+    # on screen and built a cylinder of 2 -- an assertion on the built
+    # object is the only one that would have caught it.
+    dock.engine.submit("cylinderradius=4 mm")
+    settle(15)
+    dock.engine.submit("done")
+    settle(35)
+    made = sorted({o.Name for o in doc.Objects} - before)
+    check("  builds the one that was chosen", made, ["Cylinder"])
+    built = doc.getObject(made[0]) if made else None
+    check("  at the size it was given, not the one it displayed",
+          round(built.Radius.Value, 3) if built else None, 4.0)
+    check("  and closes", panels.is_open(), False)
+
+    dock.engine.submit("close!")
+
+
 def suite_roundtrip(dock):
     print("\n8. save, close and reopen, with no dialogs")
     path = os.path.join(tempfile.gettempdir(), "fccli-bvt-doc.FCStd")
@@ -491,6 +891,7 @@ def run():
     try:
         from fccli import dock as D
         dock = D.instance()
+        watch_for_dialogs(dock)
         if dock is not None:
             dock.persist = False       # this window's shape is not a setting
         suite_dock(dock)
@@ -504,6 +905,8 @@ def run():
         suite_units(dock)
         suite_check(dock, doc)
         suite_modals(dock)
+        suite_panel(dock)
+        suite_panels_generic(dock)
         suite_roundtrip(dock)
         suite_shutdown(dock)
     except Exception:
@@ -511,10 +914,26 @@ def run():
         print(failed_early)
 
     try:
+        # A panel still up holds the application open: the run finished,
+        # wrote its result, and then sat there. Whatever aborted the suite
+        # is reported above; this is only so the process ends.
+        from fccli import panels as _panels
+        if _panels.is_open():
+            ESCAPED.append("a task panel was left open")
+            _panels.dismiss()
+    except Exception:
+        pass
+
+    try:
         from fccli import dock as _D
         restore_geometry(entry_geometry, _D.instance())
     except Exception:
         restore_geometry(entry_geometry)   # the tests must not move a setting
+
+    check("no dialog escaped a command", ESCAPED, [])
+    if EXPECTED:
+        print(f"  note  {len(EXPECTED)} dialog(s) outside any command, "
+              f"which is FreeCAD's business: {EXPECTED[:3]}")
 
     passed = sum(1 for c in CHECKS if c["ok"])
     payload = {

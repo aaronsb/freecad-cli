@@ -28,6 +28,11 @@ class Option:
     doc: str = ""
     # Mutates engine state; returns True if the step is finished.
     action: Optional[Callable[[Any], bool]] = None
+    # Whether typing it belongs in the line history recalls. False for one
+    # that only says "that is all" -- a line naming its own parameters is
+    # already complete, and `done` recorded into it was read back as part
+    # of the last value.
+    record: bool = True
 
 
 @dataclass
@@ -55,6 +60,12 @@ class Step:
     # sooner. Points default late, so a pick is what commits a command
     # whose numbers were typed. An explicit value overrides that.
     prompt_order: Optional[int] = None
+    # Run when a value lands, before the next step is asked for. A step
+    # that stands for a field in an open task panel writes it there and
+    # then, so the model moves as the command is answered rather than all
+    # at once at the end -- which is what a panel does for a mouse, and
+    # what makes cancelling it mean something. Returns a complaint, or None.
+    on_accept: Optional[Callable[[Any, "Step", Any, Any], Optional[str]]] = None
 
     def option_names(self) -> List[str]:
         return [o.name for o in self.options]
@@ -95,6 +106,21 @@ class Verb:
     # whose whole job is the ring itself -- "history clear" recorded into
     # the history it just emptied is noise.
     record: bool = True
+    # Whether the factory made this rather than a person writing it. Said
+    # outright, because it stopped being visible from the outside: every
+    # generated verb now shares its emit with the hand-written panel verbs,
+    # so the module that emit came from answers a different question than
+    # it used to.
+    generated: bool = False
+    # Steps a verb only learns once it has started. A task panel names its
+    # own parameters, and which ones it is showing depends on what has been
+    # chosen in it, so they cannot be declared here. Called with the engine,
+    # returns steps to ask for -- or None, leaving the verb as it stands.
+    open: Optional[Callable[[Any], Optional[List["Step"]]]] = None
+    # Undo whatever open() set up, when the command is cancelled rather
+    # than finished. A panel left on screen with half a command in it is
+    # worse than one that was never opened.
+    abort: Optional[Callable[[Any], None]] = None
 
 
 class Registry:

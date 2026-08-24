@@ -340,9 +340,14 @@ class CliDock(QtWidgets.QDockWidget):
             opts = msg.data.get("options") or []
             tail = f" [{'/'.join(opts)}]" if opts else ""
             self.console.set_prompt(f"{msg.text}{tail}: ")
+            # prompt_sequence, not verb.steps: a panel verb finds what it
+            # asks for by starting, so the declared list is empty and every
+            # one of them read "step 1/0".
+            total = len(self.engine.prompt_sequence())
             self.status.setText(
                 f"{self.engine.verb.name} · step "
-                f"{self.engine.step_index + 1}/{len(self.engine.verb.steps)}"
+                f"{min(self.engine.step_index + 1, total) if total else 1}"
+                f"/{total or 1}"
             )
         self._paint_focus_state()
 
@@ -497,6 +502,13 @@ class CliDock(QtWidgets.QDockWidget):
         self._applying_remote = False
 
     def closeEvent(self, ev):
+        # Whatever is half-typed goes with the window. A panel verb left
+        # its task panel on screen with the engine still collecting for a
+        # command line that had gone.
+        try:
+            self.engine.cancel()
+        except Exception:
+            pass
         self.keyfilter.remove()
         self.picker.stop()
         # This handler is on the QApplication and holds the dock, so every

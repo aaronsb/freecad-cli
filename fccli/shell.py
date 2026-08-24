@@ -840,8 +840,7 @@ def _list_verbs(engine):
     hand, generated = [], []
     for name in REGISTRY.names():
         verb = REGISTRY.get(name)
-        (generated if verb.emit.__module__.endswith("factory") else hand
-         ).append(verb)
+        (hand if _curation.authored(verb) else generated).append(verb)
     engine.bus.emit(_bus.INFO, f"{len(hand)} hand-written commands:")
     for verb in hand:
         alias = f" ({verb.aliases[0]})" if verb.aliases else ""

@@ -177,4 +177,17 @@ REGISTRY.add(Verb(
     steps=[Step("at", POINT, "Point location")],
     emit=_emit_point,
 ))
+
+
+from .panels import _abort_panel, _emit_panel, _open_panel  # noqa: E402
+
+REGISTRY.add(Verb(
+    name="transform", gui_command="Std_TransformManip", aliases=["xf"],
+    doc="Move and rotate the selection, through FreeCAD's own Transform panel.",
+    steps=[],
+    open=_open_panel("Std_TransformManip"),
+    emit=_emit_panel,
+    abort=_abort_panel,
+
+))
 from . import shell  # noqa: F401,E402  -- registers the shell builtins

@@ -24,26 +24,15 @@ having run one command, the neighbours are what FreeCAD put next to it.
 def authored(verb):
     """Whether a person wrote this verb, rather than the factory generating it.
 
-    Rank cannot answer this: a generated launcher for a command FreeCAD
-    puts in a toolbar ranks PROMOTED too, so `box` and the re-homed
-    `part_box` beside it are indistinguishable by rank alone.
+    Asked of the verb, not of where its emit came from. The module was
+    never really answering this and finally stopped: hand-written
+    `transform` shares its emit with every generated command verb, so it
+    read as generated, lost promoted rank, and `use <domain>` hid it.
+
+    The factory marks what it makes. Everything else -- fccli/verbs.py,
+    fccli/shell.py, an addon's own patch -- is somebody's writing.
     """
-    if verb is None:
-        return False
-    module = getattr(verb.emit, "__module__", "")
-    return module.endswith((".verbs", ".shell")) or _authored(module)
-
-
-def _authored(module):
-    """Whether a patch module wrote this verb, rather than the factory.
-
-    A patch is imported by path under a synthetic name -- fccli_builtin_x,
-    fccli_addon_X, fccli_user_x -- so it never reads as fccli.patches.
-    Matching that string meant an addon's own hand-written verb ranked
-    below every generated launcher, which is the opposite of the rule.
-    """
-    from .patches import MODULE_PREFIX
-    return module.startswith(MODULE_PREFIX)
+    return verb is not None and not getattr(verb, "generated", False)
 
 
 PROMOTED = 0    # in a default toolbar -- a button somebody can click
