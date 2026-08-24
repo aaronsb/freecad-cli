@@ -293,6 +293,31 @@ def suite_tracker(dock):
     snapper = Gui.Snapper
     truthy("Draft owns a track line", snapper.trackLine is not None)
 
+    # The grid is Draft's, configured by whoever owns this FreeCAD. The
+    # picker used to switch show_always off on every snap regardless of
+    # what alwaysShowGrid said, which held for the rest of the session.
+    # setTrackers is where Draft reads those preferences, so compare
+    # against what it set rather than against a constant.
+    snapper.setTrackers()
+    QtWidgets.QApplication.processEvents()
+    _prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
+    if snapper.grid is not None:
+        check("the grid shows what alwaysShowGrid asks for",
+              bool(snapper.grid.show_always),
+              _prefs.GetBool("alwaysShowGrid", True))
+        check("  and during a command, what grid asks for",
+              bool(snapper.grid.show_during_command),
+              _prefs.GetBool("grid", True))
+        # Through the picker, which is where the suppression used to sit:
+        # quiet_grid ran on every resolve and every teardown, so a grid
+        # switched back on by hand went away again at the next click.
+        _before = bool(snapper.grid.show_always)
+        dock.picker.resolve((400, 300))
+        dock.picker.stop()
+        QtWidgets.QApplication.processEvents()
+        check("  and a pick does not take it away",
+              bool(snapper.grid.show_always), _before)
+
     snapper.off()
     QtWidgets.QApplication.processEvents()
     check("it is dark to begin with", snapper.trackLine.Visible, False)

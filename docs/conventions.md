@@ -327,6 +327,31 @@ document name. `window` grabs the whole application, which needs real
 hardware GL — a widget grab of an OpenGL viewport on a virtual display comes
 back as flat colour.
 
+## FreeCAD's settings are FreeCAD's
+
+**Read a preference, never overrule one.** This project is a way of
+interacting with FreeCAD, not a second opinion about how FreeCAD should be
+configured. Writing a preference and defeating its effect at runtime are
+the same imposition through different doors — the picker once turned
+Draft's grid off on every snap while `alwaysShowGrid` was on, and called
+that restraint because `user.cfg` was untouched.
+
+Three rules fall out:
+
+- **Report the condition, do not correct it.** A grid drawn as stray lines
+  because `gridSpacing` is `0` gets one line on the command line naming
+  where to fix it. `fccli/picking.py` `report_grid`.
+- **Borrow and return.** A command that needs its workbench loaded does not
+  need it left in front. `fccli/panels.py` `_workbench_borrowed` activates,
+  takes what it came for, and puts back whichever workbench was on.
+- **Write only what was asked for, and only where it belongs.** `units`
+  writes `Units/UserSchema` because somebody ran `units`, which is the
+  command-line spelling of Preferences → Units. Everything this project
+  keeps for itself lives under `Mod/fccli`.
+
+Tests inherit this: a suite may not read or write the operator's real
+history, alias file, or preferences.
+
 ## Dialogs
 
 **A command takes its arguments inline and never raises a modal.** `save`

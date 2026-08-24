@@ -21,7 +21,7 @@ def _is_point(value):
 _SNAPPER_READY = None
 
 
-def ensure_snapper():
+def ensure_snapper(notify=None):
     """Bring ``Gui.Snapper`` into existence.
 
     It is installed by Draft, not by the core GUI, so it is absent until
@@ -43,66 +43,59 @@ def ensure_snapper():
         return False
     _SNAPPER_READY = hasattr(Gui, "Snapper")
     if _SNAPPER_READY:
-        quiet_grid()
+        report_grid(notify)
     return _SNAPPER_READY
 
 
-class _hushed:
-    """Draft's warnings, for as long as we are building Draft's furniture.
+_GRID_CHECKED = False
 
-    Creating the grid tracker makes Draft read its own gridSpacing
-    preference and, when that is 0 -- which it is on any FreeCAD where
-    nobody has set up a Draft grid -- print "Draft Grid: Spacing value is
-    zero" once per update, three times per bootstrap. The operator asked
-    for a circle. They did not ask for a grid, and the grid is not theirs
-    to be warned about.
 
-    Only around setTrackers, and put back afterwards even if it raises:
-    everything Draft has to say about what the operator did ask for still
-    reaches them.
+def report_grid(notify=None):
+    """Say what Draft's grid is about to do, once, and change nothing.
+
+    Bootstrapping Draft builds its grid tracker, which reads the operator's
+    own `alwaysShowGrid`, `grid` and `gridSpacing` preferences. When the
+    spacing is 0 the grid draws as a handful of stray lines across the
+    model and Draft prints "Draft Grid: Spacing value is zero" once per
+    update, three times per bootstrap.
+
+    This used to turn the grid off and suppress the warnings. That read the
+    operator's preferences and overruled them: `alwaysShowGrid` was on,
+    Draft honoured it in setTrackers, and the picker switched it back off
+    for the rest of the session. The command line is a way of interacting
+    with FreeCAD, not a second opinion about how FreeCAD should be set up.
+
+    So the grid is left exactly as configured, and the condition is
+    reported the way every other fault is -- as a line on the command line,
+    naming where to fix it.
     """
+    global _GRID_CHECKED
+    if _GRID_CHECKED or notify is None:
+        return
+    _GRID_CHECKED = True
+    if not _grid_will_draw() or _grid_spacing() != 0:
+        return
+    notify("Draft's grid spacing is 0, so its grid draws as stray lines. "
+           "Preferences -> Draft -> Grid and snapping -> Grid spacing.")
 
-    def __enter__(self):
-        self.was = True
-        try:
-            self.was = App.Console.GetStatus("Console", "Wrn")
-            App.Console.SetStatus("Console", "Wrn", False)
-        except Exception:
-            pass
-        return self
 
-    def __exit__(self, *exc):
-        try:
-            App.Console.SetStatus("Console", "Wrn", self.was)
-        except Exception:
-            pass
+def _grid_will_draw():
+    """Whether the operator has asked for the grid at all."""
+    try:
+        prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
+        return prefs.GetBool("alwaysShowGrid", True) or \
+            prefs.GetBool("grid", True)
+    except Exception:
         return False
 
 
-def quiet_grid():
-    """Keep Draft's grid out of the scene.
-
-    Bootstrapping Draft creates its grid tracker, which is Draft workbench
-    furniture the command line never asked for. It also renders as a handful
-    of stray lines when the user's Draft gridSpacing preference is 0.
-    """
-    snapper = getattr(Gui, "Snapper", None)
-    if snapper is None:
-        return
-    with _hushed():
-        try:
-            snapper.setTrackers()
-        except Exception:
-            pass
-        grid = getattr(snapper, "grid", None)
-        if grid is None:
-            return
-        try:
-            grid.show_always = False
-            grid.show_during_command = False
-            grid.off()
-        except Exception:
-            pass
+def _grid_spacing():
+    """Draft's grid spacing as a number, read the way Draft reads it."""
+    try:
+        prefs = App.ParamGet("User parameter:BaseApp/Preferences/Mod/Draft")
+        return App.Units.Quantity(prefs.GetString("gridSpacing", "1 mm")).Value
+    except Exception:
+        return None
 
 
 def _active_view():
@@ -197,7 +190,7 @@ class SnapPicker(_ViewPicker):
         self._snapping = True
 
     def start(self, callback, last=None) -> None:
-        if self._snapping and not ensure_snapper():
+        if self._snapping and not ensure_snapper(self.notify):
             self._snapping = False
             self.backend = "raw (fallback)"
             if self.notify:
@@ -213,7 +206,6 @@ class SnapPicker(_ViewPicker):
             if self.notify:
                 self.notify(f"snap failed ({exc}); using the raw point")
             point = None
-        quiet_grid()
         if point is not None:
             return App.Vector(point.x, point.y, point.z)
         return super().resolve(pos)
@@ -242,7 +234,6 @@ class SnapPicker(_ViewPicker):
             Gui.Snapper.off()
         except Exception:
             pass
-        quiet_grid()
 
 
 class GetPointPicker:
@@ -262,7 +253,7 @@ class GetPointPicker:
 
     def start(self, callback, last=None) -> None:
         self.stop()
-        if not ensure_snapper():
+        if not ensure_snapper(self.notify):
             return
         self._callback = callback
         self._active = True

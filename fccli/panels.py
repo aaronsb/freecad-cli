@@ -35,6 +35,7 @@ PySide as a bare `QAbstractSpinBox` with no `setValue`, so the text is the
 only door as well as the better one.
 """
 
+import contextlib
 import re
 
 from . import bus as _bus
@@ -698,6 +699,29 @@ def wait_for_panel(before=frozenset(), rounds=12):
     return bool(names_on_screen() - set(before)) if _dialog_up() else False
 
 
+@contextlib.contextmanager
+def _workbench_borrowed(name):
+    """Load a workbench, and hand the operator theirs back.
+
+    Activating registers the workbench's commands for the rest of the
+    session, so they survive the switch back.
+    """
+    import FreeCADGui as Gui
+    try:
+        was = Gui.activeWorkbench().name()
+    except Exception:
+        was = None
+    Gui.activateWorkbench(name)
+    try:
+        yield
+    finally:
+        if was and was != name:
+            try:
+                Gui.activateWorkbench(was)
+            except Exception:
+                pass
+
+
 def not_yet_loaded(command):
     """Why this command cannot run, if it is simply not there yet.
 
@@ -724,9 +748,16 @@ def not_yet_loaded(command):
             # Knowing which workbench and making somebody go and get it is
             # two thirds of an answer. A workbench registers its commands
             # the first time it is activated and keeps them for the rest of
-            # the session, so this is a one-off either way.
-            Gui.activateWorkbench(owner)
-            if command in set(Gui.listCommands()):
+            # the session, so fetching it is a one-off.
+            #
+            # Put back whichever workbench was on. The command needs its
+            # own workbench loaded, and does not need it left in front:
+            # typing one Arch command moved somebody from Part Design to
+            # BIM and left them there, which is the command line deciding
+            # how FreeCAD should be set up rather than driving it.
+            with _workbench_borrowed(owner):
+                loaded = command in set(Gui.listCommands())
+            if loaded:
                 return None
         where = f" -- it comes with {owner}" if owner else ""
         return (f"{command} is not loaded{where}, and this could not load "

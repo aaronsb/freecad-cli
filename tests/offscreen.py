@@ -1381,6 +1381,49 @@ def _run():
           _cmds["Std_ViewFront"].get("workbench"), None)
     check("  including Part_Box", _cmds["Part_Box"].get("workbench"), None)
 
+    print("\n5aa. FreeCAD's settings stay FreeCAD's")
+    # The picker used to turn Draft's grid off on every snap because the
+    # operator's gridSpacing was 0 -- while their alwaysShowGrid was on.
+    # Overruling a preference at runtime is the same imposition as
+    # rewriting it. The condition gets reported instead.
+    from fccli import picking as _pick
+    check("nothing forces the grid off any more",
+          hasattr(_pick, "quiet_grid"), False)
+    check("  nor silences Draft's warnings", hasattr(_pick, "_hushed"), False)
+
+    _was_draw, _was_space = _pick._grid_will_draw, _pick._grid_spacing
+    try:
+        def _report(will_draw, spacing):
+            said = []
+            _pick._GRID_CHECKED = False
+            _pick._grid_will_draw = lambda: will_draw
+            _pick._grid_spacing = lambda: spacing
+            _pick.report_grid(said.append)
+            return said
+        check("zero spacing on a grid that draws is reported",
+              len(_report(True, 0.0)), 1)
+        check("  and it names where to fix it",
+              "Preferences" in _report(True, 0.0)[0], True)
+        check("a working spacing says nothing", _report(True, 10.0), [])
+        check("a grid nobody shows says nothing", _report(False, 0.0), [])
+        check("an unreadable preference says nothing", _report(True, None), [])
+
+        # Once per session: three point steps must not print it three times.
+        said = []
+        _pick._GRID_CHECKED = False
+        _pick._grid_will_draw, _pick._grid_spacing = lambda: True, lambda: 0.0
+        for _ in range(3):
+            _pick.report_grid(said.append)
+        check("it is said once, not once per pick", len(said), 1)
+    finally:
+        _pick._grid_will_draw, _pick._grid_spacing = _was_draw, _was_space
+        _pick._GRID_CHECKED = False
+
+    # A workbench fetched to run a command is handed back.
+    from fccli import panels as _panels
+    check("a borrowed workbench is a context manager",
+          hasattr(_panels, "_workbench_borrowed"), True)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

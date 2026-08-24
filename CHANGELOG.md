@@ -2,6 +2,24 @@
 
 <!-- next -->
 
+### Fixed
+
+- **Draft's grid is left as the operator configured it.** The picker turned
+  `show_always` and `show_during_command` off and hid the grid on every
+  Draft bootstrap, every snap and every teardown, on the grounds that
+  `gridSpacing` of `0` draws stray lines across the model. It never wrote
+  the preference, and it overruled one: `alwaysShowGrid` was on, Draft
+  honoured it in `setTrackers`, and the picker switched it back off for the
+  rest of the session. `quiet_grid` and the console-warning suppression
+  around it are gone; `report_grid` says the spacing is zero once, on the
+  command line, and names the preference page.
+- **A workbench fetched to run a command is handed back.** Typing an Arch
+  command with BIM unloaded moved the operator from wherever they were to
+  BIM and left them there. `_workbench_borrowed` activates, takes the
+  command registration -- which survives the switch, so it is still a
+  one-off -- and puts the previous workbench back.
+
+
 ## 0.3.0 -- 2026-08-23
 
 The command line reads FreeCAD's own opinion about itself, and then yours.
