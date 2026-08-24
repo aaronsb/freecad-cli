@@ -40,6 +40,14 @@ import time
 EX_OK, EX_REJECTED, EX_USAGE, EX_NOINSTANCE, EX_AMBIGUOUS = 0, 1, 2, 3, 4
 EX_TEMPFAIL = 75
 
+# xvfb-run sets DISPLAY. Qt6 on a Wayland session never reads it: the
+# platform plugin is chosen from XDG_SESSION_TYPE and WAYLAND_DISPLAY, and
+# the wayland plugin connects to the operator's compositor, so --headless
+# put FreeCAD on their screen. Pinning the platform makes the virtual
+# display the one FreeCAD actually gets. Only for the headless path -- an
+# interactive start should stay on whatever the desktop is running.
+HEADLESS_ENV = {"QT_QPA_PLATFORM": "xcb"}
+
 PROTOCOL = 1
 
 
@@ -455,16 +463,17 @@ def cmd_start(args):
               file=sys.stderr)
         return EX_AMBIGUOUS
 
-    runner = []
+    runner, env = [], None
     if args.headless:
         if not shutil.which("xvfb-run"):
             print("fccli: --headless needs xvfb-run", file=sys.stderr)
             return EX_NOINSTANCE
         runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"]
+        env = dict(os.environ, **HEADLESS_ENV)
 
     log = open(args.log, "ab") if args.log else subprocess.DEVNULL
     proc = subprocess.Popen(runner + [binary, *args.args],
-                            stdout=log, stderr=log,
+                            stdout=log, stderr=log, env=env,
                             stdin=subprocess.DEVNULL, start_new_session=True)
     deadline = time.monotonic() + args.timeout
     while time.monotonic() < deadline:

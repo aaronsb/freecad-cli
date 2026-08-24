@@ -18,6 +18,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULT = os.path.join(tempfile.gettempdir(), "fccli-bvt.json")
 TIMEOUT = int(os.environ.get("FCCLI_BVT_TIMEOUT", "300"))
 
+# xvfb-run sets DISPLAY, and that used to be the whole story. Qt6 on a
+# Wayland session never reads it -- the platform plugin comes from
+# XDG_SESSION_TYPE and WAYLAND_DISPLAY, and the wayland plugin talks to the
+# operator's compositor. The suite ran on their desktop anyway, dialogs and
+# all, which is the thing the comment below says it fixed.
+HEADLESS_ENV = {"QT_QPA_PLATFORM": "xcb"}
+
 
 def main():
     if os.path.exists(RESULT):
@@ -28,7 +35,7 @@ def main():
     # at whoever was sitting there. A build verification test should be
     # invisible. FCCLI_BVT_DISPLAY=1 asks for the real one, for watching it
     # run on purpose.
-    runner = []
+    runner, headless = [], {}
     if os.environ.get("FCCLI_BVT_DISPLAY"):
         if not os.environ.get("DISPLAY"):
             print("bvt: FCCLI_BVT_DISPLAY is set but DISPLAY is not",
@@ -36,6 +43,7 @@ def main():
             return 2
     elif shutil.which("xvfb-run"):
         runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"]
+        headless = HEADLESS_ENV
     elif not os.environ.get("DISPLAY"):
         print("bvt: needs xvfb-run, or a DISPLAY with FCCLI_BVT_DISPLAY=1",
               file=sys.stderr)
@@ -49,7 +57,7 @@ def main():
     # test dies with "No module named 'fccli'" before it reaches a check.
     scratch = tempfile.mkdtemp(prefix="fccli-bvt-")
     env = dict(os.environ, FCCLI_BVT_RESULT=RESULT,
-               XDG_STATE_HOME=os.path.join(scratch, "state"))
+               XDG_STATE_HOME=os.path.join(scratch, "state"), **headless)
     try:
         proc = subprocess.run(cmd, env=env, timeout=TIMEOUT,
                               capture_output=True, text=True)
