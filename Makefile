@@ -36,10 +36,11 @@ test:  ## Run the test suite (offscreen, no FreeCAD GUI needed)
 	@QT_QPA_PLATFORM=offscreen python3 tests/offscreen.py
 
 .PHONY: lint
-lint:  ## Byte-compile everything, and check the decision records
+lint:  ## Byte-compile, check the decision records, lint the command tree
 	@python3 -m compileall -q fccli tools tests InitGui.py Init.py bin/fccli \
 	  && echo "compiles clean"
 	@docs/scripts/adr lint --check
+	@python3 tools/lint_dictionary.py
 
 .PHONY: bvt
 bvt:  ## Drive a real FreeCAD GUI end to end, unattended
@@ -58,6 +59,14 @@ check-all: check bvt socket  ## check, plus the live GUI and socket runs
 .PHONY: descriptor
 descriptor:  ## Regenerate fccli/descriptor.json from FreeCAD's registries
 	@python3 tools/generate_descriptor.py
+
+.PHONY: commands
+commands:  ## Write a file for every command that has none (--force resets all)
+	@python3 tools/generate_commands.py $(FLAGS)
+
+.PHONY: dictionary
+dictionary:  ## Compile fccli/lib/commands into fccli/dictionary.json
+	@python3 tools/compile_dictionary.py
 
 .PHONY: install
 install:  ## Symlink into FreeCAD's Mod directory (live dev install)

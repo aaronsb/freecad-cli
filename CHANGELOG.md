@@ -80,6 +80,15 @@
 
 ### Added
 
+- **One file per command.** `fccli/lib/commands/<workbench>/<Command>.md`
+  for all 1111 -- Markdown with YAML frontmatter, a `generated:` block the
+  tool owns and authored fields (`verb`, `aliases`, `requires`, `panel`,
+  `family`, `choice`, `rank`, `type`) a person owns, the body seeded from
+  the command's page in FreeCAD/FreeCAD-documentation (854) or its tooltip
+  (257). `make commands` writes what is missing, `make dictionary` compiles
+  the tree to `fccli/dictionary.json`, and `tools/lint_dictionary.py` runs
+  in `make lint` with ADR-100's five rules. Nothing reads the compiled file
+  yet; that is the next change.
 - **Every command carries its wiki page.** `getInfo()` returns `whatsThis`,
   the page name FreeCAD's F1 help resolves against, and the harvest had
   been dropping it. It is recorded as `wiki`: 1106 of 1111 have one, 9

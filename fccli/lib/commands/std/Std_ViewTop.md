@@ -1,0 +1,29 @@
+---
+command: "Std_ViewTop"
+generated:                     # owned by the tool; rewritten on reconcile
+  freecad: "1.1.3"
+  label: "&2 Top"
+  tooltip: "Sets the camera to the top view"
+  toolbar: "Individual Views"
+  menu: "Standard Views"
+  shortcut: "2"
+  workbench: null
+  wiki: "Std_ViewTop"
+  wiki_rev: "0499378"
+# authored from here down; the tool never rewrites these
+verb: null
+aliases: []
+requires: []
+panel: null
+family: null
+choice: null
+rank: null
+type: null
+---
+
+The Std ViewTop command points the camera in the active 3D view in the direction of the negative Z axis.
+
+## See also
+
+- Std_ViewFront
+- Std_ViewRight

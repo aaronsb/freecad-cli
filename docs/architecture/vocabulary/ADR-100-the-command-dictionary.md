@@ -157,9 +157,10 @@ selections.
    inside it fails, with the message that the edit belongs in an
    authored field or in `etc/`.
 3. `requires` values come from the closed vocabulary; `panel` is `pick`
-   or null; `rank` is `registry` or null; `type` keys are the five named.
-   When the documentation clone is present, every `generated.wiki` names
-   a page in it.
+   or null; `rank` is `registry` or null; `family` is a name or `false`;
+   `type` keys are the five named. `generated.wiki` is not checked
+   against the clone: 195 of 1106 name no page (composite tool groups,
+   Std internals, test hooks), and the body falls back to the tooltip.
 4. After composition, every verb name is unique and every `verb` a file
    asked for is the one granted.
 5. `fccli/dictionary.json` is the compilation of `lib/commands/`.

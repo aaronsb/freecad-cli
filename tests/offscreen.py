@@ -1784,6 +1784,102 @@ def _run():
     _rt2 = _Registry()
     _rc2 = register_all(_rt2, tier0=True, patches=PatchSet())
     check("  no GUI, no runtime commands, no error", _rc2.get("runtime", 0), 0)
+    print("\n5ac. a command file round-trips, and lands where its workbench says")
+    # ADR-100. The tree under fccli/lib/commands is the hand-owned layer:
+    # one Markdown file per command, a generated: block the tool owns and
+    # authored fields it never touches. tools/lint_dictionary.py checks the
+    # tree in make lint; this checks the model the three tools share.
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
+    import command_files as _cf
+    check("a workbench names its directory",
+          [_cf.workbench_dir(w) for w in
+           ("SketcherWorkbench", "CurvedShapesWB", None, "BIMWorkbench")],
+          ["sketcher", "curvedshapes", "std", "bim"])
+    _gen = {"freecad": "1.1.3", "label": "Circle From Center",
+            "tooltip": "Creates a circle", "toolbar": None,
+            "menu": "Geometries", "shortcut": "G, C",
+            "workbench": "SketcherWorkbench",
+            "wiki": "Sketcher_CreateCircle", "wiki_rev": "0499378"}
+    _auth = {"verb": "circle_center", "aliases": ["cc"],
+             "requires": ["sketch-edit"],
+             "type": {"steps": ["Radius"], "strict": True}}
+    _text = _cf.render("Sketcher_CreateCircle", _gen, _auth,
+                       "A circle.\n\n## See also\n\n- Sketcher_CreateArc")
+    _front, _body = _cf.parse(_text)
+    check("  the generated block reads back as written",
+          _front["generated"], _gen)
+    check("  and so do the authored fields, defaults filled in",
+          _cf.authored_of(_front),
+          {**{k: v for k, v in _cf.AUTHORED.items()}, **_auth})
+    check("  the body is the body", _body.strip().splitlines()[0], "A circle.")
+    check("  a comment in the frontmatter survives the template",
+          "# authored from here down" in _text, True)
+    # The wiki page reader. Every defect the review found in the bodies
+    # was in untested code; each is a line here now.
+    import generate_commands as _gc
+    _page = (
+        "---\n GuiCommand:\n   Name: Acme Thing\n   Shortcut: **G** **C**\n"
+        "   Version: \n   SeeAlso: Acme_Other, Acme_More\n---\n\n# Acme Thing\n\n"
+        "## Description\n\nThe <img src=x.svg> [Acme Thing](Acme_Thing.md) "
+        "tool does " + "'" * 3 + "things" + "'" * 3 + " <small>(v0.21)</small> : and "
+        "\\'\\'more\\'\\'\\. {{Version|1.0}}\n\n ![](images/Acme.png) \n\n*A caption*\n\n"
+        "-   First item\n-   Second [item](X.md)\n    wrapped\n1.  Third\n\n"
+        "### Sub heading\n\nStill the description.\n\n## Usage\n\nNot.\n\n"
+        "---\n⏵ [documentation index](../README.md) > Acme > Acme Thing\n")
+    _front, _desc, _redir = _gc.page_parts(_page)
+    check("a page's fields are read a line at a time, not as YAML",
+          (_front.get("Shortcut"), _gc.see_also(_front)),
+          ("**G** **C**", ["Acme_Other", "Acme_More"]))
+    check("  an empty field does not swallow the next line",
+          _front.get("Version"), None)
+    check("  the prose comes out clean",
+          _desc.split("\n\n")[0],
+          "The Acme Thing tool does things and more.")
+    check("  a list stays a list; a wrapped item rejoins; numbers stay",
+          _desc.split("\n\n")[1], "- First item\n- Second item wrapped\n1. Third")
+    check("  a ### inside the Description is part of it; ## Usage ends it",
+          _desc.split("\n\n")[2:], ["## Sub heading", "Still the description."])
+    check("  the image, its caption, the template and the footer are gone",
+          ("caption" in _desc, "{{" in _desc, "index" in _desc, "Not." in _desc),
+          (False, False, False, False))
+    _d3 = _gc.page_parts("### Description\n\nDeep.\n\n### Other\n\nx\n")
+    check("  ### Description counts and ends at the next ###", _d3[1], "Deep.")
+    _r = _gc.page_parts("---\n GuiCommand:\n   Name: X\n---\n\n"
+                        "1.  REDIRECT [Part_Common](Part_Common.md)\n")
+    check("  a redirect names where to look", _r[2], "Part_Common")
+    _i = _gc.page_parts("## Introduction\n\nIntro text.\n\n## Usage\n\nx\n")
+    check("  Introduction serves when there is no Description", _i[1], "Intro text.")
+    # A C1 control in a label wedges YAML unless escaped.
+    _weird = _cf.render("X", {"label": "a\x85b\x7fc"}, {}, "")
+    check("  a control character in a harvested string round-trips",
+          _cf.parse(_weird)[0]["generated"]["label"], "a\x85b\x7fc")
+    # The lint says what is wrong with a wrong-typed field, once.
+    _bad_dir = tempfile.mkdtemp(prefix="fccli-lint-")
+    os.makedirs(os.path.join(_bad_dir, "part"))
+    _gen_pb = {k: _cmds["Part_Box"].get(k) for k in
+               ("label", "tooltip", "toolbar", "menu", "shortcut",
+                "workbench", "wiki")}
+    _gen_pb["freecad"] = _load_desc()["freecad"]
+    with open(os.path.join(_bad_dir, "part", "Part_Box.md"), "w") as _fh:
+        _fh.write(_cf.render("Part_Box", _gen_pb,
+                             {"panel": ["pick"], "requires": "sketch-edit",
+                              "family": False}, "x"))
+    import lint_dictionary as _ld2
+    _n2, _p2 = _ld2.lint(_bad_dir, _ld2.DESCRIPTOR, os.path.join(_bad_dir, "none.json"))
+    _shapes = [p for p in _p2 if "wrong shape" in p]
+    check("  a wrong-typed field is one message, and family: false is allowed",
+          (len(_shapes), any("family" in p and "shape" in p for p in _p2)),
+          (2, False))
+    import shutil as _sh2; _sh2.rmtree(_bad_dir, ignore_errors=True)
+
+    # The tree in the repository agrees with the descriptor: every command
+    # has a file in its workbench's directory and no file names a command
+    # that is not there. This is lint rule 1, run here so a stale tree
+    # fails the suite and not only make lint.
+    import lint_dictionary as _ld, compile_dictionary as _cd
+    _n, _problems = _ld.lint(_cd.DEFAULT_TREE, _ld.DESCRIPTOR, _cd.DEFAULT_OUT)
+    check("  the tree in the repository is clean", (_n, _problems[:3]),
+          (len(_cmds), []))
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

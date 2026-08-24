@@ -1,0 +1,30 @@
+---
+command: "Part_SimpleCopy"
+generated:                     # owned by the tool; rewritten on reconcile
+  freecad: "1.1.3"
+  label: "Simple Copy"
+  tooltip: "Creates a simple non-parametric copy of the selected shapes"
+  toolbar: null
+  menu: "Copy"
+  shortcut: null
+  workbench: "PartWorkbench"
+  wiki: "Part_SimpleCopy"
+  wiki_rev: "0499378"
+# authored from here down; the tool never rewrites these
+verb: null
+aliases: []
+requires: []
+panel: null
+family: null
+choice: null
+rank: null
+type: null
+---
+
+The Part SimpleCopy command creates non-parametric copies of objects.
+
+## See also
+
+- Part_TransformedCopy
+- Std_Copy
+- Std_DuplicateSelection
