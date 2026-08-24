@@ -28,3 +28,11 @@ _How the project is built and checked — test tiers, review, release, reconcile
 | ADR | Title | Status |
 |-----|-------|--------|
 | [ADR-500](./practice/ADR-500-decisions-are-recorded-as-adrs.md) | Decisions are recorded as ADRs | Accepted |
+
+## System
+_Cross-cutting — the layer model, the root the terminal navigates, anything spanning two or more domains_
+
+| ADR | Title | Status |
+|-----|-------|--------|
+| [ADR-600](./system/ADR-600-the-layer-model.md) | The layer model | Proposed |
+| [ADR-601](./system/ADR-601-a-root-the-terminal-navigates.md) | A root the terminal navigates | Proposed |

@@ -37,6 +37,12 @@ domains:
     description: How the project is built and checked — test tiers, review, release, reconcile, records
     folder: practice
 
+  system:
+    range: [600, 699]
+    name: System
+    description: Cross-cutting — the layer model, the root the terminal navigates, anything spanning two or more domains
+    folder: system
+
 statuses:
   - Draft
   - Proposed

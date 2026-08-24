@@ -6,6 +6,8 @@ deciders:
   - claude
 related:
   - ADR-500
+  - ADR-600
+  - ADR-601
 ---
 
 # ADR-100: The command dictionary
@@ -46,7 +48,8 @@ Four facts from the harvest thread shape the answer:
 
 - The 148 commands that reached the descriptor without a label looked like
   a case for hand-written entries. They were a harvest bug; `getInfo()` had
-  the labels all along. An entry that papers over a harvest gap hides it.
+  the labels all along. A hand edit that papers over a harvest gap hides
+  it.
 - `panels.py` reads a panel's fields live and caches nothing, because
   which fields a panel shows depends on what has been chosen in it. The
   same holds for whether a command can run: `Gui.Command.isActive()`
@@ -60,125 +63,182 @@ Four facts from the harvest thread shape the answer:
   a sketch in edit mode, a selection of the right kind — and the
   workbench is the GUI's proxy for it.
 
+The first draft of this record proposed a sparse overlay: an entry only
+where the factory's answer is wrong, so that a file which is 95 % copy
+does not rot. The operator's direction is the opposite shape — one file
+per command, all of them, externalised and organised by workbench, so the
+factory becomes a maintenance tool and the command line improves by
+editing the files. That direction is taken here, and the rot problem is
+solved by tooling instead of sparseness.
+
 ## Decision
 
-A command-keyed overlay, `PATCH["commands"]`, as the third half of the
-existing patch format alongside `types` and `verbs`. Per-namespace files,
-the three discovery roots, and key-by-key merging apply unchanged.
+**One file per command.** The factory generates `lib/commands/<workbench>/
+<Command>.md` for every command in the descriptor, organised by the
+workbench that loads it (`std/` for the 213 that belong to none). Each
+file is Markdown with YAML frontmatter. The frontmatter has two parts:
 
-```python
-PATCH = {
-    "key": "Sketcher",
-    "commands": {
-        "Sketcher_CreateCircle": {
-            "requires": ["sketch-edit"],
-            "wiki": "Sketcher_CreateCircle",
-        },
-        "Mesh_PolySegm": {"verb": "mesh_segment"},
-        "Std_ViewFitAll": {"family": "zoom", "choice": "all"},
-    },
-}
+```yaml
+---
+command: Sketcher_CreateCircle
+generated:                      # owned by the tool; rewritten on reconcile
+  freecad: 1.1.3
+  label: Circle From Center
+  tooltip: Creates a circle from a center and rim point
+  toolbar: null
+  menu: Geometries
+  shortcut: G, C
+  workbench: SketcherWorkbench
+verb: null                      # authored from here down; null means "as generated"
+aliases: []
+requires: [sketch-edit]
+panel: null
+family: null
+rank: null
+wiki: Sketcher_CreateCircle
+---
+Creates a circle from a centre point and a point on the rim. Both are
+picked in the sketch; the radius is the distance between them.
 ```
 
-**An entry records divergence.** It exists only where the factory's answer
-is wrong. It may carry:
+The body is the documentation `man` shows, seeded from the tooltip and
+thereafter written by a person against the FreeCAD wiki. Types are the
+same shape: a command linked to a type carries a `type:` block with the
+`steps`, `options`, `hide`, `point` and `strict` keys `PATCH["types"]`
+uses today, and `patches/*.py` migrates into it. Python patches remain
+for declared verbs with a custom `emit`; data lives in files, code in
+Python.
 
-| Field | Meaning | The divergence it records |
-|---|---|---|
-| `verb` | the name, when the factory's is wrong | `segment`, `split`; a contested name `_by_prominence` gets wrong |
-| `doc` | one sentence, when FreeCAD's tooltip is absent or wrong against the manual | per-command documentation read from the wiki |
-| `wiki` | page name on wiki.freecad.org; `man` cites it | a versionable pointer to the documentation |
-| `requires` | closed vocabulary: `document`, `body`, `sketch-edit`, `selection`, `selection:face`, … | the declared precondition, so a refusal can say why |
-| `panel` | `pick` — do not adopt the task panel | a panel whose substance is a viewport pick |
-| `family`, `choice` | force into or out of a family, under what name | `zoom`, `view`; the `constrain` composite; `NOT_ACTIONS` |
-| `rank` | `registry` — sort last regardless of placement | a promoted command that is useless at a prompt |
+**The tool owns `generated:`; a person owns the rest.** Reconcile is a
+three-way merge per file, per field: base is the generation from the
+committed descriptor at the file's stamp, theirs is a fresh harvest, ours
+is the file. A field unchanged by the harvest is kept; a field the
+harvest changed is applied to `generated:`; an authored field is never
+touched. A command gone from the harvest is reported and its file moved
+aside, not deleted; a command new to the harvest gets a fresh file. That
+is `make reconcile`, and it is what a release PR reads before `make
+descriptor` commits the new stamp.
 
-**An entry never holds runtime state.** Not a label, a tooltip copy, a
-toolbar, a menu, a workbench, a panel's field list, or anything
-`isActive()` answers. The first five are harvest output; the rest is
-stale the day it is written.
+**Three roots, one layout.** `lib/commands/` ships with the addon;
+`lib/addons/<name>/commands/` is what an addon ships beside its own code;
+`etc/commands/` is the operator's, merged key by key over the same
+relative path. ADR-601 places all three in the tree the terminal
+navigates.
 
-**Lint runs in `make check`**, over the data subset of all three halves:
+**Compiled, not parsed at startup.** `make dictionary` compiles the
+shipped tree into `fccli/dictionary.json`, checked in beside
+`descriptor.json`; the lint fails when the two disagree. At startup the
+factory reads the compiled file and parses only `etc/commands/`, which is
+small.
 
-1. Every key in `commands` names a command in `descriptor.json` for the
-   stamped FreeCAD version.
-2. No identity entries. A `verb` equal to what the factory produces
-   unaided, a `doc` equal to the harvested tooltip, a `family`/`choice`
-   equal to what `families.py` derives, a `rank` equal to the placement
-   rank — each fails.
+**Authored fields:**
+
+| Field | Meaning |
+|---|---|
+| `verb` | the name, when the factory's is wrong: `segment` → `mesh_segment` |
+| `aliases` | short spellings |
+| `requires` | closed vocabulary: `document`, `body`, `sketch-edit`, `selection`, `selection:face`, … — the precondition, so a refusal can say why |
+| `panel` | `pick` — do not adopt the task panel |
+| `family`, `choice` | force into or out of a family, under what name |
+| `rank` | `registry` — sort last regardless of placement |
+| `wiki` | page name on wiki.freecad.org; `man` cites it |
+| `type` | tuning for the linked type: `steps`, `options`, `hide`, `point`, `strict` |
+
+**A file never holds runtime state.** Not a panel's field list, not
+whether the command is currently active. `generated:` holds harvest
+output because the tool rewrites it; nothing holds what changes between
+selections.
+
+**Lint runs in `make check`:**
+
+1. Every file names a command in the descriptor and every command has a
+   file, in both directions. A file whose command is gone fails.
+2. `generated:` matches the descriptor field for field. A hand edit
+   inside it fails, with the message that the edit belongs in an
+   authored field or in `etc/`.
 3. `requires` values come from the closed vocabulary; `wiki` matches
-   `^[A-Za-z0-9_]+$`; `panel` is `pick` or absent; `rank` is `registry`
-   or absent.
-4. After composition, every verb name is unique and every `verb` the
-   dictionary asked for is the one granted.
-
-**`make reconcile`** regenerates the descriptor into the scratch directory
-and diffs it against the committed one: commands added, removed,
-relabeled, re-homed; verbs whose name would change and why; entries gone
-identity or dangling; tier-1 verbs whose parameters changed. It is what a
-release PR reads before `make descriptor` commits the new stamp.
+   `^[A-Za-z0-9_]+$`; `panel` is `pick` or null; `rank` is `registry` or
+   null; `type` keys are the five named.
+4. After composition, every verb name is unique and every `verb` a file
+   asked for is the one granted.
+5. `fccli/dictionary.json` is the compilation of `lib/commands/`.
 
 **Precondition, not workbench.** `requires` names what a command needs;
 `isActive()` reports it live; the prompt shows the context that determines
-it. The descriptor's `workbench` field is used for loading and for
-ordering completion, never for refusing.
+it. The `workbench` field is used for loading, for the directory a file
+lives in, and for ordering completion — never for refusing.
 
 ## Consequences
 
 ### Positive
 
-- Tier 0 gets the hand-owned layer it lacked, in the format the other two
-  tiers already use.
-- Rule 2 keeps the file sparse by machine. A harvest fix that makes an
-  entry redundant fails the build until the entry is deleted.
-- The two `shell.py` tables and `families.NOT_ACTIONS` move into the
-  overlay and out of code.
-- Declining a pick-driven panel becomes a declared fact rather than a
-  widget-class heuristic. A missing panel in the test suite becomes a
-  named conformance failure `make reconcile` reports.
-- The descriptor diff PR #14 read by hand is a subcommand.
+- Every command has a place a person can open, read, and improve, and the
+  improvement is the project's work product from here on.
+- Third-party addons ship the same shape beside their code and appear in
+  the same tree.
+- Rule 2 makes the generated block safe to regenerate, so a new FreeCAD
+  release is a reconcile pass and a diff, not a rewrite.
+- The two `shell.py` tables, `families.NOT_ACTIONS`, and `patches/*.py`
+  type tuning move into files and out of code.
+- Declining a pick-driven panel becomes a declared fact. A missing panel
+  in the test suite becomes a named conformance failure.
 
 ### Negative
 
-- Every FreeCAD release costs a reconcile pass before the descriptor is
-  re-stamped.
-- `requires` is a closed vocabulary that will grow, and each new value
-  needs a live check behind it.
+- 1111 files in the repository, most of them unedited for a long time.
+  The compiled JSON is what runs; the files are what people read.
+- Every FreeCAD release costs a reconcile pass, and a conflict — a field
+  changed both by the harvest and by hand — needs a person.
+- `requires` is a closed vocabulary that grows, and each value needs a
+  live check behind it.
+- Depends on PyYAML, which FreeCAD requires and the standard library does
+  not provide.
 
 ### Neutral
 
 - Two runtime facts stay runtime: a panel cancelled in the panel still
   reports success, and Space belongs to the command line for the whole of
   a panel verb. The dictionary describes; it never drives.
-- Before the overlay is useful, 238 Sketcher, Part and PartDesign commands
-  need their workbench: `harvest_commands.py` snapshots `listCommands()`
-  after the startup workbench has loaded them, and its stem repair only
-  runs over commands already attributed. Std stays unattributed.
+- Before the tree is generated, 238 Sketcher, Part and PartDesign
+  commands need their workbench: `harvest_commands.py` snapshots
+  `listCommands()` after the startup workbench has loaded them, and its
+  stem repair only runs over commands already attributed. Std stays
+  unattributed and lands in `std/`.
+- The seven mechanisms in Context reduce to: the factory (generation),
+  the tree (data), `patches/*.py` (declared verbs with code), the alias
+  file.
 
 ## Test cases
 
-- `Mesh_PolySegm` → `verb: mesh_segment`; `Draft_Split` → `verb:
-  draft_split`. Rule 2 passes because the factory would have said
-  `segment` and `split`.
-- `Sketcher_CompConstrainTools` carries the label "Constrain", takes the
-  name, and the 21-member family loses its door. `family: constrain,
-  choice: tools` on the composite moves one name.
-- `ZOOM_TARGETS` and `VIEW_TARGETS` become `family`/`choice` entries on
-  each `Std_View*` command.
-- `NOT_ACTIONS` becomes a `families.exclude` list in the `Std` patch.
-- `Std_Test1`: registered, no toolbar or menu, already ranked `registry`.
-  An entry `rank: registry` for it must fail rule 2.
+- `Mesh_PolySegm`: `verb: mesh_segment`. `Draft_Split`: `verb:
+  draft_split`.
+- `Sketcher_CompConstrainTools` carries the label "Constrain" and takes
+  the name from the 21-member family. `family: constrain, choice: tools`
+  on the composite moves one name.
+- `ZOOM_TARGETS` and `VIEW_TARGETS` become `family`/`choice` on each
+  `Std_View*` file.
+- `NOT_ACTIONS` becomes a `families.exclude` list in `lib/commands/
+  std/_families.yaml`, beside the commands it speaks for.
+- `Std_Test1`: `rank: registry` on a command already ranked registry by
+  placement is accepted; the file records the intent even where the
+  placement agrees.
+- Editing `generated.label` in any file fails rule 2.
 
 ## Alternatives Considered
 
-- **A separate lintable file.** A second format with its own loader and
-  discovery, for data the patch loader already merges by key.
-- **A complete dictionary, one entry per command.** 1111 entries that are
-  95 % identity mapping rot within two releases and hide the entries that
-  matter.
-- **Runtime heuristics per case.** `can_finish()` already declines a panel
-  with no accepting button; extending that to pick-driven panels by widget
-  class is a probe per panel kind, and each probe is a fact about FreeCAD
+- **A sparse overlay recording divergence only** — the first draft. Keeps
+  the hand-owned surface small and cannot rot, and gives nobody a place
+  to open for the 1000 commands it does not mention. Rejected in favour
+  of the tree with the tool owning the generated block, which keeps the
+  anti-rot property by a different route.
+- **A separate lintable file format.** A second loader and discovery for
+  data the patch loader already merges by key. The tree uses one format
+  for commands, types and scripts (ADR-601).
+- **Parse the tree at startup.** 1111 YAML files at every FreeCAD launch
+  for content that changes only on reconcile. Compiled instead.
+- **Runtime heuristics per case.** `can_finish()` already declines a
+  panel with no accepting button; extending that to pick-driven panels by
+  widget class is a probe per panel kind, each a fact about FreeCAD
   restated as code.
 - **Refuse by workbench.** Wrong in fact: a loaded command runs from any
   workbench. The refusal would fire on commands that work and miss the
