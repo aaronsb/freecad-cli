@@ -7,6 +7,13 @@ printables collides on purpose. Three rules keep the collision survivable:
 a focus guard so real editors keep their keys, step-aware digit routing so
 1-6 stay the standard views while nothing is running, and a passthrough
 allowlist for the rest.
+
+The digit rule and the passthrough rule are the same rule: a bare key
+belongs to FreeCAD while the command line is empty and idle, and to the
+command line once something is being typed. Space is the one that showed
+why -- it is FreeCAD's visibility toggle and the separator between a verb
+and its argument, and a command typed from the viewport got as far as the
+first word.
 """
 
 from .qt import Qt, QtCore, QtGui, QtWidgets
@@ -75,6 +82,15 @@ class KeyFilter(QtCore.QObject):
         if Qt.Key_F1 <= key <= Qt.Key_F35:
             return False
         if key in self.passthrough and not (mods & Qt.ControlModifier):
+            # Only while nothing is being typed. Space is FreeCAD's
+            # visibility toggle, and it is also the separator between a
+            # verb and its first argument -- so with the viewport focused,
+            # `circle` reached the command line a letter at a time and the
+            # space after it went to FreeCAD instead. Typing a command from
+            # the viewport is the whole point of usurping, and it stopped
+            # at the first word.
+            if self.engine.state != "idle" or self._pending_text():
+                return True
             return False
 
         if mods & Qt.ControlModifier:

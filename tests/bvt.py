@@ -150,6 +150,36 @@ def suite_keys(dock):
         app.processEvents()
     check("and keeps landing, so focus followed",
           dock.console.input_text(), "boxes")
+
+    # A command is a verb and then its arguments, and the thing between
+    # them is a space. Space is also FreeCAD's visibility toggle, so it sat
+    # in the passthrough allowlist unconditionally and never reached the
+    # command line -- typing from the viewport got as far as the first
+    # word. `new file` worked because the console still had focus; once a
+    # document opened, the 3D view took it back.
+    dock.console.set_input("")
+    view.setFocus(QtCore.Qt.OtherFocusReason)
+    app.processEvents()
+    for ch in "circle 0,0,0 5":
+        target = app.focusWidget() or view
+        key = (QtCore.Qt.Key_Space if ch == " "
+               else QtGui.QKeySequence(ch)[0].key())
+        app.sendEvent(target, QtGui.QKeyEvent(
+            QtCore.QEvent.KeyPress, key, QtCore.Qt.NoModifier, ch))
+        app.processEvents()
+    check("a space mid-command reaches the command line",
+          dock.console.input_text(), "circle 0,0,0 5")
+
+    # Idle with an empty line, it is FreeCAD's key again.
+    dock.console.set_input("")
+    app.processEvents()
+    ev_space = QtGui.QKeyEvent(QtCore.QEvent.KeyPress, QtCore.Qt.Key_Space,
+                               QtCore.Qt.NoModifier, " ")
+    check("idle, space is still FreeCAD's", dock.keyfilter.should_usurp(ev_space), False)
+    dock.console.set_input("c")
+    check("  and the command line's once a line is started",
+          dock.keyfilter.should_usurp(ev_space), True)
+
     dock.console.set_input("")
     dock.engine.submit("close!")
 
