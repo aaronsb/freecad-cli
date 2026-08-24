@@ -130,12 +130,20 @@ a bad descriptor breaks a toolbar button, and users blame FreeCAD. The
 per-verb kill switch and the global `off` exist for that reason. Default is
 `echo`.
 
-**Live trackers.** Built. `fccli/tracker.py` puts an `SoAnnotation` in the
-view's scene graph and the picker moves it on every `SoLocation2Event`. Two
-details worth keeping: `SoPickStyle.UNPICKABLE`, so the line being drawn is
-not something to snap to, and `SoGroup.findChild` rather than identity when
-testing membership — pivy returns a fresh Python wrapper per `getChild`, so
-`is` compares wrappers rather than nodes.
+**Live trackers.** Draft already had one. `Gui.Snapper.snap(pos,
+lastpoint=v)` sets `Snapper.trackLine.p1(v)`, then `p2` to the snapped
+point, colours it and turns it on — a `draftguitools.gui_trackers.lineTracker`
+that has been there the whole time. `Snapper.off()` puts it away, which
+teardown already called.
+
+It never appeared because `lastpoint` was arriving as a document object, so
+Draft raised inside `p1()` before reaching `on()`. Passing a vector is the
+whole feature.
+
+Draft ships seventeen trackers — line, wire, rectangle, arc, bspline,
+bezcurve, ghost, dim, box, radius, grid and more. **Look there before
+putting a node in the scene graph.** This project wrote its own
+`SoAnnotation` line for exactly one commit before finding that out.
 
 **Sketcher.** Bare `C`, `D`, `E` are Sketcher constraint commands pressed
 mid-interaction against a selection. Under usurping they cost one extra

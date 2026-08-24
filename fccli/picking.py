@@ -15,7 +15,8 @@ Three backends:
 import FreeCAD as App
 import FreeCADGui as Gui
 
-from . import tracker as _tracker
+def _is_point(value):
+    return value is not None and hasattr(value, "x") and hasattr(value, "y")
 
 _SNAPPER_READY = None
 
@@ -79,9 +80,7 @@ def _active_view():
 class _ViewPicker:
     """Shared Coin3D plumbing: a click callback, optionally a move callback."""
 
-    # Mouse moves are wanted by any backend that can draw a rubber band,
-    # which is every one resolved through Coin3D.
-    wants_move = True
+    wants_move = False
 
     def __init__(self, notify=None) -> None:
         self.notify = notify
@@ -90,7 +89,6 @@ class _ViewPicker:
         self._last = None
         self._view = None
         self._cbs = []
-        self.band = _tracker.RubberBand()
 
     def start(self, callback, last=None) -> None:
         self.stop()
@@ -98,7 +96,10 @@ class _ViewPicker:
         if view is None:
             return
         self._callback = callback
-        self._last = last
+        # Only ever a point. Draft's snapper takes lastpoint straight to
+        # its own tracker and raises there if it is anything else, after
+        # having already part-configured it.
+        self._last = last if _is_point(last) else None
         self._view = view
         self._cbs.append(
             ("SoMouseButtonEvent",
@@ -107,10 +108,6 @@ class _ViewPicker:
             self._cbs.append(
                 ("SoLocation2Event",
                  view.addEventCallback("SoLocation2Event", self._on_move)))
-            # Only from a point already placed: the first click of a
-            # command has nothing to rubber-band from.
-            if last is not None:
-                self.band.attach(view)
 
     def stop(self) -> None:
         for kind, cb in self._cbs:
@@ -119,7 +116,6 @@ class _ViewPicker:
             except Exception:
                 pass
         self._cbs = []
-        self.band.detach()
         self._view = None
         self._callback = None
         self._last = None
@@ -129,23 +125,7 @@ class _ViewPicker:
         pass
 
     def _on_move(self, info) -> None:
-        self._draw_band(info.get("Position"))
-
-    def _draw_band(self, pos, point=None) -> None:
-        """Follow the cursor with the line, if there is a line.
-
-        ``point`` is the already-resolved cursor position. This runs on
-        every mouse move, and a backend that has just resolved the point
-        for its own marker should not make it resolve again.
-        """
-        if not self.band.attached or self._last is None:
-            return
-        if point is None:
-            if not pos:
-                return
-            point = self.resolve(pos)
-        if point is not None:
-            self.band.update(self._last, point)
+        pass
 
     def _on_click(self, info) -> None:
         if info.get("State") != "DOWN" or info.get("Button") != "BUTTON1":
@@ -201,24 +181,21 @@ class SnapPicker(_ViewPicker):
         return super().resolve(pos)
 
     def _on_move(self, info) -> None:
-        """Drive the snap tracker, and the rubber band behind it.
+        """Let the Snapper draw.
 
-        The snap marker says what a click would land on; the band says
-        where it would land from. Both come off the same move event, so the
-        snapped point is resolved once and used for both.
+        One call does both jobs. The snap marker says what a click would
+        land on, and passing lastpoint makes Draft light its own trackLine
+        from there to the cursor -- the rubber band, drawn by the code that
+        already owns rubber bands in FreeCAD, in the colour the rest of
+        Draft uses.
         """
         pos = info.get("Position")
-        if not pos:
+        if not pos or not self._snapping:
             return
-        point = None
-        if self._snapping:
-            try:
-                snapped = Gui.Snapper.snap(tuple(pos), lastpoint=self._last)
-                if snapped is not None:
-                    point = App.Vector(snapped.x, snapped.y, snapped.z)
-            except Exception:
-                pass
-        self._draw_band(pos, point=point)
+        try:
+            Gui.Snapper.snap(tuple(pos), lastpoint=self._last)
+        except Exception:
+            pass
 
     def _teardown(self) -> None:
         if not self._snapping:

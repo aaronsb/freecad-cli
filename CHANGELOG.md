@@ -58,11 +58,11 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
 - **`describe`** reads an object out as text -- identity, placement, the
   parametric properties, and what the shape measures. Bare it lists the
   document. Closes #1.
-- **A rubber band follows the cursor** from the last point placed, so a
-  polyline shows what it is about to become. Dashed, unpickable, drawn over
-  the model, and torn down on finish or cancel. It never touches the
-  message bus: a scene update on every mouse move does not belong on
-  something that crosses a socket. Closes #2.
+- **A rubber band follows the cursor** from the last point placed. It is
+  Draft's -- `Gui.Snapper.snap(lastpoint=...)` lights `Snapper.trackLine`
+  from that point to the cursor, and always could. It never appeared
+  because `lastpoint` was arriving as a document object. Closes #2 with
+  FreeCAD's own tracker rather than another one. Closes #2.
 - **`shortcuts`** offers FreeCAD's key chords as aliases: `A,X` becomes
   `ax`. `list`, `why`, `import`, `drop`. Closes #4.
 - **`units.format_measure`** for numbers FreeCAD computed rather than ones
@@ -83,6 +83,23 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
   the new file exists, and a history file holding both line formats.
 
 ### Fixed
+
+- **A verb that acts on a selection could never run.** `move`, and anything
+  else with a selection step, asked "select objects" and had no way to be
+  answered: nothing in the engine ever read `Gui.Selection`. Enter said the
+  step was required, forever. The engine now takes the live selection --
+  and takes it without asking when something is already selected, which is
+  what select-then-act means.
+- **`last_point` returned a document object.** It scanned every step for
+  anything list-shaped, so for any verb with a selection step it handed
+  back the last selected object. That went to `Gui.Snapper.snap` as
+  `lastpoint`, which passes it to Draft's own tracker, which raises inside
+  `p1()` -- on every mouse move, after part-configuring that tracker.
+- **`make bvt` ran on the operator's desktop.** It used Xvfb only when
+  `DISPLAY` was unset, so running the suite on a workstation opened FreeCAD
+  windows on that workstation and popped its dialogs at whoever was there.
+  It now always takes its own display; `FCCLI_BVT_DISPLAY=1` asks for the
+  real one.
 
 - **A declared choice was hijacked by a command of the same name.**
   `_is_restart` guarded text, point and quantity steps and forgot choices,

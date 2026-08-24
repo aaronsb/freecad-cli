@@ -220,15 +220,20 @@ multiplier, integer arithmetic, no curve.
 
 ## The viewport
 
+- **Draft draws.** Snapping, the snap markers, the grid and the rubber band
+  from the last point to the cursor are all Draft's, reached by passing
+  `lastpoint` to `Gui.Snapper.snap()`. This project wrote its own
+  `SoAnnotation` line for one commit before finding `Snapper.trackLine`
+  already there; the line had never appeared only because `lastpoint` was
+  arriving as the wrong type. Look for the FreeCAD tracker before adding a
+  node to the scene graph.
+- **`lastpoint` is a point.** `Snapper.snap` hands it straight to its own
+  tracker and raises inside `p1()` if it is anything else — after having
+  part-configured that tracker, on every mouse move. `Engine.last_point`
+  reads only point steps for this reason.
 - **Frame-rate updates do not go on the bus.** The bus carries roles a dock
   renders in Qt colours and a terminal renders in ANSI, and it crosses a
-  socket. A scene update on every mouse move has no business on it, and a
-  terminal has nothing to do with the answer. The widget and the tracker
-  are peers, both fed by the engine through the picker.
-- **The rubber band draws from the second point on.** The first click of a
-  command has nothing to draw from.
-- **Anything the command line puts in the scene graph is unpickable.** The
-  line somebody is drawing must not be a thing they can snap to.
+  socket. What happens on every mouse move belongs to the viewport.
 
 ## Files
 

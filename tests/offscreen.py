@@ -980,6 +980,23 @@ def main():
           REGISTRY.resolve_prefix("ci"), ["circle"])
     _stop2()
 
+    print("\n5w. a selection is not a point")
+    from fccli.grammar import SELECTION as _SEL, POINT as _PT
+    _mv = REGISTRY.get("move")
+    check("move asks for a selection first",
+          [s.kind for s in _mv.steps][0], _SEL)
+    _probe = Engine(Bus(), REGISTRY, picker=None)
+    _probe.verb = _mv
+    _probe.state = "collecting"
+    _probe.values = {"objects": ["not a vector", "nor is this"]}
+    check("a filled selection step is not read back as a point",
+          _probe.last_point(), None)
+    _probe.values["frm"] = App.Vector(1, 2, 3)
+    check("  the point step is", tuple(_probe.last_point()), (1.0, 2.0, 3.0))
+    _probe.values["to"] = App.Vector(4, 5, 6)
+    check("  and the latest one wins", tuple(_probe.last_point()),
+          (4.0, 5.0, 6.0))
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

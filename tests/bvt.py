@@ -155,68 +155,93 @@ def suite_picker(dock):
     dock.engine.cancel()
 
 
-def suite_tracker(dock):
-    print("\n5a. a rubber band follows the cursor between clicks")
-    band = dock.picker.band
-    check("nothing is drawn while idle", band.attached, False)
+def suite_selection(dock):
+    print("\n4h. a verb that acts on a selection takes the live one")
+    doc = App.ActiveDocument or App.newDocument("sel")
+    sphere = doc.addObject("Part::Sphere", "Ball")
+    doc.recompute()
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(doc.Name, sphere.Name)
 
-    dock.engine.submit("polyline")
+    dock.engine.submit("move")
     QtWidgets.QApplication.processEvents()
-    check("the first point has nothing to draw from", band.attached, False)
+    step = dock.engine.current_step()
+    truthy("having selected, it does not ask again",
+           step is not None and step.kind == "point")
+    check("  it went straight to the first point", step.id, "frm")
+    check("  and the selection is what it holds",
+          [o.Name for o in dock.engine.values.get("objects", [])], ["Ball"])
+    check("nothing is offered as an anchor by a selection",
+          dock.picker._last, None)
 
     dock.engine.feed_point(App.Vector(0, 0, 0))
     QtWidgets.QApplication.processEvents()
-    truthy("after a point lands, the band is in the scene graph",
-           band.attached)
-
-    view = Gui.ActiveDocument.ActiveView if Gui.ActiveDocument else None
-    root = view.getSceneGraph() if view else None
-    # findChild rather than identity: pivy hands back a fresh Python
-    # wrapper for each getChild, so `is` compares wrappers, not nodes.
-    truthy("  and the scene graph is what holds it",
-           root is not None and root.findChild(band.node) >= 0)
-
-    ok = band.update(App.Vector(0, 0, 0), App.Vector(30, 40, 0))
-    truthy("it moves when told where the cursor is", ok)
-    pts = band._coords.point
-    check("  from the last point", tuple(pts.getValues()[0].getValue()),
-          (0.0, 0.0, 0.0))
-    check("  to the cursor", tuple(pts.getValues()[1].getValue()),
-          (30.0, 40.0, 0.0))
-
-    dock.engine.feed_point(App.Vector(30, 40, 0))
+    check("a real point becomes the anchor Draft draws from",
+          tuple(dock.picker._last), (0.0, 0.0, 0.0))
+    dock.engine.feed_point(App.Vector(50, 20, 0))
     QtWidgets.QApplication.processEvents()
-    truthy("it survives into the next segment", band.attached)
+    check("the move landed", tuple(sphere.Placement.Base), (50.0, 20.0, 0.0))
+    no_dialog("no dialog appeared")
 
-    gone = band.node          # detach clears the handle, so keep it first
-    dock.engine.cancel()
-    QtWidgets.QApplication.processEvents()
-    check("cancelling takes it out of the scene graph", band.attached, False)
-    truthy("  and out of the graph itself",
-           root is None or gone is None or root.findChild(gone) < 0)
-
-    # It must not be pickable: the line being drawn cannot be the thing
-    # somebody snaps to.
-    dock.engine.submit("polyline")
-    dock.engine.feed_point(App.Vector(0, 0, 0))
-    QtWidgets.QApplication.processEvents()
-    from pivy import coin
-    styles = [band.node.getChild(i) for i in range(band.node.getNumChildren())]
-    picks = [s for s in styles if isinstance(s, coin.SoPickStyle)]
-    truthy("the band declares itself unpickable",
-           bool(picks) and picks[0].style.getValue()
-           == coin.SoPickStyle.UNPICKABLE)
-    dock.engine.cancel()
-    QtWidgets.QApplication.processEvents()
-
-    # Finishing a command tears it down the same way cancelling does.
-    dock.engine.submit("polyline")
-    dock.engine.feed_point(App.Vector(0, 0, 0))
-    dock.engine.feed_point(App.Vector(10, 0, 0))
+    # With nothing selected, it says so rather than sitting silently.
+    Gui.Selection.clearSelection()
+    errors = []
+    stop = dock.bus.subscribe(
+        lambda m: errors.append(m.text) if m.kind == "error" else None)
+    dock.engine.submit("move")
     QtWidgets.QApplication.processEvents()
     dock.engine.submit("")
     QtWidgets.QApplication.processEvents()
-    check("finishing tears it down too", band.attached, False)
+    truthy("with nothing selected, Enter explains itself",
+           any("nothing selected" in e for e in errors))
+    stop()
+    dock.engine.cancel()
+    doc.removeObject(sphere.Name)
+    doc.recompute()
+
+
+def suite_tracker(dock):
+    print("\n5a. Draft's own track line is the rubber band")
+    # Not our line. Passing lastpoint to Gui.Snapper.snap makes Draft light
+    # its lineTracker from there to the cursor. It never appeared before
+    # because lastpoint was arriving as a document object for any verb with
+    # a selection step, so Draft raised inside p1() before reaching on().
+    from fccli.picking import ensure_snapper
+    truthy("the snapper is available", ensure_snapper())
+    snapper = Gui.Snapper
+    truthy("Draft owns a track line", snapper.trackLine is not None)
+
+    snapper.off()
+    QtWidgets.QApplication.processEvents()
+    check("it is dark to begin with", snapper.trackLine.Visible, False)
+
+    snapper.snap((400, 300), lastpoint=App.Vector(0, 0, 0))
+    QtWidgets.QApplication.processEvents()
+    truthy("a snap with a last point lights it", snapper.trackLine.Visible)
+    check("  anchored at the point given",
+          tuple(snapper.trackLine.p1()), (0.0, 0.0, 0.0))
+    truthy("  and running to where the cursor snapped",
+           tuple(snapper.trackLine.p2()) != (0.0, 0.0, 0.0))
+
+    snapper.snap((400, 300))
+    QtWidgets.QApplication.processEvents()
+    check("no last point, no line", snapper.trackLine.Visible, False)
+
+    snapper.off()
+    QtWidgets.QApplication.processEvents()
+    check("Snapper.off puts it away, which is what teardown calls",
+          snapper.trackLine.Visible, False)
+
+    # And the engine feeds it a point, never anything else.
+    dock.engine.submit("line")
+    QtWidgets.QApplication.processEvents()
+    check("the first point has no anchor to offer", dock.picker._last, None)
+    dock.engine.feed_point(App.Vector(3, 4, 0))
+    QtWidgets.QApplication.processEvents()
+    check("the second is anchored on the first",
+          tuple(dock.picker._last), (3.0, 4.0, 0.0))
+    dock.engine.cancel()
+    QtWidgets.QApplication.processEvents()
 
 
 def suite_dock_geometry(dock):
@@ -398,6 +423,7 @@ def run():
         suite_keys(dock)
         doc = suite_geometry(dock)
         suite_undo(dock, doc)
+        suite_selection(dock)
         suite_picker(dock)
         suite_tracker(dock)
         suite_dock_geometry(dock)

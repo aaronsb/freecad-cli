@@ -19,6 +19,42 @@ IDLE = "idle"
 COLLECTING = "collecting"
 
 
+def _selection_text(objects):
+    """How a selection reads back in history: by label, so it replays."""
+    return ",".join(o.Label for o in objects)
+
+
+def current_selection():
+    """What is selected in FreeCAD right now, as objects.
+
+    Asked of the GUI rather than tracked here: somebody can select in the
+    tree, in the viewport, or with a previous command, and all three are
+    the same answer.
+    """
+    try:
+        import FreeCADGui as Gui
+        selection = getattr(Gui, "Selection", None)
+        if selection is None:
+            return []
+        return list(selection.getSelection())
+    except Exception:
+        return []
+
+
+def _resolve_names(text):
+    """Labels or names typed at a selection step, as objects."""
+    try:
+        import FreeCAD as App
+        doc = App.ActiveDocument
+        if doc is None:
+            return []
+        wanted = [w.strip().lower() for w in text.split(",") if w.strip()]
+        return [o for o in doc.Objects
+                if o.Label.lower() in wanted or o.Name.lower() in wanted]
+    except Exception:
+        return []
+
+
 def _open_transaction(verb, label):
     """One typed line, one undo step.
 
@@ -128,11 +164,21 @@ class Engine:
         return step is not None and step.kind in (POINT, QUANTITY)
 
     def last_point(self) -> Optional[Any]:
+        """The most recent point placed, for snapping and the rubber band.
+
+        Only a point step holds a point. Scanning every step for anything
+        list-shaped handed back the last selected object for any verb with
+        a selection step -- `move` gave Draft's snapper a Part::Sphere
+        where it wanted a vector, on every mouse move, which raises inside
+        Draft after it has already half-configured its own tracker.
+        """
         for step in reversed(self.prompt_sequence()):
+            if step.kind != POINT:
+                continue
             v = self.values.get(step.id)
             if isinstance(v, list) and v:
-                return v[-1]
-            if v is not None and hasattr(v, "x"):
+                v = v[-1]
+            if v is not None and hasattr(v, "x") and hasattr(v, "y"):
                 return v
         return None
 
@@ -276,6 +322,12 @@ class Engine:
                 self.bus.emit(_bus.ERROR, res.error)
                 return
             self._accept(step, res.value, format_quantity(res.value, step.unit))
+        elif step.kind == SELECTION:
+            found = _resolve_names(text)
+            if not found:
+                self.bus.emit(_bus.ERROR, f"no object called {text!r}")
+                return
+            self._accept(step, found, _selection_text(found))
         elif step.kind in (TEXT, PATH):
             self._accept(step, text, text)
         elif step.kind == CHOICE:
@@ -352,6 +404,15 @@ class Engine:
                 self._finish()
             else:
                 self._announce()
+            return
+        if step.kind == SELECTION:
+            picked = current_selection()
+            if not picked:
+                self.bus.emit(_bus.ERROR,
+                              "nothing selected -- select in the tree or the "
+                              "viewport, or name it")
+                return
+            self._accept(step, picked, _selection_text(picked))
             return
         if step.default is not None:
             self._accept(step, step.default, str(step.default))
@@ -434,6 +495,13 @@ class Engine:
             self.bus.emit(_bus.PROMPT, "", step_kind=None, options=[], idle=True)
             self._stop_picking()
             return
+        if step.kind == SELECTION:
+            # Select the thing, then say what to do to it. Somebody who has
+            # already selected should not be asked to select again.
+            picked = current_selection()
+            if picked:
+                self._accept(step, picked, _selection_text(picked))
+                return
         self.bus.emit(_bus.PROMPT, step.prompt, step_kind=step.kind,
                       options=step.option_names(), idle=False)
         if step.kind == POINT and self.picker:
