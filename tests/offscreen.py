@@ -2471,13 +2471,25 @@ def _run():
               _cur3.current().order(REGISTRY, ["cube", "circle_from_center"]),
               _cur3.current().order(REGISTRY, ["cube", "circle_from_center"], workbench=None))
         # Part active: a Part command first, PartDesign's not counted as
-        # Part's, and a hand-written verb keeps its promoted place.
-        _po = _cur3.current().order(REGISTRY, ["partdesign_box", "box"], workbench="part")
+        # Part's by prefix. box is Part_Box and partdesign_pad is
+        # PartDesign_Pad, both promoted, so only the home key separates
+        # them -- and "partdesignworkbench".startswith("part") is the trap.
+        _c3 = _cur3.current()
+        assert _c3.rank_of(REGISTRY.get("box")) == _c3.rank_of(REGISTRY.get("partdesign_pad"))
         check("  a PartDesign command is not Part's by prefix",
-              _po, ["box", "partdesign_box"])
-        check("  a verb with no command keeps its place, not pushed behind",
-              _cur3.current().order(REGISTRY, ["save", "box"], workbench="part"),
-              _cur3.current().order(REGISTRY, ["save", "box"]))
+              _c3.order(REGISTRY, ["partdesign_pad", "box"], workbench="part"),
+              ["box", "partdesign_pad"])
+        check("    and Part's is not PartDesign's either",
+              _c3.order(REGISTRY, ["box", "partdesign_pad"], workbench="partdesign"),
+              ["partdesign_pad", "box"])
+        # A hand-written verb that runs a Std command keeps its place: its
+        # command has no workbench, so the home key is neutral. transform
+        # is hand-written (Std_TransformManip); box is Part_Box.
+        assert _c3.rank_of(REGISTRY.get("transform")) == _c3.rank_of(REGISTRY.get("box"))
+        check("  a verb whose command has no workbench keeps its place",
+              (_c3.order(REGISTRY, ["transform", "box"], workbench="part"),
+               _c3.order(REGISTRY, ["box", "transform"], workbench="part")),
+              (["box", "transform"], ["box", "transform"]))
         # Refusal: FreeCAD says no, the file says why.
         from fccli import panels as _pn
         _CtxGui.Command.registry["Sketcher_CreateCircle"] = _Cmd(False)
