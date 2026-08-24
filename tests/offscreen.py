@@ -861,6 +861,66 @@ def main():
     check("mnemonic markers are stripped from a label",
           _factory_label("&Box Zoom"), "Box Zoom")
 
+    print("\n5t. describe reads an object out as text")
+    from fccli import describe as _desc
+    from fccli.properties import is_noise as _is_noise
+    _ddoc = App.newDocument("describe")
+    _dbox = _ddoc.addObject("Part::Box", "Slab")
+    _dbox.Length, _dbox.Width, _dbox.Height = 1219.2, 610, 19
+    _ddoc.recompute()
+
+    _out = []
+    _stop = bus.subscribe(
+        lambda m: _out.append(m.text) if m.kind == "info" else None)
+    engine.submit("describe Slab")
+    _text = "\n".join(_out)
+    check("it names the object", "Slab" in _text, True)
+    check("  and its type", "Part::Box" in _text, True)
+    check("  and the verb that would build another", "made by" in _text, True)
+    check("it reports placement", "position" in _text, True)
+    check("it reports the parametric properties",
+          all(p in _text for p in ("Length", "Width", "Height")), True)
+    check("it reports what the shape measures",
+          "bounding box" in _text and "volume" in _text, True)
+    check("the filter is the one generated verbs use -- no plumbing",
+          any(p in _text for p in ("AttachmentOffset", "MapReversed",
+                                   "ExpressionEngine")), False)
+
+    _by_heading = dict((h, dict(rows)) for h, rows in _desc.sections(_dbox))
+    check("properties are exactly the useful ones",
+          sorted(_by_heading["PROPERTIES"]),
+          sorted(p for p in _dbox.PropertiesList if not _is_noise(_dbox, p)))
+
+    _out.clear()
+    engine.submit("describe")
+    check("bare, it lists what the document holds",
+          any("objects" in ln for ln in _out), True)
+    check("  with one line each", any("Slab" in ln for ln in _out), True)
+
+    _errs = []
+    _stoperr = bus.subscribe(
+        lambda m: _errs.append(m.text) if m.kind == ERROR else None)
+    engine.submit("describe Slabb")
+    check("a near miss is suggested, not just refused",
+          any("did you mean" in e and "Slab" in e for e in _errs), True)
+    _stoperr()
+
+    # Derived numbers use FreeCAD's own rendering: they are read, never
+    # typed back, so they are not held to the round-trip that a typed
+    # value is. Held to it, a volume prints twelve significant digits.
+    _entry_schema = _units.current_name()
+    _units.set_schema("Internal")
+    _shape = dict((h, dict(r)) for h, r in _desc.sections(_dbox))["SHAPE"]
+    check("a volume renders to the Decimals preference",
+          _shape["volume"], "14.13 l")
+    _units.set_schema("ImperialBuilding")
+    _shape = dict((h, dict(r)) for h, r in _desc.sections(_dbox))["SHAPE"]
+    check("  and a bounding box follows the schema",
+          _shape["bounding box"], "4\' x 2\' x 3/4\"")
+    _units.set_schema(_entry_schema)
+    _stop()
+    App.closeDocument("describe")
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

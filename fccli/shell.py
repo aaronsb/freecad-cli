@@ -20,6 +20,7 @@ import FreeCAD as App
 
 from . import bus as _bus
 from . import curation as _curation
+from . import describe as _describe
 from . import paths as _paths
 from .grammar import (CHOICE, PATH, QUANTITY, TEXT, Option, Step, Verb,
                       REGISTRY)
@@ -272,6 +273,76 @@ def _shot_path(given):
         if not os.path.exists(path):
             return path
         n += 1
+
+
+def _emit_describe(v):
+    """Read an object out, or list what the document holds.
+
+    Bare, it summarises every object. Given a label it describes one in
+    full. Nothing is written per type: the properties come off the object,
+    the filter is the one generated verbs use, and every number goes
+    through the unit schema.
+    """
+    engine = v.get("_engine")
+    doc = App.ActiveDocument
+    if engine is None:
+        return None
+    if doc is None:
+        raise RuntimeError("no active document")
+
+    def say(text, role="info"):
+        engine.bus.emit(_bus.INFO, text, role=role)
+
+    target = (v.get("object") or "").strip()
+    if not target:
+        gui = _gui()
+        # Gui exists without Selection under freecadcmd, so ask for the
+        # attribute rather than for the module.
+        selection = getattr(gui, "Selection", None) if gui else None
+        picked = list(selection.getSelection()) if selection else []
+        if picked:
+            objects = picked
+        else:
+            if not doc.Objects:
+                say(f"{doc.Label} is empty", "quiet")
+                return None
+            say(f"{doc.Label} -- {len(doc.Objects)} objects", "head")
+            for obj in doc.Objects:
+                say("  " + _describe.summary(obj))
+            say("  describe <label> reads one out in full", "quiet")
+            return None
+    else:
+        objects = [o for o in doc.Objects
+                   if target.lower() in (o.Label.lower(), o.Name.lower())]
+        if not objects:
+            names = [o.Label for o in doc.Objects]
+            hint = _did_you_mean_from(names, target)
+            raise RuntimeError(
+                f"no object called {target!r}"
+                + (f" -- did you mean {hint}?" if hint else ""))
+
+    for obj in objects:
+        for heading, rows in _describe.sections(obj, verb_for=_verb_for_type):
+            say(heading, "head")
+            for key, value in rows:
+                say(f"    {key:<16} {value}" if key else f"    {value}")
+    return None
+
+
+def _verb_for_type(type_id):
+    """The verb that builds this type, if one does."""
+    if not type_id:
+        return None
+    for name in REGISTRY.names():
+        if REGISTRY.get(name).creates == type_id:
+            return name
+    return None
+
+
+def _did_you_mean_from(names, token):
+    import difflib
+    hit = difflib.get_close_matches(token, names, n=1, cutoff=0.6)
+    return hit[0] if hit else None
 
 
 def _emit_screenshot(v):
@@ -854,6 +925,14 @@ def _emit_help(v):
         engine.bus.emit(_bus.INFO, f"  {name + alias:<18} {verb.doc}")
     return None
 
+
+REGISTRY.add(Verb(
+    name="describe", transactional=False, aliases=["desc", "what"],
+    doc="Read an object out as text. Bare, it lists what the document holds.",
+    steps=[Step("object", TEXT, "Object", optional=True,
+                completes="objects")],
+    emit=_emit_describe,
+))
 
 REGISTRY.add(Verb(
     name="screenshot", transactional=False, aliases=["shot", "capture"],

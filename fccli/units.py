@@ -116,6 +116,22 @@ def _internal_form(value, unit):
     return f"{n(value)}{unit}" if unit else n(value)
 
 
+def format_measure(value, unit):
+    """Render a measurement FreeCAD computed rather than one somebody typed.
+
+    A volume or an area is read and never typed back, so it does not have
+    to survive the round-trip that format_quantity insists on -- and
+    insisting costs precision: the full conversion of a cylinder's volume
+    is 5.02654824574ml where FreeCAD itself says 5.03 ml, honouring the
+    Decimals preference the rest of the GUI uses.
+    """
+    try:
+        import FreeCAD as App
+        return App.Units.Quantity(value, unit).UserString
+    except Exception:
+        return format_quantity(value, unit)
+
+
 def format_quantity(value, unit="mm"):
     """Render a stored value for the echo, in the configured schema.
 

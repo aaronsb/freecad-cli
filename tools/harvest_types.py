@@ -27,12 +27,10 @@ MODULES = [
     "ReverseEngineering", "Measure", "Material", "Path", "BIM", "Arch",
 ]
 
-NOISE_GROUPS = {"Attachment", "Base", ""}
-NOISE_PROPS = {
-    "Shape", "ShapeMaterial", "Label", "Label2", "Visibility",
-    "ExpressionEngine", "AddSubShape", "SuppressedShape", "Suppressed",
-    "BaseFeature", "_Body", "Group", "Proxy",
-}
+# One definition, shared with the `describe` verb: what a generated verb
+# asks for and what describe reads back must be the same set.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from fccli.properties import is_noise  # noqa: E402
 
 KIND_BY_PROPERTY = {
     "App::PropertyLength": ("quantity", "mm"),
@@ -141,9 +139,7 @@ def main():
             continue
         for prop in props:
             try:
-                if (prop in NOISE_PROPS
-                        or obj.getGroupOfProperty(prop) in NOISE_GROUPS
-                        or "Hidden" in (obj.getEditorMode(prop) or [])):
+                if is_noise(obj, prop):
                     dropped += 1
                     continue
                 params.append(describe(obj, prop))
