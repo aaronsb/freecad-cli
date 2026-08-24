@@ -17,7 +17,8 @@ import os
 import FreeCAD as App
 
 from . import bus as _bus
-from .grammar import CHOICE, PATH, TEXT, Step, Verb, REGISTRY
+from .grammar import (CHOICE, PATH, QUANTITY, TEXT, Option, Step, Verb,
+                      REGISTRY)
 from .dirty import dirty_documents, is_dirty, mark_clean
 
 
@@ -244,6 +245,72 @@ REGISTRY.add(Verb(
     doc="Delete the selected objects.",
     steps=[], emit=_emit_delete,
 ))
+
+
+SHOT_DIR = os.path.join(os.path.expanduser("~"), ".local", "share",
+                        "FreeCAD", "fccli", "shots")
+
+
+def _shot_path(given):
+    """Where the image goes. A given path wins; otherwise a numbered file."""
+    if given:
+        path = _expand(given)
+        if not os.path.splitext(path)[1]:
+            path += ".png"
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        return path
+    os.makedirs(SHOT_DIR, exist_ok=True)
+    doc = App.ActiveDocument
+    stem = (doc.Name if doc is not None else "freecad").lower()
+    n = 1
+    while True:
+        path = os.path.join(SHOT_DIR, f"{stem}-{n:03d}.png")
+        if not os.path.exists(path):
+            return path
+        n += 1
+
+
+def _emit_screenshot(v):
+    """Save a picture of the model, and say where it went.
+
+    The path is the point: whoever asked -- a person scrolling back, or an
+    agent driving the session over the socket -- needs to be able to open
+    the file without guessing its name.
+
+    Default is the 3D view through FreeCAD's own saveImage. The window
+    option grabs the whole application instead, which needs real hardware
+    GL: a widget grab of an OpenGL viewport on a virtual display comes back
+    as flat colour.
+    """
+    gui = _gui()
+    if gui is None:
+        raise RuntimeError("screenshot needs the GUI")
+    path = _shot_path(v.get("path"))
+    flags = v["_flags"]
+    width = int(v.get("width") or 1600)
+    height = int(v.get("height") or 1100)
+
+    if flags.get("Window"):
+        window = gui.getMainWindow()
+        if window is None:
+            raise RuntimeError("no main window")
+        if not window.grab().save(path):
+            raise RuntimeError(f"could not write {path}")
+    else:
+        doc = gui.ActiveDocument
+        view = doc.activeView() if doc is not None else None
+        if view is None:
+            raise RuntimeError("no 3D view -- open a document first")
+        if flags.get("Fit"):
+            gui.SendMsgToActiveView("ViewFit")
+        background = "Transparent" if flags.get("Transparent") else "Current"
+        view.saveImage(path, width, height, background)
+
+    if not os.path.exists(path):
+        raise RuntimeError(f"nothing was written to {path}")
+    size = os.path.getsize(path) // 1024
+    _say(v, f"{path} ({size} KB)")
+    return path
 
 
 def _emit_check(v):
@@ -762,6 +829,20 @@ def _emit_help(v):
         engine.bus.emit(_bus.INFO, f"  {name + alias:<18} {verb.doc}")
     return None
 
+
+REGISTRY.add(Verb(
+    name="screenshot", transactional=False, aliases=["shot", "capture"],
+    doc="Save a picture of the model and print the path.",
+    steps=[
+        Step("path", PATH, "Where to save it", optional=True),
+        Step("width", QUANTITY, "Width in pixels", unit="", optional=True,
+             options=[Option("Window", "grab the whole application window"),
+                      Option("Fit", "zoom to fit before capturing"),
+                      Option("Transparent", "transparent background")]),
+        Step("height", QUANTITY, "Height in pixels", unit="", optional=True),
+    ],
+    emit=_emit_screenshot,
+))
 
 REGISTRY.add(Verb(
     name="check", transactional=False, aliases=["whatif", "dry", "ck"],

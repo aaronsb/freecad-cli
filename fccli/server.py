@@ -216,7 +216,7 @@ class Server(QtCore.QObject):
             if not ok:
                 return {"kind": "busy", "reason": "floor", "holder": holder,
                         "retryable": True}
-            collected = _Collector(session.bus)
+            collected = _Collector(session.bus, session.engine.registry)
             try:
                 session.submit(request.get("text", ""), who=who)
             finally:
@@ -232,8 +232,9 @@ class Server(QtCore.QObject):
 class _Collector:
     """What one submitted line produced, so a one-shot can answer at once."""
 
-    def __init__(self, bus):
+    def __init__(self, bus, registry=None):
         self.messages = []
+        self.registry = registry
         self._stop = bus.subscribe(self._on)
 
     def _on(self, msg):
@@ -241,10 +242,27 @@ class _Collector:
         role = msg.data.get("role")
         if role:
             payload["role"] = role
+        if msg.kind in (_bus.RESULT, _bus.LIVE, _bus.ECHO):
+            # Ship the spans, not just the text. A terminal then paints a
+            # command the way the dock paints it -- axis colours on a
+            # coordinate, the dimension on a number, italic where the unit
+            # was implied -- from the same computation rather than its own.
+            payload["spans"] = self._spans(msg.text)
         if msg.kind == _bus.RESULT:
             payload["replay"] = msg.data.get("replay")
             payload["dry"] = bool(msg.data.get("dry"))
         self.messages.append(payload)
+
+    def _spans(self, text):
+        if self.registry is None or not text:
+            return []
+        try:
+            from .highlight import command_spans
+            return [[start, length, role, bool(implicit)]
+                    for start, length, role, implicit
+                    in command_spans(self.registry, text)]
+        except Exception:
+            return []
 
     def stop(self):
         self._stop()

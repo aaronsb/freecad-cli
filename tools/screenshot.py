@@ -18,12 +18,15 @@ from PySide6 import QtCore, QtWidgets
 OUT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                    "docs", "images")
 
+# Chosen to exercise the colouring: coordinates take axis colours, a
+# stated unit stands upright where an implied one is italic, an option
+# keyword and a relative point each get their own.
 SESSION = [
-    "new demo",
-    "box 90 90 8",
+    "new bracket",
+    "box 0,0,0 90mm 90mm 8",
     "cylinder 30 55",
-    "polyline -45,-45,8 45,-45,8 45,45,8 -45,45,8 close",
-    "circle 0,0,63 34",
+    "polyline -45,-45,8 @90,0,0 @0,90,0 close",
+    "circle 0,0,63 3/8in",
 ]
 
 
@@ -82,17 +85,22 @@ def tower(dock):
 # ------------------------------------------------------------------- shots
 
 def shot_console(dock):
-    set_height(dock, 250)
+    """A session transcript, showing what the colouring says."""
+    set_height(dock, 260)
     dock.console.set_input("")
+    dock.console.verticalScrollBar().setValue(0)
+    QtWidgets.QApplication.processEvents()
     save(dock, "console.png")
 
 
 def shot_midcommand(dock):
-    set_height(dock, 250)
+    """A getter open: its options in the prompt, validation as you type."""
+    set_height(dock, 260)
     dock.engine.submit("polyline")
     dock.engine.submit("0,0,70")
-    dock.engine.submit("40,0,70")
+    dock.engine.submit("@60,0,0")
     dock.console.set_input("@0,40,zz")   # the zz reddens as it is typed
+    QtWidgets.QApplication.processEvents()
     save(dock, "midcommand.png")
     dock.console.set_input("")
     dock.engine.cancel()
@@ -134,8 +142,9 @@ def shot_colour(dock):
     set_height(dock, 260)
     dock.engine.submit("units internal")
     dock.engine.submit("clear")
-    for line in ("box 0,0,0 40mm 30 20",
-                 "circle 10,20,30 3/8in",
+    for line in ("box 10,20,30 40mm 30 20",
+                 "circle 0,0,0 3/8in",
+                 "cylinder 12 45deg" if False else "sphere 18mm",
                  "polyline 0,0,0 @40,-15,0 100<45 close"):
         dock.engine.submit(line)
     dock.engine.submit("polyline")
@@ -200,14 +209,18 @@ def shot_hero(dock):
     mw = Gui.getMainWindow()
     _hide_panels(mw, {"Report view", "Tasks", "Selection view",
                       "Python console"})
-    set_height(dock, 210)
+    set_height(dock, 235)
+    # A document of its own, so the portrait shows the scene it describes
+    # rather than everything the earlier shots left behind.
+    while App.listDocuments():
+        dock.engine.submit("close!")
     dock.engine.submit("clear")
     from fccli.build_info import describe
     dock.console.write(
         f"FreeCAD CLI {describe()} -- {len(dock.engine.registry.names())} "
         "commands. Type man for the list, or click in the viewport.", "info")
-    for line in SESSION[1:]:
-        dock.console.write("  " + line, "echo")
+    for line in SESSION:
+        dock.engine.submit(line)
     dock.console.set_input("")
     view_png = render_view("_hero_view.png", 1600, 1100)
     mw = Gui.getMainWindow()

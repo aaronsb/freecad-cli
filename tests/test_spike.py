@@ -487,6 +487,17 @@ def main():
     check("every span role has a colour",
           [sp.role for sp in spans if sp.role not in PALETTE], [])
 
+    print("\n5g. screenshot reports where it wrote")
+    from fccli.shell import _shot_path
+    target = os.path.join(os.environ.get("TMPDIR", "/tmp"), "fccli-shot-test")
+    check("a path without a suffix gets one",
+          _shot_path(target).endswith(".png"), True)
+    check("  an explicit suffix is kept",
+          _shot_path(target + ".jpg").endswith(".jpg"), True)
+    auto = _shot_path(None)
+    check("  and an absent path is numbered under the document",
+          auto.endswith(".png") and "shots" in auto, True)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

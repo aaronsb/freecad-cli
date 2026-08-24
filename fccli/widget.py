@@ -98,15 +98,20 @@ class Console(QtWidgets.QPlainTextEdit):
         cur.movePosition(QtGui.QTextCursor.EndOfBlock,
                          QtGui.QTextCursor.KeepAnchor)
         cur.removeSelectedText()
-        fmt = QtGui.QTextCharFormat()
-        fmt.setForeground(QtGui.QColor(ROLE_COLOURS.get(role, "#d4d4d4")))
-        cur.setCharFormat(fmt)
-        cur.insertText(text)
+        if not self._paint_spans(cur, text, role):
+            cur.setCharFormat(_char_format(role))
+            cur.insertText(text)
+        cur.movePosition(QtGui.QTextCursor.End)
+        cur.setCharFormat(QtGui.QTextCharFormat())
         cur.insertBlock()
         cur.setCharFormat(QtGui.QTextCharFormat())
         cur.insertText(self._prompt + pending)
         self.setTextCursor(cur)
         self.ensureCursorVisible()
+
+    # Only these carry a command. Prose lines are prose, and running the
+    # command highlighter over them paints the first word as an unknown verb.
+    COMMAND_ROLES = {"echo", "result"}
 
     def _paint_spans(self, cursor, text, base_role):
         """Colour a finished command in the transcript the way it was typed.
@@ -114,6 +119,8 @@ class Console(QtWidgets.QPlainTextEdit):
         A command that goes flat the moment it runs loses exactly the thing
         that made it readable while it was being typed.
         """
+        if base_role not in self.COMMAND_ROLES:
+            return False
         from .highlight import command_spans
         indent = len(text) - len(text.lstrip())
         try:

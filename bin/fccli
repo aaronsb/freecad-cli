@@ -123,16 +123,23 @@ ROLE_ANSI = {
     "dim_area": "\033[38;5;151m", "dim_volume": "\033[38;5;151m",
     "dim_mass": "\033[38;5;182m", "scalar": "\033[38;5;109m",
     "prefix": "\033[38;5;176m", "sep": "\033[90m",
+    "verb": "\033[38;5;79m", "option": "\033[38;5;179m",
+    "object": "\033[38;5;117m", "unknown": "\033[31m", "number": "\033[38;5;151m",
 }
 RESET = "\033[0m"
 ITALIC = "\033[3m"
+BOLD = "\033[1m"
+
+# Bold is the verb, the same as in the dock.
+BOLD_ROLES = {"verb"}
 
 
 def paint(text, role, stream, italic=False):
-    """Italic means the command line supplied it, not the person."""
+    """Bold is the verb; italic is what the command line supplied, not you."""
     if not stream.isatty() or os.environ.get("NO_COLOR"):
         return text
-    return f"{ITALIC if italic else ''}{ROLE_ANSI.get(role, '')}{text}{RESET}"
+    prefix = f"{BOLD if role in BOLD_ROLES else ''}{ITALIC if italic else ''}"
+    return f"{prefix}{ROLE_ANSI.get(role, '')}{text}{RESET}"
 
 
 def documents_of(payload):
@@ -170,6 +177,22 @@ def warn_protocol(client):
               file=sys.stderr)
 
 
+def paint_spans(text, spans, role, stream):
+    """Paint a command the way the dock paints it, from the server's spans."""
+    if not spans or not stream.isatty() or os.environ.get("NO_COLOR"):
+        return paint(text, role, stream)
+    out, cursor = [], 0
+    for start, length, span_role, implicit in sorted(spans):
+        if start < cursor:
+            continue
+        out.append(text[cursor:start])
+        out.append(paint(text[start:start + length], span_role, stream,
+                         italic=implicit))
+        cursor = start + length
+    out.append(text[cursor:])
+    return "".join(out)
+
+
 def render(reply, args):
     """Print one submit reply, and return the exit code it implies."""
     if args.json:
@@ -196,7 +219,9 @@ def render(reply, args):
         # never lands in a redirect.
         stream = sys.stdout if kind in ("result", "info") else sys.stderr
         prefix = {"error": "error: ", "result": "= "}.get(kind, "")
-        print(paint(prefix + msg["text"], role, stream), file=stream)
+        body = paint_spans(msg["text"], msg.get("spans"), role, stream) \
+            if msg.get("spans") else paint(msg["text"], role, stream)
+        print(paint(prefix, role, stream) + body, file=stream)
 
     if reply.get("engine") != "idle" and reply.get("prompt"):
         options = reply.get("options") or []
@@ -354,7 +379,9 @@ def cmd_repl(client, args):
                 continue
             role = msg.get("role", msg["kind"])
             prefix = {"error": "error: ", "result": "= "}.get(msg["kind"], "")
-            print(paint(prefix + msg["text"], role, sys.stdout))
+            body = paint_spans(msg["text"], msg.get("spans"), role,
+                               sys.stdout)
+            print(paint(prefix, role, sys.stdout) + body)
         state = reply
 
 
