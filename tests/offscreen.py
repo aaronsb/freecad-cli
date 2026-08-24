@@ -1784,6 +1784,44 @@ def _run():
     _rt2 = _Registry()
     _rc2 = register_all(_rt2, tier0=True, patches=PatchSet())
     check("  no GUI, no runtime commands, no error", _rc2.get("runtime", 0), 0)
+    print("\n5ac. a command file round-trips, and lands where its workbench says")
+    # ADR-100. The tree under fccli/lib/commands is the hand-owned layer:
+    # one Markdown file per command, a generated: block the tool owns and
+    # authored fields it never touches. tools/lint_dictionary.py checks the
+    # tree in make lint; this checks the model the three tools share.
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
+    import command_files as _cf
+    check("a workbench names its directory",
+          [_cf.workbench_dir(w) for w in
+           ("SketcherWorkbench", "CurvedShapesWB", None, "BIMWorkbench")],
+          ["sketcher", "curvedshapes", "std", "bim"])
+    _gen = {"freecad": "1.1.3", "label": "Circle From Center",
+            "tooltip": "Creates a circle", "toolbar": None,
+            "menu": "Geometries", "shortcut": "G, C",
+            "workbench": "SketcherWorkbench",
+            "wiki": "Sketcher_CreateCircle", "wiki_rev": "0499378"}
+    _auth = {"verb": "circle_center", "aliases": ["cc"],
+             "requires": ["sketch-edit"],
+             "type": {"steps": ["Radius"], "strict": True}}
+    _text = _cf.render("Sketcher_CreateCircle", _gen, _auth,
+                       "A circle.\n\n## See also\n\n- Sketcher_CreateArc")
+    _front, _body = _cf.parse(_text)
+    check("  the generated block reads back as written",
+          _front["generated"], _gen)
+    check("  and so do the authored fields, defaults filled in",
+          _cf.authored_of(_front),
+          {**{k: v for k, v in _cf.AUTHORED.items()}, **_auth})
+    check("  the body is the body", _body.strip().splitlines()[0], "A circle.")
+    check("  a comment in the frontmatter survives the template",
+          "# authored from here down" in _text, True)
+    # The tree in the repository agrees with the descriptor: every command
+    # has a file in its workbench's directory and no file names a command
+    # that is not there. This is lint rule 1, run here so a stale tree
+    # fails the suite and not only make lint.
+    import lint_dictionary as _ld, compile_dictionary as _cd
+    _n, _problems = _ld.lint(_cd.DEFAULT_TREE, _ld.DESCRIPTOR, _cd.DEFAULT_OUT)
+    check("  the tree in the repository is clean", (_n, _problems[:3]),
+          (len(_cmds), []))
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
