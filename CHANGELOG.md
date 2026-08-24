@@ -4,6 +4,15 @@
 
 ### Fixed
 
+- **239 commands get their workbench.** The harvest snapshots
+  `listCommands()` before activating anything, so whatever the startup
+  workbench had already loaded -- Sketcher, Part and Part Design on a
+  machine that starts in Part Design, and one Material command -- was
+  credited to no workbench, and
+  the stem repair that fixes misattribution only ran over commands the loop
+  had attributed. It now runs over every command. Std keeps none, which is
+  true. The test that asserted `Part_Box` had no workbench was asserting
+  the bug.
 - **148 commands get their real names and documentation.** The harvest read
   everything off QActions, and 147 registered commands have none -- they are
   runnable and appear in no toolbar and no menu. They reached the descriptor

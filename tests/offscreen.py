@@ -1392,9 +1392,21 @@ def _run():
           _cmds["Arch_Grid"]["workbench"], "BIMWorkbench")
     check("  and a Draft command says Draft, not whatever loaded first",
           _cmds["Draft_Line"]["workbench"], "DraftWorkbench")
-    check("what is there from the start claims no workbench",
+    check("Std claims no workbench",
           _cmds["Std_ViewFront"].get("workbench"), None)
-    check("  including Part_Box", _cmds["Part_Box"].get("workbench"), None)
+    # The harvest snapshots listCommands() before activating anything, so
+    # whatever the startup workbench had loaded -- Part, Sketcher and Part
+    # Design on a machine that starts in Part Design -- was credited to
+    # nobody, and the stem repair only ran over what the loop attributed.
+    # 238 commands. A command whose stem names a workbench carries it.
+    check("  Part_Box comes with Part, whatever loaded it first",
+          _cmds["Part_Box"].get("workbench"), "PartWorkbench")
+    _by_stem = {w.lower(): w for w in _load_desc()["workbenches"]}
+    _orphans = [n for n in _cmds if not _cmds[n].get("workbench")
+                and (_by_stem.get(n.split("_", 1)[0].lower() + "workbench")
+                     or _by_stem.get(n.split("_", 1)[0].lower()))]
+    check("  every command whose stem names a workbench carries it",
+          (len(_orphans), _orphans[:5]), (0, []))
 
     # The check that would have caught it. 148 commands reached the
     # descriptor carrying only a name, because the harvest read everything

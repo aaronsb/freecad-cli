@@ -165,8 +165,15 @@ def run():
     # commands along -- so Draft_Line was attributed to BIM, which is true
     # and is not what anybody would say. Where a workbench is named after
     # the command's own stem, that is the one to name.
+    #
+    # Over every command, not only the ones the loop attributed. The
+    # snapshot taken before the loop already held whatever the startup
+    # workbench had loaded -- 238 Sketcher, Part and PartDesign commands
+    # on a machine that starts in Part Design -- and running the repair
+    # over `owner` alone left all of them without a workbench. Std has no
+    # workbench and keeps none.
     by_name = {w.lower(): w for w in workbenches}
-    for name in list(owner):
+    for name in known:
         stem = name.split("_", 1)[0].lower()
         better = by_name.get(stem + "workbench") or by_name.get(stem)
         if better:
