@@ -2073,6 +2073,7 @@ def _run():
           ("dline", ["dl"], "registry"))
     # --force keeps a written body AND the seed it departed from, so a
     # later reconcile still sees it as written rather than laundering it.
+    # _old is the new descriptor by now: --apply copied it there.
     _gc.generate(_tree, force=True, quiet=True, descriptor_path=_old)
     _front5, _body5 = _cf.read(os.path.join(_tree, "std", "Std_Test2.md"))
     check("  --force keeps the written body and its old seed",

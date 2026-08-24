@@ -15,6 +15,7 @@ three-way merge whose base is the file's generated: block:
                                                          -> generated: rewritten
     reseeded     body never edited, and the page moved   -> body rewritten
     conflict     body edited, and the page moved         -> reported, left alone
+    page gone    the page a body came from is missing  -> reported, left alone
     identity     an authored verb equal to the name the factory now derives
 
 Authored fields are never touched. Without --apply nothing is written;
