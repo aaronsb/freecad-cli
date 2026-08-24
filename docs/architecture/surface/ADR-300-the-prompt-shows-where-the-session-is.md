@@ -66,6 +66,12 @@ PartDesign Body › Sketch* [2] /plinth >
 A field that is empty is left out. At `/` with a clean document, nothing
 active and the default workbench, the prompt is `> ` as it is today.
 
+**The segment belongs to the idle prompt.** While a verb is collecting,
+the prompt is the step's question — `Radius [mm]: ` — as it is today:
+the context was on screen when the command was typed, and the status
+strip carries the verb and the step count. The shell's own distinction,
+PS1 and PS2.
+
 **Context orders completion.** `curation.order` sorts a verb whose
 command's `workbench` matches the active one ahead within its rank.
 Every verb stays offered; `use` remains the one way to narrow.
@@ -92,8 +98,8 @@ the command anyway.
 
 - A selection observer fires on every click. The emit is cheap; it is
   one more thing on the click path.
-- The prompt grows. Empty fields are left out, and the dock colours the
-  segment apart from the step's prompt.
+- The idle prompt grows. Empty fields are left out, and the dock colours
+  the segment apart from the `> `.
 
 ### Neutral
 
