@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CompCreateBSpline"
   wiki_rev: null
+  seed: "f78dd96e828b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "BIMWorkbench"
   wiki: "BIM_TogglePanels"
   wiki_rev: "0499378"
+  seed: "df0495cc3e0e"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

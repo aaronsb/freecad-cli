@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CreateEllipseBy3Points"
   wiki_rev: "0499378"
+  seed: "01a6a92ad928"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -1799,7 +1799,8 @@ def _run():
             "tooltip": "Creates a circle", "toolbar": None,
             "menu": "Geometries", "shortcut": "G, C",
             "workbench": "SketcherWorkbench",
-            "wiki": "Sketcher_CreateCircle", "wiki_rev": "0499378"}
+            "wiki": "Sketcher_CreateCircle", "wiki_rev": "0499378",
+            "seed": "9c1e0b7d2a44"}
     _auth = {"verb": "circle_center", "aliases": ["cc"],
              "requires": ["sketch-edit"],
              "type": {"steps": ["Radius"], "strict": True}}
@@ -1998,6 +1999,114 @@ def _run():
           (_texts.count("SEE ALSO"), any("Sketcher_CreateArc" in t for t in _texts),
            _arc in [n.strip() for n in _line.split(",")]),
           (1, False, True))
+
+    print("\n5ae. reconcile reads a new harvest and brings the tree to it")
+    # ADR-100's prize. A copy of the tree and a descriptor with one of
+    # every kind of change; the report names each, --apply performs each,
+    # the lint holds afterwards, and a second run has nothing to say.
+    import reconcile as _rc, shutil as _shutil, json as _json
+    _tmp = tempfile.mkdtemp(prefix="fccli-reconcile-")
+    _tree = os.path.join(_tmp, "commands")
+    _shutil.copytree(_cd.DEFAULT_TREE, _tree)
+    _old = os.path.join(_tmp, "old.json"); _new = os.path.join(_tmp, "new.json")
+    _shutil.copyfile(_ld.DESCRIPTOR, _old)
+    _d = _json.load(open(_old)); _c = _d["commands"]
+    _d["freecad"] = "9.9.9"
+    _c["Acme_New"] = {"name": "Acme_New", "label": "New Thing",
+                      "tooltip": "Does a new thing", "toolbar": None,
+                      "menu": None, "shortcut": None, "wiki": None}
+    del _c["Std_Test1"]
+    _c["Part_Box"]["label"] = "Cuboid"
+    _c["Draft_Line"]["workbench"] = "BIMWorkbench"
+    # Re-homed and authored, both: everything a person wrote must move.
+    with open(os.path.join(_tree, "draft", "Draft_Line.md")) as _fh:
+        _dl = _fh.read()
+    _dl = _dl.replace("verb: null", 'verb: "dline"').replace(
+        "aliases: []", "aliases:\n- dl").replace("rank: null", 'rank: "registry"')
+    with open(os.path.join(_tree, "draft", "Draft_Line.md"), "w") as _fh:
+        _fh.write(_dl)
+    _c["Std_TestConsoleOutput"]["tooltip"] = "Console output, verified"
+    _c["Std_Test2"]["tooltip"] = "Test 2 moved"
+    _c["Mesh_PolySegm"]["label"] = "Mesh Segment"
+    _json.dump(_d, open(_new, "w"))
+    with open(os.path.join(_tree, "std", "Std_Test2.md"), "a") as _fh:
+        _fh.write("\nA person wrote this.\n")
+    _rep = _rc.reconcile(_tree, _old, _new, apply=False, quiet=True)
+    # Without the wiki clone no body is compared; the rest of the report
+    # is the same, and the suite says which world it ran in.
+    _online = not _rep.no_docs
+    check("the report names one of each" + ("" if _online else " (no clone)"),
+          (_rep.stamp, _rep.added, [r.split(" ")[0] for r in _rep.removed],
+           [r.split(":")[0] for r in _rep.rehomed], _rep.reseeded,
+           [r.split(":")[0] for r in _rep.conflicts],
+           [r.split(":")[0] for r in _rep.identity]),
+          (("1.1.3", "9.9.9"), ["Acme_New"], ["Std_Test1"], ["Draft_Line"],
+           ["Std_TestConsoleOutput"] if _online else [],
+           ["Std_Test2"] if _online else [], ["Mesh_PolySegm"]))
+    check("  and every changed field",
+          sorted(r.split(":")[0] for r in _rep.changed),
+          ["Mesh_PolySegm", "Part_Box", "Std_Test2", "Std_TestConsoleOutput"])
+    check("  a dry run writes nothing",
+          os.path.exists(os.path.join(_tree, "std", "Acme_New.md")), False)
+    _rc.reconcile(_tree, _old, _new, apply=True, quiet=True)
+    _front, _body = _cf.read(os.path.join(_tree, "std", "Std_Test2.md"))
+    check("  applied: the conflict keeps the written body",
+          _body.strip().endswith("A person wrote this."), True)
+    _front2, _body2 = _cf.read(os.path.join(_tree, "std",
+                                            "Std_TestConsoleOutput.md"))
+    check("  applied: the unedited body is reseeded",
+          _body2.strip(), "Console output, verified." if _online
+          else "Run test cases to verify console messages.")
+    check("  applied: files moved, added, retired",
+          (os.path.exists(os.path.join(_tree, "bim", "Draft_Line.md")),
+           os.path.exists(os.path.join(_tree, "draft", "Draft_Line.md")),
+           os.path.exists(os.path.join(_tree, "std", "Acme_New.md")),
+           os.path.exists(os.path.join(_tree, "_retired", "std", "Std_Test1.md"))),
+          (True, False, True, True))
+    _front3, _ = _cf.read(os.path.join(_tree, "part", "Part_Box.md"))
+    check("  applied: generated block carries the new label and stamp",
+          (_front3["generated"]["label"], _front3["generated"]["freecad"]),
+          ("Cuboid", "9.9.9"))
+    _front4, _ = _cf.read(os.path.join(_tree, "bim", "Draft_Line.md"))
+    check("  applied: the re-homed file keeps everything authored",
+          (_front4.get("verb"), _front4.get("aliases"), _front4.get("rank")),
+          ("dline", ["dl"], "registry"))
+    # --force keeps a written body AND the seed it departed from, so a
+    # later reconcile still sees it as written rather than laundering it.
+    # _old is the new descriptor by now: --apply copied it there.
+    _gc.generate(_tree, force=True, quiet=True, descriptor_path=_old)
+    _front5, _body5 = _cf.read(os.path.join(_tree, "std", "Std_Test2.md"))
+    check("  --force keeps the written body and its old seed",
+          (_body5.strip().endswith("A person wrote this."),
+           _cf.edited(_front5, _body5)), (True, True))
+    _n, _problems = _ld.lint(_tree, _old, os.path.join(_tmp, "dictionary.json"))
+    check("  the lint holds against the descriptor it applied",
+          (_n, _problems[:2]), (1111, []))
+    # Identity is reported on every run until the entry is deleted; it is
+    # advice, not a change. Everything else is settled.
+    _again = _rc.reconcile(_tree, _old, _new, apply=False, quiet=True)
+    check("  and a second run has only the identity advice left",
+          (_again.stamp, _again.added, _again.removed, _again.rehomed,
+           _again.changed, _again.reseeded, _again.conflicts,
+           len(_again.identity)),
+          (None, [], [], [], [], [], [], 1))
+    # Offline: no clone means no page to compare, so no body is touched --
+    # otherwise 835 wiki-seeded bodies would "move" to their tooltips.
+    _shutil.copytree(_cd.DEFAULT_TREE, os.path.join(_tmp, "offline"))
+    import docs_clone as _dc
+    _was = _dc.ensure
+    _dc.ensure = lambda **kw: None
+    try:
+        _off = _rc.reconcile(os.path.join(_tmp, "offline"), _old, _new,
+                             apply=True, quiet=True)
+    finally:
+        _dc.ensure = _was
+    _fo, _bo = _cf.read(os.path.join(_tmp, "offline", "sketcher",
+                                     "Sketcher_CreateCircle.md"))
+    check("  offline, bodies are left alone and the report says so",
+          (_off.no_docs, _off.reseeded, _bo.startswith("The Sketcher CreateCircle tool")),
+          (True, [], True))
+    _shutil.rmtree(_tmp, ignore_errors=True)
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

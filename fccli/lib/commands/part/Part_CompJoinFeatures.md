@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_CompJoinFeatures"
   wiki_rev: null
+  seed: "0be1a45ac4be"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

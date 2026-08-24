@@ -96,6 +96,14 @@
   authored entries: `Mesh_PolySegm` is `mesh_segment` and `Draft_Split` is
   `draft_split`, generic words given back. `requires` and `panel` are
   carried and not yet acted on; `type` is parsed and not yet applied.
+- **`make reconcile`.** Harvests FreeCAD afresh, refreshes the wiki clone,
+  and reports what changed against the committed tree: commands added,
+  removed, re-homed, fields changed, bodies reseeded, conflicts where a
+  page moved under a body somebody wrote, and authored verbs that became
+  what the factory derives anyway. `FLAGS=--apply` brings the tree, the
+  descriptor and the compiled dictionary to the new harvest together.
+  A `seed` hash in each generated block is what tells a written body from
+  a stale one. Against a fresh harvest today: nothing changed.
 - **Every command carries its wiki page.** `getInfo()` returns `whatsThis`,
   the page name FreeCAD's F1 help resolves against, and the harvest had
   been dropping it. It is recorded as `wiki`: 1106 of 1111 have one, 9

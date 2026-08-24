@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_ConstrainHorVer"
   wiki_rev: "0499378"
+  seed: "70458a2a7b4b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "DraftWorkbench"
   wiki: "Draft_Snap_Center"
   wiki_rev: "0499378"
+  seed: "211789265c29"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

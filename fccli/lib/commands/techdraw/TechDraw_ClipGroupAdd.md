@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ClipGroupAdd"
   wiki_rev: "0499378"
+  seed: "e626dcb1491c"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

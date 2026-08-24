@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CompCreateRegularPolygon"
   wiki_rev: null
+  seed: "680f5ee7ede0"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

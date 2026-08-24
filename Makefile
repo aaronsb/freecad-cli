@@ -68,6 +68,12 @@ commands:  ## Write a file for every command that has none (--force resets all)
 dictionary:  ## Compile fccli/lib/commands into fccli/dictionary.json
 	@python3 tools/compile_dictionary.py
 
+.PHONY: reconcile
+reconcile:  ## Harvest FreeCAD afresh and report what it changes (FLAGS=--apply to take it)
+	@mkdir -p $${XDG_CACHE_HOME:-$$HOME/.cache}/fccli
+	@python3 tools/generate_descriptor.py -q --out $${XDG_CACHE_HOME:-$$HOME/.cache}/fccli/descriptor.next.json
+	@python3 tools/reconcile.py --refresh-docs --descriptor $${XDG_CACHE_HOME:-$$HOME/.cache}/fccli/descriptor.next.json $(FLAGS)
+
 .PHONY: install
 install:  ## Symlink into FreeCAD's Mod directory (live dev install)
 	@mkdir -p $(MOD_DIR)

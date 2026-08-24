@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CreateRectangle"
   wiki_rev: "0499378"
+  seed: "5b30f1152ab1"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

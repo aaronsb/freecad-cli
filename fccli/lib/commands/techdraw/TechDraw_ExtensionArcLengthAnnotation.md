@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ExtensionArcLengthAnnotation"
   wiki_rev: "0499378"
+  seed: "38c95c47bcc3"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CompBSplineShowHideGeometryInformation"
   wiki_rev: null
+  seed: "fe3adbcd1d56"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

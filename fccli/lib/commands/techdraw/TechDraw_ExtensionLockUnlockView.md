@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ExtensionLockUnlockView"
   wiki_rev: "0499378"
+  seed: "e7f1431b5d75"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

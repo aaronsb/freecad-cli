@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "MeshWorkbench"
   wiki: null
   wiki_rev: "0499378"
+  seed: "daec4c3ed2e7"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

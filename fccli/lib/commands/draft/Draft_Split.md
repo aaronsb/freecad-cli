@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "DraftWorkbench"
   wiki: "Draft_Split"
   wiki_rev: "0499378"
+  seed: "58a300c5c446"
 # authored from here down; the tool never rewrites these
 verb: "draft_split"
 aliases: []

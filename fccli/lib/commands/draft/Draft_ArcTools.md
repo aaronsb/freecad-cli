@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "DraftWorkbench"
   wiki: "Draft_ArcTools"
   wiki_rev: null
+  seed: "b513f26b9640"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

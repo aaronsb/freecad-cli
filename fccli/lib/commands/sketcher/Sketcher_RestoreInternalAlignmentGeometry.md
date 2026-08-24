@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_RestoreInternalAlignmentGeometry"
   wiki_rev: "0499378"
+  seed: "ddf25b79f72d"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

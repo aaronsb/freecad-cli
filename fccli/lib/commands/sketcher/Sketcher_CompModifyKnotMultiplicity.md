@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CompModifyKnotMultiplicity"
   wiki_rev: null
+  seed: "9a2ad286c959"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_LinkMakeGroup"
   wiki_rev: null
+  seed: "d3078667ddc6"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

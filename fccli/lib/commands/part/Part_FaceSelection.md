@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_FaceSelection"
   wiki_rev: null
+  seed: "fddb22c89e09"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_WindowsMenu"
   wiki_rev: null
+  seed: "ba0e9c31f06b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

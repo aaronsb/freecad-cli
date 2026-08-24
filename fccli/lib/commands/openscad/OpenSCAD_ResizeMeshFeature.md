@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "OpenSCADWorkbench"
   wiki: "OpenSCAD_ResizeMeshFeature"
   wiki_rev: "0499378"
+  seed: "e11edd60da40"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

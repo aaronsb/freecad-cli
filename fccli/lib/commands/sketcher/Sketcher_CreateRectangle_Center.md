@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CreateRectangle_Center"
   wiki_rev: "0499378"
+  seed: "f001392ab2c8"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

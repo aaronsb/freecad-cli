@@ -6,9 +6,10 @@
 
 Writes a file for every command in fccli/descriptor.json that has none.
 An existing file is left alone -- it may carry authored fields and a
-body somebody wrote -- unless --force, which is for a first generation
-or a deliberate reset. Keeping generated fields current in an existing
-file is reconcile's job, not this one's.
+body somebody wrote. --force rewrites every file's generated: block and
+reseeds every body the tool seeded, and keeps the authored fields and
+any body a person edited; it is for a change to the generator itself.
+Keeping files current with a new harvest is reconcile's job.
 
 The body is the wiki page's Description, stripped of images and links,
 followed by the page's SeeAlso. A command with no page gets its tooltip.
@@ -39,7 +40,7 @@ DEFLIST = re.compile(r"\s+:\s+")
 CAPTION = re.compile(r"^\*[^*]+\*$")
 TEMPLATE = re.compile(r"\{\{[^{}]*\}\}")
 QUOTES = re.compile(r"(?:\\?'){2,3}")   # wiki italics and bold, sometimes escaped
-ESCAPED = re.compile(r"\\([^\w\s\\])")   # the conversion escapes punctuation; prose does not
+ESCAPED = re.compile(r"\\([^0-9A-Za-z\s\\])")   # the conversion escapes punctuation; prose does not
 LIST_ITEM = re.compile(r"^\s*(?P<mark>[-*]|\d+\.)\s+")
 REDIRECT = re.compile(r"REDIRECT\s+\[[^\]]*\]\((\w+)\.md\)")
 SECTION = re.compile(r"^(#{2,3}) +(.*?)\s*$", re.M)
@@ -137,6 +138,22 @@ def see_also(front):
             if re.fullmatch(r"[\w.-]+", p.strip() or " ")]
 
 
+def generated_for(entry, stamp, rev, body):
+    """The generated: block for a command, as the tool writes it."""
+    return {
+        "freecad": stamp,
+        "label": entry.get("label"),
+        "tooltip": entry.get("tooltip"),
+        "toolbar": entry.get("toolbar"),
+        "menu": entry.get("menu"),
+        "shortcut": entry.get("shortcut"),
+        "workbench": entry.get("workbench"),
+        "wiki": entry.get("wiki"),
+        "wiki_rev": rev,
+        "seed": cf.seed_of(body),
+    }
+
+
 def body_for(entry, pages):
     """The seeded body, and where it came from."""
     name = entry["name"]
@@ -161,8 +178,8 @@ def body_for(entry, pages):
     return tooltip.rstrip(".") + ".", "tooltip"
 
 
-def generate(out, force=False, quiet=False):
-    with open(DESCRIPTOR, encoding="utf-8") as fh:
+def generate(out, force=False, quiet=False, descriptor_path=DESCRIPTOR):
+    with open(descriptor_path, encoding="utf-8") as fh:
         descriptor = json.load(fh)
     clone = docs_clone.ensure(quiet=quiet)
     pages = docs_clone.pages(clone) if clone else {}
@@ -172,41 +189,47 @@ def generate(out, force=False, quiet=False):
     sources = {"wiki": 0, "tooltip": 0}
     for name, entry in sorted(descriptor["commands"].items()):
         path = cf.path_for(out, name, entry.get("workbench"))
-        if os.path.exists(path) and not force:
-            skipped += 1
-            continue
-        generated = {
-            "freecad": stamp,
-            "label": entry.get("label"),
-            "tooltip": entry.get("tooltip"),
-            "toolbar": entry.get("toolbar"),
-            "menu": entry.get("menu"),
-            "shortcut": entry.get("shortcut"),
-            "workbench": entry.get("workbench"),
-            "wiki": entry.get("wiki"),
-            "wiki_rev": None,
-        }
+        authored = {}
         body, source = body_for(entry, pages)
-        if source == "wiki":
-            generated["wiki_rev"] = rev    # provenance only where there is any
-        sources[source] += 1
+        page_rev = rev if source == "wiki" else None   # provenance only where there is any
+        if os.path.exists(path):
+            if not force:
+                skipped += 1
+                continue
+            front, old_body = cf.read(path)
+            authored = cf.authored_of(front)
+            was_wiki = (front.get("generated") or {}).get("wiki_rev")
+            if cf.edited(front, old_body) or (was_wiki and not pages):
+                # A person's body stays. So does a wiki-seeded body when
+                # there is no clone to reseed it from: a tooltip is not a
+                # better body than the page was.
+                body, source = old_body, "kept"
+                page_rev = was_wiki
+        sources[source] = sources.get(source, 0) + 1
+        generated = generated_for(entry, stamp, page_rev, body)
+        if source == "kept":
+            # The seed stays what the person's body departed from. Stamping
+            # the kept body's own hash would launder it into the tool's,
+            # and the next reconcile would reseed over it.
+            generated["seed"] = (front.get("generated") or {}).get("seed")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as fh:
-            fh.write(cf.render(name, generated, {}, body))
+            fh.write(cf.render(name, generated, authored, body))
         written += 1
     if not quiet:
         print(f"{written} written, {skipped} left alone; bodies from "
-              f"wiki {sources['wiki']}, tooltip {sources['tooltip']}; "
-              f"wiki @ {rev or 'no clone'}")
+              + ", ".join(f"{k} {v}" for k, v in sorted(sources.items()))
+              + f"; wiki @ {rev or 'no clone'}")
     return written
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=DEFAULT_OUT)
+    ap.add_argument("--descriptor", default=DESCRIPTOR)
     ap.add_argument("--force", action="store_true")
     args = ap.parse_args()
-    generate(args.out, force=args.force)
+    generate(args.out, force=args.force, descriptor_path=args.descriptor)
     return 0
 
 

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SurfaceWorkbench"
   wiki: "BlendCurve"
   wiki_rev: "0499378"
+  seed: "7d2b41b1803f"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

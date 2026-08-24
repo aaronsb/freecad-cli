@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CreateArcSlot"
   wiki_rev: "0499378"
+  seed: "df2dd9fa413b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

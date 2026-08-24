@@ -36,8 +36,10 @@ import compile_dictionary as cd  # noqa: E402
 DESCRIPTOR = os.path.join(ROOT, "fccli", "descriptor.json")
 
 # Descriptor field -> generated: field, compared value for value. freecad
+# Descriptor field -> generated: field, compared value for value. freecad
 # is compared to the descriptor's stamp. wiki_rev is the tool's own: null,
 # or the short hash of the documentation commit the body was seeded from.
+# seed is the tool's too, and reconcile owns both.
 MIRRORED = ("label", "tooltip", "toolbar", "menu", "shortcut", "workbench",
             "wiki")
 

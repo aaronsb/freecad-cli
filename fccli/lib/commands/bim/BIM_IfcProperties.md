@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "BIMWorkbench"
   wiki: "BIM_IfcProperties"
   wiki_rev: "0499378"
+  seed: "b5157f9e842f"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []
@@ -37,7 +38,7 @@ The predefined property sets are in /Mod/BIM/Presets/pset_definitions.csv.
 
 Inside the CSV file, each line represents a different property set, beginning with the name of the set, and any number of Name;Type pairs, defining a property name and its type. For example:
 
-This would define a property set named "FreeCAD" (the "Pset\_" prefix is not mandatory but is a common practice) that contains two properties: one called "Name" which is an IfcLabel (a piece of text), and another called "Version" which is an IfcReal (a numeric value with decimals).
+This would define a property set named "FreeCAD" (the "Pset_" prefix is not mandatory but is a common practice) that contains two properties: one called "Name" which is an IfcLabel (a piece of text), and another called "Version" which is an IfcReal (a numeric value with decimals).
 
 You can add a custom csv file with your own property sets. This file must be named CustomPsets.csv and be placed in $USERAPPDATA/BIM.
 

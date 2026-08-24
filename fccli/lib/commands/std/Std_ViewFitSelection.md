@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_ViewFitSelection"
   wiki_rev: "0499378"
+  seed: "336f7d2968d0"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

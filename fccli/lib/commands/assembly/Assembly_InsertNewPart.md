@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_InsertNewPart"
   wiki_rev: "0499378"
+  seed: "b6f51c08ebb3"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

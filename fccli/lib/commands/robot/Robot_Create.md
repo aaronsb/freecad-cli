@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "RobotWorkbench"
   wiki: "Robot_Create"
   wiki_rev: null
+  seed: "8f4a55108d69"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

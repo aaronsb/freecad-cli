@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_CloseActiveWindow"
   wiki_rev: "0499378"
+  seed: "c875e2d113c2"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

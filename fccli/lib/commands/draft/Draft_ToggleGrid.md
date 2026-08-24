@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "DraftWorkbench"
   wiki: "Draft_ToggleGrid"
   wiki_rev: "0499378"
+  seed: "40e622b445cb"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

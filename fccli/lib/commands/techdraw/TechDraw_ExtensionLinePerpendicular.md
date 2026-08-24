@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ExtensionLinePerpendicular"
   wiki_rev: "0499378"
+  seed: "2959be237c03"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

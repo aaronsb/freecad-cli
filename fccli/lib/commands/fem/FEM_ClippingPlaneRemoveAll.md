@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "FemWorkbench"
   wiki: "FEM_ClippingPlaneRemoveAll"
   wiki_rev: "0499378"
+  seed: "f63bcf6ea4f6"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

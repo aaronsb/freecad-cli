@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "MeshWorkbench"
   wiki: "Mesh_RemoveCompByHand"
   wiki_rev: "0499378"
+  seed: "4e1c7b846f8b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

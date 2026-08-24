@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_SelectElementsWithDoFs"
   wiki_rev: "0499378"
+  seed: "e8275321ad63"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

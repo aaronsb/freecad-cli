@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_Fillet"
   wiki_rev: "0499378"
+  seed: "1dab7b1462e4"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

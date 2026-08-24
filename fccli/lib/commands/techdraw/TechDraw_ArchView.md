@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_NewArch"
   wiki_rev: "0499378"
+  seed: "a771c9e8b3b3"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

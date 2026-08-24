@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CreatePeriodicBSpline"
   wiki_rev: "0499378"
+  seed: "48c672088f2f"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

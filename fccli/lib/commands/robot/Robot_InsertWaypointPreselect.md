@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "RobotWorkbench"
   wiki: "Robot_InsertWaypointPreselect"
   wiki_rev: null
+  seed: "df11e995d9a0"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

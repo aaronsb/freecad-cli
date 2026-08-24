@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartDesignWorkbench"
   wiki: "PartDesign_MoveTip"
   wiki_rev: "0499378"
+  seed: "3ab95da585cf"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

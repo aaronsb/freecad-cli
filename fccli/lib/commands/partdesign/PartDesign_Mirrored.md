@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartDesignWorkbench"
   wiki: "PartDesign_Mirrored"
   wiki_rev: "0499378"
+  seed: "b58815397d07"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

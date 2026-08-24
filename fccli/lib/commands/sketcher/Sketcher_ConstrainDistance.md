@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_ConstrainDistance"
   wiki_rev: "0499378"
+  seed: "b6a28baf3e6a"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

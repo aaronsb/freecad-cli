@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ExtensionCreateVertChamferDimension"
   wiki_rev: "0499378"
+  seed: "90d34570458e"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

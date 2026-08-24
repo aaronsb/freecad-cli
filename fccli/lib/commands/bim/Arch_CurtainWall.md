@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "BIMWorkbench"
   wiki: "Arch_CurtainWall"
   wiki_rev: "0499378"
+  seed: "06a4b0c59276"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartDesignWorkbench"
   wiki: "PartDesign_CompPrimitiveAdditive"
   wiki_rev: null
+  seed: "801bf464bcf4"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []
