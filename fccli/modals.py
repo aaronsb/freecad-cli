@@ -125,6 +125,18 @@ def _pick(buttons, force):
     return buttons[0][0]
 
 
+HANDLED = "_fccli_answered"
+
+
+def _click(widget):
+    """Press it, unless it is already gone."""
+    try:
+        (widget.reject if isinstance(widget, QtWidgets.QFileDialog)
+         else widget.click)()
+    except RuntimeError:
+        pass          # the dialog went away before the loop came back round
+
+
 class _Filter(QtCore.QObject):
     """Catches a modal as it is shown, reads it, and answers it."""
 
@@ -132,16 +144,21 @@ class _Filter(QtCore.QObject):
         super().__init__()
         self.caught = caught
         self.force = force
-        self._seen = set()
 
     def eventFilter(self, obj, event):
         if event.type() != _SHOW:
             return False
         if not isinstance(obj, QtWidgets.QDialog) or not obj.isModal():
             return False
-        if id(obj) in self._seen:
+        # Marked on the dialog rather than remembered here. A Show event
+        # arrives again every time a dialog is hidden and reshown, and a
+        # verb whose emit runs another verb installs a second filter --
+        # both would answer, and the second click would land on a widget
+        # the first one already destroyed. id() cannot carry the mark:
+        # CPython reuses an address as soon as the dialog is freed.
+        if obj.property(HANDLED):
             return False
-        self._seen.add(id(obj))
+        obj.setProperty(HANDLED, True)
         parsed = read(obj)
         if parsed is None:
             return False
@@ -157,12 +174,14 @@ class _Filter(QtCore.QObject):
                 (text, [(b.text() or "").replace("&", "") for b, _ in buttons],
                  undoable))
         if isinstance(obj, QtWidgets.QFileDialog):
-            QtCore.QTimer.singleShot(0, obj.reject)
+            QtCore.QTimer.singleShot(0, lambda: _click(obj))
             return False
         chosen = _pick(buttons, self.force)
         # Deferred: the dialog is still inside its own show handler, and
-        # exec() has not started the loop that a click has to unwind.
-        QtCore.QTimer.singleShot(0, chosen.click)
+        # exec() has not started the loop that a click has to unwind. By
+        # the time the timer fires the dialog may have closed on its own,
+        # and a bound method of a freed widget raises rather than no-ops.
+        QtCore.QTimer.singleShot(0, lambda: _click(chosen))
         return False
 
 
