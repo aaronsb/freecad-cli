@@ -237,16 +237,28 @@ multiplier, integer arithmetic, no curve.
 
 ## Files
 
-`fccli/paths.py` is the only module that names a directory.
+`fccli/paths.py` is the only module that names a directory of ours.
+FreeCAD's own `Mod` roots are named where they are read, in
+`fccli/patches`.
 
 | | |
 |---|---|
 | `$XDG_STATE_HOME/fccli/history` | what accumulates by use — the spec names history as the example |
 | `$XDG_DATA_HOME/fccli/aliases` | what the user wrote down on purpose |
+| `$XDG_DATA_HOME/fccli/patches` | the same, in Python |
+| `$XDG_DATA_HOME/fccli/shots` | where `screenshot` writes when told nowhere else |
 
 - **Reads fall back to the pre-XDG location**, `~/.local/share/FreeCAD/fccli/`.
   Writes only go to the new path, and nothing is moved or deleted — the
-  fallback stops applying by itself once the new file exists.
+  fallback stops applying by itself once the new file exists. User patches
+  are a directory rather than a file, so both are scanned and the XDG copy
+  wins where a name appears in each.
+- **A test may not read or write any of these.** Three did, and each was
+  invisible until something else broke: the offscreen suite loaded the
+  operator's real history into every test ring, drove `shortcuts import`
+  into their real alias file, and moved `UserSchema` — a persisted FreeCAD
+  preference — with the restore on the happy path only, so a failure left
+  the next run reading bare numbers as inches.
 - **History lines are `<epoch>\t<command>`.** A line with no tab is read as
   epoch 0 rather than skipped.
 

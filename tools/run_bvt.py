@@ -41,6 +41,10 @@ def main():
             print("bvt: FCCLI_BVT_DISPLAY is set but DISPLAY is not",
                   file=sys.stderr)
             return 2
+        # Watching it run means seeing it. An exported QT_QPA_PLATFORM of
+        # offscreen is inherited, and there would be nothing to watch.
+        if os.environ.get("QT_QPA_PLATFORM") == "offscreen":
+            headless = {"QT_QPA_PLATFORM": ""}
     elif shutil.which("xvfb-run"):
         runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"]
         headless = HEADLESS_ENV
@@ -64,10 +68,18 @@ def main():
     except subprocess.TimeoutExpired:
         print(f"bvt: FreeCAD did not finish within {TIMEOUT}s", file=sys.stderr)
         return 2
+    finally:
+        # One of these per run, otherwise kept forever.
+        shutil.rmtree(scratch, ignore_errors=True)
 
     if not os.path.exists(RESULT):
         print("bvt: no result file -- FreeCAD exited before finishing",
               file=sys.stderr)
+        if "xcb" in (proc.stderr or "") and "plugin" in (proc.stderr or ""):
+            print("bvt: the xcb platform plugin is missing. Several distros "
+                  "ship it apart from qt6-wayland -- install it (Debian: "
+                  "libqt6gui6 / qt6-qpa-plugins, Arch: qt6-base, Fedora: "
+                  "qt6-qtbase-gui).", file=sys.stderr)
         print(proc.stdout[-2000:], file=sys.stderr)
         print(proc.stderr[-2000:], file=sys.stderr)
         return 2

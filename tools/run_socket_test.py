@@ -7,6 +7,7 @@ to appear, then drives it with the same client a person would use. Nothing
 here imports FreeCAD -- if the client can do it, so can a terminal.
 """
 
+import atexit
 import json
 import os
 import shutil
@@ -91,6 +92,7 @@ def main():
     # Mod directory, so repointing it hides the installed addon. And
     # XDG_RUNTIME_DIR is left alone: the socket belongs where it belongs.
     scratch = tempfile.mkdtemp(prefix="fccli-socket-")
+    atexit.register(shutil.rmtree, scratch, True)   # one per run, else kept
     os.environ["XDG_STATE_HOME"] = os.path.join(scratch, "state")
 
     os.makedirs(socket_dir(), mode=0o700, exist_ok=True)

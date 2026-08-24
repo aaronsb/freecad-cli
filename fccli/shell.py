@@ -20,6 +20,7 @@ import FreeCAD as App
 
 from . import bus as _bus
 from . import curation as _curation
+from . import engine as _engine_mod
 from . import describe as _describe
 from . import shortcuts as _shortcuts
 from . import paths as _paths
@@ -253,8 +254,7 @@ REGISTRY.add(Verb(
 ))
 
 
-SHOT_DIR = os.path.join(os.path.expanduser("~"), ".local", "share",
-                        "FreeCAD", "fccli", "shots")
+SHOT_DIR = _paths.data("shots")
 
 
 def _shot_path(given):
@@ -390,8 +390,10 @@ def _emit_describe(v):
             say("  describe <label> reads one out in full", "quiet")
             return None
     else:
-        objects = [o for o in doc.Objects
-                   if target.lower() in (o.Label.lower(), o.Name.lower())]
+        # engine._resolve_names is the same lookup a selection step does,
+        # so both surfaces answer to a name identically -- and describe
+        # gets `describe A,B` out of sharing it.
+        objects = _engine_mod._resolve_names(target)
         if not objects:
             names = [o.Label for o in doc.Objects]
             hint = _did_you_mean_from(names, target)

@@ -21,6 +21,11 @@ DEFAULT_HEIGHT = 140
 # separately: dragging a floating window tall should not leave a 600px strip
 # across the top of FreeCAD the next time it is docked.
 DEFAULT_FLOAT = (760, 340)
+# Both saving and restoring clamp to this, so a hand-edited or pre-floor
+# value cannot produce a window nobody can find. minimumSizeHint allows a
+# drag below it, which means such a drag does not survive a re-float --
+# noted rather than changed: which of the two should give is a decision
+# about what the operator meant, not a bug with one right answer.
 MIN_FLOAT = (320, 120)
 
 FULL = "full"

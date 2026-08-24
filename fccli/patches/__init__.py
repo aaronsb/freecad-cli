@@ -13,7 +13,7 @@ three roots, each overriding the one before:
 
     fccli/patches/*.py                      shipped with this addon
     <Mod>/<addon>/fccli_patch.py            shipped by the addon itself
-    ~/.local/share/FreeCAD/fccli/patches/   written by the user
+    $XDG_DATA_HOME/fccli/patches/           written by the user
 
 An addon that ships its own ``fccli_patch.py`` is picked up with no
 registration step, so a third-party workbench gets generic command-line
@@ -58,6 +58,7 @@ import glob
 import importlib.util
 import os
 
+from .. import paths as _paths
 from ..grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
                        Option, Step, Verb)
 
@@ -65,7 +66,12 @@ KINDS = {"point": POINT, "quantity": QUANTITY, "choice": CHOICE,
          "selection": SELECTION, "text": TEXT, "path": PATH}
 
 BUILTIN_DIR = os.path.dirname(os.path.abspath(__file__))
-USER_DIR = os.path.expanduser("~/.local/share/FreeCAD/fccli/patches")
+# XDG, with the pre-XDG directory still read. paths.py's docstring has
+# named patches as XDG_DATA_HOME data since it landed; this was the third
+# of the "three paths spelled out by hand in three modules" and was the
+# one left behind, with no XDG support and no fallback.
+USER_DIR = _paths.data("patches")
+LEGACY_USER_DIR = _paths.legacy("patches")
 MOD_DIRS = [
     os.path.expanduser("~/.local/share/FreeCAD/v1-1/Mod"),
     os.path.expanduser("~/.local/share/FreeCAD/Mod"),
@@ -107,10 +113,16 @@ def discover():
             if patch:
                 patch.setdefault("key", addon)
                 found.append(("addon", path, patch))
-    for path in sorted(glob.glob(os.path.join(USER_DIR, "*.py"))):
-        patch = _load_module(path, MODULE_PREFIX + "user_" + os.path.basename(path)[:-3])
-        if patch:
-            found.append(("user", path, patch))
+    seen = set()
+    for root in (USER_DIR, LEGACY_USER_DIR):
+        for path in sorted(glob.glob(os.path.join(root, "*.py"))):
+            base = os.path.basename(path)
+            if base in seen:
+                continue        # the XDG copy wins over the one beside it
+            seen.add(base)
+            patch = _load_module(path, MODULE_PREFIX + "user_" + base[:-3])
+            if patch:
+                found.append(("user", path, patch))
     return found
 
 
