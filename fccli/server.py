@@ -174,7 +174,8 @@ class Server(QtCore.QObject):
             from .completion import candidates
             head, tail, hits = candidates(session.engine,
                                           request.get("text", ""),
-                                          history=session.history)
+                                          history=session.history,
+                                          scope=session.scope)
             return {"kind": "completions", "head": head, "tail": tail,
                     "candidates": hits[:200]}
 

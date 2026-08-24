@@ -185,7 +185,8 @@ These take their arguments inline instead:
 ```
 > save ~/parts/bracket.FCStd     saves there, no dialog
 > open ~/parts/bracket.FCStd     new bracket     close     close!
-> alias b box                    unalias b       history   clear
+> alias b box                    unalias b       history   history clear
+> use sketcher                   commands part   use off
 > undo    redo    delete         quit    quit!
 > units imperialbuilding         zoom extents / selection / front / iso
 > screenshot ~/shots/plate.png   saves it, and prints the path

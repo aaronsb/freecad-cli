@@ -83,6 +83,10 @@ class Verb:
     # Wrap the command in a document transaction, so one typed line is one
     # undo step. False for verbs that manage documents rather than edit them.
     transactional: bool = True
+    # Whether running this belongs in the history ring. False for verbs
+    # whose whole job is the ring itself -- "history clear" recorded into
+    # the history it just emptied is noise.
+    record: bool = True
 
 
 class Registry:

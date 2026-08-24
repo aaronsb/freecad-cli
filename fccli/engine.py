@@ -385,7 +385,8 @@ class Engine:
             return
         _commit_transaction(doc)
         self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
-                      object=obj, picked=picked, typed=typed)
+                      object=obj, picked=picked, typed=typed,
+                      record=verb.record)
         self._announce()
 
     def _only_optional_left(self) -> bool:

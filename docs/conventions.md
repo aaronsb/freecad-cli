@@ -98,10 +98,25 @@ Each carries exactly one meaning.
 - **Editing it makes it yours.** The underline goes, and Enter runs what is
   written.
 - **Tab walks a remembered command out**, one argument per press.
+- **`history clear` empties the ring**, and does not record itself doing it.
+  A verb can declare `record=False` when its whole job is the ring.
 - **Tab on an empty line offers recent commands.** Shells answer that key by
   listing every executable on `PATH` — noisy enough that they prompt first —
   and here it would be 1250 entries beginning `1_front`. Tab has never meant
   history anywhere, so nothing is being broken by making it useful.
+
+## Scope
+
+`use <domain>` narrows what Tab offers to one corner of FreeCAD. Typing `c`
+against 1250 launchers is a wall, not discovery; scoped to Sketcher it is 22
+candidates.
+
+- **Domains are read off the verbs**, from the command a verb runs or the
+  type it builds. Nothing is tagged by hand.
+- **A scope never hides a verb someone wrote.** Hand-written, patched and
+  family verbs always complete; the scope narrows the launchers.
+- `use` alone lists the domains and says which is active; `use off` clears.
+- `commands` lists the domains, `commands <domain>` lists what is in one.
 
 ## Completion
 

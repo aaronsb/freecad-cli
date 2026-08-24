@@ -41,7 +41,7 @@ def is_bare_number(token):
     return True
 
 
-def candidates(engine, text, history=None):
+def candidates(engine, text, history=None, scope=None):
     """Return (head, tail, candidates) for the text before the cursor.
 
     Candidates replace ``tail``. One may contain a space, which is how a
@@ -84,6 +84,9 @@ def candidates(engine, text, history=None):
     # it is what lets a fully typed verb fall through to its arguments.
     hits = [c for c in pool
             if c.lower().startswith(lowered) and c.lower() != lowered]
+    if scope and not head:
+        narrowed = [c for c in hits if in_scope(engine.registry, c, scope)]
+        hits = narrowed or hits
 
     # The grammar has nothing left to offer, but a command run before may
     # know what came next here. Hand back one argument at a time, so Tab
@@ -131,6 +134,50 @@ def _starter_verbs(engine):
     return names or engine.registry.names()[:RECENT_LIMIT]
 
 
+def domain_of(verb):
+    """Which corner of FreeCAD a verb belongs to.
+
+    Read off what the verb already carries -- the command it runs or the
+    type it builds -- so nothing has to be tagged by hand.
+    """
+    command = getattr(verb, "gui_command", None)
+    if command and "_" in command:
+        return command.split("_")[0]
+    creates = getattr(verb, "creates", None)
+    if creates and "::" in creates:
+        return creates.split("::")[0]
+    return None
+
+
+def domains(registry):
+    """Every domain, with how many verbs are in it."""
+    counts = {}
+    for name in registry.names():
+        domain = domain_of(registry.get(name))
+        if domain:
+            counts[domain] = counts.get(domain, 0) + 1
+    return counts
+
+
+def in_scope(registry, name, scope):
+    """Whether a verb survives the current scope.
+
+    Hand-written, patched and family verbs are always in: they are the ones
+    someone chose, and hiding them behind a scope would be perverse. The
+    scope narrows the thousand launchers.
+    """
+    if not scope:
+        return True
+    verb = registry.get(name)
+    if verb is None:
+        return True
+    module = getattr(verb.emit, "__module__", "")
+    if module.endswith((".verbs", ".shell")) or "patches" in module:
+        return True
+    domain = domain_of(verb)
+    return domain is None or domain.lower() == scope.lower()
+
+
 def _default_source(step):
     """What a step completes from when it has not said."""
     return "objects" if step.kind == SELECTION else None
@@ -144,6 +191,8 @@ def from_source(engine, source):
     if source == "aliases":
         return sorted({a for name in engine.registry.names()
                        for a in engine.registry.get(name).aliases})
+    if source == "domains":
+        return sorted(domains(engine.registry)) + ["off"]
     if source == "schemas":
         try:
             from .units import schemas

@@ -313,6 +313,87 @@ def _emit_screenshot(v):
     return path
 
 
+def _emit_scope(v):
+    """Narrow what Tab offers to one corner of FreeCAD.
+
+    Typing c and pressing Tab against 1250 launchers is not discovery, it
+    is a wall. Scoping to a domain makes the same key useful again, and the
+    domains are read off what each verb already carries rather than tagged
+    by hand.
+    """
+    from .completion import domains, domain_of
+    engine = v.get("_engine")
+    if engine is None:
+        return None
+    session = getattr(engine, "session", None)
+    wanted = v.get("domain")
+
+    if not wanted:
+        current = getattr(session, "scope", None)
+        counts = domains(engine.registry)
+        engine.bus.emit(
+            _bus.INFO,
+            f"scoped to {current}" if current else "not scoped -- all "
+            f"{len(engine.registry.names())} commands complete", role="head")
+        for name, count in sorted(counts.items(), key=lambda kv: -kv[1])[:20]:
+            mark = "*" if current and name.lower() == current.lower() else " "
+            engine.bus.emit(_bus.INFO, f"  {mark} {name:<16} {count:>4}",
+                            role="ok" if mark == "*" else "quiet")
+        engine.bus.emit(_bus.INFO, "use <domain> to narrow, use off to clear",
+                        role="quiet")
+        return None
+
+    if wanted.lower() in ("off", "none", "all", "clear"):
+        if session is not None:
+            session.scope = None
+        _say(v, "scope cleared")
+        return None
+
+    counts = domains(engine.registry)
+    match = next((d for d in counts if d.lower() == wanted.lower()), None)
+    if match is None:
+        match = next((d for d in counts if d.lower().startswith(wanted.lower())),
+                     None)
+    if match is None:
+        raise RuntimeError(
+            f"no domain {wanted!r}. Try: " +
+            ", ".join(sorted(counts, key=lambda d: -counts[d])[:8]))
+    if session is not None:
+        session.scope = match
+    _say(v, f"scoped to {match} -- {counts[match]} commands complete here")
+    return None
+
+
+def _emit_commands(v):
+    """What is in a domain, or what the domains are."""
+    from .completion import domains, domain_of
+    engine = v.get("_engine")
+    if engine is None:
+        return None
+    wanted = v.get("domain")
+    counts = domains(engine.registry)
+    if not wanted:
+        engine.bus.emit(_bus.INFO,
+                        f"{len(counts)} domains, "
+                        f"{sum(counts.values())} commands", role="head")
+        for name, count in sorted(counts.items(), key=lambda kv: -kv[1]):
+            engine.bus.emit(_bus.INFO, f"  {name:<16} {count:>4}", role="quiet")
+        return None
+    match = next((d for d in counts if d.lower().startswith(wanted.lower())),
+                 None)
+    if match is None:
+        raise RuntimeError(f"no domain {wanted!r}")
+    names = sorted(n for n in engine.registry.names()
+                   if domain_of(engine.registry.get(n)) == match)
+    engine.bus.emit(_bus.INFO, f"{match} -- {len(names)} commands",
+                    role="head")
+    for i in range(0, len(names), 4):
+        engine.bus.emit(_bus.INFO,
+                        "  " + "".join(f"{n:<22}" for n in names[i:i + 4]),
+                        role="quiet")
+    return None
+
+
 def _emit_check(v):
     """Resolve and validate a command without running it.
 
@@ -632,11 +713,29 @@ def _emit_unalias(v):
 
 
 def _emit_history(v):
-    """Show the ring. clear wipes the screen; this is what survives it."""
+    """Show the ring, trim it, or empty it.
+
+    clear wipes the screen; this is what survives that. The two are
+    different enough to be different words.
+    """
     engine = v.get("_engine")
     if engine is None:
         return None
-    engine.bus.emit(_bus.INFO, "@@history@@")
+    session = getattr(engine, "session", None)
+    arg = (v.get("what") or "").strip().lower()
+
+    if arg in ("clear", "wipe", "forget"):
+        if session is not None:
+            session.history.forget()
+        _say(v, "history forgotten")
+        return None
+
+    limit = None
+    if arg:
+        if not arg.isdigit():
+            raise RuntimeError("history takes a count, or the word clear")
+        limit = int(arg)
+    engine.bus.emit(_bus.INFO, f"@@history@@{limit or ''}")
     return None
 
 
@@ -771,11 +870,29 @@ def _emit_unalias(v):
 
 
 def _emit_history(v):
-    """Show the ring. clear wipes the screen; this is what survives it."""
+    """Show the ring, trim it, or empty it.
+
+    clear wipes the screen; this is what survives that. The two are
+    different enough to be different words.
+    """
     engine = v.get("_engine")
     if engine is None:
         return None
-    engine.bus.emit(_bus.INFO, "@@history@@")
+    session = getattr(engine, "session", None)
+    arg = (v.get("what") or "").strip().lower()
+
+    if arg in ("clear", "wipe", "forget"):
+        if session is not None:
+            session.history.forget()
+        _say(v, "history forgotten")
+        return None
+
+    limit = None
+    if arg:
+        if not arg.isdigit():
+            raise RuntimeError("history takes a count, or the word clear")
+        limit = int(arg)
+    engine.bus.emit(_bus.INFO, f"@@history@@{limit or ''}")
     return None
 
 
@@ -845,6 +962,22 @@ REGISTRY.add(Verb(
 ))
 
 REGISTRY.add(Verb(
+    name="use", transactional=False, aliases=["scope"],
+    doc="Narrow what Tab offers to one domain. 'use off' clears it.",
+    steps=[Step("domain", TEXT, "Domain", optional=True,
+                completes="domains")],
+    emit=_emit_scope,
+))
+
+REGISTRY.add(Verb(
+    name="commands", transactional=False, aliases=["cmds"],
+    doc="List the domains, or the commands in one.",
+    steps=[Step("domain", TEXT, "Domain", optional=True,
+                completes="domains")],
+    emit=_emit_commands,
+))
+
+REGISTRY.add(Verb(
     name="check", transactional=False, aliases=["whatif", "dry", "ck"],
     doc="Validate a command without running it.",
     steps=[Step("line", TEXT, "Command to check", raw=True,
@@ -885,9 +1018,10 @@ REGISTRY.add(Verb(
 ))
 
 REGISTRY.add(Verb(
-    name="history", transactional=False, aliases=["hist"],
-    doc="List recalled commands. clear wipes the screen, not this.",
-    steps=[], emit=_emit_history,
+    name="history", transactional=False, record=False, aliases=["hist"],
+    doc="List recalled commands, or 'history clear' to forget them.",
+    steps=[Step("what", TEXT, "A count, or clear", optional=True)],
+    emit=_emit_history,
 ))
 
 REGISTRY.add(Verb(

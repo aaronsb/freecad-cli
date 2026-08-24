@@ -582,6 +582,36 @@ def main():
           len(App.ActiveDocument.Objects), before + 1)
     engine.submit("close!")
 
+    print("\n5k. scoping, and managing the ring")
+    from fccli.completion import candidates as _c3, domains as _domains
+    engine.submit("new scopedoc")
+    # Scoping only matters once the thousand launchers are present.
+    register_all(REGISTRY, tier0=True, patches=PatchSet())
+
+    def count(text):
+        return len(_c3(engine, text, history=session.history,
+                       scope=session.scope)[2])
+
+    wide = count("c")
+    check("unscoped, a letter offers a lot", wide > 100, True)
+    engine.submit("use sketcher")
+    check("scoping narrows it", count("c") < wide // 3, True)
+    scoped = _c3(engine, "c", history=session.history,
+                 scope=session.scope)[2]
+    check("  hand-written verbs are never hidden by a scope",
+          all(v in scoped for v in ("check", "circle", "clear")), True)
+    engine.submit("use off")
+    check("clearing restores it", count("c"), wide)
+
+    found = _domains(REGISTRY)
+    check("domains are read off the verbs, not tagged",
+          found.get("Sketcher", 0) > 50 and found.get("Part", 0) > 10, True)
+
+    session.history.entries[:] = ["circle 0,0,0 20"]
+    engine.submit("history clear")
+    check("history clear empties the ring", session.history.entries, [])
+    engine.submit("close!")
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

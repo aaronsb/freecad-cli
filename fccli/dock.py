@@ -233,8 +233,9 @@ class CliDock(QtWidgets.QDockWidget):
             self.console.write("  ! " + msg.text, "error")
         elif msg.kind == _bus.INFO:
             self.console.end_live()
-            if msg.text == "@@history@@":
-                self._show_history()
+            if msg.text.startswith("@@history@@"):
+                tail = msg.text[len("@@history@@"):]
+                self._show_history(int(tail) if tail.isdigit() else 40)
             else:
                 self.console.write("  " + msg.text,
                                    msg.data.get("role", "info"))
@@ -258,8 +259,8 @@ class CliDock(QtWidgets.QDockWidget):
             )
         self._paint_focus_state()
 
-    def _show_history(self):
-        ring = self.session.history.tail(40)
+    def _show_history(self, limit=40):
+        ring = self.session.history.tail(limit)
         if not ring:
             self.console.write("  (no history yet)", "info")
             return

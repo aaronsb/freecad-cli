@@ -76,6 +76,16 @@ class History:
         """
         return self.typed.get(line, line)
 
+    def forget(self):
+        """Empty the ring, and the file behind it."""
+        self.entries = []
+        self.typed = {}
+        try:
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            open(self.path, "w", encoding="utf-8").close()
+        except OSError:
+            pass
+
     def drop(self, line):
         """Remove a provisional entry the finished command supersedes."""
         for i in range(len(self.entries) - 1, -1, -1):
@@ -156,6 +166,11 @@ class Session:
         self.history = history if history is not None else History()
         self.floor = Floor(engine)
         self._provisional = None
+        # Narrows what Tab offers to one corner of FreeCAD. The thousand
+        # launchers are the problem; the verbs someone chose are never
+        # hidden by it.
+        self.scope = None
+        engine.session = self          # so a verb can reach the scope
         self.bus.subscribe(self._on_message)
 
     def _on_message(self, msg):
@@ -168,8 +183,9 @@ class Session:
         if self._provisional is not None:
             self.history.drop(self._provisional)
             self._provisional = None
-        self.history.commit(msg.data.get("replay") or msg.text,
-                            typed=msg.data.get("typed"))
+        if msg.data.get("record", True):
+            self.history.commit(msg.data.get("replay") or msg.text,
+                                typed=msg.data.get("typed"))
 
     def submit(self, text, who=DOCK):
         """Run a line, recording it provisionally so a typo can be recalled."""
@@ -216,4 +232,5 @@ class Session:
             "prompt": step.prompt if step else None,
             "options": step.option_names() if step else [],
             "floor": self.floor.state(),
+            "scope": self.scope,
         }
