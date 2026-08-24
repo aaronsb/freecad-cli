@@ -22,8 +22,3 @@ type: null
 ---
 
 The Std TextDocument command creates an object capable of holding arbitrary text. This element can be used to write general information or documentation about the model.
-
-## See also
-
-- Draft ShapeString
-- Draft Text

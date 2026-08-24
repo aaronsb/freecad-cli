@@ -818,11 +818,14 @@ def _emit_man(v):
     # "what goes with what", and it is a better answer than a guess from
     # the names would be.
     near = curated.neighbours(REGISTRY, verb)
+    # The page's names first, in the page's order, and only those that
+    # are a verb here: a page for a workbench or a concept is not.
+    first = []
     for page in from_page:
         other = REGISTRY.by_gui_command(page)
-        name = other.name if other else page.lower()
-        if name not in near and name != verb.name:
-            near.insert(0, name)
+        if other and other.name != verb.name and other.name not in first:
+            first.append(other.name)
+    near = first + [n for n in near if n not in first]
     if near:
         say(f"    {', '.join(near)}", "ok")
     say("    man     (list every command)")

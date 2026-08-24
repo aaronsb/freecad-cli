@@ -1895,9 +1895,16 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    check("  and register_all counts the authored files",
-          _wc.get("authored"), sum(1 for e in _dict["commands"].values()
-                                  if set(e) - {"file", "doc"}))
+    check("  and register_all counts the authored files", _wc.get("authored"), 2)
+    # #19: every descriptor command is some verb's gui_command. Nine were
+    # not, because a typed verb added over their launcher; _make_room
+    # qualifies the launcher instead.
+    _reached = {getattr(_with.get(n), "gui_command", None) for n in _with.names()}
+    check("  every descriptor command reaches a verb",
+          sorted(c for c in _cmds if c not in _reached), [])
+    _bimbox = _with.by_gui_command("BIM_Box")
+    check("    BIM_Box, once lost to Part::Box's `box`, is bim_box",
+          _bimbox.name if _bimbox else None, "bim_box")
     # The first two entries: generic words for workbench-specific tools.
     check("  Mesh_PolySegm is `segment` with no tree and mesh_segment with it",
           (_bare.by_gui_command("Mesh_PolySegm").name,
@@ -1944,6 +1951,31 @@ def _run():
     check("  and the derived `view` family lost those three",
           [c for c in _cr.get("view").steps[0].choices
            if c in ("front", "top", "rear")], [])
+    # An authored name that collides is handled, never silently taken.
+    _bad = {"commands": {
+        "Mesh_PolySegm": {"verb": "additive_box"},       # a tier-1 name
+        # a launcher's name, a family's, a typed verb's -- and one free
+        "Std_ViewFitAll": {"aliases": ["cube", "view", "box", "fitall"]},
+    }}
+    _cb = _Registry()
+    _cbc = register_all(_cb, tier0=True, patches=PatchSet(), dictionary=_bad)
+    _seg = _cb.by_gui_command("Mesh_PolySegm")
+    check("  a verb that collides with a typed verb is re-homed, not lost",
+          (_seg.name if _seg else None,
+           getattr(_cb.get("additive_box"), "creates", None)),
+          ("mesh_additive_box", "PartDesign::AdditiveBox"))
+    check("  an alias cannot take a name in use, a family's, or a typed verb's",
+          (getattr(_cb.get("cube"), "gui_command", None) != "Std_ViewFitAll",
+           _cb.get("view").family, _cb.get("box").creates,
+           _cb.get("fitall").gui_command, _cbc.get("aliases_dropped")),
+          (True, "view", "Part::Box", "Std_ViewFitAll", 3))
+    # Put the shared curation back the way the shipped tree has it.
+    _curation.load(_load_desc(), _dict)
+    # A dictionary that will not parse costs its overrides, not the verbs.
+    from fccli.factory import load_dictionary as _ld_fn
+    _broken = os.path.join(tempfile.mkdtemp(prefix="fccli-dict-"), "d.json")
+    open(_broken, "w").write("{not json")
+    check("  a broken dictionary is treated as absent", _ld_fn(_broken), None)
     # man shows the page.
     # man reads the shell's own registry, which register_all filled from
     # the shipped tree earlier in this suite.

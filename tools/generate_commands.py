@@ -130,10 +130,11 @@ def clean(md):
 
 
 def see_also(front):
-    raw = (front or {}).get("SeeAlso")
-    if not raw:
-        return []
-    return [p.strip() for p in str(raw).split(",") if p.strip()]
+    """Page names only. The field carries templates and prose on some
+    pages, and `}}` is not a page."""
+    raw = TEMPLATE.sub("", (front or {}).get("SeeAlso") or "")
+    return [p.strip() for p in raw.split(",")
+            if re.fullmatch(r"[\w.-]+", p.strip() or " ")]
 
 
 def body_for(entry, pages):

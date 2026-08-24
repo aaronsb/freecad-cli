@@ -56,10 +56,23 @@ def load_descriptor(path=DESCRIPTOR):
 
 
 def load_dictionary(path=DICTIONARY):
+    """The compiled tree, or None when there is none.
+
+    A file that will not parse is reported and treated as absent: a
+    broken dictionary costs its overrides, never the 1111 verbs.
+    """
     if not os.path.exists(path):
         return None
-    with open(path, encoding="utf-8") as fh:
-        return json.load(fh)
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    except (OSError, ValueError) as exc:
+        try:
+            import FreeCAD as App
+            App.Console.PrintWarning(f"[fccli] {path}: {exc}\n")
+        except Exception:
+            pass
+        return None
 
 
 # ---------------------------------------------------------------- tier 1
@@ -295,6 +308,45 @@ def register_runtime(registry, descriptor=None):
     return added
 
 
+def _make_room(registry, name, origins, counts):
+    """A typed verb is taking `name`. Re-home whatever generated verb
+    holds it rather than add over it.
+
+    The tier-1 loops used to add without asking, which is how nine
+    descriptor commands reached no verb at all (#19): their launcher's
+    slugged label -- box, pipe, helix, fillet -- was also a typed verb's
+    name. A launcher is qualified the way a contested tier-0 name is; a
+    typed verb from another type is module-qualified as before.
+    """
+    sitting = registry.get(name)
+    if sitting is None or not getattr(sitting, "generated", False):
+        return
+    if sitting.name != name:
+        return                  # `name` was one of its aliases; leave it
+    command = getattr(sitting, "gui_command", None)
+    if sitting.open is not None and command:
+        if _qualify_command(sitting, command, registry):
+            counts["displaced"] = counts.get("displaced", 0) + 1
+    elif _qualify(sitting, origins.get(sitting.name), registry):
+        counts["displaced"] = counts.get("displaced", 0) + 1
+
+
+def _free_aliases(verb, registry, reserved, counts):
+    """Drop an authored alias that would take a name already in use.
+
+    Registry.add writes aliases unconditionally, so a file's `aliases:
+    [w]` took `w` from save, and `[view]` took the name the view family
+    was about to claim -- 41 commands lost their door to one alias.
+    """
+    kept = []
+    for alias in verb.aliases:
+        if registry.get(alias) is not None or alias in reserved:
+            counts["aliases_dropped"] = counts.get("aliases_dropped", 0) + 1
+            continue
+        kept.append(alias)
+    verb.aliases = kept
+
+
 def _claimed(registry, name):
     """Whether a verb somebody wrote by hand already owns this name.
 
@@ -475,9 +527,19 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
     by_type = {l["type"]: {**descriptor["commands"].get(n, {}), "name": n}
                for n, l in descriptor.get("links", {}).items()}
 
+    # Names the families will want, so no authored alias takes one first.
+    from .families import overrides_of
+    over, exclude = overrides_of(dictionary)
+    family_names = set(families(descriptor["commands"], overrides=over,
+                                exclude=exclude)) if tier0 else set()
+    # And the typed verbs', which register after tier 0 and would land on
+    # top of an alias with that name.
+    reserved = family_names | set(descriptor.get("verbs", {}))
+
     if tier0:
         for command in _by_prominence(descriptor["commands"].values()):
             verb = build_command_verb(command, entries.get(command["name"]))
+            _free_aliases(verb, registry, reserved, counts)
             if registry.get(verb.name) is None:
                 registry.add(verb)
                 counts["tier0"] += 1
@@ -520,6 +582,7 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
             else:
                 counts["skipped"] += 1
             continue
+        _make_room(registry, verb.name, origins, counts)
         registry.add(verb)
         origins[verb.name] = tid
         counts["tier1"] += 1
@@ -532,10 +595,7 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
             else:
                 counts["skipped"] += 1
             continue
-        sitting = registry.get(verb.name)
-        if sitting is not None and sitting is not verb:
-            if _qualify(sitting, origins.get(sitting.name), registry):
-                counts["displaced"] = counts.get("displaced", 0) + 1
+        _make_room(registry, verb.name, origins, counts)
         registry.add(verb)
         counts["patched"] += 1
         counts["tier1"] += 1
@@ -552,8 +612,6 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
     # make a spread-out group discoverable without displacing anything
     # anyone wrote.
     if tier0:
-        from .families import overrides_of
-        over, exclude = overrides_of(dictionary)
         for name, members in families(descriptor["commands"], overrides=over,
                                       exclude=exclude).items():
             if _claimed(registry, name) or registry.get(name) is not None:

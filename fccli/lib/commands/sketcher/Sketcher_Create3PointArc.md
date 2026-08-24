@@ -22,7 +22,3 @@ type: null
 ---
 
 The Sketcher Create3PointArc tool creates an arc by its endpoints and a point along the arc. This is the same tool as Sketcher CreateArc but with a different initial mode.
-
-## See also
-
-- Sketcher CreateArc

@@ -2639,7 +2639,7 @@
    "file": "sketcher/Sketcher_CopyClipboard.md"
   },
   "Sketcher_Create3PointArc": {
-   "doc": "The Sketcher Create3PointArc tool creates an arc by its endpoints and a point along the arc. This is the same tool as Sketcher CreateArc but with a different initial mode.\n\n## See also\n\n- Sketcher CreateArc",
+   "doc": "The Sketcher Create3PointArc tool creates an arc by its endpoints and a point along the arc. This is the same tool as Sketcher CreateArc but with a different initial mode.",
    "file": "sketcher/Sketcher_Create3PointArc.md"
   },
   "Sketcher_Create3PointCircle": {
@@ -3563,7 +3563,7 @@
    "file": "std/Std_TestReloadQM.md"
   },
   "Std_TextDocument": {
-   "doc": "The Std TextDocument command creates an object capable of holding arbitrary text. This element can be used to write general information or documentation about the model.\n\n## See also\n\n- Draft ShapeString\n- Draft Text",
+   "doc": "The Std TextDocument command creates an object capable of holding arbitrary text. This element can be used to write general information or documentation about the model.",
    "file": "std/Std_TextDocument.md"
   },
   "Std_TextureMapping": {
