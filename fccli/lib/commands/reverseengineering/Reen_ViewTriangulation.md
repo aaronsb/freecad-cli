@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "ReverseEngineeringWorkbench"
   wiki: "Reen_ViewTriangulation"
   wiki_rev: null
+  seed: "4890e9d388e7"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_ClarifySelection"
   wiki_rev: null
+  seed: "722784e971fe"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

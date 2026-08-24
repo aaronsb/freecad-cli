@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartDesignWorkbench"
   wiki: "PartDesign_CoordinateSystem"
   wiki_rev: "0499378"
+  seed: "18ab26c7e0f7"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

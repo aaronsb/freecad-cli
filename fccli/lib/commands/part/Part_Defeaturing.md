@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_Defeaturing"
   wiki_rev: "0499378"
+  seed: "4db406a483f8"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

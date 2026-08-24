@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_ToggleDrivingConstraint"
   wiki_rev: "0499378"
+  seed: "d2e44b64c810"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

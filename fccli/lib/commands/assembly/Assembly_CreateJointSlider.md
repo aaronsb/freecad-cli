@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_CreateJointSlider"
   wiki_rev: "0499378"
+  seed: "4c144046b3ac"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

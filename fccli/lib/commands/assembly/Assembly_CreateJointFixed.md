@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_CreateJointFixed"
   wiki_rev: "0499378"
+  seed: "f2095bc5a24d"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

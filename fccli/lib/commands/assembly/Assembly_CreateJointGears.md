@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_CreateJointGears"
   wiki_rev: "0499378"
+  seed: "f36160d99b35"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

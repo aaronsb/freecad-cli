@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_CreateJointCylindrical"
   wiki_rev: "0499378"
+  seed: "af1e91ef1eff"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

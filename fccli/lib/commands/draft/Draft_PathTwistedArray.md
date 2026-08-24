@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "DraftWorkbench"
   wiki: "Draft_PathTwistedArray"
   wiki_rev: null
+  seed: "c5becbc9a603"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "BIMWorkbench"
   wiki: "BIM_Tutorial"
   wiki_rev: null
+  seed: "2e288912f0ac"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

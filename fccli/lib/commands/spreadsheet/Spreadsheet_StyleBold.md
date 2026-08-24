@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SpreadsheetWorkbench"
   wiki: "Spreadsheet_StyleBold"
   wiki_rev: "0499378"
+  seed: "41569f7de46b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

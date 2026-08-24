@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "MeshWorkbench"
   wiki: "Mesh_VertexCurvature"
   wiki_rev: "0499378"
+  seed: "6ff4bb88f34a"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

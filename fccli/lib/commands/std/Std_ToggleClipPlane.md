@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_ToggleClipPlane"
   wiki_rev: "0499378"
+  seed: "009855a4ed1c"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

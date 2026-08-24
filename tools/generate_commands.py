@@ -6,9 +6,10 @@
 
 Writes a file for every command in fccli/descriptor.json that has none.
 An existing file is left alone -- it may carry authored fields and a
-body somebody wrote -- unless --force, which is for a first generation
-or a deliberate reset. Keeping generated fields current in an existing
-file is reconcile's job, not this one's.
+body somebody wrote. --force rewrites every file's generated: block and
+reseeds every body the tool seeded, and keeps the authored fields and
+any body a person edited; it is for a change to the generator itself.
+Keeping files current with a new harvest is reconcile's job.
 
 The body is the wiki page's Description, stripped of images and links,
 followed by the page's SeeAlso. A command with no page gets its tooltip.
@@ -137,6 +138,22 @@ def see_also(front):
             if re.fullmatch(r"[\w.-]+", p.strip() or " ")]
 
 
+def generated_for(entry, stamp, rev, body):
+    """The generated: block for a command, as the tool writes it."""
+    return {
+        "freecad": stamp,
+        "label": entry.get("label"),
+        "tooltip": entry.get("tooltip"),
+        "toolbar": entry.get("toolbar"),
+        "menu": entry.get("menu"),
+        "shortcut": entry.get("shortcut"),
+        "workbench": entry.get("workbench"),
+        "wiki": entry.get("wiki"),
+        "wiki_rev": rev,
+        "seed": cf.seed_of(body),
+    }
+
+
 def body_for(entry, pages):
     """The seeded body, and where it came from."""
     name = entry["name"]
@@ -172,32 +189,28 @@ def generate(out, force=False, quiet=False):
     sources = {"wiki": 0, "tooltip": 0}
     for name, entry in sorted(descriptor["commands"].items()):
         path = cf.path_for(out, name, entry.get("workbench"))
-        if os.path.exists(path) and not force:
-            skipped += 1
-            continue
-        generated = {
-            "freecad": stamp,
-            "label": entry.get("label"),
-            "tooltip": entry.get("tooltip"),
-            "toolbar": entry.get("toolbar"),
-            "menu": entry.get("menu"),
-            "shortcut": entry.get("shortcut"),
-            "workbench": entry.get("workbench"),
-            "wiki": entry.get("wiki"),
-            "wiki_rev": None,
-        }
+        authored = {}
         body, source = body_for(entry, pages)
-        if source == "wiki":
-            generated["wiki_rev"] = rev    # provenance only where there is any
-        sources[source] += 1
+        page_rev = rev if source == "wiki" else None   # provenance only where there is any
+        if os.path.exists(path):
+            if not force:
+                skipped += 1
+                continue
+            front, old_body = cf.read(path)
+            authored = cf.authored_of(front)
+            if cf.edited(front, old_body):
+                body, source = old_body, "kept"
+                page_rev = (front.get("generated") or {}).get("wiki_rev")
+        sources[source] = sources.get(source, 0) + 1
+        generated = generated_for(entry, stamp, page_rev, body)
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as fh:
-            fh.write(cf.render(name, generated, {}, body))
+            fh.write(cf.render(name, generated, authored, body))
         written += 1
     if not quiet:
         print(f"{written} written, {skipped} left alone; bodies from "
-              f"wiki {sources['wiki']}, tooltip {sources['tooltip']}; "
-              f"wiki @ {rev or 'no clone'}")
+              + ", ".join(f"{k} {v}" for k, v in sorted(sources.items()))
+              + f"; wiki @ {rev or 'no clone'}")
     return written
 
 

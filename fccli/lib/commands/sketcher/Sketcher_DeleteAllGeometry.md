@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_DeleteAllGeometry"
   wiki_rev: "0499378"
+  seed: "3598fcfcc3e3"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ExtensionChangeLineAttributes"
   wiki_rev: "0499378"
+  seed: "83d02de5b83a"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

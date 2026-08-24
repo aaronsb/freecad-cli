@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ExtensionInsertRepetition"
   wiki_rev: "0499378"
+  seed: "58ef8da05d9b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

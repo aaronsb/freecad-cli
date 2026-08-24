@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_BSplineDegree"
   wiki_rev: "0499378"
+  seed: "65c435da77bf"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

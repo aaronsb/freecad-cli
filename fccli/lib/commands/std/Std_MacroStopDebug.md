@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_MacroStopDebug"
   wiki_rev: "0499378"
+  seed: "2534152eb3ec"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

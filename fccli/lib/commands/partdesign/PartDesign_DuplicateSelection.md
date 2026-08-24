@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartDesignWorkbench"
   wiki: "PartDesign_DuplicateSelection"
   wiki_rev: null
+  seed: "c77def19d593"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

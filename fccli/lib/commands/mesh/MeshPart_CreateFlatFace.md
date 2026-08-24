@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "MeshWorkbench"
   wiki: "MeshPart_CreateFlatFace"
   wiki_rev: "0499378"
+  seed: "4a27b8176a68"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

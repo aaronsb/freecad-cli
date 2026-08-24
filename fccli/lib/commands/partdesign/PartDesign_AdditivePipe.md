@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartDesignWorkbench"
   wiki: "PartDesign_AdditivePipe"
   wiki_rev: "0499378"
+  seed: "6a3c8c877759"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

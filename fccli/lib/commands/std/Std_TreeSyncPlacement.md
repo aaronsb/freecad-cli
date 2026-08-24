@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_TreeSyncPlacement"
   wiki_rev: "0499378"
+  seed: "d2f776bf1f54"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_Extend"
   wiki_rev: "0499378"
+  seed: "56d80a22bcba"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

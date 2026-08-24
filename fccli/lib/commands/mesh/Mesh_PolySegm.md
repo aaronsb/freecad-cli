@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "MeshWorkbench"
   wiki: "Mesh_PolySegm"
   wiki_rev: null
+  seed: "5231b1b5085d"
 # authored from here down; the tool never rewrites these
 verb: "mesh_segment"
 aliases: []

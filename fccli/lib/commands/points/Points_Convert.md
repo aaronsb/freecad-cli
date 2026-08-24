@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PointsWorkbench"
   wiki: "Points_Convert"
   wiki_rev: "0499378"
+  seed: "31bb38956980"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

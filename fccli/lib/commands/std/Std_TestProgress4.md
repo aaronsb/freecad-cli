@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_TestProgress4"
   wiki_rev: null
+  seed: "d5c576862611"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

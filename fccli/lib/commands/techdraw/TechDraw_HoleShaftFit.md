@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_HoleShaftFit"
   wiki_rev: "0499378"
+  seed: "73a4857e86d8"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

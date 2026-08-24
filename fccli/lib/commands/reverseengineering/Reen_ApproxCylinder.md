@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "ReverseEngineeringWorkbench"
   wiki: "Reen_ApproxCylinder"
   wiki_rev: null
+  seed: "bc90991e8090"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

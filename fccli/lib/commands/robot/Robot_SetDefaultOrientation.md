@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "RobotWorkbench"
   wiki: "Robot_SetDefaultOrientation"
   wiki_rev: null
+  seed: "4c4d5c357f09"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

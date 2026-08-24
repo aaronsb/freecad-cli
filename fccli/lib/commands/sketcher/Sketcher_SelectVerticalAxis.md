@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_SelectVerticalAxis"
   wiki_rev: "0499378"
+  seed: "a0a14429e91b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

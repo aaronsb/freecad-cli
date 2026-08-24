@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "CAMWorkbench"
   wiki: "CAM_SetStartPoint"
   wiki_rev: null
+  seed: "621027855285"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

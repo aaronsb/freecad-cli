@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_AlignToSelection"
   wiki_rev: "0499378"
+  seed: "7b7a986ed013"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

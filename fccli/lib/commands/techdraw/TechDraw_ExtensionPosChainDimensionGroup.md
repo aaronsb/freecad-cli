@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "TechDrawWorkbench"
   wiki: "TechDraw_ExtensionPosChainDimensionGroup"
   wiki_rev: null
+  seed: "31c6f021f80e"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

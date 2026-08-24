@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_CopyClipboard"
   wiki_rev: null
+  seed: "1df8d6d3cebc"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_TestCmdFuncs"
   wiki_rev: null
+  seed: "7ab28958b499"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

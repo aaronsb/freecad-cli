@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_ViewIsometric"
   wiki_rev: "0499378"
+  seed: "f48df9f3b8fb"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

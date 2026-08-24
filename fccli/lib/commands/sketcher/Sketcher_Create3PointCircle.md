@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_Create3PointCircle"
   wiki_rev: "0499378"
+  seed: "b90bd684cd89"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "PartWorkbench"
   wiki: "Part_CompoundFilter"
   wiki_rev: "0499378"
+  seed: "cba9f9a35f0b"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "SketcherWorkbench"
   wiki: "Sketcher_ConstrainLock"
   wiki_rev: "0499378"
+  seed: "d01b3cd78600"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

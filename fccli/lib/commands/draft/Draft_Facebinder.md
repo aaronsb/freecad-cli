@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "DraftWorkbench"
   wiki: "Draft_Facebinder"
   wiki_rev: "0499378"
+  seed: "f6f41aabdfd4"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "AssemblyWorkbench"
   wiki: "Assembly_ExportASMT"
   wiki_rev: "0499378"
+  seed: "23b36f651051"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

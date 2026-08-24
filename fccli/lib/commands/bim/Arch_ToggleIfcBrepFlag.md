@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "BIMWorkbench"
   wiki: "Arch_ToggleIfcBrepFlag"
   wiki_rev: "0499378"
+  seed: "e0d90aa93c96"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: null
   wiki: "Std_ViewIvStereoOff"
   wiki_rev: "0499378"
+  seed: "a82e50f0e58e"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []

@@ -10,6 +10,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   workbench: "ReverseEngineeringWorkbench"
   wiki: "Reen_ApproxSphere"
   wiki_rev: null
+  seed: "2c16bb9e3156"
 # authored from here down; the tool never rewrites these
 verb: null
 aliases: []
