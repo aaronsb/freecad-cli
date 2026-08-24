@@ -264,13 +264,50 @@ class CliDock(QtWidgets.QDockWidget):
         for i, line in enumerate(ring, start):
             self.console.write(f"  {i:>4}  {line}", "info")
 
+    # Where typed keys would land right now. The socket adds "observing";
+    # the rest exist today.
+    STATE_STYLE = {
+        "usurping":     ("#4ec9b0", "#d4d4d4", ""),
+        "click to type": ("#3a3a3a", "#8a8a8a", "click to type"),
+        "blocked":      ("#5a4a2a", "#7a7060", "blocked"),
+        "observing":    ("#3a3a3a", "#7a7a7a", "observing"),
+    }
+
+    def input_state(self):
+        """Whether keys typed anywhere would reach this widget."""
+        app = QtWidgets.QApplication.instance()
+        if app is not None and app.activeModalWidget():
+            return "blocked", self._dialog_name()
+        if self.keyfilter.enabled:
+            return "usurping", ""
+        if self.console.hasFocus():
+            return "usurping", ""
+        return "click to type", ""
+
+    def _dialog_name(self):
+        try:
+            import FreeCADGui as Gui
+            dialog = Gui.Control.activeDialog()
+        except Exception:
+            dialog = None
+        return "task panel" if dialog else "dialog"
+
     def _paint_focus_state(self):
-        border = "#4ec9b0" if self.keyfilter.enabled else "#333"
+        state, detail = self.input_state()
+        border, text, label = self.STATE_STYLE.get(
+            state, self.STATE_STYLE["usurping"])
         self.console.setStyleSheet(
-            "QPlainTextEdit { background:#1e1e1e; color:#d4d4d4;"
+            f"QPlainTextEdit {{ background:#1e1e1e; color:{text};"
             " selection-background-color:#264f78;"
             f" border:1px solid {border}; }}"
         )
+        if label:
+            shown = f"{label}: {detail}" if detail else label
+            self.status.setText(shown)
+            self.status.setStyleSheet("color:#8a8a8a;")
+        elif self.engine.state == "idle":
+            self.status.setText("idle")
+            self.status.setStyleSheet("color:#808080;")
 
     # ------------------------------------------------------------- geometry
 
@@ -294,7 +331,11 @@ class CliDock(QtWidgets.QDockWidget):
     def activate(self):
         self.keyfilter.install()
         self.bridge.install()
+        app = QtWidgets.QApplication.instance()
+        if app is not None:
+            app.focusChanged.connect(lambda *_: self._paint_focus_state())
         self.console.setFocus(Qt.OtherFocusReason)
+        self._paint_focus_state()
 
     def closeEvent(self, ev):
         self.keyfilter.remove()

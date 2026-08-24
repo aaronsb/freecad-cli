@@ -171,6 +171,24 @@ nobody is mid-thought, and refuses when someone is.
 This is what makes the shared buffer safe. Without it, a shared buffer is a
 race; with it, it is a shared terminal.
 
+### Showing it
+
+The floor is worth nothing if you cannot see who has it. Every renderer
+shows its own input state, so the answer to "will my keys go there?" is
+visible without pressing one:
+
+| State | The dock | A terminal client |
+|---|---|---|
+| **usurping** — keys anywhere land here | live border, prompt lit | normal prompt |
+| **click to type** — usurping off, widget unfocused | dim border, dim prompt | n/a |
+| **observing** — another client holds the floor | greyed text, holder named in the strip | greyed prompt, holder named |
+| **blocked** — a modal dialog owns input | greyed, dialog named | refused, dialog named |
+
+Greyed is the honest rendering for observing and blocked alike: the line is
+still readable and still updating, and it is obvious that typing will go
+nowhere. The states above the socket line — usurping and click-to-type —
+exist today; observing arrives with the floor.
+
 ## Four decisions
 
 **Who owns the prompt.** Shared state, arbitrated by the floor. Everyone
@@ -193,6 +211,50 @@ half-open dialog.
 **Security.** 0600 in `XDG_RUNTIME_DIR`. Anyone who can read that socket can
 already read the user's files and attach a debugger to their FreeCAD, so the
 socket adds no new authority. Refuse to bind anywhere world-readable.
+
+## Many clients, one instance
+
+Two different axes, worth not conflating:
+
+- **Many clients → one FreeCAD.** The point of the socket. `QLocalServer`
+  accepts simultaneous connections natively; each gets its own
+  `QLocalSocket` and its own subscription to the bus. A person in an
+  interactive REPL, an agent firing one-shots, and a `history -f` watching
+  in a third pane are three clients on one engine.
+- **Many FreeCADs.** A separate concern, handled by socket-per-pid.
+
+The first is the interesting one and it should be provable rather than
+assumed. The acceptance test is concrete: attach three clients, have one
+watch, have the other two submit, and assert every client saw every message
+in the same order and the document has exactly the objects that were asked
+for.
+
+### One-shot mode
+
+An agent's client is not a REPL with the human removed — it wants different
+things, so it is a distinct mode:
+
+```bash
+fccli exec 'box 0,0,0 40 30 20'        # claim, submit, await result, release
+fccli exec --json 'circle 0,0,0 20'    # the typed message stream
+fccli exec --wait 30 'pad 12'          # queue up to 30s for the floor
+```
+
+- **Claims the floor only for the moment of execution**, then releases. It
+  never holds it while thinking, because it does not think.
+- **Exits on the result**, not on a prompt. A command that opens a getter
+  and waits for more input is an error in one-shot mode, reported as such
+  with the prompt text, rather than hanging.
+- **`--wait`** queues rather than failing when a human is mid-thought. An
+  agent can afford to wait; a script in a pipeline usually cannot, so the
+  default is to fail fast.
+- **No tty required.** Output is plain by default and structured under
+  `--json`.
+
+The floor rule — busy when the engine is collecting or the buffer is
+non-empty — is what makes this safe to run against a session someone is
+using. An agent's one-shot lands in the gaps, and refuses rather than
+interleaving into a half-typed command.
 
 ## Client surface
 
@@ -254,7 +316,9 @@ one modal state.
 3. **Server**: `QLocalServer`, handshake, `submit`/`cancel`/`state`,
    broadcast of the bus.
 4. **Client**: `exec`, `history`, stdin, exit codes. No REPL yet.
-5. **Follow mode** — `history -f`, `subscribe`.
+5. **Follow mode** — `history -f`, `subscribe`, and the three-client
+   acceptance test above. This is where the shared-instance claim gets
+   proved rather than asserted.
 6. **Completion and validation move server-side**, exposed as `complete`.
    The dock switches to asking rather than computing, which is the change
    that proves the shared answer is genuinely shared.
