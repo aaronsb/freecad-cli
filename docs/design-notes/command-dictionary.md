@@ -8,7 +8,7 @@ that knows names, labels and placement, a type registry that knows
 properties, and an object model where most operations are a task panel or
 a mode. The factory reads the two registries and produces a verb for every
 command and every parametric type, and that part is complete: 1111
-launchers, 213 typed verbs, 59 families, no command dropped. What it
+launchers, 206 typed verbs, 40 families, no command dropped. What it
 cannot produce is judgement — that `Mesh_PolySegm` should not own the word
 `segment`, that `Sketcher_CreateCircle` needs a sketch in edit mode, that
 `Std_TestQuestion` is a test hook.
@@ -35,9 +35,9 @@ layer at all: `patches/` is keyed by type, and a command that builds no
 type — most of them — has nowhere for a correction to go.
 
 "Which corner of FreeCAD is this" has four spellings: the descriptor's
-`workbench` (`PartWorkbench`), `completion.domain_of` (`Part`, sliced off
-the command name), a patch's `key` (`Part`), and a verbs entry's `module`
-(`PartDesign`). Nothing reconciles them, and the prompt work in
+`workbench` (`DraftWorkbench`), `completion.domain_of` (`Draft`, sliced
+off the command name), a patch's `key` (`Part`), and a descriptor `verbs`
+entry's `module` (`PartDesign`). Nothing reconciles them, and the prompt work in
 [state.md](state.md) needs one of them to be the answer.
 
 ## Constraints
@@ -105,7 +105,7 @@ An entry may carry:
 | `requires` | closed vocabulary — `document`, `body`, `sketch-edit`, `selection`, `selection:face`, … | the declared precondition, so a refusal can say why |
 | `panel` | `pick` — do not adopt the task panel | a panel whose substance is a viewport pick (task #2) |
 | `family`, `choice` | force into or out of a family, under what name | `zoom`, `view`; the `constrain` non-finding; `NOT_ACTIONS` |
-| `rank` | `registry` — sort last regardless of placement | `Std_TestQuestion` and its kin |
+| `rank` | `registry` — sort last regardless of placement | `Std_Test1`–`Std_Test5`, `Std_MDITest1`–`3` |
 
 An entry may not carry a label, a tooltip copy, a toolbar, a menu, a
 workbench, a panel's field list, or anything `isActive()` answers. The
@@ -147,9 +147,9 @@ new stamp. It is the diff PR #14 read by hand, as a subcommand.
 
 The harvested `workbench` field says which workbench *loads* a command.
 The operator's framing — certain tools must be used on certain workbenches
-— is a GUI habit rather than a FreeCAD rule: `_workbench_borrowed` already
-loads a workbench, runs the command from wherever the operator was, and
-hands the workbench back. Once loaded, a command runs from any workbench.
+— is a GUI habit rather than a FreeCAD rule: `not_yet_loaded` already
+activates the owning workbench, hands the operator's own back, and only
+then runs the command. Once loaded, a command runs from any workbench.
 
 What a command actually needs is a precondition: an active document, a
 Body, a sketch in edit mode, a selection of the right kind. The workbench
@@ -182,8 +182,9 @@ Whatever the dictionary says, it must answer these:
 - **`NOT_ACTIONS`.** A set of stems in `families.py` that are modules
   rather than actions. It becomes a `families.exclude` list in the `Std`
   patch, in the same file as the rest of the judgement.
-- **`Std_TestQuestion`.** Promoted by placement, useless at a prompt.
-  Entry: `rank: registry`.
+- **`Std_Test1`.** Registered, labelled "Test1", no toolbar or menu, and
+  useless at a prompt. It already ranks `registry` by placement, so an
+  entry for it fails rule 2. The test is that the lint rejects it.
 
 ## What it subsumes and what it leaves
 
