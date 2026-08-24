@@ -2,11 +2,11 @@
 
 """Application-level key usurping.
 
-195 of FreeCAD's 940 default shortcuts are unmodified keys, so claiming bare
-printables collides on purpose. Three rules keep the collision survivable:
-a focus guard so real editors keep their keys, step-aware digit routing so
-1-6 stay the standard views while nothing is running, and a passthrough
-allowlist for the rest.
+250 of the shortcuts in the descriptor use no modifier -- 197 two-key
+chords and 53 single bare keys -- so claiming bare printables collides on
+purpose. Three rules keep the collision survivable: a focus guard so real
+editors keep their keys, step-aware digit routing so 1-6 stay the standard
+views while nothing is running, and a passthrough allowlist for the rest.
 
 The digit rule and the passthrough rule are the same rule: a bare key
 belongs to FreeCAD while the command line is empty and idle, and to the

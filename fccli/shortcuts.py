@@ -2,7 +2,8 @@
 
 """FreeCAD's own key chords, offered as aliases.
 
-FreeCAD ships 940 shortcuts and 250 of them use unmodified keys. The Draft
+311 commands in the descriptor carry a shortcut and 250 of those use no
+modifier: 197 two-key chords and 53 single bare keys. The Draft
 and Arch two-letter chords -- A,X for an axis, C,I for a circle, B,U for a
 building -- are already a command language. A bad one: nothing lists them,
 nothing completes them, and none of them takes an argument. But they are in

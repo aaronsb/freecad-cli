@@ -47,6 +47,15 @@ class ActionBridge(QtCore.QObject):
         added = 0
         for act in mw.findChildren(QtGui.QAction):
             name = act.objectName()
+            # Never pruned, and it gates the skip. That is safe only
+            # because a Gui::Command is a session singleton in FreeCAD's
+            # CommandManager with its QAction parented to the main window,
+            # so a workbench switch rebuilds the toolbars around actions
+            # that persist -- the same fact _unflash relies on when it
+            # says the QToolButton is what dies. If FreeCAD ever destroys
+            # and recreates an action under the same objectName, the stale
+            # entry blocks reconnection and that command stops echoing,
+            # silently.
             if not name or name in self._connected:
                 continue
             act.triggered.connect(
@@ -119,7 +128,16 @@ class ActionBridge(QtCore.QObject):
             self.engine.submit(verb.name)
 
 
-def _unflash(widget, base):
+# Where a button's real stylesheet is kept for the duration of a flash.
+# Reading it back off the widget is what went wrong: a second flash inside
+# the first one's 350ms captured the already-flashed sheet as the thing to
+# restore, and left FreeCAD's toolbar button yellow until the workbench
+# reloaded. Two verbs can share a button, and fetching a workbench now
+# rebuilds the toolbars twice, so the window is real.
+FLASH_BASE = "_fccli_flash_base"
+
+
+def _unflash(widget):
     """Put the button back, unless it has gone.
 
     The flash outlives the command by 350ms, and a command can take the
@@ -129,7 +147,8 @@ def _unflash(widget, base):
     that worked.
     """
     try:
-        widget.setStyleSheet(base)
+        widget.setStyleSheet(widget.property(FLASH_BASE) or "")
+        widget.setProperty(FLASH_BASE, None)
     except RuntimeError:
         pass
 
@@ -147,7 +166,9 @@ def flash(command_name):
                 else act.associatedWidgets():
             if not isinstance(w, QtWidgets.QWidget):
                 continue
-            base = w.styleSheet()
-            w.setStyleSheet(base + "\nQToolButton { background: #dcdcaa; }")
-            QtCore.QTimer.singleShot(350, lambda w=w, b=base: _unflash(w, b))
+            if w.property(FLASH_BASE) is None:
+                w.setProperty(FLASH_BASE, w.styleSheet())
+            w.setStyleSheet(w.property(FLASH_BASE)
+                            + "\nQToolButton { background: #dcdcaa; }")
+            QtCore.QTimer.singleShot(350, lambda w=w: _unflash(w))
         return

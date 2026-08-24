@@ -21,88 +21,128 @@ def _is_point(value):
 _SNAPPER_READY = None
 
 
-def ensure_snapper():
-    """Bring ``Gui.Snapper`` into existence.
+def ensure_snapper(notify=None):
+    """Bring ``Gui.Snapper`` into existence, and say what Draft's grid will do.
 
     It is installed by Draft, not by the core GUI, so it is absent until
     something pulls Draft in. Importing DraftTools is the bootstrap Draft
     documents for exactly this. Done lazily on the first point step, so
     FreeCAD starts no slower for people who never pick.
+
+    The report sits out here rather than inside the bootstrap because the
+    bootstrap runs at most once and usually does nothing: anyone who opened
+    Draft or BIM before their first pick already has a Snapper, and those
+    are exactly the people who have grid preferences worth reporting on. It
+    kept its own counsel for everyone it was written for.
     """
     global _SNAPPER_READY
-    if _SNAPPER_READY is not None:
-        return _SNAPPER_READY
+    if _SNAPPER_READY is None:
+        _SNAPPER_READY = _bootstrap_snapper()
+    if _SNAPPER_READY:
+        report_grid(notify)
+    return _SNAPPER_READY
+
+
+def _bootstrap_snapper():
+    """Pull Draft in, once.
+
+    Draft's own `setTrackers` used to be called from here. It was dropped
+    as redundant -- `Snapper.snap` calls it itself, unconditionally -- and
+    that moves the build of nine Coin trackers plus `grid.set()` into the
+    first mouse-move callback of the first pick. On a large model that is
+    a visible hitch in the frame after the click. Weighed and accepted:
+    one frame inside the command the operator just started is cheaper than
+    a line of setup here that reads like the grid suppression coming back.
+    """
     if hasattr(Gui, "Snapper"):
-        _SNAPPER_READY = True
         return True
     try:
         import DraftTools  # noqa: F401
     except Exception as exc:
         App.Console.PrintWarning(f"[fccli] could not load Draft: {exc}\n")
-        _SNAPPER_READY = False
         return False
-    _SNAPPER_READY = hasattr(Gui, "Snapper")
-    if _SNAPPER_READY:
-        quiet_grid()
-    return _SNAPPER_READY
+    return hasattr(Gui, "Snapper")
 
 
-class _hushed:
-    """Draft's warnings, for as long as we are building Draft's furniture.
+_GRID_REPORTED = False
 
-    Creating the grid tracker makes Draft read its own gridSpacing
-    preference and, when that is 0 -- which it is on any FreeCAD where
-    nobody has set up a Draft grid -- print "Draft Grid: Spacing value is
-    zero" once per update, three times per bootstrap. The operator asked
-    for a circle. They did not ask for a grid, and the grid is not theirs
-    to be warned about.
 
-    Only around setTrackers, and put back afterwards even if it raises:
-    everything Draft has to say about what the operator did ask for still
-    reaches them.
+def report_grid(notify=None):
+    """Name Draft's zero-spacing grid once, and change nothing.
+
+    Draft's grid tracker reads the operator's own `alwaysShowGrid`, `grid`
+    and `gridSpacing`. At a spacing of 0 `gridTracker.update` empties both
+    line sets and returns, leaving the axes and the human figure on screen
+    with no grid between them, and prints "Draft Grid: Spacing value is
+    zero" once per update.
+
+    This used to turn the grid off and suppress those warnings, which read
+    the operator's preferences and overruled them -- see the settings
+    section of docs/conventions.md. The condition is reported instead.
+
+    The flag is tested last and set only when something was said, so a
+    spacing corrected mid-session is picked up: Draft carries a parameter
+    observer for that key precisely because it changes while a session
+    runs. Two preference reads per point step is nothing.
     """
-
-    def __enter__(self):
-        self.was = True
-        try:
-            self.was = App.Console.GetStatus("Console", "Wrn")
-            App.Console.SetStatus("Console", "Wrn", False)
-        except Exception:
-            pass
-        return self
-
-    def __exit__(self, *exc):
-        try:
-            App.Console.SetStatus("Console", "Wrn", self.was)
-        except Exception:
-            pass
-        return False
-
-
-def quiet_grid():
-    """Keep Draft's grid out of the scene.
-
-    Bootstrapping Draft creates its grid tracker, which is Draft workbench
-    furniture the command line never asked for. It also renders as a handful
-    of stray lines when the user's Draft gridSpacing preference is 0.
-    """
-    snapper = getattr(Gui, "Snapper", None)
-    if snapper is None:
+    global _GRID_REPORTED
+    if notify is None or _GRID_REPORTED:
         return
-    with _hushed():
-        try:
-            snapper.setTrackers()
-        except Exception:
-            pass
-        grid = getattr(snapper, "grid", None)
-        if grid is None:
-            return
-        try:
-            grid.show_always = False
-            grid.show_during_command = False
-            grid.off()
-        except Exception:
-            pass
+    if not _grid_will_draw() or _grid_spacing() != 0:
+        return
+    _GRID_REPORTED = True
+    notify("Draft's grid spacing is 0, so it draws no grid -- just its axes "
+           "and the human figure. Preferences -> Draft -> Grid and snapping.")
+
+
+def _draft_param(name):
+    """One Draft preference, read the way Draft reads it.
+
+    Through `draftutils.params`, whose types and defaults are parsed from
+    Draft's own preference pages, so a default this module never sees stays
+    correct for as long as the key resolves. Only ever called once Draft
+    has loaded.
+
+    `silent=True` because a key that does not resolve is not an exception
+    -- `get_param` prints and returns None, which no `except` here would
+    catch. Draft calls it unguarded once per new view; this runs once per
+    point prompt, and a twenty-point polyline would have put forty lines
+    of Draft's diagnostic into the console this module exists to keep
+    clear. None reads as falsy and nothing gets reported, which is right.
+    """
+    from draftutils import params
+    return params.get_param(name, silent=True)
+
+
+def _grid_will_draw():
+    """Whether Draft is about to draw the grid, as things stand.
+
+    `setTrackers` draws for `alwaysShowGrid` outright, and for `grid` only
+    while `App.activeDraftCommand` is set. Reporting on the second without
+    that check told people about a grid that was not going to appear.
+
+    The second disjunct cannot fire from any caller today: this is reached
+    only from a point step, and a point step never runs under a Draft
+    command -- the verbs that reach one through `runCommand` hand picking
+    to Draft's own snapper instead. It is here because it is the condition
+    `setTrackers` actually applies, so the answer stays right if that ever
+    changes. Nothing exercises it, and no test can until something does.
+    """
+    try:
+        if _draft_param("alwaysShowGrid"):
+            return True
+        return bool(_draft_param("grid")
+                    and getattr(App, "activeDraftCommand", None))
+    except Exception:
+        return False
+
+
+def _grid_spacing():
+    """Draft's grid spacing as a number, or None if it could not be read."""
+    try:
+        return App.Units.Quantity(_draft_param("gridSpacing")).Value
+    except Exception:
+        return None
 
 
 def _active_view():
@@ -197,7 +237,7 @@ class SnapPicker(_ViewPicker):
         self._snapping = True
 
     def start(self, callback, last=None) -> None:
-        if self._snapping and not ensure_snapper():
+        if self._snapping and not ensure_snapper(self.notify):
             self._snapping = False
             self.backend = "raw (fallback)"
             if self.notify:
@@ -213,7 +253,6 @@ class SnapPicker(_ViewPicker):
             if self.notify:
                 self.notify(f"snap failed ({exc}); using the raw point")
             point = None
-        quiet_grid()
         if point is not None:
             return App.Vector(point.x, point.y, point.z)
         return super().resolve(pos)
@@ -242,7 +281,6 @@ class SnapPicker(_ViewPicker):
             Gui.Snapper.off()
         except Exception:
             pass
-        quiet_grid()
 
 
 class GetPointPicker:
@@ -262,7 +300,7 @@ class GetPointPicker:
 
     def start(self, callback, last=None) -> None:
         self.stop()
-        if not ensure_snapper():
+        if not ensure_snapper(self.notify):
             return
         self._callback = callback
         self._active = True

@@ -1381,6 +1381,159 @@ def _run():
           _cmds["Std_ViewFront"].get("workbench"), None)
     check("  including Part_Box", _cmds["Part_Box"].get("workbench"), None)
 
+    print("\n5aa. FreeCAD's settings stay FreeCAD's")
+    # The picker used to turn Draft's grid off on every snap because the
+    # operator's gridSpacing was 0 -- while their alwaysShowGrid was on.
+    # Overruling a preference at runtime is the same imposition as
+    # rewriting it. The condition gets reported instead.
+    from fccli import picking as _pick
+
+    # Revert detectors, not behaviour: an inlined suppression leaves these
+    # green. Named so nobody counts them as coverage.
+    check("quiet_grid is not back by that name",
+          hasattr(_pick, "quiet_grid"), False)
+    check("  nor _hushed", hasattr(_pick, "_hushed"), False)
+
+    _was_draw, _was_space = _pick._grid_will_draw, _pick._grid_spacing
+    try:
+        def _report(will_draw, spacing, notify=True, fresh=True):
+            said = []
+            if fresh:
+                _pick._GRID_REPORTED = False
+            _pick._grid_will_draw = lambda: will_draw
+            _pick._grid_spacing = lambda: spacing
+            _pick.report_grid(said.append if notify else None)
+            return said
+        check("zero spacing on a grid that draws is reported",
+              len(_report(True, 0.0)), 1)
+        check("  and it names where to fix it",
+              "Preferences" in _report(True, 0.0)[0], True)
+        check("a working spacing says nothing", _report(True, 10.0), [])
+        check("a grid nobody shows says nothing", _report(False, 0.0), [])
+        check("an unreadable preference says nothing", _report(True, None), [])
+
+        # Once per session: three point steps must not print it three times.
+        _pick._GRID_REPORTED = False
+        said = []
+        _pick._grid_will_draw, _pick._grid_spacing = lambda: True, lambda: 0.0
+        for _ in range(3):
+            _pick.report_grid(said.append)
+        check("it is said once, not once per pick", len(said), 1)
+
+        # A call that had nowhere to say it must not count as having said
+        # it. bvt calls ensure_snapper() bare, and that used to silence the
+        # report for the rest of the process.
+        _pick._GRID_REPORTED = False
+        _report(True, 0.0, notify=False, fresh=False)
+        check("a call with no way to speak does not use up the one report",
+              len(_report(True, 0.0, fresh=False)), 1)
+
+        # Nothing to say yet is not the same as said. Draft carries a
+        # parameter observer for gridSpacing because it changes mid-session.
+        _pick._GRID_REPORTED = False
+        _report(True, 10.0, fresh=False)
+        check("a spacing corrected to zero later is still reported",
+              len(_report(True, 0.0, fresh=False)), 1)
+    finally:
+        _pick._grid_will_draw, _pick._grid_spacing = _was_draw, _was_space
+        _pick._GRID_REPORTED = False
+
+    # A workbench fetched to run a command is handed back. Driven against a
+    # stub, because the import is inside the function: what matters is the
+    # order, the no-op when it is already active, and that the restore
+    # happens when the body raises.
+    from fccli import panels as _panels
+
+    class _FakeWb:
+        def __init__(self, name): self._name = name
+        def name(self): return self._name
+
+    class _FakeGui:
+        def __init__(self, active, brings=None):
+            self.active, self.calls = active, []
+            # What each workbench registers when it is activated.
+            self.brings = brings or {}
+            self.commands = []
+        def activeWorkbench(self): return _FakeWb(self.active)
+        def listWorkbenches(self): return ["PartDesignWorkbench",
+                                           "BIMWorkbench"]
+        def listCommands(self): return list(self.commands)
+        def activateWorkbench(self, name):
+            self.active = name
+            self.calls.append(name)
+            self.commands += self.brings.get(name, [])
+
+    # Nothing inside this block may EXECUTE a module: an import that runs
+    # would bind the fake permanently, past the finally. An import
+    # statement that resolves from sys.modules is fine, and there is one
+    # -- not_yet_loaded does `from .factory import load_descriptor`.
+    # Importing fccli.panels does not pull fccli.factory in, so that would
+    # be a cold import here if nothing else had loaded it. Load it now, so
+    # the window holds by construction rather than by what ran before it.
+    import fccli.factory  # noqa: F401
+    _real_gui = sys.modules.get("FreeCADGui")
+    try:
+        gui = _FakeGui("PartDesignWorkbench")
+        sys.modules["FreeCADGui"] = gui
+        with _panels._workbench_borrowed("BIMWorkbench") as was:
+            inside = gui.active
+        check("the borrow activates what was asked for",
+              inside, "BIMWorkbench")
+        check("  and names what it displaced", was, "PartDesignWorkbench")
+        check("  and puts it back",
+              gui.calls, ["BIMWorkbench", "PartDesignWorkbench"])
+
+        gui = _FakeGui("BIMWorkbench")
+        sys.modules["FreeCADGui"] = gui
+        with _panels._workbench_borrowed("BIMWorkbench"):
+            pass
+        check("already there means no switch back",
+              gui.calls, ["BIMWorkbench"])
+
+        gui = _FakeGui("PartDesignWorkbench")
+        sys.modules["FreeCADGui"] = gui
+        try:
+            with _panels._workbench_borrowed("BIMWorkbench"):
+                raise RuntimeError("the command blew up")
+        except RuntimeError:
+            pass
+        check("a body that raises still gives the workbench back",
+              gui.calls, ["BIMWorkbench", "PartDesignWorkbench"])
+
+        # And the fetch says where it went. This is the whole user-visible
+        # half of the fix -- a fetch rebuilds the toolbars twice, and an
+        # unexplained double flicker is what it replaced.
+        def _fetch(active, brings, already=()):
+            said = []
+            g = _FakeGui(active, brings)
+            g.commands = list(already)
+            sys.modules["FreeCADGui"] = g
+            complaint = _panels.not_yet_loaded("Arch_Grid", said.append)
+            return said, complaint, g.calls
+        _brings = {"BIMWorkbench": ["Arch_Grid"]}
+        check("a fetch from elsewhere names both ends",
+              _fetch("PartDesignWorkbench", _brings)[0],
+              ["fetched Arch_Grid from BIMWorkbench, "
+               "back to PartDesignWorkbench"])
+        check("  a fetch from the same workbench has nowhere to go back to",
+              _fetch("BIMWorkbench", _brings)[0],
+              ["fetched Arch_Grid from BIMWorkbench"])
+        _said, _complaint, _calls = _fetch(
+            "PartDesignWorkbench", _brings, already=["Arch_Grid"])
+        check("a command already there is not fetched", _calls, [])
+        check("  and nothing is said about it", _said, [])
+        check("  and it does not complain", _complaint, None)
+        _said, _complaint, _calls = _fetch(
+            "PartDesignWorkbench", {"BIMWorkbench": []})
+        check("a fetch that does not produce the command complains",
+              bool(_complaint) and "BIMWorkbench" in _complaint, True)
+        check("  and claims no fetch it did not make", _said, [])
+    finally:
+        if _real_gui is not None:
+            sys.modules["FreeCADGui"] = _real_gui
+        else:
+            sys.modules.pop("FreeCADGui", None)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

@@ -100,11 +100,14 @@ added to the main window appears there automatically.
 type, not the symlink.
 
 **Draft's grid follows the Snapper in.** Bootstrapping Draft creates its
-grid tracker, which is workbench furniture the command line never asked
-for -- and it renders as a handful of stray lines across the model when the
-user's Draft `gridSpacing` preference is `0`. The picker now turns
-`show_always` and `show_during_command` off and hides it, rather than
-rewriting the preference.
+grid tracker, which reads `alwaysShowGrid`, `grid` and `gridSpacing` and
+renders as a handful of stray lines across the model when `gridSpacing` is
+`0`. The picker used to turn `show_always` and `show_during_command` off
+and hide it, on the grounds that it was not rewriting the preference -- but
+`alwaysShowGrid` was on, Draft honoured it, and the picker switched it back
+off for the rest of the session. Overruling a preference is the same
+imposition as rewriting one. It now reports the zero-spacing condition on
+the command line once and leaves the grid alone.
 
 **History recorded fragments, not commands.** Each typed line went into the
 ring, so a polyline built over four Enters left `polyline`, `0,0,0`,
