@@ -404,6 +404,95 @@ def suite_modals(dock):
     dock.engine.submit("close!")
 
 
+def suite_panel(dock):
+    """A task panel, offered as steps and finished from the command line.
+
+    Tier 0 runs Std_TransformManip and leaves the panel to a mouse. This
+    reads what it is asking for, offers it as prompts, writes the answers
+    back and presses the panel's own button. Nothing is written per
+    command: the panel names its own fields.
+    """
+    print("\n7c. a task panel answers on the command line")
+    from fccli import panels
+
+    dock.engine.submit("new panel")
+    doc = App.ActiveDocument
+    slab = doc.addObject("Part::Box", "Slab")
+    slab.Length, slab.Width, slab.Height = 100, 60, 20
+    doc.recompute()
+
+    def select():
+        Gui.Selection.clearSelection()
+        Gui.Selection.addSelection(doc.Name, "Slab")
+        for _ in range(6):
+            QtWidgets.QApplication.processEvents()
+
+    def settle(n=25):
+        for _ in range(n):
+            QtWidgets.QApplication.processEvents()
+
+    def skip_to(target):
+        for _ in range(14):
+            step = dock.engine.current_step()
+            if step is None or step.id == target:
+                return step
+            dock.engine.submit("")
+            settle(4)
+        return dock.engine.current_step()
+
+    select()
+    dock.engine.submit("transform")
+    settle()
+
+    truthy("the panel opened", panels.is_open())
+    check("and the engine is collecting", dock.engine.state, "collecting")
+    ids = [s.id for s in dock.engine.prompt_sequence()]
+    truthy("its fields became steps", len(ids) >= 8)
+    truthy("  named as the panel names them", "xPositionSpinBox" in ids)
+    truthy("  read in the order it reads",
+           ids.index("xPositionSpinBox") < ids.index("zRotationSpinBox"))
+    step = dock.engine.current_step()
+    truthy("a prompt carries the panel's own value",
+           step is not None and "[" in step.prompt)
+
+    # Answering is typing into the panel, so FreeCAD's parser runs -- which
+    # is why a fraction of an inch needs nothing from this module.
+    skip_to("xPositionSpinBox")
+    dock.engine.submit("25 mm")
+    settle(8)
+    skip_to("zPositionSpinBox")
+    dock.engine.submit("3/4 in")
+    settle(8)
+    dock.engine.submit("done")
+    settle(30)
+
+    check("what was typed is what moved",
+          [round(v, 3) for v in slab.Placement.Base], [25.0, 0.0, 19.05])
+    check("the panel closed itself", panels.is_open(), False)
+    check("and the engine is idle", dock.engine.state, "idle")
+    no_dialog("nothing is waiting for a click")
+
+    # Cancelling cancels the panel, and FreeCAD puts back what it applied.
+    was = [round(v, 3) for v in slab.Placement.Base]
+    select()
+    dock.engine.submit("transform")
+    settle()
+    truthy("it opens again", panels.is_open())
+    skip_to("yPositionSpinBox")
+    dock.engine.submit("40 mm")
+    settle(10)
+    truthy("a panel applies as it is written, before any commit",
+           round(slab.Placement.Base.y, 3) == 40.0)
+    dock.engine.cancel()
+    settle(30)
+    check("cancelling puts it back",
+          [round(v, 3) for v in slab.Placement.Base], was)
+    check("  and takes the panel with it", panels.is_open(), False)
+    check("  leaving the engine idle", dock.engine.state, "idle")
+
+    dock.engine.submit("close!")
+
+
 def suite_roundtrip(dock):
     print("\n8. save, close and reopen, with no dialogs")
     path = os.path.join(tempfile.gettempdir(), "fccli-bvt-doc.FCStd")
@@ -504,6 +593,7 @@ def run():
         suite_units(dock)
         suite_check(dock, doc)
         suite_modals(dock)
+        suite_panel(dock)
         suite_roundtrip(dock)
         suite_shutdown(dock)
     except Exception:

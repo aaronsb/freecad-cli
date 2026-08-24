@@ -10,6 +10,7 @@ A grammar that handles these handles a hundred.
 
 import FreeCAD as App
 
+from . import bus as _bus
 from .grammar import CHOICE, POINT, QUANTITY, SELECTION, Option, Step, Verb, REGISTRY
 
 
@@ -176,5 +177,77 @@ REGISTRY.add(Verb(
     doc="Place a single point.",
     steps=[Step("at", POINT, "Point location")],
     emit=_emit_point,
+))
+
+
+# ------------------------------------------------------- a panel, driven
+
+def _open_panel(command):
+    """Run the command, and ask whatever panel it opens what it wants.
+
+    Tier 0 runs the command and leaves the panel to a mouse. This reads it
+    and offers its parameters on the command line instead. If nothing
+    opens, or nothing in what opened is readable, the command has already
+    run and there is nothing left to ask.
+    """
+    def start(engine):
+        from . import panels
+        import FreeCADGui as Gui
+        Gui.runCommand(command)
+        panels._pump(25)
+        if not panels.is_open():
+            return None
+        found = panels.fields()
+        if not found:
+            engine.bus.emit(_bus.INFO,
+                            "the panel offers nothing this can type into "
+                            "-- it is open for the mouse")
+            return None
+        engine.flags["panel"] = True
+        return panels.steps_from(found)
+    return start
+
+
+def _abort_panel(engine):
+    """Cancelling the command cancels the panel, and FreeCAD puts it back.
+
+    A panel applies as each field is written, so by the time somebody
+    cancels, the model has already moved. Pressing the panel's own Cancel
+    is what undoes it -- which is why this verb opens no transaction.
+    """
+    from . import panels
+    if engine.flags.get("panel") and panels.is_open():
+        panels.dismiss()
+
+
+def _emit_panel(v):
+    from . import panels
+    engine = v.get("_engine")
+    if not v["_flags"].get("panel"):
+        return None             # no panel opened; the command has run
+    # The steps wrote as they were answered; this only finishes it.
+    pressed = panels.commit()
+    if pressed is None:
+        panels.dismiss()
+        raise RuntimeError("the panel offered no way to finish -- cancelled")
+    if panels.is_open():
+        # Part_Primitives creates repeatedly and closes separately.
+        panels.press(*panels.DISMISS)
+    if engine is not None:
+        engine.bus.emit(_bus.INFO, f"{pressed} -- panel closed")
+    _refresh_view()
+    return None
+
+
+REGISTRY.add(Verb(
+    name="transform", gui_command="Std_TransformManip", aliases=["xf"],
+    doc="Move and rotate the selection, through FreeCAD's own Transform panel.",
+    steps=[],
+    open=_open_panel("Std_TransformManip"),
+    emit=_emit_panel,
+    abort=_abort_panel,
+    # The panel keeps its own undo and puts everything back on Cancel, so
+    # a transaction wrapped around this one would nest inside that.
+    transactional=False,
 ))
 from . import shell  # noqa: F401,E402  -- registers the shell builtins

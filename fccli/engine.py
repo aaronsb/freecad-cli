@@ -113,6 +113,9 @@ class Engine:
         self.step_index = 0
         self.done: set = set()
         self.values: Dict[str, Any] = {}
+        # Steps for this invocation, when the verb only learned them by
+        # starting. None means the verb's own declared steps stand.
+        self.steps: Optional[List[Step]] = None
         self.replay: List[str] = []
         # Which replay tokens came from the viewport rather than the
         # keyboard. A command driven half by mouse can then hand back the
@@ -134,7 +137,8 @@ class Engine:
         """
         if self.verb is None:
             return []
-        return sorted(self.verb.steps, key=order_of)
+        return sorted(self.steps if self.steps is not None else self.verb.steps,
+                      key=order_of)
 
     def pending(self) -> List[Step]:
         """Steps still to fill, in prompt order."""
@@ -210,6 +214,7 @@ class Engine:
         if self.state == IDLE:
             return
         name = self.verb.name if self.verb else "?"
+        self._abort_verb()
         self._stop_picking()
         self._reset()
         self.bus.emit(_bus.INFO, f"{name} cancelled")
@@ -243,10 +248,24 @@ class Engine:
         self.step_index = 0
         self.done = set()
         self.values = {}
+        self.steps = None
         self.flags = {"force": force}
         self.replay = [self.verb.name + ("!" if force else "")]
         self.picked = []
         self._emit_live()
+        if self.verb.open is not None:
+            # A verb that finds out what to ask for by starting. A task
+            # panel names its own parameters, and which it shows depends on
+            # what has been chosen in it, so there is nothing to declare.
+            try:
+                found = self.verb.open(self)
+            except Exception as exc:
+                self._reset()
+                self.bus.emit(_bus.ERROR, f"{token}: {exc}")
+                self._announce()
+                return
+            if found:
+                self.steps = list(found)
         while rest and self.state == COLLECTING:
             step = self.current_step()
             if step is not None and step.raw:
@@ -258,10 +277,15 @@ class Engine:
             # "circle 0,0,0 20" and "circle 20 0,0,0" both work and a
             # remembered line replays whatever order it was typed in.
             self._feed_text(token, step=self._step_for_token(token))
-        if self.state == COLLECTING and self._only_optional_left():
+        if (self.state == COLLECTING and self.steps is None
+                and self._only_optional_left()):
             # Nothing required remains, so the command is already complete.
             # "save", "new" and "help" run on Enter rather than stopping to
             # prompt for an argument the caller chose not to give.
+            #
+            # Not for steps a verb found by starting. Every field a panel
+            # offers is optional -- ten parameters, and a command usually
+            # means two -- so this would commit the panel unread.
             self._finish()
             return
         self._announce()
@@ -376,6 +400,7 @@ class Engine:
         if len(hits) != 1:
             return False
         self.bus.emit(_bus.INFO, f"{self.verb.name} cancelled")
+        self._abort_verb()
         self._stop_picking()
         self._reset()
         self._start(text)
@@ -391,6 +416,10 @@ class Engine:
             self.values[step.id] = value
             self.done.add(step.id)
         self.replay.append(typed)
+        if step.on_accept is not None:
+            complaint = step.on_accept(self, step, value)
+            if complaint:
+                self.bus.emit(_bus.ERROR, complaint)
         self._emit_live()
         if not self.pending():
             self._finish()
@@ -501,12 +530,27 @@ class Engine:
         self.bus.emit(_bus.LIVE, " ".join(self.replay),
                       picked=list(self.picked))
 
+    def _abort_verb(self) -> None:
+        """Let a verb undo what starting it set up.
+
+        A panel left on screen holding half a command is worse than one
+        that was never opened, and the operator has already said stop.
+        """
+        verb = self.verb
+        if verb is None or verb.abort is None:
+            return
+        try:
+            verb.abort(self)
+        except Exception as exc:
+            self.bus.emit(_bus.ERROR, f"{verb.name}: {exc}")
+
     def _reset(self) -> None:
         self.state = IDLE
         self.verb = None
         self.step_index = 0
         self.done = set()
         self.values = {}
+        self.steps = None
         self.replay = []
         self.picked = []
         self.flags = {}
