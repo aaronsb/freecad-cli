@@ -79,6 +79,8 @@ class Engine:
         # keyboard. A command driven half by mouse can then hand back the
         # half you typed, and complete the rest from history.
         self.picked: List[int] = []
+        # What Enter on an empty prompt would repeat.
+        self.repeat_hint: Optional[str] = None
         self.flags: Dict[str, Any] = {}
 
     # ---------------------------------------------------------------- query
@@ -144,6 +146,11 @@ class Engine:
         if self.state == IDLE:
             if text:
                 self._start(text)
+            elif self.repeat_hint:
+                # Enter on an empty prompt repeats the last command, the way
+                # it does in Rhino and AutoCAD. With points asked for last,
+                # that is the placement loop: click, Enter, click again.
+                self._start(self.repeat_hint)
             return
         if not text:
             self._terminate_step()
@@ -358,6 +365,9 @@ class Engine:
         typed = self.typed_prefix(self.replay, picked)
         self._stop_picking()
         self._reset()
+        # Repeat the typed half, so the next one is placed with a fresh
+        # click rather than landing on top of the last.
+        self.repeat_hint = typed or replay
         if self.dry:
             self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
                           object=None, dry=True, creates=verb.creates,

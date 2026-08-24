@@ -547,6 +547,41 @@ def main():
           (40.0, 30.0, 20.0))
     engine.submit("close!")
 
+    print("\n5j. Enter on an empty prompt repeats; Tab shows recent")
+    from fccli.completion import candidates as _c2
+    _units.set_schema("Internal")
+    engine.submit("new repeatdoc")
+    session.history.entries[:] = []
+    session.history.typed.clear()
+
+    empty = _c2(engine, "", history=session.history)[2]
+    check("Tab on an empty line is not the whole registry", len(empty) < 40,
+          True)
+
+    engine.submit("circle diameter 10")
+    engine.feed_point(App.Vector(15, 30, 0))
+    recent = _c2(engine, "", history=session.history)[2]
+    check("Tab then offers what was just run",
+          recent[0], "circle diameter 10.00mm")
+
+    # Enter with nothing typed repeats -- the CAD convention, and with
+    # points asked for last it is the placement loop.
+    engine.submit("")
+    check("it repeats the typed half", engine.verb.name, "circle")
+    check("  and waits for a click", engine.current_step().kind, "point")
+    engine.feed_point(App.Vector(-40, 5, 0))
+    check("so a second lands where the second click was",
+          [tuple(o.Placement.Base) for o in App.ActiveDocument.Objects],
+          [(15.0, 30.0, 0.0), (-40.0, 5.0, 0.0)])
+
+    # A fully typed command repeats verbatim; there is nothing to place.
+    engine.submit("box 0,0,0 40 30 20")
+    before = len(App.ActiveDocument.Objects)
+    engine.submit("")
+    check("a fully typed command repeats as it was",
+          len(App.ActiveDocument.Objects), before + 1)
+    engine.submit("close!")
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

@@ -56,6 +56,17 @@ def candidates(engine, text, history=None):
         unit = preferred("angle" if step.unit == "deg" else "length")
         return head, tail, [tail + unit]
 
+    # Tab on an empty line. Shells answer this by listing every executable
+    # on PATH, which is so noisy they prompt first; here it would be 1250
+    # entries starting with 1_front. Recent commands are what someone
+    # actually wants at an empty prompt, and there is no convention being
+    # broken -- Tab has never meant history anywhere.
+    if not head and not tail:
+        recent = recent_commands(history)
+        if recent:
+            return head, tail, recent
+        return head, tail, sorted(_starter_verbs(engine))
+
     # The first token is a verb; everything after a space is an argument.
     # So verb names complete only at the start of a line, or at a step that
     # declares its value is a command -- man, alias, check.
@@ -87,6 +98,37 @@ def candidates(engine, text, history=None):
         if remembered:
             hits = [remembered]
     return head, tail, hits
+
+
+RECENT_LIMIT = 12
+
+
+def recent_commands(history, limit=RECENT_LIMIT):
+    """The last few distinct commands, newest first."""
+    if history is None:
+        return []
+    seen, out = set(), []
+    for line in reversed(history.tail(200)):
+        recalled = history.recall(line)
+        if recalled in seen:
+            continue
+        seen.add(recalled)
+        out.append(recalled)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _starter_verbs(engine):
+    """With no history, the verbs somebody wrote by hand -- the ones that
+    pick points, and the ones that manage a document."""
+    names = []
+    for name in engine.registry.names():
+        verb = engine.registry.get(name)
+        module = getattr(verb.emit, "__module__", "")
+        if module.endswith((".verbs", ".shell")):
+            names.append(name)
+    return names or engine.registry.names()[:RECENT_LIMIT]
 
 
 def _default_source(step):

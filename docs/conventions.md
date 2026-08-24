@@ -13,6 +13,7 @@ over the socket.
 | A unique **prefix** runs | `pol` + Enter is `polyline`. Tab is for discovery; prefix is for speed. |
 | Bare **Enter** finishes a repeating step | `polyline` takes points until you stop. |
 | **Esc** / **Ctrl+C** cancels | The command, not the session. |
+| **Enter** on an empty prompt repeats | The last command, minus anything a click supplied — so it waits for a fresh one. Rhino and AutoCAD do the same. |
 | A verb typed **mid-command** restarts | Only when the token cannot be read as input for the open step, so `c` stays `Close` inside `polyline`. |
 
 ## Arguments
@@ -95,6 +96,10 @@ Each carries exactly one meaning.
 - **Editing it makes it yours.** The underline goes, and Enter runs what is
   written.
 - **Tab walks a remembered command out**, one argument per press.
+- **Tab on an empty line offers recent commands.** Shells answer that key by
+  listing every executable on `PATH` — noisy enough that they prompt first —
+  and here it would be 1250 entries beginning `1_front`. Tab has never meant
+  history anywhere, so nothing is being broken by making it useful.
 
 ## Completion
 
