@@ -60,7 +60,7 @@ class Step:
     # then, so the model moves as the command is answered rather than all
     # at once at the end -- which is what a panel does for a mouse, and
     # what makes cancelling it mean something. Returns a complaint, or None.
-    on_accept: Optional[Callable[[Any, "Step", Any], Optional[str]]] = None
+    on_accept: Optional[Callable[[Any, "Step", Any, Any], Optional[str]]] = None
 
     def option_names(self) -> List[str]:
         return [o.name for o in self.options]

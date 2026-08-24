@@ -56,14 +56,19 @@ def _resolve_names(text):
         return []
 
 
-def _open_transaction(verb, label):
+def _open_transaction(verb, label, panel=False):
     """One typed line, one undo step.
 
     Objects created outside a transaction never reach the undo stack, and
     UndoMode is off by default on a document nobody has told otherwise, so
     both are set here rather than left to each emitter.
+
+    A panel keeps its own undo and puts everything back on Cancel, so one
+    wrapped around it would nest -- but only when a panel actually opened.
+    Declaring every command verb non-transactional to cover that took undo
+    grouping away from the 970 of them that open nothing.
     """
-    if not verb.transactional:
+    if not verb.transactional or panel:
         return None
     import FreeCAD as App
     doc = App.ActiveDocument
@@ -253,10 +258,14 @@ class Engine:
         self.replay = [self.verb.name + ("!" if force else "")]
         self.picked = []
         self._emit_live()
-        if self.verb.open is not None:
+        if self.verb.open is not None and not self.dry:
             # A verb that finds out what to ask for by starting. A task
             # panel names its own parameters, and which it shows depends on
             # what has been chosen in it, so there is nothing to declare.
+            # Not under `check`. open() runs the command, so checking one
+            # would move the model, print "nothing was run", and leave a
+            # task dialog registered -- which blocks every panel command
+            # after it. `check` reports on the verb it can see instead.
             name = self.verb.name
             try:
                 # Armed here as well as around emit. open() is where a
@@ -432,8 +441,8 @@ class Engine:
             self.values[step.id] = value
             self.done.add(step.id)
         self.replay.append(typed)
-        if step.on_accept is not None:
-            complaint = step.on_accept(self, step, value)
+        if step.on_accept is not None and not self.dry:
+            complaint = step.on_accept(self, step, value, typed)
             if complaint:
                 self.bus.emit(_bus.ERROR, complaint)
         self._emit_live()
@@ -499,7 +508,7 @@ class Engine:
                           typed=typed)
             self._announce()
             return
-        doc = _open_transaction(verb, replay)
+        doc = _open_transaction(verb, replay, panel=flags.get("panel"))
         try:
             with modals.intercepted(force=flags.get("force")) as caught:
                 obj = verb.emit({**values, "_flags": flags, "_engine": self})

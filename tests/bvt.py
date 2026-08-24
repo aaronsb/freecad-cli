@@ -567,6 +567,27 @@ def suite_panel(dock):
     check("  and takes the panel with it", panels.is_open(), False)
     check("  leaving the engine idle", dock.engine.state, "idle")
 
+    # `check` runs nothing. open() is where a command runs now, so without
+    # a guard `check transform` moved the object, printed "nothing was
+    # run", and left a task dialog registered -- which blocks every panel
+    # command after it.
+    was = [round(v, 3) for v in slab.Placement.Base]
+    said = []
+    stop2 = dock.bus.subscribe(
+        lambda m: said.append(m.text) if m.kind == "info" else None)
+    Gui.Selection.clearSelection()
+    Gui.Selection.addSelection(doc.Name, "Slab")
+    settle(6)
+    dock.engine.submit("check transform")
+    settle(25)
+    check("check opens no panel", panels.is_open(), False)
+    check("  and leaves nothing registered for FreeCAD",
+          bool(Gui.Control.activeDialog()), False)
+    check("  and moves nothing",
+          [round(v, 3) for v in slab.Placement.Base], was)
+    check("  and the engine is idle after it", dock.engine.state, "idle")
+    stop2()
+
     dock.engine.submit("close!")
 
 

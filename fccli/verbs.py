@@ -10,7 +10,6 @@ A grammar that handles these handles a hundred.
 
 import FreeCAD as App
 
-from . import bus as _bus
 from .grammar import CHOICE, POINT, QUANTITY, SELECTION, Option, Step, Verb, REGISTRY
 
 
@@ -189,8 +188,6 @@ REGISTRY.add(Verb(
     open=_open_panel("Std_TransformManip"),
     emit=_emit_panel,
     abort=_abort_panel,
-    # The panel keeps its own undo and puts everything back on Cancel, so
-    # a transaction wrapped around this one would nest inside that.
-    transactional=False,
+
 ))
 from . import shell  # noqa: F401,E402  -- registers the shell builtins

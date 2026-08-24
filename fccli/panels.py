@@ -119,6 +119,31 @@ class Field:
             return [w.itemText(i) for i in range(w.count())]
         return []
 
+    def unit(self):
+        """What this field measures, read off what it is showing.
+
+        A rotation reads "0.00\u00b0" and a length "1.00 mm". Without this
+        every panel quantity took Step's default of mm, so a bare number at
+        a rotation prompt was parsed as a length -- and under an imperial
+        schema `25` at an angle became 635.
+        """
+        text = (self.read() or "").strip()
+        if not text:
+            return ""
+        if "\u00b0" in text or "deg" in text.lower():
+            return "deg"
+        tail = ""
+        for ch in reversed(text):
+            if ch.isalpha() or ch == "'" or ch == '"':
+                tail = ch + tail
+            elif tail:
+                break
+            elif ch in " \t":
+                continue
+            else:
+                break
+        return tail or ""
+
     def read(self):
         w = self.widget
         try:
@@ -313,7 +338,6 @@ def prompt_for(name):
 
 
 def _done(engine):
-    engine.flags["panel_done"] = True
     return True         # the verb is finished
 
 
@@ -331,10 +355,13 @@ def _writer(name):
     a whole page of fields, and the widget found when the command started
     may no longer be the one on show.
     """
-    def write(engine, step, value):
+    def write(engine, step, value, typed=None):
         for field in fields():
             if field.name == name:
-                return field.write(value)
+                # What was typed, not what it parsed to. The panel's own
+                # parser is the one that should read it -- that is why
+                # "3/4 in" works without this module knowing about inches.
+                return field.write(typed if typed is not None else value)
         return f"{prompt_for(name)} is no longer on the panel"
     return write
 
@@ -365,6 +392,7 @@ def steps_from(found):
             options=[DONE],
             optional=True,
             prompt_order=index,
+            unit=field.unit() if kind == QUANTITY else "",
             on_accept=_writer(field.name),
         ))
     return steps

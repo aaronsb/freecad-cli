@@ -174,10 +174,7 @@ def build_command_verb(command):
                 emit=_emit_panel,
                 abort=_abort_panel,
                 doc=command.get("tooltip") or label,
-                gui_command=name, generated=True,
-                # A panel keeps its own undo and puts everything back on
-                # Cancel. A transaction wrapped around one would nest.
-                transactional=False)
+                gui_command=name, generated=True)
 
 
 def _claimed(registry, name):
