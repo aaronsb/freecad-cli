@@ -1365,6 +1365,22 @@ def _run():
     check("something that is not an assignment says so",
           _split("justaword"), ([], "justaword"))
 
+    print("\n5z. a command a workbench has not brought yet")
+    # The descriptor is harvested with every workbench activated, so it
+    # knows about commands a running FreeCAD has not registered. `grid` is
+    # Arch_Grid, and Arch commands come with BIM -- which the command's own
+    # name does not say, so the descriptor has to.
+    _cmds = _load_desc()["commands"]
+    _owned = [n for n, v in _cmds.items() if v.get("workbench")]
+    check("commands say which workbench brings them", len(_owned) > 300, True)
+    check("  Arch_Grid comes with BIM",
+          _cmds["Arch_Grid"]["workbench"], "BIMWorkbench")
+    check("  and a Draft command says Draft, not whatever loaded first",
+          _cmds["Draft_Line"]["workbench"], "DraftWorkbench")
+    check("what is there from the start claims no workbench",
+          _cmds["Std_ViewFront"].get("workbench"), None)
+    check("  including Part_Box", _cmds["Part_Box"].get("workbench"), None)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

@@ -119,6 +119,21 @@ class ActionBridge(QtCore.QObject):
             self.engine.submit(verb.name)
 
 
+def _unflash(widget, base):
+    """Put the button back, unless it has gone.
+
+    The flash outlives the command by 350ms, and a command can take the
+    button with it: `grid` loads BIM, which tears down the toolbars the
+    flash is pending on, and the timer then wrote a stylesheet onto a
+    deleted QToolButton. Two tracebacks in the report view for a command
+    that worked.
+    """
+    try:
+        widget.setStyleSheet(base)
+    except RuntimeError:
+        pass
+
+
 def flash(command_name):
     """Reverse direction: highlight the toolbar button a CLI verb maps to."""
     import FreeCADGui as Gui
@@ -134,5 +149,5 @@ def flash(command_name):
                 continue
             base = w.styleSheet()
             w.setStyleSheet(base + "\nQToolButton { background: #dcdcaa; }")
-            QtCore.QTimer.singleShot(350, lambda w=w, b=base: w.setStyleSheet(b))
+            QtCore.QTimer.singleShot(350, lambda w=w, b=base: _unflash(w, b))
         return

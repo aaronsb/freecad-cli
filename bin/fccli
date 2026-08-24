@@ -579,7 +579,10 @@ def cmd_cancel(client, args):
     if args.json:
         print(json.dumps(reply))
     elif reply.get("kind") == "cancelled":
-        print("cancelled")
+        what = reply.get("what")
+        print("cancelled" if what in (None, "command")
+              else "closed the open panel" if what == "panel"
+              else "nothing to cancel")
     else:
         print("nothing to cancel")
     return EX_OK

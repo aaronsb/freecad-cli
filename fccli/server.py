@@ -170,6 +170,21 @@ class Server(QtCore.QObject):
             pass
         return None
 
+    def _close_panel(self):
+        """Shut whatever task panel is open, whoever opened it.
+
+        Only from an explicit cancel: somebody asked to be got out of it.
+        """
+        try:
+            import FreeCADGui as Gui
+            if not Gui.Control.activeDialog():
+                return False
+            from . import panels
+            panels.dismiss()
+            return not Gui.Control.activeDialog()
+        except Exception:
+            return False
+
     def _dispatch(self, info, request):
         op = request.get("op")
         who = info["name"]
@@ -225,8 +240,18 @@ class Server(QtCore.QObject):
             return {"kind": "released"}
 
         if op == "cancel":
-            session.engine.cancel()
-            return {"kind": "cancelled"}
+            # Escape, from outside. If a command of ours is part-way
+            # through, that is what stops. Otherwise a task panel is what
+            # stands between this socket and every other command -- an
+            # interactive Draft tool started from here leaves one, and
+            # `cancel` cancelled our idle engine and left the panel, so
+            # the only way out was reaching for the keyboard.
+            if session.engine.state != "idle" or session.engine.driving:
+                session.engine.cancel()
+                return {"kind": "cancelled", "what": "command"}
+            closed = self._close_panel()
+            return {"kind": "cancelled",
+                    "what": "panel" if closed else "nothing"}
 
         if op == "submit":
             busy = self._busy()

@@ -47,6 +47,38 @@ def ensure_snapper():
     return _SNAPPER_READY
 
 
+class _hushed:
+    """Draft's warnings, for as long as we are building Draft's furniture.
+
+    Creating the grid tracker makes Draft read its own gridSpacing
+    preference and, when that is 0 -- which it is on any FreeCAD where
+    nobody has set up a Draft grid -- print "Draft Grid: Spacing value is
+    zero" once per update, three times per bootstrap. The operator asked
+    for a circle. They did not ask for a grid, and the grid is not theirs
+    to be warned about.
+
+    Only around setTrackers, and put back afterwards even if it raises:
+    everything Draft has to say about what the operator did ask for still
+    reaches them.
+    """
+
+    def __enter__(self):
+        self.was = True
+        try:
+            self.was = App.Console.GetStatus("Console", "Wrn")
+            App.Console.SetStatus("Console", "Wrn", False)
+        except Exception:
+            pass
+        return self
+
+    def __exit__(self, *exc):
+        try:
+            App.Console.SetStatus("Console", "Wrn", self.was)
+        except Exception:
+            pass
+        return False
+
+
 def quiet_grid():
     """Keep Draft's grid out of the scene.
 
@@ -57,19 +89,20 @@ def quiet_grid():
     snapper = getattr(Gui, "Snapper", None)
     if snapper is None:
         return
-    try:
-        snapper.setTrackers()
-    except Exception:
-        pass
-    grid = getattr(snapper, "grid", None)
-    if grid is None:
-        return
-    try:
-        grid.show_always = False
-        grid.show_during_command = False
-        grid.off()
-    except Exception:
-        pass
+    with _hushed():
+        try:
+            snapper.setTrackers()
+        except Exception:
+            pass
+        grid = getattr(snapper, "grid", None)
+        if grid is None:
+            return
+        try:
+            grid.show_always = False
+            grid.show_during_command = False
+            grid.off()
+        except Exception:
+            pass
 
 
 def _active_view():
