@@ -20,7 +20,7 @@ _What the verbs are — descriptor, harvest, factory tiers, families, patches, t
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [ADR-100](./vocabulary/ADR-100-the-command-dictionary.md) | The command dictionary | Proposed |
+| [ADR-100](./vocabulary/ADR-100-the-command-dictionary.md) | The command dictionary | Accepted |
 
 ## Practice
 _How the project is built and checked — test tiers, review, release, reconcile, records_
@@ -34,5 +34,5 @@ _Cross-cutting — the layer model, the root the terminal navigates, anything sp
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [ADR-600](./system/ADR-600-the-layer-model.md) | The layer model | Proposed |
-| [ADR-601](./system/ADR-601-a-root-the-terminal-navigates.md) | A root the terminal navigates | Proposed |
+| [ADR-600](./system/ADR-600-the-layer-model.md) | The layer model | Accepted |
+| [ADR-601](./system/ADR-601-a-root-the-terminal-navigates.md) | A root the terminal navigates | Accepted |
