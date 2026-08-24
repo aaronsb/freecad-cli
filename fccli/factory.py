@@ -188,6 +188,79 @@ def _claimed(registry, name):
     return sitting is not None and not getattr(sitting, "generated", False)
 
 
+def _by_prominence(commands):
+    """Commands in the order they should get to claim a short name.
+
+    Two commands whose labels slug the same both want the plain name, and
+    whoever is registered first takes it. Left to the descriptor's own
+    order that is alphabetical, which decides by accident: `compound` went
+    to CAM_Compound over Part_Compound, and `material` to Arch_Material
+    over the BIM_Material that sits in a toolbar, because C sorts before P
+    and A before B.
+
+    FreeCAD already says which of the two it considers the front door, by
+    putting one in a toolbar or a menu and leaving the other reachable
+    only from code. That is the same signal curation.py ranks completions
+    by. Sorting on it first costs nothing and settles every one of these
+    the way a person would: in all twenty cases the command that loses a
+    contested name under alphabetical order is the one FreeCAD surfaces.
+
+    Stable within a rank, so the descriptor's sorted order still decides
+    genuine ties and the result does not move between regenerations.
+    """
+    return sorted(commands,
+                  key=lambda c: (c.get("toolbar") is None,
+                                 c.get("menu") is None))
+
+
+def _qualify_command(verb, command, registry):
+    """Re-home a command verb whose name another command already took.
+
+    Two commands whose labels slug the same are ordinary -- Sketcher and
+    Draft both have a Grid, Sketcher and Std both have a Copy. The loser
+    used to be dropped without a word, which cost 90 commands their verb
+    before this function existed and would have cost 43 more when the
+    harvest started reading real labels for commands with no QAction:
+    `Sketcher_Grid` had been reachable as `sketcher_grid` precisely
+    because it had no label to collide with.
+
+    So the loser keeps the prefix its command name already carries, which
+    is the name it had. Whoever wins the short name is decided by the
+    descriptor's own order -- arbitrary, but stable, and the other one is
+    reachable either way.
+
+    Three-way collisions are real: Sketcher_CreateSlot wants `slot`, which
+    CAM_Slot has, and then `sketcher_slot`, which Sketcher_CompSlot has.
+    The command's own name is unique by construction, so slugging that is
+    the fallback and there is always one left. Nothing is dropped.
+    """
+    for candidate in _candidate_names(verb.name, command):
+        if registry.get(candidate) is None:
+            verb.name = candidate
+            registry.add(verb)
+            return candidate
+    return None
+
+
+def _candidate_names(name, command):
+    """Names to try for a command verb, least qualified first.
+
+    The last resort counts, because even the command's own slug can be
+    taken: Sketcher_Dimension wants `dimension`, then `sketcher_dimension`
+    -- which is where Sketcher_CompDimensionTools already landed by this
+    same route. A suffix is ugly and it is reachable, which beats the
+    command having no verb at all.
+    """
+    stem = command.split("_", 1)[0].lower() if "_" in command else ""
+    if stem:
+        yield f"{stem}_{name}"
+    full = _slug(command)
+    if full != name:
+        yield full
+    for n in range(2, 10):
+        yield f"{full}_{n}"
+
+
 def _qualify(verb, tid, registry):
     """Re-home a generated verb whose name a patch is taking."""
     if not tid:
@@ -278,11 +351,16 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
                for n, l in descriptor.get("links", {}).items()}
 
     if tier0:
-        for command in descriptor["commands"].values():
+        for command in _by_prominence(descriptor["commands"].values()):
             verb = build_command_verb(command)
             if registry.get(verb.name) is None:
                 registry.add(verb)
                 counts["tier0"] += 1
+            elif _qualify_command(verb, command["name"], registry):
+                counts["tier0"] += 1
+                counts["qualified"] = counts.get("qualified", 0) + 1
+            else:
+                counts["unreachable"] = counts.get("unreachable", 0) + 1
 
     # Two passes. A patch may rename a verb onto a name the generator
     # already produced from another type -- Part::Box patched to "cube"

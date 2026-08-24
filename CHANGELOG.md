@@ -4,6 +4,46 @@
 
 ### Fixed
 
+- **148 commands get their real names and documentation.** The harvest read
+  everything off QActions, and 147 registered commands have none -- they are
+  runnable and appear in no toolbar and no menu. They reached the descriptor
+  carrying only a name, which slugged into verbs like `arch_multimaterial`
+  whose entire documentation was the string `Arch_MultiMaterial`. FreeCAD
+  had their menuText and toolTip the whole time behind
+  `Gui.Command.get(name).getInfo()`, which `harvest_commands.py` asserted
+  did not exist. `multi_material` is now "Creates or edits multi-materials",
+  `nest` is "Nests a series of selected shapes in a container". Each field
+  now picks its own source rather than the whole entry riding on whether a
+  QAction exists -- `Std_WindowsMenu` has one whose text is empty, and it
+  stayed bare one branch away from the fix.
+- **909 tooltips were the command's own name glued to a sentence.**
+  `act.toolTip()` is rich text in three blocks and `clean()` ran them
+  together, so `Part_Box` documented itself as
+  `CubeCreates a solid cubePart_Box` -- and that string is what `man`
+  printed. The tooltip now comes from `getInfo`, which is the plain
+  sentence, falling back to the action's statusTip and then to the rich
+  text with the trailing name taken off.
+- **The descriptor no longer names the machine that built it.** TechDraw's
+  `PatIncluded`, `SvgIncluded` and `SymbolIncluded` defaults pointed at a
+  copy FreeCAD had made inside the transient document's cache directory --
+  24 absolute paths through a home directory, carrying a per-document UUID
+  that changed on every regeneration, into a directory deleted with the
+  document. `make descriptor` is now byte-identical across runs.
+- **A contested short name goes to the command FreeCAD surfaces.** Two
+  commands whose labels slug the same both want the plain name and the
+  first registered took it, which alphabetical order decided by accident:
+  `compound` went to CAM_Compound over Part_Compound, `material` to
+  Arch_Material over the BIM_Material sitting in a toolbar. Twenty names
+  moved that way, every one off a command with a toolbar or menu entry and
+  onto one reachable only from code. Registration is now ordered by that
+  presence, which is the same signal `curation.py` ranks completions by,
+  and the descriptor's sorted order still breaks genuine ties.
+- **A command whose verb name is taken is no longer dropped in silence.**
+  Two commands whose labels slug the same are ordinary. The loser used to
+  vanish -- 90 commands before this, and 133 once labels got better and
+  more of them wanted the same short names. It now keeps the prefix its
+  command name already carries, falling back to the command's own slug and
+  then a suffix, so every one of the 1111 commands has a verb.
 - **Draft's grid is left as the operator configured it.** The picker turned
   `show_always` and `show_during_command` off and hid the grid on every
   Draft bootstrap, every snap and every teardown, on the grounds that
@@ -28,6 +68,14 @@
   one's 350ms saved the flashed state as the real one and left FreeCAD's
   button yellow until the workbench reloaded. The base is parked in a
   widget property and taken back once.
+
+### Changed
+
+- **`constrain` is a command verb rather than a family.** Sketcher's
+  CompConstrainTools carries the label "Constrain" and now claims the name.
+  Its 21 constraint commands stay individually reachable. Whether a family
+  should outrank a generated command verb is a real question -- it would
+  move about thirty names -- and is not settled here.
 
 ## 0.3.0 -- 2026-08-23
 

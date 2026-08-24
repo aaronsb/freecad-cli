@@ -103,10 +103,37 @@ def describe(obj, prop):
     try:
         value = getattr(obj, prop)
         if isinstance(value, (bool, int, float, str)):
-            entry["default"] = value
+            default = _portable(value) if isinstance(value, str) else value
+            if default is not None:
+                entry["default"] = default
     except Exception:
         pass
     return entry
+
+
+# FreeCAD copies a template into the transient document's own cache
+# directory and reports the copy's path as the property default --
+# TechDraw's PatIncluded, SvgIncluded and SymbolIncluded do this. The path
+# carries a per-document UUID, so it changed on every regeneration and the
+# descriptor diff carried the churn; it named the harvesting operator's
+# home directory in a file this project ships; and it points inside a
+# directory that goes away with the document, so it was a dangling path
+# for every reader.
+#
+# Matched on the UUID marker rather than on the cache location or on HOME.
+# The first version tested both and neither held up: the cache directory is
+# `FreeCAD/v1-1/Cache` and App.Version() gives `1-1`, so that clause never
+# fired at all, and the HOME clause it was left leaning on is an unanchored
+# substring -- with HOME=/ or HOME unset, which is ordinary in a container,
+# every absolute default in the descriptor would have been discarded in
+# silence, including the three real TechDraw template paths under
+# /usr/share. This marker is the thing that is actually per-document.
+TRANSIENT = "FreeCAD_Doc_"
+
+
+def _portable(value):
+    """A string default worth recording, or None if it is this run's."""
+    return None if TRANSIENT in value else value
 
 
 def main():
