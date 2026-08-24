@@ -35,6 +35,25 @@ def sh(cmd, **kw):
     return subprocess.run(cmd, capture_output=True, text=True, **kw)
 
 
+def stock_only(env, workdir):
+    """Harvest what FreeCAD ships, not what this machine has installed.
+
+    FreeCAD reads addons from XDG_DATA_HOME as well as its own Mod
+    directory, so the descriptor recorded whatever the person generating it
+    happened to have. The shipped file carried CurvedShapes and a FreeCAD
+    MCP addon -- both in default toolbars, so both PROMOTED for every user
+    -- and an FCCLI_ entry, this addon having harvested itself. Once the
+    descriptor drives ranking and what `man` cites, that is somebody else's
+    workbench in everyone's output.
+
+    Neither harvester needs fccli installed: properties.py imports nothing
+    and harvest_types puts the repo on sys.path itself.
+    """
+    empty = os.path.join(workdir, "no-addons")
+    os.makedirs(empty, exist_ok=True)
+    return dict(env, XDG_DATA_HOME=empty)
+
+
 # ------------------------------------------------------------ pass A: types
 
 def read_jsonl(path):
@@ -77,7 +96,8 @@ def harvest_types(workdir, verbose):
     path = os.path.join(workdir, "types.jsonl")
     skip, crashers = [], []
     for attempt in range(MAX_RESTARTS):
-        env = dict(os.environ, FCCLI_OUT=path, FCCLI_SKIP=",".join(skip))
+        env = stock_only(dict(os.environ, FCCLI_OUT=path,
+                              FCCLI_SKIP=",".join(skip)), workdir)
         proc = sh(["freecadcmd", os.path.join(HERE, "harvest_types.py")], env=env)
         records, claimed, done = read_jsonl(path)
         if done:
@@ -102,7 +122,7 @@ def harvest_types(workdir, verbose):
 
 def harvest_commands(workdir, verbose):
     path = os.path.join(workdir, "commands.json")
-    env = dict(os.environ, FCCLI_OUT=path)
+    env = stock_only(dict(os.environ, FCCLI_OUT=path), workdir)
     # harvest_commands activates every workbench to read its QActions, so
     # this is a full GUI. Two ways it used to land on the operator's screen:
     # falling back to their DISPLAY whenever one was set, and -- once that
