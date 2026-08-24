@@ -290,7 +290,7 @@ def _emit_shortcuts(v):
         engine.bus.emit(_bus.INFO, text, role=role)
 
     what = (v.get("what") or "list").strip().lower()
-    mine = _user_aliases()
+    mine, imported = _read_aliases()
     from .factory import load_descriptor
     accepted, rejected = _shortcuts.proposals(
         REGISTRY, load_descriptor(), mine)
@@ -313,7 +313,7 @@ def _emit_shortcuts(v):
         return None
 
     if what == "import":
-        added = 0
+        fresh = []
         for alias, name in accepted.items():
             verb = REGISTRY.get(name)
             if verb is None or alias in verb.aliases:
@@ -321,26 +321,29 @@ def _emit_shortcuts(v):
             verb.aliases.append(alias)
             REGISTRY.add(verb)
             mine[alias] = name
-            added += 1
+            imported.add(alias)
+            fresh.append(alias)
         REGISTRY.reindex()
-        _save_aliases(mine)
-        say(f"imported {added} chords -- ax, ci, bu and the rest now type")
+        _save_aliases(mine, imported)
+        shown = ", ".join(sorted(fresh)[:3])
+        say(f"imported {len(fresh)} chords"
+            + (f" -- {shown} and the rest now type" if fresh else ""))
         return None
 
     if what == "drop":
-        _, _ = accepted, rejected
         dropped = 0
-        for alias in list(mine):
-            if _shortcuts.chord_to_alias(alias.upper()) != alias:
+        for alias in sorted(imported):
+            if alias not in mine:
                 continue
             verb = REGISTRY.get(mine[alias])
             if verb is not None and alias in verb.aliases:
                 verb.aliases.remove(alias)
-                dropped += 1
             mine.pop(alias, None)
+            dropped += 1
         REGISTRY.reindex()
-        _save_aliases(mine)
-        say(f"dropped {dropped} imported chords")
+        _save_aliases(mine, set())
+        say(f"dropped {dropped} imported chords"
+            + ("" if dropped else " -- nothing was imported"))
         return None
 
     raise RuntimeError(f"shortcuts takes list, why, import or drop")
@@ -838,33 +841,54 @@ def load_aliases():
     return count
 
 
-def _save_aliases(pairs):
+# What `shortcuts import` wrote, marked so `shortcuts drop` can find it
+# again. Without it drop had to guess, and its guess -- "does this look
+# like a key chord" -- is true of any alias of two or more letters, so it
+# deleted everything the operator had ever written.
+CHORD_MARK = "\t# chord"
+
+
+def _save_aliases(pairs, imported=()):
+    imported = set(imported)
     try:
         _paths.ensure(ALIAS_PATH)
         with open(ALIAS_PATH, "w", encoding="utf-8") as fh:
             fh.write("# fccli aliases -- <name>=<command>\n")
             for name, target in sorted(pairs.items()):
-                fh.write(f"{name}={target}\n")
+                mark = CHORD_MARK if name in imported else ""
+                fh.write(f"{name}={target}{mark}\n")
     except OSError:
         pass
 
 
-def _user_aliases():
-    """Everything in the alias file, as name -> command."""
-    pairs = {}
+def _read_aliases():
+    """The alias file, as (name -> command, names `shortcuts import` wrote)."""
+    pairs, imported = {}, set()
     try:
         with open(_paths.readable(ALIAS_PATH, "aliases"),
                   encoding="utf-8") as fh:
             for line in fh:
+                line = line.rstrip("\n")
+                marked = line.endswith(CHORD_MARK)
+                if marked:
+                    line = line[:-len(CHORD_MARK)]
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
                 name, _, target = line.partition("=")
-                if name.strip() and target.strip():
-                    pairs[name.strip()] = target.strip()
+                name, target = name.strip(), target.strip()
+                if name and target:
+                    pairs[name] = target
+                    if marked:
+                        imported.add(name)
     except OSError:
         pass
-    return pairs
+    return pairs, imported
+
+
+def _user_aliases():
+    """Everything in the alias file, as name -> command."""
+    return _read_aliases()[0]
 
 
 def _emit_alias(v):
@@ -875,7 +899,7 @@ def _emit_alias(v):
     """
     engine = v.get("_engine")
     name, target = v.get("name"), v.get("command")
-    pairs = _user_aliases()
+    pairs, imported = _read_aliases()
     if not name:
         if engine is None:
             return None
@@ -899,21 +923,23 @@ def _emit_alias(v):
         verb.aliases.append(name)
         REGISTRY.add(verb)
     pairs[name] = verb.name
-    _save_aliases(pairs)
+    # Writing one by hand makes it the operator's, whatever import called
+    # it before. Everyone else's mark survives.
+    _save_aliases(pairs, imported - {name})
     _say(v, f"{name} -> {verb.name}")
     return None
 
 
 def _emit_unalias(v):
     name = v["name"]
-    pairs = _user_aliases()
+    pairs, imported = _read_aliases()
     if name not in pairs:
         raise RuntimeError(f"no alias {name}")
     verb = REGISTRY.get(pairs[name])
     if verb is not None and name in verb.aliases:
         verb.aliases.remove(name)
     del pairs[name]
-    _save_aliases(pairs)
+    _save_aliases(pairs, imported - {name})
     REGISTRY.reindex()
     _say(v, f"removed {name}")
     return None

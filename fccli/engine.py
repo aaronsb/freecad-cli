@@ -364,6 +364,14 @@ class Engine:
             # `constrain coincident` and `additive helix`.
             if any(c.lower().startswith(token) for c in step.choices):
                 return False
+        if step.kind == SELECTION and _resolve_names(text):
+            # An object that exists is input, and FreeCAD's default labels
+            # are the verb names: Box, Cylinder, Sphere, Cone, Line, Circle,
+            # Point. Typing `Box` at move's selection step cancelled move
+            # and started the box verb asking for a Length, which made
+            # _resolve_names unreachable for exactly the labels FreeCAD
+            # hands out.
+            return False
         hits = self.registry.resolve_prefix(token)
         if len(hits) != 1:
             return False

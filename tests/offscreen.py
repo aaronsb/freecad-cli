@@ -54,6 +54,14 @@ from fccli import paths as _paths_mod  # noqa: E402
 # machine it ran on. 0252fba stopped the suites writing there; this is the
 # reading half.
 _paths_mod.LEGACY = tempfile.mkdtemp(prefix="fccli-no-legacy-")
+
+# 5v drives `shortcuts import` through the engine, which writes every
+# accepted chord to ALIAS_PATH -- the operator's real alias file, since
+# make test sets no XDG_DATA_HOME. It ends by dropping them again, so the
+# file survived by luck; a failure between the two left 161 aliases behind.
+from fccli import shell as _shell_mod  # noqa: E402
+_shell_mod.ALIAS_PATH = os.path.join(
+    tempfile.mkdtemp(prefix="fccli-aliases-"), "aliases")
 from fccli.keyfilter import KeyFilter  # noqa: E402
 from fccli.widget import Console  # noqa: E402
 import fccli.verbs  # noqa: E402,F401
@@ -1026,6 +1034,42 @@ def main():
     check("the pairs that would have been hijacked are many",
           _hijacked > 100, True)
 
+    # SELECTION was the other one it forgot, and FreeCAD's default labels
+    # are the verb names: Box, Cylinder, Sphere, Cone, Line, Circle, Point.
+    # Typing `Box` at move's selection step cancelled move and started the
+    # box verb asking for a Length, which made _resolve_names unreachable
+    # for exactly the labels FreeCAD hands out.
+    _seldoc = App.newDocument("restartsel")
+    _seldoc.addObject("Part::Box", "Box")
+    _seldoc.recompute()
+    _sel = []
+    _stops = bus.subscribe(
+        lambda m: _sel.append(m.text) if m.kind == "info" else None)
+    engine.cancel()
+    engine.submit("move")
+    engine.submit("Box")
+    check("an object's own label fills the selection step",
+          engine.state, "collecting")
+    check("  the command is still move", engine.verb.name, "move")
+    check("  and the object landed",
+          [o.Name for o in engine.values.get("objects", [])], ["Box"])
+    check("  nothing was cancelled",
+          any("cancelled" in ln for ln in _sel), False)
+
+    # A verb name that is not an object in the document still restarts.
+    _sel.clear()
+    engine.submit("cancel") if False else engine.cancel()
+    _sel.clear()
+    engine.submit("move")
+    engine.submit("cylinder")
+    check("a name no object answers to still restarts",
+          any("cancelled" in ln for ln in _sel), True)
+    check("  and the new verb is the one that started",
+          engine.verb.name, "cylinder")
+    engine.cancel()
+    _stops()
+    App.closeDocument(_seldoc.Name)
+
     print("\n5v. FreeCAD's key chords, offered as aliases")
     from fccli import shortcuts as _short
     check("a two-key chord becomes a word", _short.chord_to_alias("A, X"), "ax")
@@ -1050,17 +1094,55 @@ def main():
           all(REGISTRY.get(v) is not None for v in _accepted2.values()), True)
     check("there are chords worth importing", len(_accepted2) > 100, True)
 
+    # drop used to decide what to remove by asking whether an alias looked
+    # like a key chord. Every alias of two or more letters does, so it
+    # deleted the operator's own -- with nothing ever imported. The file
+    # records who wrote each one instead.
+    from fccli import shell as _shell
+    _alias_saved = _shell.ALIAS_PATH
+    _shell.ALIAS_PATH = os.path.join(tempfile.mkdtemp(), "aliases")
+    try:
+        _shell._save_aliases({"sq": "box", "zzz": "circle", "ax": "circle"},
+                             imported={"ax"})
+        _pairs, _imported = _shell._read_aliases()
+        check("what import wrote is marked", _imported, {"ax"})
+        check("  and what the operator wrote is not",
+              sorted(set(_pairs) - _imported), ["sq", "zzz"])
+        check("every alias still reads back",
+              sorted(_pairs), ["ax", "sq", "zzz"])
+        check("the mark never leaks into the command",
+              _pairs["ax"], "circle")
+        # A chord the operator redefines by hand becomes theirs.
+        _shell._save_aliases(_pairs, _imported - {"ax"})
+        check("redefining one by hand clears its mark",
+              _shell._read_aliases()[1], set())
+    finally:
+        _shell.ALIAS_PATH = _alias_saved
+
     _out2 = []
     _stop2 = bus.subscribe(
         lambda m: _out2.append(m.text) if m.kind == "info" else None)
+    # A hand-written alias, in the file drop reads -- `ci` is declared on
+    # the circle verb in fccli/verbs.py, so it never reaches the alias file
+    # and drop never considered it. The check passed either way.
+    engine.submit("alias sq box")
+    check("a hand-written alias resolves", REGISTRY.resolve_prefix("sq"),
+          ["box"])
     engine.submit("shortcuts import")
     check("import gives ax to the axis verb",
           REGISTRY.resolve_prefix("ax"), ["axis"])
+    check("  and marks it as its own",
+          "ax" in _shell_mod._read_aliases()[1], True)
+    check("  leaving the hand-written one unmarked",
+          "sq" in _shell_mod._read_aliases()[1], False)
     engine.submit("shortcuts drop")
     check("drop takes it back again",
           "ax" in REGISTRY.get("axis").aliases, False)
     check("  without disturbing a hand-written alias",
-          REGISTRY.resolve_prefix("ci"), ["circle"])
+          REGISTRY.resolve_prefix("sq"), ["box"])
+    check("  which is still in the file",
+          _shell_mod._read_aliases()[0].get("sq"), "box")
+    engine.submit("unalias sq")
     _stop2()
 
     print("\n5w. a selection is not a point")

@@ -101,7 +101,9 @@ def main():
     if code == 0:
         print("socket: a FreeCAD is already running, and the suite would be "
               "testing the session someone is using. Clear it with:\n"
-              "    bin/fccli exec 'quit!'\n"
+              "    bin/fccli cancel && bin/fccli exec 'quit!'\n"
+              "(cancel first: a session part-way through a command reads "
+              "quit! as input for the step it is waiting on)\n"
               "An aborted run leaves one behind, so this is often its own "
               "leftover rather than yours.", file=sys.stderr)
         print(out, file=sys.stderr)
@@ -186,6 +188,25 @@ def main():
                    "cancelled" in err.lower())
         code, out, _ = fccli("state")
         truthy("the instance is still idle afterwards", "engine    idle" in out)
+
+        print("\n4c. a session part-way through a command can be cleared")
+        # Every line goes to the step being collected, so `exec quit!` was
+        # answered with "still wants The radius" and an instance mid-command
+        # could not be shut down from outside at all. The server has always
+        # had a cancel op; nothing offered it.
+        code, out, err = fccli("exec", "cylinder")
+        check("an incomplete command leaves the engine collecting", code, 1)
+        code, out, _ = fccli("state")
+        truthy("  and state says so", "engine    collecting" in out)
+        code, out, _ = fccli("exec", "quit!")
+        code, out, _ = fccli("state")
+        truthy("quit! is read as input for the open step, not as a command",
+               "engine    collecting" in out)
+        code, out, _ = fccli("cancel")
+        check("cancel exits clean", code, 0)
+        truthy("  and says what it did", "cancelled" in out)
+        code, out, _ = fccli("state")
+        truthy("the engine is idle again", "engine    idle" in out)
 
         print("\n5. check never mutates")
         fccli("exec", "cancel") if False else None
