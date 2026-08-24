@@ -784,6 +784,12 @@ def _emit_man(v):
     # wiki's page names are answered as verb names beside what FreeCAD
     # put on the same toolbar.
     from_page = []
+    if getattr(verb, "script", None) and not getattr(verb, "manual", ""):
+        # A script's note is the .md beside it.
+        note = os.path.splitext(verb.script)[0] + ".md"
+        if os.path.exists(note):
+            with open(note, encoding="utf-8") as fh:
+                verb.manual = fh.read().strip()
     if getattr(verb, "manual", ""):
         say("DESCRIPTION", "head")
         holding = False
@@ -804,6 +810,9 @@ def _emit_man(v):
         say("    " + ", ".join(verb.requires))
 
     curated = _curation.current()
+    if getattr(verb, "script", None):
+        say("SCRIPT", "head")
+        say(f"    {verb.script}")
     if verb.gui_command:
         say("GUI", "head")
         say(f"    {verb.gui_command}")
@@ -1182,6 +1191,41 @@ def _emit_cat(v):
         _say(v, f"({target}: cut at {_root.LIMIT} characters)")
     return None
 
+
+def _emit_run(v):
+    """A script or macro by path, arguments inline."""
+    from . import scripts as _scripts
+    engine = v.get("_engine")
+    session = _session(v)
+    cwd = session.cwd if session else "/"
+    args = (v.get("args") or "").split()
+    return _scripts.run_path(engine, cwd, v.get("path") or "", args)
+
+
+def _emit_rehash(v):
+    """Read /bin again: a script added since startup becomes a verb."""
+    from . import scripts as _scripts
+    added, notes = _scripts.register(REGISTRY)
+    for note in notes:
+        _say(v, note)
+    _say(v, f"{len(added)} scripts in bin: {', '.join(added) or 'none'}")
+    return None
+
+
+REGISTRY.add(Verb(
+    name="run", transactional=False,
+    doc="Run a script (.fccli) or macro (.FCMacro) by path, arguments inline.",
+    steps=[Step("path", TEXT, "Script", completes="paths"),
+           Step("args", TEXT, "Arguments", optional=True, raw=True)],
+    emit=_emit_run,
+))
+
+REGISTRY.add(Verb(
+    name="rehash", transactional=False, record=False,
+    doc="Read bin/ again, so a new script is a verb.",
+    steps=[],
+    emit=_emit_rehash,
+))
 
 REGISTRY.add(Verb(
     name="cd", transactional=False, record=False,

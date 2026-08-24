@@ -2219,6 +2219,113 @@ def _run():
             os.environ["XDG_DATA_HOME"] = _xdg_was
         import shutil as _sh3; _sh3.rmtree(_xdg, ignore_errors=True)
 
+    print("\n5ag. a script is lines the parser already accepts, run as one verb")
+    # ADR-601. A .fccli in bin/ is a verb by file name with the arguments
+    # its frontmatter declares; elsewhere it runs by path with them inline.
+    # The call is one history line; the lines inside are not recorded; the
+    # first error or unanswered prompt stops it.
+    from fccli import scripts as _scripts
+    _xdg_was = os.environ.get("XDG_DATA_HOME")
+    _xdg = tempfile.mkdtemp(prefix="fccli-scripts-")
+    os.environ["XDG_DATA_HOME"] = _xdg
+    try:
+        _root.layout()
+        _r = _root.root()
+        with open(os.path.join(_r, "bin", "plinth.fccli"), "w") as _fh:
+            _fh.write("---\ndoc: A plinth.\nsteps:\n"
+                      "  - {id: size, kind: quantity, prompt: Size, unit: mm}\n"
+                      "  - {id: height, kind: quantity, prompt: Height, unit: mm, default: 5}\n"
+                      "---\n# the plinth\nnew\nbox 0,0,0 $size $size $height   # a slab\n")
+        with open(os.path.join(_r, "bin", "plinth.md"), "w") as _fh:
+            _fh.write("A square slab, size by height.\n")
+        _added, _notes = _scripts.register(REGISTRY)
+        check("a script in bin is a verb by file name",
+              (_added, _notes, REGISTRY.get("plinth").steps[0].id), (["plinth"], [], "size"))
+        from fccli.session import Session as _Session
+        _sbus = Bus(); _sseen = []
+        _sbus.subscribe(_sseen.append)
+        _seng = Engine(_sbus, REGISTRY)
+        _ssess = _Session(_seng, _sbus, history=_History(os.path.join(_xdg, "h")))
+        _ssess.submit("plinth 30")
+        _results = [m for m in _sseen if m.kind == RESULT]
+        check("  it runs its lines and the call is the one recorded result",
+              ([m.data.get("verb") for m in _results],
+               [m.data.get("record") for m in _results]),
+              (["new", "box", "plinth"], [False, False, True]))
+        check("  the argument reached the line as typed text",
+              round(float(App.ActiveDocument.Objects[-1].Length), 3), 30.0)
+        check("  the default filled the other",
+              round(float(App.ActiveDocument.Objects[-1].Height), 3), 5.0)
+        check("  history holds the call and not the lines",
+              [h for h in _ssess.history.tail(5) if "plinth" in h or "box 0,0,0 30" in h],
+              ["plinth 30.00mm"])
+        check("  and the engine is idle after", (_seng.state, _seng.suppress_record), ("idle", 0))
+        # A bad line stops it, before what follows.
+        with open(os.path.join(_r, "bin", "broken.fccli"), "w") as _fh:
+            _fh.write("no_such_verb_xyz\nbox 0,0,0 1 1 1\n")
+        _scripts.register(REGISTRY)
+        _sseen.clear(); _before = len(App.ActiveDocument.Objects)
+        _ssess.submit("broken")
+        check("  the first error stops a script",
+              ([m.text for m in _sseen if m.kind == ERROR][-1].startswith("broken failed: broken stopped at line 1"),
+               len(App.ActiveDocument.Objects)), (True, _before))
+        with open(os.path.join(_r, "bin", "waits.fccli"), "w") as _fh:
+            _fh.write("circle\nbox 0,0,0 1 1 1\n")
+        _scripts.register(REGISTRY)
+        _sseen.clear()
+        _ssess.submit("waits")
+        check("  a line that still wants input stops it and cancels",
+              ("still wants" in [m.text for m in _sseen if m.kind == ERROR][-1], _seng.state),
+              (True, "idle"))
+        # By path, arguments inline; and the ./ sugar.
+        os.makedirs(os.path.join(_r, "plinth"))
+        with open(os.path.join(_r, "plinth", "tower.fccli"), "w") as _fh:
+            _fh.write("---\nsteps:\n  - {id: size, kind: quantity, unit: mm}\n---\n"
+                      "box 0,0,0 $size $size 50\n")
+        _sseen.clear(); _ssess.submit("run plinth/tower.fccli 12")
+        check("  run by path with the argument inline",
+              ([m.text for m in _sseen if m.kind == ERROR],
+               round(float(App.ActiveDocument.Objects[-1].Length), 3)), ([], 12.0))
+        check("  and it left no verb behind", REGISTRY.get("tower"), None)
+        _sseen.clear(); _ssess.submit("run plinth/tower.fccli")
+        check("  by path without its argument is an error, not a prompt",
+              ("wants" in [m.text for m in _sseen if m.kind == ERROR][-1], _seng.state),
+              (True, "idle"))
+        _ssess.submit("cd plinth"); _sseen.clear(); _ssess.submit("./tower.fccli 7")
+        check("  ./tower is run tower",
+              ([m.text for m in _sseen if m.kind == ERROR],
+               round(float(App.ActiveDocument.Objects[-1].Length), 3)), ([], 7.0))
+        # A macro is FreeCAD's tier.
+        with open(os.path.join(_r, "plinth", "hello.FCMacro"), "w") as _fh:
+            _fh.write("import FreeCAD\nFreeCAD.fccli_probe = 'ran'\n")
+        _sseen.clear(); _ssess.submit("run hello.FCMacro")
+        check("  a macro runs as Python",
+              ([m.text for m in _sseen if m.kind == ERROR], getattr(App, "fccli_probe", None)),
+              ([], "ran"))
+        # rehash, and man.
+        with open(os.path.join(_r, "bin", "gadget.fccli"), "w") as _fh:
+            _fh.write("pwd\n")
+        with open(os.path.join(_r, "bin", "new.fccli"), "w") as _fh:
+            _fh.write("pwd\n")
+        _sseen.clear(); _ssess.submit("rehash")
+        check("  rehash adds a new script and refuses a taken name",
+              (REGISTRY.get("gadget") is not None,
+               getattr(REGISTRY.get("new"), "script", None),
+               any("new is taken" in m.text for m in _sseen)), (True, None, True))
+        _sseen.clear(); _ssess.submit("man plinth")
+        _mt = [m.text for m in _sseen if m.kind == _INFO]
+        check("  man on a script shows its note and its path",
+              ("DESCRIPTION" in _mt, any("A square slab" in t for t in _mt),
+               "SCRIPT" in _mt), (True, True, True))
+    finally:
+        for _n in ("plinth", "broken", "waits", "gadget"):
+            REGISTRY.remove(_n)
+        if _xdg_was is None:
+            os.environ.pop("XDG_DATA_HOME", None)
+        else:
+            os.environ["XDG_DATA_HOME"] = _xdg_was
+        import shutil as _sh4; _sh4.rmtree(_xdg, ignore_errors=True)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])
