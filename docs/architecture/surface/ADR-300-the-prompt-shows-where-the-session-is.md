@@ -14,28 +14,32 @@ related:
 
 ## Context
 
-The prompt shows the engine's step and, since ADR-601, the working
-directory. It shows nothing of FreeCAD: not the workbench, not the Body
-or the sketch in edit, not whether the document is dirty, not what is
-selected. Yet those decide what a command does next. `Sketcher_CreateCircle`
-fails on the Part workbench because no sketch is open, and would fail on
-the Sketcher workbench for the same reason; the workbench is the GUI's
-proxy for the precondition, and the command line has no proxy at all.
+A shell prompt shows the path, the branch and the dirty flag because the
+next command depends on them. FreeCAD's equivalents are the workbench,
+the active Body or Part, the sketch in edit, whether the document is
+dirty, and what is selected. Today the prompt shows the engine's step
+and, since ADR-601, the working directory; the FreeCAD side is visible
+only in the GUI.
 
-A shell prompt that shows the branch and the dirty flag is the model.
-Both terminals must show the same thing, from the same source, the way
-`bin/fccli` already renders its prompt from the session's `state()`.
+That side decides what a command does. `Sketcher_CreateCircle` needs a
+sketch in edit mode; in the GUI the Sketcher toolbar stands nearby as a
+reminder, and on the command line the operator has to remember. The
+prompt is where that reminder belongs.
 
-`bus.STATE` has been declared since the bus existed and never emitted
-(`docs/state.md`). `MainWindow.workbenchActivated` is already connected
-(ADR-600, layer 2). `Gui.Command.isActive()` reports whether a command can
-run now, and changes with every selection; ADR-100 rules that such a fact
-is never written down.
+Three pieces already exist. `bus.STATE` has been declared since the bus
+existed and is free for this use (`docs/state.md`).
+`MainWindow.workbenchActivated` is connected (ADR-600, layer 2).
+`Gui.Command.isActive()` answers, live, whether a command can run now —
+the same answer FreeCAD greys a button with — and ADR-100 keeps that
+answer live rather than written down.
+
+Both terminals show the same prompt from the same source: `bin/fccli`
+already renders its prompt from the session's `state()`.
 
 ## Decision
 
-**One message.** The engine emits `STATE` — the declared, never-used kind
-— with the session's context whenever it changes and after every command:
+**One message carries the context.** The engine emits `STATE` with the
+session's context whenever it changes and after every command:
 
 | Field | Source | Shown as |
 |---|---|---|
@@ -45,65 +49,64 @@ is never written down.
 | `selection` | `Gui.Selection.getSelection()` count, when non-zero | `[3]` |
 | `cwd` | the session (ADR-601) | `/plinth` |
 
-Emitted on `workbenchActivated`, on document change (the observer
-`dirty.py` already installs), on selection change (`Gui.Selection.addObserver`),
-and from `_announce` when the engine returns to idle.
+It is emitted on `workbenchActivated`, on document change through the
+observer `dirty.py` installs, on selection change through
+`Gui.Selection.addObserver`, and from `_announce` when the engine returns
+to idle.
 
-**Both terminals render it, neither computes it.** The dock prepends the
-segment to the idle prompt; `bin/fccli._prompt_for` does the same from
-`state()`, which gains the same fields. The rendering is one function in
-`fccli/prompt.py`, used by both:
+**Both terminals render it from one function.** `fccli/prompt.py` turns
+the message into the segment; the dock prepends it to the idle prompt,
+and `bin/fccli._prompt_for` does the same from `state()`, which gains the
+same fields.
 
 ```
 PartDesign Body › Sketch* [2] /plinth > 
 ```
 
-Empty fields are omitted; at `/` with nothing active on a clean document
-in the default workbench, the prompt is `> ` as it is today.
+A field that is empty is left out. At `/` with a clean document, nothing
+active and the default workbench, the prompt is `> ` as it is today.
 
-**Context orders completion; it never narrows it.** `curation.order`
-sorts a verb whose command's `workbench` matches the active one ahead
-within its rank. `use` keeps its contract as the one way to narrow.
+**Context orders completion.** `curation.order` sorts a verb whose
+command's `workbench` matches the active one ahead within its rank.
+Every verb stays offered; `use` remains the one way to narrow.
 
-**A refusal says why, before running.** When the verb runs a command and
-`Gui.Command.get(name).isActive()` is false, the engine reports the
-command file's `requires` (ADR-100) if it has one — "needs a sketch in
-edit mode" — and "is not available here" otherwise, and does not run it.
-`isActive()` is read at that moment and never stored. A trailing `!` runs
-it anyway.
+**A command that cannot run here says so first.** When a verb runs a
+command and `Gui.Command.get(name).isActive()` is false, the engine
+reports the reason from the command file's `requires` (ADR-100) — "needs
+a sketch in edit mode" — or "is not available here" when the file gives
+none, and stops. `isActive()` is read at that moment. A trailing `!` runs
+the command anyway.
 
 ## Consequences
 
 ### Positive
 
-- The prompt answers the question the GUI answers with a toolbar: where
-  am I, and what will a command act on.
-- One message, one renderer, two terminals showing the same thing.
-- `requires` in the command tree becomes visible: a refusal with a reason.
-- `STATE` finally means something.
+- The prompt answers what the GUI answers with a toolbar: where am I,
+  and what will a command act on.
+- One message, one renderer, two terminals in agreement.
+- `requires` in the command tree becomes visible as the reason in a
+  refusal.
+- `STATE` gains its meaning.
 
 ### Negative
 
-- A selection observer fires on every click; the emit is cheap, but it is
+- A selection observer fires on every click. The emit is cheap; it is
   one more thing on the click path.
-- A long prompt. The segment is omitted where empty, and the dock's prompt
-  colour separates it from the step's prompt.
+- The prompt grows. Empty fields are left out, and the dock colours the
+  segment apart from the step's prompt.
 
 ### Neutral
 
-- `panel` from the command tree is not acted on here; declining a
-  pick-driven panel is a separate change.
+- `panel` from the command tree stays for a separate change: declining a
+  pick-driven panel.
 - `docs/state.md` gains the message and its triggers.
 
 ## Alternatives Considered
 
-- **A status strip field instead of the prompt.** The dock has a strip;
-  the socket terminal has no strip, only a prompt. The prompt is what both
-  have.
+- **A status-strip field.** The dock has a strip; the socket terminal has
+  a prompt only. The prompt is what both have.
 - **Context as scope.** Narrowing Tab to the active workbench would hide
-  the 1000 launchers by default, which `use` deliberately leaves to the
-  operator.
-- **Refuse by workbench.** Wrong in fact (ADR-100): a loaded command runs
-  from any workbench. `isActive()` is what FreeCAD itself greys a button
-  with.
-- **Store `requires` verdicts.** Runtime state, ruled out by ADR-100.
+  the thousand launchers by default; `use` leaves that to the operator.
+- **Refuse by workbench.** A loaded command runs from any workbench
+  (ADR-100); `isActive()` is the fact the refusal should rest on.
+- **Store `requires` verdicts.** Runtime state, kept live by ADR-100.
