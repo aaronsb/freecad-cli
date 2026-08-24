@@ -176,6 +176,10 @@ class Field:
             setText            the text changed and the value did not, so
                                Part_Primitives showed "4 mm" in its radius
                                box and built a cylinder of 2
+
+        A spin box that counts rather than measures -- prismPolygon, the
+        number of sides -- is a plain QSpinBox with no rawValue at all,
+        and takes setValue.
             interpretText      protected in Qt; the call did nothing
             focus, then type   the focus-out on panel close segfaulted in
                                ViewProviderDragger::getDraggerPlacement
@@ -192,9 +196,19 @@ class Field:
         if not parsed.ok:
             return parsed.error
         try:
-            if not w.setProperty("rawValue", float(parsed.value)):
+            if w.setProperty("rawValue", float(parsed.value)):
+                w.lineEdit().editingFinished.emit()
+                return None
+            # Not every spin box on a panel measures something.
+            # prismPolygon counts sides -- a plain QSpinBox, with no
+            # rawValue and no units, and setValue is its own door.
+            setter = getattr(w, "setValue", None)
+            if setter is None:
                 return (f"{self.name} would not take a value "
-                        "-- it is not a quantity box")
+                        "-- it is not a spin box this can write")
+            setter(int(round(parsed.value))
+                   if isinstance(w, QtWidgets.QSpinBox)
+                   else float(parsed.value))
             w.lineEdit().editingFinished.emit()
         except RuntimeError:
             return "the panel closed before that could be set"
@@ -542,6 +556,13 @@ def split_assignments(text):
     return pairs, leading
 
 
+def announce(engine, found, heading=None):
+    """Say what the panel answers to, the way completion lists verbs."""
+    engine.bus.emit(_bus.INFO, heading or f"{len(found)} to set:", role="head")
+    for row in offered(found):
+        engine.bus.emit(_bus.INFO, f"  {row}", role="quiet")
+
+
 def _assign(engine, step, value, typed=None):
     """Every `name=value` on the line, written where each belongs.
 
@@ -549,6 +570,14 @@ def _assign(engine, step, value, typed=None):
     that should read it, which is why `3/4 in` needs nothing from here.
     """
     text = str((typed if typed is not None else value) or "")
+    # A trailing `done` on a line that named its parameters. The step takes
+    # the whole line, so the option never matched and `done` was read as
+    # part of the last value -- `xposition=220 mm done` reached the parser
+    # as one length. It is redundant there anyway: a line that named
+    # something completes itself, the way `circle 0,0,0 5` does.
+    stripped = text.rstrip()
+    if stripped.lower().endswith(" done"):
+        text = stripped[:-5]
     pairs, leftover = split_assignments(text)
     if not pairs:
         return (f"{text.strip()!r} is not an assignment -- "
@@ -558,6 +587,7 @@ def _assign(engine, step, value, typed=None):
                 "name=value, or `done` to apply")
     seen, problems = {}, []
     found = fields()
+    before_names = [key_for(f.name) for f in found]
     for name, wanted in pairs:
         if name.lower() in seen:
             # Last would have won, silently, on a line somebody meant.
@@ -582,7 +612,15 @@ def _assign(engine, step, value, typed=None):
     # Every pair is attempted and every complaint reported. Returning at
     # the first one left the rest of the line untried while the whole line
     # went into history, so replaying it did more than running it had.
-    return "; ".join(problems) if problems else None
+    if problems:
+        return "; ".join(problems)
+    after = [key_for(f.name) for f in found]
+    if sorted(after) != sorted(before_names):
+        # The panel is asking for different things than it was. It was
+        # listed once when it opened, so choosing a primitive type left
+        # somebody naming fields they had no way to see.
+        announce(engine, found, f"{len(found)} to set now:")
+    return None
 
 
 def offered(found):
@@ -730,9 +768,7 @@ def _open_panel(command):
         # What it answers to, listed once, the way completion lists verbs.
         # Ten prompts in a row was the alternative, and four of them were
         # blank Enters on the way to the fifth.
-        engine.bus.emit(_bus.INFO, f"{len(found)} to set:", role="head")
-        for row in offered(found):
-            engine.bus.emit(_bus.INFO, f"  {row}", role="quiet")
+        announce(engine, found)
         engine.bus.emit(_bus.INFO,
                         "name=value sets one · done applies · cancel abandons",
                         role="quiet")
