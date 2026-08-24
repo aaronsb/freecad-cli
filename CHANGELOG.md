@@ -80,6 +80,12 @@
 
 ### Added
 
+- **Every command carries its wiki page.** `getInfo()` returns `whatsThis`,
+  the page name FreeCAD's F1 help resolves against, and the harvest had
+  been dropping it. It is recorded as `wiki`: 1106 of 1111 have one, 9
+  differ from the command name (`TechDraw_Annotation` documents itself at
+  `TechDraw_NewAnnotation`), and it is the link ADR-100 seeds each
+  command's documentation from.
 - **Decision records.** `docs/architecture/` holds ADRs in six domains --
   vocabulary, engine, surface, host, practice, system -- managed by
   `docs/scripts/adr`, with lint in `make check`. ADR-500 records the
