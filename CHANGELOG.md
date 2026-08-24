@@ -86,6 +86,15 @@
   differ from the command name (`TechDraw_Annotation` documents itself at
   `TechDraw_NewAnnotation`), and it is the link ADR-100 seeds each
   command's documentation from.
+- **An addon's commands reach the command line without a new descriptor.**
+  The descriptor is harvested once, from stock FreeCAD, so an addon
+  installed on this machine had no verbs until somebody regenerated it with
+  the addon present. Now a command FreeCAD has registered that the
+  descriptor never saw gets a tier-0 verb at startup, named from
+  `getInfo()` the way the harvest names one -- and again whenever a
+  workbench is activated, since an addon that registers in `Initialize()`
+  has nothing until its workbench opens. Measured live: CurvedShapes brings
+  ten verbs the moment its workbench is activated, and none before.
 - **Decision records.** `docs/architecture/` holds ADRs in six domains --
   vocabulary, engine, surface, host, practice, system -- managed by
   `docs/scripts/adr`, with lint in `make check`. ADR-500 records the

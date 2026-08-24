@@ -18,6 +18,7 @@ command to a type cannot be done reliably by machine, and the reframe that
 makes this work is that tier 1 never needed it.
 """
 
+import html
 import json
 import os
 import re
@@ -175,6 +176,101 @@ def build_command_verb(command):
                 abort=_abort_panel,
                 doc=command.get("tooltip") or label,
                 gui_command=name, generated=True)
+
+
+_TAG = re.compile(r"<[^>]+>")
+_PLACEHOLDER = re.compile(r"%\d")
+
+
+def _plain(text, mnemonic=False):
+    """getInfo text as the harvest cleans it: no tags, no entities, one
+    line. An addon's tooltip is the one population the harvest never
+    measured, and it is where <br>, &amp; and newlines live.
+
+    Menu text carries a Qt mnemonic marker, and Qt spells a literal
+    ampersand there as &&; a tooltip is prose and keeps its &.
+
+    One departure from clean(): a tag becomes a space, not nothing. The
+    harvest's tooltips were plain and needed unglue() for the rich-text
+    fallback; an addon's toolTip is the rich-text case from the start.
+    """
+    text = html.unescape(_TAG.sub(" ", text or ""))
+    if mnemonic:
+        text = text.replace("&&", "\0").replace("&", "").replace("\0", "&")
+    return " ".join(text.split()).strip()
+
+
+def runtime_commands(known):
+    """Commands FreeCAD has registered that the descriptor never saw.
+
+    The descriptor is harvested once, on one machine. An addon installed
+    after that registers its commands with FreeCAD at startup and got no
+    verb from it until somebody regenerated the descriptor with the addon
+    present -- layer 2 of ADR-600, true only by accident of timing.
+
+    Named the way the harvest would have named them: menuText with the
+    mnemonic dropped, unless it still holds a placeholder, in which case
+    the command name stands in. Placement is unknown, so they rank as
+    registry and claim a short name only if nobody else has.
+
+    Empty when there is no GUI to ask, or no listCommands on the one there
+    is -- which is the offscreen suite's FreeCADGui.
+    """
+    try:
+        import FreeCADGui as Gui
+        names = set(Gui.listCommands())
+    except Exception:
+        return []
+    out = []
+    for name in sorted(names - set(known)):
+        info = {}
+        try:
+            command = Gui.Command.get(name)
+            info = (command.getInfo() if command else None) or {}
+        except Exception:
+            pass
+        # A Qt placeholder is %1, %2; a percent sign on its own is prose.
+        label = _plain(info.get("menuText"), mnemonic=True)
+        if not label or _PLACEHOLDER.search(label):
+            label = name
+        tooltip = _plain(info.get("toolTip"))
+        if _PLACEHOLDER.search(tooltip):
+            tooltip = ""
+        if not tooltip:
+            # Never the command name: nothing should hand a reader
+            # documentation that ends in the thing it documents.
+            tooltip = label if label != name else name.replace("_", " ")
+        out.append({"name": name, "label": label, "tooltip": tooltip,
+                    "toolbar": None, "menu": None})
+    return out
+
+
+def register_runtime(registry, descriptor=None):
+    """Give a verb to every command FreeCAD has that nothing here does yet.
+
+    Called once by register_all and again whenever a workbench activates:
+    an addon that registers its commands in its workbench's Initialize()
+    has none at startup and all of them the first time somebody opens it.
+    Idempotent -- a command the descriptor knows, or that already reaches
+    a verb, is skipped, so the second call costs a set difference and
+    registers only what is new. The descriptor's own commands are its
+    business either way: the nine of #19 are not rescued here.
+
+    Returns how many were registered.
+    """
+    descriptor = descriptor if descriptor is not None else load_descriptor()
+    known = set((descriptor or {}).get("commands", {}))
+    known |= {getattr(registry.get(n), "gui_command", None)
+              for n in registry.names()}
+    added = 0
+    for command in runtime_commands(known):
+        verb = build_command_verb(command)
+        if registry.get(verb.name) is None:
+            registry.add(verb)
+        elif not _qualify_command(verb, command["name"], registry):
+            continue
+        added += 1
+    return added
 
 
 def _claimed(registry, name):
@@ -415,6 +511,14 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
         counts["patched"] += 1
         counts["tier1"] += 1
 
+    # Commands FreeCAD has that the descriptor never saw. After every tier
+    # that reads the descriptor, so a runtime command qualifies around a
+    # name a typed verb holds rather than being overwritten by it -- the
+    # tier-1 loops add without asking, and a runtime verb registered
+    # before them was counted, then erased.
+    if tier0:
+        counts["runtime"] = register_runtime(registry, descriptor)
+
     # Families sit between the generated verbs and the bare launchers: they
     # make a spread-out group discoverable without displacing anything
     # anyone wrote.
@@ -430,6 +534,14 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
     # author knows what their FeaturePython object is, and FreeCAD's type
     # registry does not.
     for verb in patches.build_declared():
+        sitting = registry.get(verb.name)
+        if sitting is not None and sitting is not verb:
+            # Re-home whatever generated verb held the name rather than
+            # erase it -- a launcher for the very command the addon
+            # declared a better verb for is the usual case.
+            command = getattr(sitting, "gui_command", None)
+            if getattr(sitting, "generated", False) and command:
+                _qualify_command(sitting, command, registry)
         registry.add(verb)
         counts["declared"] = counts.get("declared", 0) + 1
 

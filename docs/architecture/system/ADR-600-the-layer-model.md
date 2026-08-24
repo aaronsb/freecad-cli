@@ -26,7 +26,7 @@ model needs writing down so a change can be placed before it is made.
 |---|---|---|---|
 | 0. FreeCAD | The host: registries, documents, task panels, the Qt main window, preferences | — | host |
 | 1. Command factory | Harvest FreeCAD's registries into the descriptor; generate a verb for every command and every parametric type; derive families from the names | `tools/harvest_*.py`, `generate_descriptor.py`, `factory.py`, `families.py` | vocabulary |
-| 2. Plugin factory | The same, for commands an addon registers. Today this holds only for addons present when the descriptor was harvested; a command in `Gui.listCommands()` and absent from the descriptor gets no verb | `factory.py` (gap), `patches/__init__.py` addon root | vocabulary |
+| 2. Plugin factory | The same, for commands an addon registers: a command in `Gui.listCommands()` the descriptor never saw gets a tier-0 verb at startup and on every workbench activation (`register_runtime`) | `factory.py`, `patches/__init__.py` addon root | vocabulary |
 | 3. Overlays | The hand-owned layer: one file per command (ADR-100), type tuning, declared verbs, aliases, scripts in `/bin` (ADR-601) | `lib/commands/`, `etc/`, `patches/`, `verbs.py` | vocabulary |
 | 3a. Shell builtins | Verbs FreeCAD does not have: `save`, `open`, `undo`, `man`, `use`, `alias`, `history`, `describe`, `check`, `cd`, `ls` | `shell.py` | surface |
 | 4. Intercept and normalisation | Parsing, units, points, step routing, panel adoption, modal interception, key usurping, transactions | `engine.py`, `parsing.py`, `units.py`, `panels.py`, `modals.py`, `keyfilter.py`, `picking.py` | engine |
@@ -64,10 +64,11 @@ Rules the model implies:
 - A layer reads from the one below it and never reaches past it. Layer 4
   sees verbs, not files; layer 5 sees the bus and the session, not the
   engine's fields.
-- Layer 2 must become true. At startup, a command present in
+- Layer 2 is true at runtime, not only at harvest. A command present in
   `Gui.listCommands()` and absent from the descriptor gets a tier-0 verb
-  with its label from `getInfo()`, and `make reconcile` (ADR-100) reports
-  it as a command the descriptor does not know.
+  with its label from `getInfo()`, at startup and whenever a workbench
+  activates. `make reconcile` (ADR-100), once built, will report it as a
+  command the descriptor does not know.
 - Layer 3 is where the work is. Layers 1, 2, 4 and 5 are machinery that
   should change rarely; the command line improves by editing layer 3.
 - A reverse translator produces a line the forward direction accepts.
@@ -84,8 +85,8 @@ Rules the model implies:
 
 ### Negative
 
-- Layer 2 is recorded as a gap, and stays one until the runtime
-  registration lands.
+- Layer 2 depends on `MainWindow.workbenchActivated`, a Qt signal, so a
+  workbench activated with no main window brings nothing.
 
 ### Neutral
 

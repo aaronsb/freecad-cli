@@ -1641,6 +1641,150 @@ def _run():
         else:
             sys.modules.pop("FreeCADGui", None)
 
+    print("\n5ab. a command FreeCAD has that the descriptor never saw")
+    # ADR-600, layer 2. An addon installed after the descriptor was
+    # harvested registers its commands with FreeCAD, and register_all read
+    # the descriptor only -- so the addon was invisible until somebody ran
+    # make descriptor on a machine that had it. At startup, a command in
+    # listCommands() the descriptor does not know gets a tier-0 verb with
+    # its label from getInfo(), the way the harvest would have named it.
+    class _FakeCmd:
+        def __init__(self, info): self._info = info
+        def getInfo(self): return self._info
+
+    class _RuntimeGui:
+        def __init__(self, extra):
+            self.extra = extra
+        def listCommands(self):
+            return list(_cmds)[:5] + list(self.extra)
+        class Command:
+            registry = {}
+            @classmethod
+            def get(cls, name): return cls.registry.get(name)
+
+    class _Raising:
+        def getInfo(self): raise RuntimeError("no info")
+
+    _RuntimeGui.Command.registry = {
+        "Acme_Widget": _FakeCmd({"menuText": "&Widget Thing",
+                                 "toolTip": "Makes a widget"}),
+        "Acme_About": _FakeCmd({"menuText": "About %1",
+                                "toolTip": "About %1"}),
+        "Std_ViewFront": _FakeCmd({"menuText": "Not used"}),
+        # Collides with a descriptor tier-0 name.
+        "Acme_Box": _FakeCmd({"menuText": "Box", "toolTip": "An addon box"}),
+        # Collides with a tier-1 typed verb, which registers after tier 0.
+        "Acme_Tier1": _FakeCmd({"menuText": "Additive Box",
+                                "toolTip": "Not PartDesign's"}),
+        # Rich text and entities, the way an addon writes a tooltip.
+        "Acme_Rich": _FakeCmd({"menuText": "Rich",
+                               "toolTip": "<p><b>Cut</b> A &amp; B\nnow</p>"}),
+        # A percent sign that is not a Qt placeholder.
+        "Acme_Pct": _FakeCmd({"menuText": "Pct",
+                              "toolTip": "Scales by 50% of the box"}),
+        "Acme_Raise": _Raising(),
+    }
+    _extra = ["Acme_Widget", "Acme_About", "Std_ViewFront", "Acme_Box",
+              "Acme_Tier1", "Acme_Rich", "Acme_Pct", "Acme_Raise",
+              "Acme_Null"]        # Command.get returns None for this one
+    _real_gui = sys.modules.get("FreeCADGui")
+    try:
+        sys.modules["FreeCADGui"] = _RuntimeGui(_extra)
+        _rt = _Registry()
+        _rc = register_all(_rt, tier0=True, patches=PatchSet())
+        check("commands the descriptor never saw are registered",
+              _rc.get("runtime", 0), 8)
+        _bx = _rt.by_gui_command("Acme_Box")
+        check("  a name a descriptor command holds is qualified, not taken",
+              (_bx.name if _bx else None, _rt.get("box").gui_command),
+              ("acme_box", "Part_Box"))
+        _t1 = _rt.by_gui_command("Acme_Tier1")
+        check("  a name a tier-1 verb holds is qualified, not overwritten",
+              (_t1.name if _t1 else None,
+               getattr(_rt.get("additive_box"), "creates", None)),
+              ("acme_additive_box", "PartDesign::AdditiveBox"))
+        _rich = _rt.by_gui_command("Acme_Rich")
+        check("  rich text and entities are cleaned the way the harvest does",
+              _rich.doc if _rich else None, "Cut A & B now")
+        _pct = _rt.by_gui_command("Acme_Pct")
+        check("  a percent sign that is not a placeholder is kept",
+              _pct.doc if _pct else None, "Scales by 50% of the box")
+        _null = _rt.by_gui_command("Acme_Null")
+        _raise = _rt.by_gui_command("Acme_Raise")
+        check("  no info at all still gets a verb, documented as a name",
+              (_null.name if _null else None, _null.doc if _null else None,
+               _raise.name if _raise else None),
+              ("acme_null", "Acme Null", "acme_raise"))
+        _w = _rt.get("widget_thing")
+        check("  named from getInfo's menuText, mnemonic dropped",
+              _w.gui_command if _w else None, "Acme_Widget")
+        check("  documented from its toolTip",
+              _w.doc if _w else None, "Makes a widget")
+        _a = _rt.by_gui_command("Acme_About")
+        check("  a placeholder label falls back to the command name",
+              _a.name if _a else None, "acme_about")
+        check("  and a descriptor command is not registered twice",
+              _rc["tier0"], len(_cmds))
+        _launchers = [_rt.get(n) for n in _rt.names()
+                      if _rt.get(n).gui_command == "Std_ViewFront"
+                      and _rt.get(n).open is not None]
+        check("  the descriptor's own label wins for Std_ViewFront",
+              [v.name for v in _launchers], ["1_front"])
+        check("  and the runtime label for it was not used",
+              _rt.get("not_used"), None)
+    finally:
+        if _real_gui is None:
+            sys.modules.pop("FreeCADGui", None)
+        else:
+            sys.modules["FreeCADGui"] = _real_gui
+    # A workbench opened later brings more. The second call registers only
+    # what is new, and says how many.
+    from fccli.factory import register_runtime
+    _gui2 = _RuntimeGui(["Acme_Widget"])
+    _RuntimeGui.Command.registry["Acme_Later"] = _FakeCmd(
+        {"menuText": "Later Thing", "toolTip": "Came with a workbench"})
+    try:
+        sys.modules["FreeCADGui"] = _gui2
+        _rt3 = _Registry()
+        register_all(_rt3, tier0=True, patches=PatchSet())
+        check("  a second pass with nothing new registers nothing",
+              register_runtime(_rt3), 0)
+        _gui2.extra.append("Acme_Later")
+        check("  and a workbench's new commands are picked up on the next",
+              register_runtime(_rt3), 1)
+        check("    reachable by the name getInfo gives it",
+              _rt3.get("later_thing").gui_command
+              if _rt3.get("later_thing") else None, "Acme_Later")
+    finally:
+        if _real_gui is None:
+            sys.modules.pop("FreeCADGui", None)
+        else:
+            sys.modules["FreeCADGui"] = _real_gui
+    # An addon that declares a verb and registers a command of the same
+    # name: the declared verb wins the name and the launcher is re-homed,
+    # the way a displaced tier-1 verb is, rather than erased.
+    from fccli.patches import PatchSet as _PS
+    _decl = _PS([("addon", "<test>", {"key": "Acme", "verbs": {
+        "widget_thing": {"doc": "Declared.", "emit": lambda v: None}}})])
+    try:
+        sys.modules["FreeCADGui"] = _RuntimeGui(["Acme_Widget"])
+        _rt4 = _Registry()
+        register_all(_rt4, tier0=True, patches=_decl)
+        _w4 = _rt4.by_gui_command("Acme_Widget")
+        check("  a declared verb re-homes the launcher it displaces",
+              (_rt4.get("widget_thing").doc, _w4.name if _w4 else None),
+              ("Declared.", "acme_widget_thing"))
+    finally:
+        if _real_gui is None:
+            sys.modules.pop("FreeCADGui", None)
+        else:
+            sys.modules["FreeCADGui"] = _real_gui
+    # Nothing to read: a FreeCADGui with no listCommands, which is what
+    # the offscreen suite has, registers nothing and raises nothing.
+    _rt2 = _Registry()
+    _rc2 = register_all(_rt2, tier0=True, patches=PatchSet())
+    check("  no GUI, no runtime commands, no error", _rc2.get("runtime", 0), 0)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

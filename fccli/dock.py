@@ -477,6 +477,7 @@ class CliDock(QtWidgets.QDockWidget):
     def activate(self):
         self.keyfilter.install()
         self.bridge.install()
+        self._watch_workbenches()
         self._serve()
         app = QtWidgets.QApplication.instance()
         self._focus_hook = None
@@ -485,6 +486,47 @@ class CliDock(QtWidgets.QDockWidget):
             app.focusChanged.connect(self._focus_hook)
         self.console.setFocus(Qt.OtherFocusReason)
         self._paint_focus_state()
+
+    def _watch_workbenches(self):
+        """Pick up the commands a workbench brings when it is opened.
+
+        An addon that registers its commands in Initialize() has none until
+        its workbench is activated for the first time, and register_all ran
+        before that. MainWindow.workbenchActivated fires after every
+        activation, including the ones panels.not_yet_loaded borrows.
+        """
+        self._workbench_hook = None
+        try:
+            import FreeCADGui as Gui
+            mw = Gui.getMainWindow()
+            self._workbench_hook = self._on_workbench_activated
+            mw.workbenchActivated.connect(self._workbench_hook)
+        except Exception as exc:
+            self._workbench_hook = None
+            try:
+                import FreeCAD as App
+                App.Console.PrintWarning(
+                    f"[fccli] not watching workbenches: {exc}\n")
+            except Exception:
+                pass
+
+    def _on_workbench_activated(self, name):
+        from .factory import load_descriptor, register_runtime
+        try:
+            if getattr(self, "_descriptor", None) is None:
+                self._descriptor = load_descriptor()
+            added = register_runtime(REGISTRY, self._descriptor)
+            if not added:
+                return
+            if isinstance(self.factory_counts, dict):
+                self.factory_counts["runtime"] = (
+                    self.factory_counts.get("runtime", 0) + added)
+                self.factory_counts["total"] = len(REGISTRY.names())
+            self.console.write(
+                f"{added} commands FreeCAD registered since startup are on "
+                f"the command line now (opened {name})", "info")
+        except Exception:
+            return
 
     def _serve(self):
         """Open the socket, so a terminal can reach this same session."""
@@ -514,6 +556,14 @@ class CliDock(QtWidgets.QDockWidget):
         # This handler is on the QApplication and holds the dock, so every
         # open/close cycle used to leave another one behind, painting a
         # window that had gone away.
+        if getattr(self, "_workbench_hook", None) is not None:
+            try:
+                import FreeCADGui as Gui
+                Gui.getMainWindow().workbenchActivated.disconnect(
+                    self._workbench_hook)
+            except Exception:
+                pass
+            self._workbench_hook = None
         if getattr(self, "_focus_hook", None) is not None:
             try:
                 QtWidgets.QApplication.instance().focusChanged.disconnect(
