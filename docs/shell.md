@@ -210,7 +210,7 @@ runs a nested event loop that still services sockets — but `submit` is
 declined while `Gui.Control.activeDialog()` is set, naming the dialog. A
 command executing into a half-open dialog is worse than one that waits.
 
-That decline is **not an error**, and the distinction is load-bearing.
+That decline is **not an error**, and the difference matters to a caller.
 
 **Security.** 0600 in `XDG_RUNTIME_DIR`. Anyone who can read that socket can
 already read the user's files and attach a debugger to their FreeCAD, so the

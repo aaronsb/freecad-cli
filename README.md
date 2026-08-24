@@ -247,6 +247,19 @@ Eighty-four commands, 1.8 seconds, no mouse. Fourteen square levels each
 rotated 14°, a circle inscribed at each, 52 stringers connecting corners
 level to level, and a plinth dimensioned in inches.
 
+None of that is this project's doing. **FreeCAD is built to be driven
+programmatically** — every command registered and introspectable, every
+object's properties typed and documented, a unit parser that handles
+`3/8in`, a snapping engine, a document observer, and a Python console that
+can reach all of it. The hard parts were solved by the people who built
+that.
+
+What this adds is a way to reach it without writing Python: a grammar over
+the registries FreeCAD already publishes, and the terminal conventions —
+completion, history, colour, undo, a prompt — that make typing a command
+feel like typing a command. It is a wrapper, and it works because there was
+something well-made to wrap.
+
 ### Families
 
 FreeCAD spreads one idea across many commands with no shared name. Zooming
@@ -356,7 +369,7 @@ method calls, which is what lets a socket client be a peer rather than a
 copy. A human and an agent share one transcript instead of talking past each
 other through write-only RPC.
 
-The key filter is the load-bearing piece: 195 of FreeCAD's 940 default
+The key filter is where most of the risk sits: 195 of FreeCAD's 940 default
 shortcuts are unmodified keys, so claiming bare printables collides on
 purpose. A focus guard keeps real editors' keys, and digits route by step —
 `1`–`6` stay the standard views while nothing is running, and become input
