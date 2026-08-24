@@ -69,6 +69,16 @@
   button yellow until the workbench reloaded. The base is parked in a
   widget property and taken back once.
 
+### Added
+
+- **Two design notes.** `docs/design-notes/command-dictionary.md` records
+  the hand-owned layer the command line is missing -- a versioned record of
+  where its vocabulary departs from what the factory derives, keyed by
+  command, linted in `make check`, reconciled by a tool rather than by
+  reading a descriptor diff. `docs/design-notes/state.md` writes down the
+  engine's two states and the six machines around it as the code holds
+  them, including the gap that task #3 names.
+
 ### Changed
 
 - **`constrain` is a command verb rather than a family.** Sketcher's
