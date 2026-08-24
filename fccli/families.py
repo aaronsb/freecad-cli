@@ -64,8 +64,9 @@ def families(commands, min_members=MIN_MEMBERS, overrides=None,
     ``{verb_name: {choice: {command, label}}}``.
 
     ``overrides`` maps a command to ``(family, choice)`` from its command
-    file (ADR-100): it goes there instead of where its name would put it,
-    and ``(None, None)`` keeps it out of any family. ``exclude`` is the set
+    file (ADR-100): it goes there instead of where its name would put it.
+    A file that says ``family: false`` arrives here as ``(None, None)``
+    and joins no family. ``exclude`` is the set
     of leading words that are not actions; the shipped list lives in
     ``lib/commands/std/_families.yaml`` and NOT_ACTIONS is the fallback
     when no dictionary was loaded.
