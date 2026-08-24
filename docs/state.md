@@ -17,7 +17,7 @@ Source: `fccli/engine.py`, `panels.py`, `picking.py`, `modals.py`,
 | Field | Values | Meaning |
 |---|---|---|
 | `state` | `IDLE`, `COLLECTING` | whether a verb is open and taking input |
-| `driving` | bool | whether `open()` or `emit()` is executing right now |
+| `driving` | int | above zero while `open()` or `emit()` is executing; a counter, since a script's `emit` runs other lines through the engine |
 | `verb` | `Verb` or `None` | the open verb |
 | `steps` | list or `None` | steps discovered by `open()`; `None` means the verb's declared steps apply |
 | `values`, `done` | dict, set | collected values; step ids that need no more input |
@@ -162,12 +162,13 @@ A script verb's `emit` runs the file's lines through `submit`, one at a
 time, from inside `_finish`. The engine is `IDLE` when `emit` starts, so
 each inner line runs a full `_start` → `_finish` of its own: its own
 transaction, its own modal arming, its own `RESULT` with `record=False`.
-`driving` is set by the outer `_finish` and toggled by each inner one; it
-reads True again for the length of the outer `emit` only until the first
-inner line finishes. The runner stops at the first inner `ERROR` or at an
-inner line that leaves the engine `COLLECTING`, which it cancels. The
-script call is the one recorded `RESULT`; `repeat_hint` is the script
-call.
+`driving` counts, so it stays above zero for the whole of the outer
+`emit`. The runner stops at the first inner `ERROR` or at an inner line
+that leaves the engine `COLLECTING`, cancelling it either way, and its
+`finally` cancels whatever is still open. The script call is the one
+recorded `RESULT`, and the runner restores `repeat_hint` to the script
+call after the inner lines overwrote it. `script_depth` stops a script
+that runs itself at eight.
 
 ### Transactions
 
