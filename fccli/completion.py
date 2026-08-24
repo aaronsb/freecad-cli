@@ -257,6 +257,8 @@ def from_source(engine, source):
             return sorted(key_for(f.name) + "=" for f in fields())
         except Exception:
             return []
+    if source == "paths":
+        return path_entries(engine)
     if source == "schemas":
         try:
             from .units import schemas
@@ -264,6 +266,18 @@ def from_source(engine, source):
         except Exception:
             return []
     return []
+
+
+def path_entries(engine):
+    """What is in the session's working directory, marked the way ls
+    marks it, so a directory completes with its slash."""
+    try:
+        from . import root as _root
+        session = getattr(engine, "session", None)
+        cwd = getattr(session, "cwd", "/") if session else "/"
+        return _root.listing(cwd)
+    except Exception:
+        return []
 
 
 def next_from_history(history, text, tail):

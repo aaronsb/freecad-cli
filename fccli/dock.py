@@ -334,7 +334,9 @@ class CliDock(QtWidgets.QDockWidget):
 
     def _on_prompt(self, msg):
         if msg.data.get("idle"):
-            self.console.set_prompt("> ")
+            # Where the session is, the way a shell prompt shows the path.
+            cwd = getattr(self.session, "cwd", "/")
+            self.console.set_prompt("> " if cwd == "/" else f"{cwd} > ")
             self.status.setText("idle")
         else:
             opts = msg.data.get("options") or []
@@ -478,6 +480,7 @@ class CliDock(QtWidgets.QDockWidget):
         self.keyfilter.install()
         self.bridge.install()
         self._watch_workbenches()
+        self._lay_out_root()
         self._serve()
         app = QtWidgets.QApplication.instance()
         self._focus_hook = None
@@ -486,6 +489,15 @@ class CliDock(QtWidgets.QDockWidget):
             app.focusChanged.connect(self._focus_hook)
         self.console.setFocus(Qt.OtherFocusReason)
         self._paint_focus_state()
+
+    def _lay_out_root(self):
+        """The directory the terminal navigates, made on first run."""
+        try:
+            from . import root as _root
+            for note in _root.layout():
+                self.console.write(f"root: {note}", "info")
+        except Exception as exc:
+            self.console.write(f"root: {exc}", "info")
 
     def _watch_workbenches(self):
         """Pick up the commands a workbench brings when it is opened.

@@ -80,6 +80,14 @@
 
 ### Added
 
+- **A root the terminal navigates.** `~/.local/share/fccli` laid out after
+  the FHS on first run: `bin/`, `etc/`, `lib/commands` linking to the
+  shipped command tree, `lib/addons/<name>` to what each addon ships, and
+  `macros` to FreeCAD's macro directory, read from its preference. The
+  session has a working directory, moved by `cd` from either terminal and
+  shown in both prompts; `ls`, `pwd` and `cat` read the tree; Tab on a path
+  offers what is there. The root is a jail: `cd ..` at `/` stays at `/`.
+  ADR-601. Scripts come next.
 - **One file per command.** `fccli/lib/commands/<workbench>/<Command>.md`
   for all 1111 -- Markdown with YAML frontmatter, a `generated:` block the
   tool owns and authored fields (`verb`, `aliases`, `requires`, `panel`,

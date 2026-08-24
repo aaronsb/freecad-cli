@@ -241,6 +241,9 @@ class Session:
         # launchers are the problem; the verbs someone chose are never
         # hidden by it.
         self.scope = None
+        # Where the terminal is in the root (ADR-601). Session state: one
+        # per process, shown in both terminals, moved by cd from either.
+        self.cwd = "/"
         engine.session = self          # so a verb can reach the scope
         self.bus.subscribe(self._on_message)
 
@@ -316,4 +319,5 @@ class Session:
             "options": step.option_names() if step else [],
             "floor": self.floor.state(),
             "scope": self.scope,
+            "cwd": self.cwd,
         }

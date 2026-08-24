@@ -176,6 +176,14 @@ compound imperial form (`3" + 7/8"`) does not parse back. Since the echoed
 line is also what Up recalls, every rendering is round-tripped before use
 and falls back to a precise conversion when it fails.
 
+### The root
+
+`~/.local/share/fccli` is a directory the terminal navigates: `cd`, `ls`,
+`pwd`, `cat`, a working directory shown in the prompt and shared by both
+terminals. `lib/commands` is the command tree, `lib/addons/<name>` what
+each addon ships, `macros` FreeCAD's own macro directory, and the rest is
+yours. [ADR-601](docs/architecture/system/ADR-601-a-root-the-terminal-navigates.md).
+
 ### Shell builtins
 
 The GUI equivalents route through modal dialogs — Save on an unnamed

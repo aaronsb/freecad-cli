@@ -287,6 +287,11 @@ A client's disconnect releases any floor it held.
 
 `busy()` is `engine.state != IDLE` or a non-blank shared buffer.
 
+The session also holds `cwd`, the terminal's place in the root directory
+(ADR-601): a virtual path under `~/.local/share/fccli`, `/` at start,
+moved by `cd` from either terminal and shown in both prompts. `cd`
+resolves against it and cannot leave the root.
+
 `submit` from a client: return a `busy` reply if `_busy()` says so; claim
 the floor, stealing when the first token ends in `!`; run the line;
 collect every bus message it produced; release the floor if the engine is
