@@ -55,6 +55,16 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
 - **A family verb cites its neighbours too.** It runs no command of its own,
   so the toolbar holding most of its members answers on its behalf.
 
+### Changed (tests)
+
+- **`tests/test_spike.py` is now `tests/offscreen.py`.** It stopped being a
+  spike a long time ago and is the whole offscreen suite. Its docstring
+  claimed to prove four things; there are eighteen sections.
+- **24 edge cases added** -- every frecency bucket boundary and which side
+  each edge falls on, a future timestamp, an empty curation, column layout
+  with nothing and with one oversized item, the XDG fallback ceasing once
+  the new file exists, and a history file holding both line formats.
+
 ### Fixed
 
 - **Ranking stopped learning once the history ring filled.** The frecency

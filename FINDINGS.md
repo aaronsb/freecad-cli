@@ -4,7 +4,7 @@ What was learned building this, mostly about FreeCAD internals that are not
 documented anywhere obvious. Each item below cost a debugging session; they
 are recorded so the next one is cheaper.
 
-Everything here is verified by `tests/test_spike.py`, which runs offscreen
+Everything here is verified by `tests/offscreen.py`, which runs offscreen
 without a FreeCAD GUI.
 
 ## Verified behaviour

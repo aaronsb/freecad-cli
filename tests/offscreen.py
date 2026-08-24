@@ -1,15 +1,17 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
-"""Spike verification. Runs offscreen, no FreeCAD GUI required.
+"""Everything checkable without a FreeCAD GUI.
 
-    QT_QPA_PLATFORM=offscreen python3 tests/test_spike.py
+    QT_QPA_PLATFORM=offscreen python3 tests/offscreen.py
 
-Proves the four things the design rests on:
-  1. bare keys reach the command line while another widget holds focus
-  2. real editors keep their keys (focus guard)
-  3. digits route by step, not by policy
-  4. typed values and simulated picks land in one state machine, and the
-     result replays as text
+The grammar, the engine, the factory, completion, units, colouring,
+curation and the history ring, with a real Qt application but no main
+window. What needs a window is in bvt.py; what needs a second process is
+in socket_host.py.
+
+It was called test_spike.py while there was a spike. The sections are
+numbered in the order they were written rather than renumbered each time,
+so a failure keeps the same name from run to run.
 """
 
 import os
@@ -787,6 +789,68 @@ def main():
     check("describe carries version, commit and date",
           _bi.describe().startswith(_fccli_version + "+"), True)
     _bi._CACHE = None
+
+    print("\n5s. edges the happy path does not reach")
+    from fccli.factory import _label as _factory_label
+    from fccli.shell import _columns as _cols
+    # Frecency bucket boundaries: each edge belongs to the bucket below it.
+    for _days, _want in ((0, 16), (7, 8), (8, 4), (30, 4),
+                         (31, 2), (180, 2), (181, 1)):
+        check(f"  {_days}d weighs {_want}",
+              _frec.recency_weight(_now, _now - _days * 86400), _want)
+    check("a timestamp in the future is not trusted",
+          _frec.recency_weight(_now, _now + 86400), 1)
+    check("a zero count scores zero however recent",
+          _frec.score(0, _now, _now), 0)
+    check("partition of nothing is nothing", _frec.partition([], dict, _now), [])
+    check("all-unused keeps the incoming order exactly",
+          _frec.partition(["c", "a", "b"], lambda n: (0, 0), _now),
+          ["c", "a", "b"])
+
+    # Curation with nothing to read -- the state before a descriptor loads.
+    _bare = _cur.Curation({})
+    check("an empty curation ranks everything registry",
+          _bare.rank("Part_Box"), _cur.REGISTRY)
+    check("  and offers no neighbours", _bare.adjacent("Part_Box"), [])
+    check("  and orders without dropping anything",
+          _bare.order(REGISTRY, ["box", "circle"]), ["box", "circle"])
+    check("an unknown command has no placement",
+          curated.placement("No_Such_Command"), (None, None))
+
+    # Column layout.
+    check("no items, no rows", _cols([]), [])
+    check("one item is one row", _cols(["only"]), ["only"])
+    check("an item wider than the width still gets a row",
+          len(_cols(["x" * 200])), 1)
+
+    # The XDG fallback must stop applying once the new file exists.
+    _dir = tempfile.mkdtemp()
+    _new = os.path.join(_dir, "history")
+    check("with nothing at the new path, the old one answers",
+          _paths.readable(_new, "history") != _new,
+          os.path.exists(_paths.legacy("history")))
+    open(_new, "w", encoding="utf-8").close()
+    check("once the new path exists it wins, empty or not",
+          _paths.readable(_new, "history"), _new)
+
+    # A history file with both formats in it.
+    _mixed = os.path.join(tempfile.mkdtemp(), "history")
+    with open(_mixed, "w", encoding="utf-8") as fh:
+        fh.write("box 1,1,1\n%d\tcircle 0,0,0 5mm\n" % _now)
+    _mh = _History(path=_mixed)
+    check("old and new format lines read together",
+          _mh.entries, ["box 1,1,1", "circle 0,0,0 5mm"])
+    check("  each keeping its own epoch",
+          [w for _, w in _mh.usage()], [0, _now])
+    check("a repeated line counts twice but stamps once",
+          (lambda h: (h.add("a", when=_now), h.add("b", when=_now),
+                      h.add("a", when=_now + 5),
+                      _frec.tally(h.usage())["a"]))(
+              _History(path=os.path.join(tempfile.mkdtemp(), "h")))[-1],
+          (2, _now + 5))
+
+    check("mnemonic markers are stripped from a label",
+          _factory_label("&Box Zoom"), "Box Zoom")
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
