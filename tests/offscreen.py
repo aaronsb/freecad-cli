@@ -2393,6 +2393,108 @@ def _run():
         else:
             os.environ["XDG_DATA_HOME"] = _xdg_was
         import shutil as _sh4; _sh4.rmtree(_xdg, ignore_errors=True)
+    print("\n5ah. the prompt shows where the session is")
+    # ADR-300. One STATE message from the session, rendered by both
+    # terminals; completion ordered by the active workbench within a
+    # rank; a command that cannot run here says so before running.
+    from fccli import context as _context
+    from fccli.bus import STATE as _STATE, PROMPT as _PROMPT
+    check("the segment leaves out what is empty",
+          [_context.segment(c) for c in (
+              {}, {"workbench": "Part"}, {"cwd": "/plinth"},
+              {"workbench": "PartDesign", "active": ["Body", "Sketch"],
+               "dirty": True, "selection": 2, "cwd": "/plinth"},
+              {"dirty": True})],
+          ["", "Part", "/plinth", "PartDesign Body › Sketch* [2] /plinth", "*"])
+    check("  and the prompt is bare with nothing to say",
+          (_context.prompt({}), _context.prompt({"workbench": "Part"})),
+          ("> ", "Part > "))
+    check("  a requires reads as a reason",
+          (_context.reason(["sketch-edit", "selection:face"]), _context.reason([])),
+          ("needs a sketch in edit mode, a face selected", "is not available here"))
+    # With a GUI that answers.
+    class _Sel:
+        items = ["a", "b"]
+        def getSelection(self): return list(self.items)
+    class _Wb:
+        def __init__(self, n): self._n = n
+        def name(self): return self._n
+    class _Cmd:
+        def __init__(self, on): self.on = on
+        def isActive(self): return self.on
+    class _CtxGui:
+        ActiveDocument = None
+        Selection = _Sel()
+        wb = "SketcherWorkbench"
+        cmds = {}
+        def activeWorkbench(self): return _Wb(self.wb)
+        def listCommands(self): return []
+        class Command:
+            registry = {}
+            @classmethod
+            def get(cls, name): return cls.registry.get(name)
+    _ctx_gui = _CtxGui()
+    _real_gui = sys.modules.get("FreeCADGui")
+    sys.modules["FreeCADGui"] = _ctx_gui
+    try:
+        check("  the snapshot reads the GUI",
+              (_context.workbench(), _context.selected()), ("Sketcher", 2))
+        from fccli.session import Session as _Session
+        _cbus = Bus(); _cseen = []
+        _cbus.subscribe(_cseen.append)
+        _ceng = Engine(_cbus, REGISTRY)
+        _csess = _Session(_ceng, _cbus, history=_History(os.path.join(tempfile.mkdtemp(), "h")))
+        _csess.cwd = "/plinth"
+        _cseen.clear(); _ceng.submit("pwd")
+        _states = [m for m in _cseen if m.kind == _STATE]
+        # Earlier sections leave documents dirty; the star is theirs.
+        check("  the session answers an idle PROMPT with STATE",
+              (len(_states) >= 1, _states[-1].text.replace("*", ""),
+               _states[-1].data.get("cwd")),
+              (True, "Sketcher [2] /plinth", "/plinth"))
+        check("  and the socket state carries the same segment",
+              _csess.state()["context"]["segment"].replace("*", ""),
+              "Sketcher [2] /plinth")
+        _cseen.clear(); _csess.announce_context()
+        check("  a change announces without a command",
+              [m.kind for m in _cseen], [_STATE])
+        # Order: a Sketcher command before a Part one of the same rank.
+        from fccli import curation as _cur3
+        _cur3.load(_load_desc(), _dict)
+        _ordered = _cur3.current().order(REGISTRY, ["cube", "circle_from_center"],
+                                         workbench=_context.workbench())
+        check("  completion puts this workbench's commands first within a rank",
+              _ordered[0] if _cur3.current().rank_of(REGISTRY.get("cube")) ==
+              _cur3.current().rank_of(REGISTRY.get("circle_from_center"))
+              else "circle_from_center", "circle_from_center")
+        check("  and leaves the order alone without a workbench",
+              _cur3.current().order(REGISTRY, ["cube", "circle_from_center"]),
+              _cur3.current().order(REGISTRY, ["cube", "circle_from_center"], workbench=None))
+        # Refusal: FreeCAD says no, the file says why.
+        from fccli import panels as _pn
+        _CtxGui.Command.registry["Sketcher_CreateCircle"] = _Cmd(False)
+        _CtxGui.Command.registry["Std_ViewFront"] = _Cmd(False)
+        _ctx_gui.listCommands = lambda: ["Sketcher_CreateCircle", "Std_ViewFront"]
+        _cc = REGISTRY.by_gui_command("Sketcher_CreateCircle")
+        _cc.requires = ["sketch-edit"]
+        _cseen.clear(); _ceng.submit(_cc.name)
+        check("  a command that cannot run here says why, from its file",
+              [m.text for m in _cseen if m.kind == ERROR],
+              [f"{_cc.name}: needs a sketch in edit mode"])
+        _vf = next(v for v in (REGISTRY.get(n) for n in REGISTRY.names())
+                   if v.gui_command == "Std_ViewFront" and v.open is not None)
+        _cseen.clear(); _ceng.submit(_vf.name)
+        check("  and says it is not available when the file says nothing",
+              [m.text for m in _cseen if m.kind == ERROR],
+              [f"{_vf.name}: is not available here"])
+        check("  can_run is True when FreeCAD cannot say",
+              _pn.can_run("Nothing_Here"), True)
+        _cc.requires = []
+    finally:
+        if _real_gui is None:
+            sys.modules.pop("FreeCADGui", None)
+        else:
+            sys.modules["FreeCADGui"] = _real_gui
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

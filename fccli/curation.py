@@ -242,15 +242,27 @@ class Curation:
 
     # ------------------------------------------------------------ order
 
-    def order(self, registry, names):
-        """Sort verb names by rank, then alphabetically.
+    def order(self, registry, names, workbench=None):
+        """Sort verb names by rank, then by whether the verb's command
+        belongs to the active workbench, then alphabetically.
 
         Stable within a rank, so the answer does not move around between
         keystrokes. Nothing is dropped -- a registry-rank verb sorts last
-        and is still there.
+        and is still there, and a verb from another workbench sorts after
+        this one's rather than out (ADR-300).
         """
+        wb = (workbench or "").lower()
+
+        def home(name):
+            if not wb:
+                return 0
+            command = getattr(registry.get(name), "gui_command", None)
+            meta = self.commands.get(command or "") or {}
+            owner = (meta.get("workbench") or "").lower()
+            return 0 if owner.startswith(wb) else 1
+
         def key(name):
-            return (self.rank_of(registry.get(name)), name)
+            return (self.rank_of(registry.get(name)), home(name), name)
         return sorted(names, key=key)
 
     def census(self, registry=None):

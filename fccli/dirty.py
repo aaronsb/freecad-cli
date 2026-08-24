@@ -35,9 +35,20 @@ class DirtyTracker:
         doc = doc if doc is not None else App.ActiveDocument
         return doc is not None and doc.Name in self.names
 
+    # Told after every change of dirtiness, so a prompt can show it.
+    listeners = []
+
+    def _tell(self):
+        for fn in list(self.listeners):
+            try:
+                fn()
+            except Exception:
+                pass
+
     def mark(self, doc):
         if doc is not None:
             self.names.add(getattr(doc, "Name", doc))
+        self._tell()
 
     def clear(self, doc=None, name=None):
         if name is None:
@@ -47,6 +58,7 @@ class DirtyTracker:
                 return
             name = getattr(doc, "Name", doc)
         self.names.discard(name)
+        self._tell()
 
     def dirty_documents(self):
         return sorted(n for n in App.listDocuments() if n in self.names)
@@ -113,6 +125,12 @@ def install():
 
 def is_dirty(doc=None):
     return TRACKER.is_dirty(doc)
+
+
+def listen(fn):
+    """Call fn after every change of dirtiness."""
+    TRACKER.listeners.append(fn)
+    return lambda: TRACKER.listeners.remove(fn)
 
 
 def mark_dirty(doc=None):
