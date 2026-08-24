@@ -175,6 +175,18 @@ class _Filter(QtCore.QObject):
         self.forced = []        # whether each of those carried the bang
 
     def eventFilter(self, obj, event):
+        try:
+            return self._catch(obj, event)
+        except Exception:
+            # This filter is on the QApplication, so it is called during
+            # exception unwinding too -- and calling into PySide with a
+            # Python exception already set raises SystemError on top of it.
+            # `grid` on a FreeCAD where Arch_Grid is not registered showed
+            # FreeCADError, then this filter's own SystemError under it,
+            # which is a confusing way to be told a command does not exist.
+            return False
+
+    def _catch(self, obj, event):
         if event.type() != _SHOW or not self.targets:
             return False
         if not isinstance(obj, QtWidgets.QDialog) or not obj.isModal():

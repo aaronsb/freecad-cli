@@ -181,9 +181,13 @@ def command_spans(registry, text, offset=0):
     if verb is None:
         return out
 
-    index, last_point = 0, None
+    # A token goes to the step whose kind it matches, which is the rule the
+    # engine follows -- `circle 0,0,0 20` and `circle 20 0,0,0` both run.
+    # Walking the steps in declaration order instead coloured the second
+    # one entirely `bad`: the line ran, and read as a syntax error.
+    remaining, last_point = list(verb.steps), None
     for start, token in tokens[1:]:
-        step = verb.steps[min(index, len(verb.steps) - 1)] if verb.steps else None
+        step = _step_for(remaining, token)
         if step is None:
             out.append((offset + start, len(token), "option", False))
             continue
@@ -207,9 +211,34 @@ def command_spans(registry, text, offset=0):
                         "option" if ok else "unknown", False))
         else:
             out.append((offset + start, len(token), "number", False))
-        if not step.repeat:
-            index += 1
+        if not step.repeat and step in remaining:
+            remaining.remove(step)
     return out
+
+
+def _step_for(remaining, token):
+    """Which pending step this token belongs to, by kind.
+
+    The same reading engine._step_for_token does: a coordinate is
+    recognisably a coordinate and a scalar recognisably a scalar, and
+    steps of one kind stay positional among themselves.
+    """
+    from .parsing import parse_quantity
+    from .grammar import POINT, QUANTITY
+
+    if not remaining:
+        return None
+    head = remaining[0]
+    if any(o.name.lower().startswith(token.lower()) for o in head.options):
+        return head
+    looks_like_point = "," in token or token[:1] in "@<" or (
+        token[:1].lower() == "r" and token[1:2].isdigit())
+    wanted = POINT if looks_like_point else None
+    if wanted is None and parse_quantity(token, unit_hint="").ok:
+        wanted = QUANTITY
+    if wanted is None:
+        return head
+    return next((s for s in remaining if s.kind == wanted), head)
 
 
 def _extend(out, res, base, length):

@@ -660,6 +660,30 @@ def wait_for_panel(before=frozenset(), rounds=12):
     return bool(names_on_screen() - set(before)) if _dialog_up() else False
 
 
+def not_yet_loaded(command):
+    """Why this command cannot run, if it is simply not there yet.
+
+    The descriptor is harvested with every workbench activated, so it
+    knows about commands a running FreeCAD has not registered -- a
+    workbench brings its own along when it loads. Running one raised
+    `Base.FreeCADError: No such command 'Arch_Grid'`, which is true and
+    unhelpful, and is the sort of thing somebody types once and gives up
+    on.
+    """
+    try:
+        import FreeCADGui as Gui
+        if command in set(Gui.listCommands()):
+            return None
+        stem = command.split("_", 1)[0] if "_" in command else ""
+        known = {w.lower(): w for w in Gui.listWorkbenches()}
+        owner = known.get((stem + "workbench").lower()) or known.get(stem.lower())
+        where = f" -- it comes with {owner}" if owner else ""
+        return (f"{command} is not loaded{where}. Switch to that workbench "
+                "once and it will be here for the rest of the session.")
+    except Exception:
+        return None
+
+
 def _open_panel(command):
     """Run the command, and ask whatever panel it opens what it wants.
 
@@ -670,6 +694,9 @@ def _open_panel(command):
     """
     def start(engine):
         import FreeCADGui as Gui
+        missing = not_yet_loaded(command)
+        if missing:
+            raise RuntimeError(missing)
         before = names_on_screen()
         Gui.runCommand(command)
         if not wait_for_panel(before):
