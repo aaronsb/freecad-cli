@@ -780,11 +780,22 @@ def _emit_man(v):
             for opt in step.options:
                 say(f"       option {opt.name}: {opt.doc}")
 
+    # The page's own See also is kept for the SEE ALSO below, where the
+    # wiki's page names are answered as verb names beside what FreeCAD
+    # put on the same toolbar.
+    from_page = []
     if getattr(verb, "manual", ""):
         say("DESCRIPTION", "head")
+        holding = False
         for para in verb.manual.split("\n\n"):
             if para.startswith("## "):
-                say(para[3:].upper(), "head")
+                holding = para[3:].strip().lower() == "see also"
+                if not holding:
+                    say(para[3:].upper(), "head")
+                continue
+            if holding:
+                from_page.extend(l.lstrip("- ").strip()
+                                 for l in para.splitlines() if l.strip())
                 continue
             for row in _wrap(para, 72):
                 say(f"    {row}")
@@ -807,6 +818,11 @@ def _emit_man(v):
     # "what goes with what", and it is a better answer than a guess from
     # the names would be.
     near = curated.neighbours(REGISTRY, verb)
+    for page in from_page:
+        other = REGISTRY.by_gui_command(page)
+        name = other.name if other else page.lower()
+        if name not in near and name != verb.name:
+            near.insert(0, name)
     if near:
         say(f"    {', '.join(near)}", "ok")
     say("    man     (list every command)")

@@ -1956,6 +1956,16 @@ def _run():
     check("  man prints DESCRIPTION from the page",
           any(t == "DESCRIPTION" for t in _texts)
           and any("segment" in t.lower() for t in _texts), True)
+    # The page's See also joins FreeCAD's toolbar neighbours, as verbs.
+    _seen_man.clear()
+    _eng.submit("man circle_from_center")
+    _texts = [m.text for m in _seen_man if m.kind == _INFO]
+    _arc = REGISTRY.by_gui_command("Sketcher_CreateArc").name
+    _line = next((t for t in _texts if _arc in t), "")
+    check("  the page's See also is answered in verb names, once",
+          (_texts.count("SEE ALSO"), any("Sketcher_CreateArc" in t for t in _texts),
+           _arc in [n.strip() for n in _line.split(",")]),
+          (1, False, True))
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
