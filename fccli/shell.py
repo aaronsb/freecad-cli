@@ -1173,13 +1173,13 @@ def _emit_cat(v):
     cwd = session.cwd if session else "/"
     target = _root.resolve(cwd, v.get("path") or "")
     try:
-        text = _root.read(target)
+        text, truncated = _root.read(target)
     except (FileNotFoundError, IsADirectoryError) as exc:
         raise RuntimeError(str(exc))
-    except OSError as exc:
-        raise RuntimeError(f"{target}: {exc}")
     for line in text.rstrip("\n").splitlines():
         _say(v, line)
+    if truncated:
+        _say(v, f"({target}: cut at {_root.LIMIT} characters)")
     return None
 
 

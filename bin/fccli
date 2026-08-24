@@ -343,6 +343,12 @@ def cmd_repl(client, args):
     state = client.hello
 
     while True:
+        # Asked fresh: the dock may have moved the session since the last
+        # reply, and the prompt shows where the session is now.
+        try:
+            state = client.ask(op="state") or state
+        except Exception:
+            pass
         prompt = _prompt_for(state)
         try:
             line = input(prompt)

@@ -53,13 +53,40 @@ def _macro_path():
         return DEFAULT_MACROS
 
 
+def _mkdir(path, notes):
+    """A real directory at path. Returns whether there is one.
+
+    A symlink where the directory should be is somebody's, and nothing
+    is made inside it: makedirs would follow it and write into whatever
+    it points at. A file where the directory should be is said once.
+    """
+    if os.path.islink(path):
+        notes.append(f"{os.path.relpath(path, root())} is a link; nothing "
+                     f"is made inside it")
+        return False
+    if os.path.isdir(path):
+        return True
+    if os.path.exists(path):
+        notes.append(f"{os.path.relpath(path, root())} is a file where a "
+                     f"directory should be")
+        return False
+    try:
+        os.makedirs(path)
+        return True
+    except OSError as exc:
+        notes.append(f"{os.path.relpath(path, root())}: {exc}")
+        return False
+
+
 def _link(path, target, notes):
     """A symlink at path to target, when target exists.
 
     A real directory at path is somebody's and is left alone; a stale
-    symlink is replaced; a missing target is noted and skipped.
+    symlink is replaced; a missing or relative target is noted and
+    skipped -- a relative one would be resolved from the link's own
+    directory and dangle.
     """
-    if not os.path.isdir(target):
+    if not os.path.isabs(target) or not os.path.isdir(target):
         notes.append(f"{os.path.basename(path)}: {target} is not there")
         return
     if os.path.islink(path):
@@ -78,18 +105,23 @@ def layout(base=None):
     """Make the root as the ADR lays it out. Returns notes worth saying."""
     base = base or root()
     notes = []
-    for d in ("bin", "etc", "lib", os.path.join("lib", "addons")):
-        os.makedirs(os.path.join(base, d), exist_ok=True)
-    here = os.path.dirname(os.path.abspath(__file__))
-    _link(os.path.join(base, "lib", "commands"),
-          os.path.join(here, "lib", "commands"), notes)
-    for mod in MOD_DIRS:
-        if not os.path.isdir(mod):
-            continue
-        for name in sorted(os.listdir(mod)):
-            shipped = os.path.join(mod, name, ADDON_DIR)
-            if os.path.isdir(shipped) and name != "freecad-cli":
-                _link(os.path.join(base, "lib", "addons", name), shipped, notes)
+    if not _mkdir(base, notes):
+        return notes
+    _mkdir(os.path.join(base, "bin"), notes)
+    _mkdir(os.path.join(base, "etc"), notes)
+    if _mkdir(os.path.join(base, "lib"), notes):
+        here = os.path.dirname(os.path.abspath(__file__))
+        _link(os.path.join(base, "lib", "commands"),
+              os.path.join(here, "lib", "commands"), notes)
+        if _mkdir(os.path.join(base, "lib", "addons"), notes):
+            for mod in MOD_DIRS:
+                if not os.path.isdir(mod):
+                    continue
+                for name in sorted(os.listdir(mod)):
+                    shipped = os.path.join(mod, name, ADDON_DIR)
+                    if os.path.isdir(shipped) and name != "freecad-cli":
+                        _link(os.path.join(base, "lib", "addons", name),
+                              shipped, notes)
     _link(os.path.join(base, "macros"), _macro_path(), notes)
     return notes
 
@@ -135,21 +167,40 @@ def kind(real_path):
     return ""
 
 
-def listing(virtual, base=None):
-    """Names in a directory, marked, directories first."""
+def listing(virtual, base=None, marked=True):
+    """Names in a directory, directories first and ending in /.
+
+    `marked` adds the other `ls -F` characters -- * for a script, @ for a
+    link -- for a listing somebody reads. Completion asks without them:
+    a marker inserted into the line is a name that is not there.
+    """
     here = real(virtual, base)
     if not os.path.isdir(here):
         raise FileNotFoundError(f"{virtual}: not a directory")
-    names = sorted(n for n in os.listdir(here) if not n.startswith("."))
+    try:
+        names = sorted(n for n in os.listdir(here) if not n.startswith("."))
+    except OSError as exc:
+        raise FileNotFoundError(f"{virtual}: {exc.strerror}")
     dirs = [n + "/" for n in names if os.path.isdir(os.path.join(here, n))]
-    files = [n + kind(os.path.join(here, n)) for n in names
-             if not os.path.isdir(os.path.join(here, n))]
+    files = [n + (kind(os.path.join(here, n)) if marked else "")
+             for n in names if not os.path.isdir(os.path.join(here, n))]
     return dirs + files
 
 
-def read(virtual, base=None, limit=200_000):
+LIMIT = 200_000
+
+
+def read(virtual, base=None, limit=LIMIT):
+    """(text, truncated) of a file, printable characters only."""
     here = real(virtual, base)
     if os.path.isdir(here):
         raise IsADirectoryError(f"{virtual}: is a directory")
-    with open(here, encoding="utf-8", errors="replace") as fh:
-        return fh.read(limit)
+    try:
+        with open(here, encoding="utf-8", errors="replace") as fh:
+            text = fh.read(limit + 1)
+    except OSError as exc:
+        raise FileNotFoundError(f"{virtual}: {exc.strerror}")
+    truncated = len(text) > limit
+    text = "".join(c if c.isprintable() or c in "\t\n" else "?"
+                   for c in text[:limit])
+    return text, truncated

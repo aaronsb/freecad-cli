@@ -2170,8 +2170,39 @@ def _run():
         check("  cd cannot leave the root", _rsess.cwd, "/")
         _reng.submit("cd plinth")
         from fccli.completion import path_entries as _pe
-        check("  path completion lists the working directory",
-              _pe(_reng), ["notes/", "README.md", "tower.fccli*"])
+        check("  path completion lists the working directory, names only",
+              _pe(_reng), ["notes/", "README.md", "tower.fccli"])
+        # What layout must never do: write through a link, or give up.
+        _other = tempfile.mkdtemp(prefix="fccli-elsewhere-")
+        _r2 = os.path.join(_xdg, "fccli2")
+        os.makedirs(_r2)
+        os.symlink(_other, os.path.join(_r2, "lib"))
+        open(os.path.join(_r2, "bin"), "w").write("a file")
+        _notes2 = _root.layout(_r2)
+        check("  a linked lib is left alone and nothing is made inside it",
+              (sorted(os.listdir(_other)), any("lib is a link" in n for n in _notes2)),
+              ([], True))
+        check("  a file named bin is said once and the rest is still made",
+              (any("bin is a file" in n for n in _notes2),
+               os.path.isdir(os.path.join(_r2, "etc"))), (True, True))
+        _r3 = os.path.join(_xdg, "fccli3"); os.makedirs(_r3); _n3 = []
+        _root._link(os.path.join(_r3, "macros"), "Macro", _n3)
+        check("  a relative macro path makes no link",
+              (os.path.lexists(os.path.join(_r3, "macros")), len(_n3)), (False, 1))
+        # cat on what is not text, and on what is too long.
+        with open(os.path.join(_r, "plinth", "big.txt"), "w") as _fh:
+            _fh.write("x" * (_root.LIMIT + 10))
+        with open(os.path.join(_r, "plinth", "odd.txt"), "w") as _fh:
+            _fh.write("a\x1b]0;title\x07b\n")
+        _rseen.clear(); _reng.submit("cat /plinth/odd.txt")
+        check("  cat shows only printable characters", _lines(), ["a?]0;title?b"])
+        _rseen.clear(); _reng.submit("cat /plinth/big.txt")
+        check("  and says when it cut a file short",
+              _lines()[-1].startswith("(/plinth/big.txt: cut at"), True)
+        _rseen.clear(); _reng.submit("ls /plinth/nothing")
+        check("  an error names the virtual path, never the disk",
+              ([m.text for m in _rseen if m.kind == ERROR][-1].startswith("ls failed: /plinth/nothing"),
+               _xdg in [m.text for m in _rseen if m.kind == ERROR][-1]), (True, False))
         check("  the idle prompt carries the path",
               _rsess.state()["cwd"], "/plinth")
     finally:

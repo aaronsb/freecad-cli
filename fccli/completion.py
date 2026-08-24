@@ -275,7 +275,7 @@ def path_entries(engine):
         from . import root as _root
         session = getattr(engine, "session", None)
         cwd = getattr(session, "cwd", "/") if session else "/"
-        return _root.listing(cwd)
+        return _root.listing(cwd, marked=False)
     except Exception:
         return []
 
