@@ -22,9 +22,24 @@ TIMEOUT = int(os.environ.get("FCCLI_BVT_TIMEOUT", "300"))
 def main():
     if os.path.exists(RESULT):
         os.remove(RESULT)
+    # Always its own display when one can be had. This used to fall back to
+    # DISPLAY whenever it was set, which meant running the suite on a
+    # desktop opened FreeCAD windows on that desktop and popped its dialogs
+    # at whoever was sitting there. A build verification test should be
+    # invisible. FCCLI_BVT_DISPLAY=1 asks for the real one, for watching it
+    # run on purpose.
     runner = []
-    if not os.environ.get("DISPLAY") and shutil.which("xvfb-run"):
+    if os.environ.get("FCCLI_BVT_DISPLAY"):
+        if not os.environ.get("DISPLAY"):
+            print("bvt: FCCLI_BVT_DISPLAY is set but DISPLAY is not",
+                  file=sys.stderr)
+            return 2
+    elif shutil.which("xvfb-run"):
         runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"]
+    elif not os.environ.get("DISPLAY"):
+        print("bvt: needs xvfb-run, or a DISPLAY with FCCLI_BVT_DISPLAY=1",
+              file=sys.stderr)
+        return 2
     cmd = runner + ["freecad", os.path.join(ROOT, "tests", "bvt.py")]
     # A scratch state directory, so a run does not append its commands to
     # the operator's history -- which now feeds completion ranking.
