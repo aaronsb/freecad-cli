@@ -7,5 +7,5 @@ because FreeCAD's Addon Manager reads it there; ``make version-check`` keeps
 the two honest, and ``make bump`` writes both.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __version_info__ = tuple(int(p) for p in __version__.split("."))

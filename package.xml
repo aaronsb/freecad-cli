@@ -8,7 +8,7 @@
     one state machine, and every value records its typed form so a
     mouse-driven command replays from history as text.
   </description>
-  <version>0.2.0</version>
+  <version>0.3.0</version>
   <date>2026-08-23</date>
   <maintainer email="aaronsb@gmail.com">Aaron Bockelie</maintainer>
   <license file="LICENSE">LGPL-2.1-or-later</license>

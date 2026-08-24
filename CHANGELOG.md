@@ -2,7 +2,9 @@
 
 <!-- next -->
 
-## Unreleased
+## 0.3.0 -- 2026-08-23
+
+The command line reads FreeCAD's own opinion about itself, and then yours.
 
 ### Changed
 

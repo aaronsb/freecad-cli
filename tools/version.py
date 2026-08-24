@@ -82,8 +82,16 @@ def write(version):
         with open(CHANGELOG, encoding="utf-8") as fh:
             text = fh.read()
         if f"## {version}" not in text:
-            entry = f"## {version} -- {today}\n\n- \n\n"
-            text = text.replace("<!-- next -->\n", "<!-- next -->\n\n" + entry, 1)
+            # Notes written during the cycle live under "## Unreleased".
+            # Retitling that is what a release is; inserting a fresh
+            # section above it would strand them under the new heading.
+            if "## Unreleased\n" in text:
+                text = text.replace("## Unreleased\n",
+                                    f"## {version} -- {today}\n", 1)
+            else:
+                entry = f"## {version} -- {today}\n\n- \n\n"
+                text = text.replace("<!-- next -->\n",
+                                    "<!-- next -->\n\n" + entry, 1)
             with open(CHANGELOG, "w", encoding="utf-8") as fh:
                 fh.write(text)
     print(version)
