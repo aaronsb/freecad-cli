@@ -55,13 +55,37 @@ def group_of(act):
 def run():
     from PySide6 import QtCore, QtGui, QtWidgets
 
-    workbenches, failed = [], {}
+    # Which workbench brings which command. A workbench registers its own
+    # commands the first time it is activated, so a running FreeCAD that
+    # has never opened BIM does not have Arch_Grid -- and the descriptor,
+    # harvested with everything activated, does. Without this the command
+    # line could say a command was not loaded and not say what would load
+    # it, which is advice nobody can act on.
+    workbenches, failed, owner = [], {}, {}
+    known = set(Gui.listCommands())      # always there, before any workbench
     for wb in sorted(Gui.listWorkbenches()):
         try:
             Gui.activateWorkbench(wb)
             workbenches.append(wb)
         except Exception as exc:
             failed[wb] = str(exc)[:90]
+            continue
+        now = set(Gui.listCommands())
+        for name in now - known:
+            owner[name] = wb
+        known = now
+
+    # A command is credited to whichever workbench happened to be
+    # activated first, and BIM sorts before Draft while bringing Draft's
+    # commands along -- so Draft_Line was attributed to BIM, which is true
+    # and is not what anybody would say. Where a workbench is named after
+    # the command's own stem, that is the one to name.
+    by_name = {w.lower(): w for w in workbenches}
+    for name in list(owner):
+        stem = name.split("_", 1)[0].lower()
+        better = by_name.get(stem + "workbench") or by_name.get(stem)
+        if better:
+            owner[name] = better
 
     mw = Gui.getMainWindow()
     actions = {}
@@ -74,6 +98,8 @@ def run():
     for name in Gui.listCommands():
         act = actions.get(name)
         entry = {"name": name}
+        if name in owner:
+            entry["workbench"] = owner[name]
         if act is not None:
             toolbar, menu = group_of(act)
             entry.update({

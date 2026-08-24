@@ -669,17 +669,31 @@ def not_yet_loaded(command):
     `Base.FreeCADError: No such command 'Arch_Grid'`, which is true and
     unhelpful, and is the sort of thing somebody types once and gives up
     on.
+
+    The descriptor records which workbench brings each one, so the usual
+    answer is to go and get it. Returns None when there was nothing to
+    report, including when it was fetched.
     """
     try:
         import FreeCADGui as Gui
         if command in set(Gui.listCommands()):
             return None
-        stem = command.split("_", 1)[0] if "_" in command else ""
-        known = {w.lower(): w for w in Gui.listWorkbenches()}
-        owner = known.get((stem + "workbench").lower()) or known.get(stem.lower())
+        from .factory import load_descriptor
+        descriptor = load_descriptor() or {}
+        owner = (descriptor.get("commands", {})
+                 .get(command, {}).get("workbench"))
+        if owner and owner in set(Gui.listWorkbenches()):
+            # Knowing which workbench and making somebody go and get it is
+            # two thirds of an answer. A workbench registers its commands
+            # the first time it is activated and keeps them for the rest of
+            # the session, so this is a one-off either way.
+            Gui.activateWorkbench(owner)
+            if command in set(Gui.listCommands()):
+                return None
         where = f" -- it comes with {owner}" if owner else ""
-        return (f"{command} is not loaded{where}. Switch to that workbench "
-                "once and it will be here for the rest of the session.")
+        return (f"{command} is not loaded{where}, and this could not load "
+                "it. Open that workbench once and it will be here for the "
+                "rest of the session.")
     except Exception:
         return None
 
