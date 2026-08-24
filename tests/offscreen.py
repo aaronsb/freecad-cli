@@ -997,6 +997,58 @@ def main():
     check("  and the latest one wins", tuple(_probe.last_point()),
           (4.0, 5.0, 6.0))
 
+    print("\n5x. a dialog's own buttons say what the command line should do")
+    from fccli import modals as _modals
+    from fccli.qt import QtWidgets as _QW
+
+    def _box(icon, text, buttons):
+        b = _QW.QMessageBox()
+        b.setIcon(icon)
+        b.setWindowTitle("Revolve")
+        b.setText(text)
+        b.setStandardButtons(buttons)
+        return b
+
+    _reject = _box(_QW.QMessageBox.Critical, "Select a shape for revolution.",
+                   _QW.QMessageBox.Ok)
+    _text, _buttons = _modals.read(_reject)
+    check("a lone OK is read as one button", len(_buttons), 1)
+    check("  and its role is what marks it a rejection",
+          _buttons[0][1], "AcceptRole")
+    check("the words come through", "revolution" in _text, True)
+    check("  with the title folded in", _text.startswith("Revolve"), True)
+
+    _ask = _box(_QW.QMessageBox.Question, "Save changes before closing?",
+                _QW.QMessageBox.Save | _QW.QMessageBox.Discard
+                | _QW.QMessageBox.Cancel)
+    _text2, _buttons2 = _modals.read(_ask)
+    _roles = sorted(role for _, role in _buttons2)
+    check("a question offers three ways out", len(_buttons2), 3)
+    check("  and Discard is the destructive one", _roles,
+          ["AcceptRole", "DestructiveRole", "RejectRole"])
+
+    # Reject by default. Cancelling is the answer that cannot lose work.
+    check("without the bang, a question is cancelled",
+          _modals._pick(_buttons2, force=False).text().replace("&", ""),
+          "Cancel")
+    check("the bang asks for the destructive answer instead",
+          _modals._pick(_buttons2, force=True).text().replace("&", ""),
+          "Discard")
+    check("the bang changes nothing when there is nothing to discard",
+          _modals._pick(_buttons, force=True).text().replace("&", ""), "OK")
+
+    # Titles that merely repeat the body are folded, not printed twice.
+    _dupe = _box(_QW.QMessageBox.Warning, "Revolve", _QW.QMessageBox.Ok)
+    check("a title the body repeats appears once",
+          _modals.read(_dupe)[0], "Revolve")
+
+    _long = _box(_QW.QMessageBox.Critical, "x " * 400, _QW.QMessageBox.Ok)
+    check("a wall of text is capped",
+          len(_modals.read(_long)[0]) <= _modals.LIMIT, True)
+
+    for _b in (_reject, _ask, _dupe, _long):
+        _b.deleteLater()
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])
