@@ -119,16 +119,21 @@ def describe(obj, prop):
 # home directory in a file this project ships; and it points inside a
 # directory that goes away with the document, so it was a dangling path
 # for every reader.
-CACHE = os.path.join("FreeCAD", App.Version()[0] + "-" + App.Version()[1],
-                     "Cache") if hasattr(App, "Version") else "Cache"
+#
+# Matched on the UUID marker rather than on the cache location or on HOME.
+# The first version tested both and neither held up: the cache directory is
+# `FreeCAD/v1-1/Cache` and App.Version() gives `1-1`, so that clause never
+# fired at all, and the HOME clause it was left leaning on is an unanchored
+# substring -- with HOME=/ or HOME unset, which is ordinary in a container,
+# every absolute default in the descriptor would have been discarded in
+# silence, including the three real TechDraw template paths under
+# /usr/share. This marker is the thing that is actually per-document.
+TRANSIENT = "FreeCAD_Doc_"
 
 
 def _portable(value):
-    """A string default worth recording, or None if it is this machine's."""
-    if os.path.isabs(value) and (CACHE in value or os.path.expanduser("~")
-                                 in value):
-        return None
-    return value
+    """A string default worth recording, or None if it is this run's."""
+    return None if TRANSIENT in value else value
 
 
 def main():

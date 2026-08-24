@@ -87,6 +87,26 @@ def group_of(act):
     return toolbar, menu
 
 
+def substituted(text):
+    """getInfo's text, unless it still has a placeholder in it.
+
+    The reason label comes off the action applies here too and the first
+    version of this only applied it there: getInfo hands back the raw
+    resource string, so Std_About's status is "Displays information about
+    %1" where the action's is "...about FreeCAD". One command in 1111, and
+    the rule reads as arbitrary without it.
+
+    Only a fallthrough. Taking the action's statusTip first instead would
+    lose 33 group commands, whose action statusTip is whichever child the
+    dropdown last had selected -- PartDesign_CompSketches said "Creates a
+    new sketch" where getInfo says "Creates a datum object or local
+    coordinate system". Reading a group's text off a child is also state
+    dependent, so getInfo first is the reproducible half as well.
+    """
+    cleaned = clean(text)
+    return "" if "%" in cleaned else cleaned
+
+
 def unglue(text, name):
     """Take the command's own name back off the end of its rich tooltip.
 
@@ -96,7 +116,11 @@ def unglue(text, name):
     "Nudge Down (Ctrl+Down)BIM_Nudge_Down". Nothing should hand a reader
     documentation that ends in the thing it is documenting.
     """
-    return text[:-len(name)].strip() if name and text.endswith(name) else text
+    if not (name and text.endswith(name)):
+        return text
+    # Never strip it to nothing: a tooltip that is only the command name
+    # has no better source behind it, and the `or` chain is spent by here.
+    return text[:-len(name)].strip() or text
 
 
 def command_info(name):
@@ -180,10 +204,10 @@ def run():
         entry.update({
             "label": clean(act.text() if act else "")
                      or clean(info.get("menuText")),
-            "tooltip": clean(info.get("toolTip"))
+            "tooltip": substituted(info.get("toolTip"))
                        or clean(act.statusTip() if act else "")
                        or unglue(clean(act.toolTip() if act else ""), name),
-            "status": clean(info.get("statusTip"))
+            "status": substituted(info.get("statusTip"))
                       or clean(act.statusTip() if act else ""),
             "shortcut": (act.shortcut().toString() if act else "")
                         or info.get("shortcut") or None,

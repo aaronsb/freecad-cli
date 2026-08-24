@@ -1419,6 +1419,21 @@ def _run():
     check("the descriptor names no home directory", "/home/" in _raw, False)
     check("  and no per-document cache path",
           "FreeCAD_Doc_" in _raw, False)
+    # Dropping the transient ones must not take the real templates with
+    # it. The first version matched on HOME as an unanchored substring,
+    # which with HOME=/ or HOME unset -- ordinary in a container -- would
+    # have discarded every absolute default in silence. Both new checks
+    # above assert on absence, so neither could have seen it.
+    _abs = {p["default"] for t in _load_desc()["types"].values()
+            for p in t.get("params", [])
+            if isinstance(p.get("default"), str)
+            and p["default"].startswith("/")}
+    check("  and the real template paths survive", len(_abs), 3)
+    # getInfo hands back raw resource strings. Std_About's status is
+    # "Displays information about %1" where the action's is substituted.
+    check("no documentation carries an unsubstituted placeholder",
+          [n for n, c in _cmds.items()
+           if "%" in (c.get("tooltip") or "") + (c.get("status") or "")], [])
 
     # Every command reaches a verb. A tier-0 name already taken used to be
     # dropped without a word -- 90 of them before this, 133 after labels

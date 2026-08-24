@@ -5,7 +5,7 @@
 ### Fixed
 
 - **148 commands get their real names and documentation.** The harvest read
-  everything off QActions, and 148 registered commands have none -- they are
+  everything off QActions, and 147 registered commands have none -- they are
   runnable and appear in no toolbar and no menu. They reached the descriptor
   carrying only a name, which slugged into verbs like `arch_multimaterial`
   whose entire documentation was the string `Arch_MultiMaterial`. FreeCAD

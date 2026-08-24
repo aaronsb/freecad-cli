@@ -7787,9 +7787,9 @@
    "menu": "Help",
    "name": "Std_About",
    "shortcut": null,
-   "status": "Displays information about %1",
+   "status": "Displays information about FreeCAD",
    "toolbar": null,
-   "tooltip": "Displays information about %1"
+   "tooltip": "Displays information about FreeCAD"
   },
   "Std_AboutQt": {
    "label": "About &Qt",
