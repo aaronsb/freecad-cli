@@ -2066,6 +2066,22 @@ def _run():
            _again.changed, _again.reseeded, _again.conflicts,
            len(_again.identity)),
           (None, [], [], [], [], [], [], 1))
+    # Offline: no clone means no page to compare, so no body is touched --
+    # otherwise 835 wiki-seeded bodies would "move" to their tooltips.
+    _shutil.copytree(_cd.DEFAULT_TREE, os.path.join(_tmp, "offline"))
+    import docs_clone as _dc
+    _was = _dc.ensure
+    _dc.ensure = lambda **kw: None
+    try:
+        _off = _rc.reconcile(os.path.join(_tmp, "offline"), _old, _new,
+                             apply=True, quiet=True)
+    finally:
+        _dc.ensure = _was
+    _fo, _bo = _cf.read(os.path.join(_tmp, "offline", "sketcher",
+                                     "Sketcher_CreateCircle.md"))
+    check("  offline, bodies are left alone and the report says so",
+          (_off.no_docs, _off.reseeded, _bo.startswith("The Sketcher CreateCircle tool")),
+          (True, [], True))
     _shutil.rmtree(_tmp, ignore_errors=True)
 
     print("\n6. filter overhead")

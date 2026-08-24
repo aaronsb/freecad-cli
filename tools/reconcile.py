@@ -58,6 +58,7 @@ class Report:
         self.added, self.removed, self.rehomed = [], [], []
         self.changed, self.reseeded, self.conflicts = [], [], []
         self.identity, self.stamp = [], None
+        self.no_docs = False
 
     def empty(self):
         return not any((self.added, self.removed, self.rehomed, self.changed,
@@ -68,6 +69,9 @@ class Report:
         lines = []
         if self.stamp:
             lines.append(f"freecad {self.stamp[0]} -> {self.stamp[1]}")
+        if self.no_docs:
+            lines.append("no documentation clone: bodies were not compared "
+                         "(tools/docs_clone.py fetches it)")
         for title, items in (("added", self.added), ("removed", self.removed),
                              ("re-homed", self.rehomed),
                              ("changed", self.changed),
@@ -127,12 +131,20 @@ def reconcile(tree, old_path, new_path, apply=False, refresh_docs=False,
             report.rehomed.append(
                 f"{name}: {cf.workbench_dir(generated.get('workbench'))}/ -> "
                 f"{cf.workbench_dir(entry.get('workbench'))}/")
-        # The body. Unedited means it still hashes to its seed.
-        new_body, src = gen.body_for(entry, pages)
+        # The body. Unedited means it still hashes to its seed. With no
+        # clone there is no page to compare against, and "the page moved"
+        # would mean every wiki-seeded body falling back to its tooltip,
+        # so bodies are left alone and the report says why.
         edited = cf.edited(front, body)
-        page_moved = cf.seed_of(new_body) != (generated.get("seed")
-                                              or cf.seed_of(body))
-        page_rev = rev if src == "wiki" else None
+        if clone:
+            new_body, src = gen.body_for(entry, pages)
+            page_moved = cf.seed_of(new_body) != (generated.get("seed")
+                                                  or cf.seed_of(body))
+            page_rev = rev if src == "wiki" else None
+        else:
+            new_body, page_moved = body, False
+            page_rev = generated.get("wiki_rev")
+            report.no_docs = True
         write_body = body
         if page_moved and not edited:
             report.reseeded.append(name)
