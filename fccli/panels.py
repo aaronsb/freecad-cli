@@ -524,24 +524,59 @@ def steps_from(found):
         options=[DONE],
         # The whole line, not a token at a time: a value can hold spaces.
         raw=True,
+        completes="fields",
         on_accept=_assign,
     )]
 
 
-def wait_for_panel(rounds=40):
-    """Give the panel time to appear, and stop as soon as it has.
+def _dialog_up():
+    """FreeCAD's own cheap answer to whether a task panel is showing."""
+    try:
+        import FreeCADGui as Gui
+        return bool(Gui.Control.activeDialog())
+    except Exception:
+        return False
+
+
+def names_on_screen():
+    return {w.objectName() for w in roots()}
+
+
+def wait_for_panel(before=frozenset(), rounds=12):
+    """Wait for a panel this command opened, and stop as soon as one has.
 
     A task panel is put up from the command's own event handling rather
     than by the call that started it, so how long it takes is FreeCAD's
-    business. A fixed number of pumps is a race: Part_Offset built its
-    object and showed its panel one round after the reading stopped, so
-    the command looked like one that opens nothing.
+    business, and a fixed number of pumps is a race -- Part_Offset built
+    its object and showed its panel one round after the reading stopped.
+
+    What was already there does not count. roots() reads whatever is on
+    screen and has no notion of whose it is, so a panel left open by
+    something else would be adopted by the next verb typed: `fit` after an
+    orphaned Transform would have been offered Transform's fields.
     """
     for _ in range(rounds):
-        if is_open():
+        # Gui.Control.activeDialog() is a boolean and roots() is a walk of
+        # every widget in the main window, so the cheap question is asked
+        # first. The ~970 commands that open no panel are the common case
+        # by a wide margin, and they used to pay the walk once a round.
+        if _dialog_up() and names_on_screen() - set(before):
             return True
-        _pump(2)
-    return is_open()
+        _pump(1)
+    return bool(names_on_screen() - set(before)) if _dialog_up() else False
+
+
+def can_finish():
+    """Whether the panel offers a way to say yes.
+
+    A panel with only a Close is not a form to fill in -- it is a mode
+    somebody is in. Sketcher's edit panels are the ones that matter: they
+    are .ui boxes with filter combos and search fields, so they read as
+    full of parameters, and driving one ends by pressing the only button
+    there is and dropping the operator out of edit mode. Before this they
+    were entered and left alone, which is what they are for.
+    """
+    return any(label in buttons() for label in COMMIT)
 
 
 def _open_panel(command):
@@ -554,8 +589,14 @@ def _open_panel(command):
     """
     def start(engine):
         import FreeCADGui as Gui
+        before = names_on_screen()
         Gui.runCommand(command)
-        if not wait_for_panel():
+        if not wait_for_panel(before):
+            return None
+        if not can_finish():
+            engine.bus.emit(_bus.INFO,
+                            "the panel has no way to finish from here -- "
+                            "it is a mode, and it is yours")
             return None
         found = fields()
         if not found:

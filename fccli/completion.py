@@ -31,10 +31,16 @@ def step_for(engine, head):
     if len(hits) != 1:
         return None
     verb = engine.registry.get(hits[0])
-    index = len(tokens) - 1
-    if verb is None or index >= len(verb.steps):
+    if verb is None:
         return None
-    return verb.steps[index]
+    # What this invocation is asking for, which is not always what the verb
+    # declares: a panel verb finds its steps by starting.
+    steps = (engine.steps if getattr(engine, "steps", None) is not None
+             else verb.steps)
+    index = len(tokens) - 1
+    if index >= len(steps):
+        return None
+    return steps[index]
 
 
 def is_bare_number(token):
@@ -243,6 +249,14 @@ def from_source(engine, source):
                        for a in engine.registry.get(name).aliases})
     if source == "domains":
         return sorted(domains(engine.registry)) + ["off"]
+    if source == "fields":
+        # What the open panel answers to. The design is "name the field",
+        # and Tab could not name one -- it offered `done` and nothing else.
+        try:
+            from .panels import fields, key_for
+            return sorted(key_for(f.name) + "=" for f in fields())
+        except Exception:
+            return []
     if source == "schemas":
         try:
             from .units import schemas

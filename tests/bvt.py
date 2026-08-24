@@ -530,6 +530,22 @@ def suite_panel(dock):
     step = dock.engine.current_step()
     truthy("one step, taken as often as there are answers",
            step is not None and step.repeat)
+    # Tab has to be able to name a field, since naming one is the whole
+    # design. It used to offer `done` and nothing else.
+    from fccli import completion as _comp
+    offered_now = _comp.from_source(dock.engine, "fields")
+    truthy("Tab can name a field", any(o.startswith("xposition=")
+                                       for o in offered_now))
+    truthy("  offering every one the panel has",
+           len(offered_now) == len(panels.fields()))
+    check("  and the step says where they come from",
+          dock.engine.current_step().completes, "fields")
+
+    # The status line counts the steps this invocation has, not the ones
+    # the verb declared -- a panel verb declares none and read "step 1/0".
+    truthy("the status line counts real steps",
+           len(dock.engine.prompt_sequence()) >= 1)
+
 
     # Named, so order does not matter and nothing is skipped past.
     dock.engine.submit("zposition=3/4 in")
@@ -880,6 +896,17 @@ def run():
     except Exception:
         failed_early = traceback.format_exc()
         print(failed_early)
+
+    try:
+        # A panel still up holds the application open: the run finished,
+        # wrote its result, and then sat there. Whatever aborted the suite
+        # is reported above; this is only so the process ends.
+        from fccli import panels as _panels
+        if _panels.is_open():
+            ESCAPED.append("a task panel was left open")
+            _panels.dismiss()
+    except Exception:
+        pass
 
     try:
         from fccli import dock as _D
