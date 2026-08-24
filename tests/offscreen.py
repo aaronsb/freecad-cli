@@ -2471,17 +2471,19 @@ def _run():
               _cur3.current().order(REGISTRY, ["cube", "circle_from_center"]),
               _cur3.current().order(REGISTRY, ["cube", "circle_from_center"], workbench=None))
         # Part active: a Part command first, PartDesign's not counted as
-        # Part's by prefix. box is Part_Box and partdesign_pad is
-        # PartDesign_Pad, both promoted, so only the home key separates
-        # them -- and "partdesignworkbench".startswith("part") is the trap.
+        # Part's by prefix. additive_helix is PartDesign_Helix and
+        # appearance_per_face is a Part command, both promoted; the
+        # PartDesign name sorts first alphabetically, so only the home key
+        # can put the Part command ahead -- and it does only when the
+        # workbench is matched by equality, since "partdesignworkbench"
+        # startswith "part".
         _c3 = _cur3.current()
-        assert _c3.rank_of(REGISTRY.get("box")) == _c3.rank_of(REGISTRY.get("partdesign_pad"))
+        _pd, _pt = "additive_helix", "appearance_per_face"
+        assert _c3.rank_of(REGISTRY.get(_pd)) == _c3.rank_of(REGISTRY.get(_pt))
+        assert _pd < _pt
         check("  a PartDesign command is not Part's by prefix",
-              _c3.order(REGISTRY, ["partdesign_pad", "box"], workbench="part"),
-              ["box", "partdesign_pad"])
-        check("    and Part's is not PartDesign's either",
-              _c3.order(REGISTRY, ["box", "partdesign_pad"], workbench="partdesign"),
-              ["partdesign_pad", "box"])
+              _c3.order(REGISTRY, [_pd, _pt], workbench="part"),
+              [_pt, _pd])
         # A hand-written verb that runs a Std command keeps its place: its
         # command has no workbench, so the home key is neutral. transform
         # is hand-written (Std_TransformManip); box is Part_Box.
