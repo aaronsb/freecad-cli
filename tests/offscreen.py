@@ -1662,21 +1662,59 @@ def _run():
             @classmethod
             def get(cls, name): return cls.registry.get(name)
 
+    class _Raising:
+        def getInfo(self): raise RuntimeError("no info")
+
     _RuntimeGui.Command.registry = {
         "Acme_Widget": _FakeCmd({"menuText": "&Widget Thing",
                                  "toolTip": "Makes a widget"}),
         "Acme_About": _FakeCmd({"menuText": "About %1",
                                 "toolTip": "About %1"}),
         "Std_ViewFront": _FakeCmd({"menuText": "Not used"}),
+        # Collides with a descriptor tier-0 name.
+        "Acme_Box": _FakeCmd({"menuText": "Box", "toolTip": "An addon box"}),
+        # Collides with a tier-1 typed verb, which registers after tier 0.
+        "Acme_Tier1": _FakeCmd({"menuText": "Additive Box",
+                                "toolTip": "Not PartDesign's"}),
+        # Rich text and entities, the way an addon writes a tooltip.
+        "Acme_Rich": _FakeCmd({"menuText": "Rich",
+                               "toolTip": "<p><b>Cut</b> A &amp; B\nnow</p>"}),
+        # A percent sign that is not a Qt placeholder.
+        "Acme_Pct": _FakeCmd({"menuText": "Pct",
+                              "toolTip": "Scales by 50% of the box"}),
+        "Acme_Raise": _Raising(),
     }
+    _extra = ["Acme_Widget", "Acme_About", "Std_ViewFront", "Acme_Box",
+              "Acme_Tier1", "Acme_Rich", "Acme_Pct", "Acme_Raise",
+              "Acme_Null"]        # Command.get returns None for this one
     _real_gui = sys.modules.get("FreeCADGui")
     try:
-        sys.modules["FreeCADGui"] = _RuntimeGui(["Acme_Widget", "Acme_About",
-                                                 "Std_ViewFront"])
+        sys.modules["FreeCADGui"] = _RuntimeGui(_extra)
         _rt = _Registry()
         _rc = register_all(_rt, tier0=True, patches=PatchSet())
         check("commands the descriptor never saw are registered",
-              _rc.get("runtime", 0), 2)
+              _rc.get("runtime", 0), 8)
+        _bx = _rt.by_gui_command("Acme_Box")
+        check("  a name a descriptor command holds is qualified, not taken",
+              (_bx.name if _bx else None, _rt.get("box").gui_command),
+              ("acme_box", "Part_Box"))
+        _t1 = _rt.by_gui_command("Acme_Tier1")
+        check("  a name a tier-1 verb holds is qualified, not overwritten",
+              (_t1.name if _t1 else None,
+               getattr(_rt.get("additive_box"), "creates", None)),
+              ("acme_additive_box", "PartDesign::AdditiveBox"))
+        _rich = _rt.by_gui_command("Acme_Rich")
+        check("  rich text and entities are cleaned the way the harvest does",
+              _rich.doc if _rich else None, "Cut A & B now")
+        _pct = _rt.by_gui_command("Acme_Pct")
+        check("  a percent sign that is not a placeholder is kept",
+              _pct.doc if _pct else None, "Scales by 50% of the box")
+        _null = _rt.by_gui_command("Acme_Null")
+        _raise = _rt.by_gui_command("Acme_Raise")
+        check("  no info at all still gets a verb, documented as a name",
+              (_null.name if _null else None, _null.doc if _null else None,
+               _raise.name if _raise else None),
+              ("acme_null", "Acme Null", "acme_raise"))
         _w = _rt.get("widget_thing")
         check("  named from getInfo's menuText, mnemonic dropped",
               _w.gui_command if _w else None, "Acme_Widget")

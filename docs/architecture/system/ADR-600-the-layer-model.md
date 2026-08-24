@@ -67,8 +67,8 @@ Rules the model implies:
 - Layer 2 is true at runtime, not only at harvest. A command present in
   `Gui.listCommands()` and absent from the descriptor gets a tier-0 verb
   with its label from `getInfo()`, at startup and whenever a workbench
-  activates; `make reconcile` (ADR-100) reports it as a command the
-  descriptor does not know.
+  activates. `make reconcile` (ADR-100), once built, will report it as a
+  command the descriptor does not know.
 - Layer 3 is where the work is. Layers 1, 2, 4 and 5 are machinery that
   should change rarely; the command line improves by editing layer 3.
 - A reverse translator produces a line the forward direction accepts.

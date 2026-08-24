@@ -177,6 +177,25 @@ def build_command_verb(command):
                 gui_command=name, generated=True)
 
 
+_TAG = re.compile(r"<[^>]+>")
+_PLACEHOLDER = re.compile(r"%\d")
+
+
+def _plain(text, mnemonic=False):
+    """getInfo text as the harvest cleans it: no tags, no entities, one
+    line. An addon's tooltip is the one population the harvest never
+    measured, and it is where <br>, &amp; and newlines live.
+
+    Menu text carries a Qt mnemonic marker, and Qt spells a literal
+    ampersand there as &&; a tooltip is prose and keeps its &.
+    """
+    import html
+    text = html.unescape(_TAG.sub(" ", text or ""))
+    if mnemonic:
+        text = text.replace("&&", "\0").replace("&", "").replace("\0", "&")
+    return " ".join(text.split()).strip()
+
+
 def runtime_commands(known):
     """Commands FreeCAD has registered that the descriptor never saw.
 
@@ -206,14 +225,20 @@ def runtime_commands(known):
             info = (command.getInfo() if command else None) or {}
         except Exception:
             pass
-        label = _label(info.get("menuText"))
-        if not label or "%" in label:
+        # A Qt placeholder is %1, %2; a percent sign on its own is prose.
+        label = _plain(info.get("menuText"), mnemonic=True)
+        if not label or _PLACEHOLDER.search(label):
             label = name
-        tooltip = _label(info.get("toolTip"))
-        if "%" in tooltip:
+        tooltip = _plain(info.get("toolTip"))
+        if _PLACEHOLDER.search(tooltip):
             tooltip = ""
+        if not tooltip:
+            # Never the command name: nothing should hand a reader
+            # documentation that ends in the thing it documents.
+            tooltip = (label if label != name
+                       else name.replace("_", " ")) + ""
         out.append({"name": name, "label": label, "tooltip": tooltip,
-                    "toolbar": None, "menu": None, "runtime": True})
+                    "toolbar": None, "menu": None})
     return out
 
 
@@ -223,8 +248,10 @@ def register_runtime(registry, descriptor=None):
     Called once by register_all and again whenever a workbench activates:
     an addon that registers its commands in its workbench's Initialize()
     has none at startup and all of them the first time somebody opens it.
-    Idempotent -- a command that already reaches a verb is skipped, so the
-    second call costs a set difference and registers only what is new.
+    Idempotent -- a command the descriptor knows, or that already reaches
+    a verb, is skipped, so the second call costs a set difference and
+    registers only what is new. The descriptor's own commands are its
+    business either way: the nine of #19 are not rescued here.
 
     Returns how many were registered.
     """
@@ -427,9 +454,6 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
                 counts["qualified"] = counts.get("qualified", 0) + 1
             else:
                 counts["unreachable"] = counts.get("unreachable", 0) + 1
-        # After the descriptor's commands, so a runtime command never takes
-        # a name the descriptor's owner of it would have had.
-        counts["runtime"] = register_runtime(registry, descriptor)
 
     # Two passes. A patch may rename a verb onto a name the generator
     # already produced from another type -- Part::Box patched to "cube"
@@ -483,6 +507,14 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
         registry.add(verb)
         counts["patched"] += 1
         counts["tier1"] += 1
+
+    # Commands FreeCAD has that the descriptor never saw. After every tier
+    # that reads the descriptor, so a runtime command qualifies around a
+    # name a typed verb holds rather than being overwritten by it -- the
+    # tier-1 loops add without asking, and a runtime verb registered
+    # before them was counted, then erased.
+    if tier0:
+        counts["runtime"] = register_runtime(registry, descriptor)
 
     # Families sit between the generated verbs and the bare launchers: they
     # make a spread-out group discoverable without displacing anything
