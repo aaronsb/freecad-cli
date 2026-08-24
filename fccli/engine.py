@@ -136,6 +136,9 @@ class Engine:
         # What Enter on an empty prompt would repeat.
         self.repeat_hint: Optional[str] = None
         self.flags: Dict[str, Any] = {}
+        # Above zero while a script runs its lines: the call is the one
+        # history line, the lines inside are not recorded.
+        self.suppress_record = 0
 
     # ---------------------------------------------------------------- query
 
@@ -248,6 +251,11 @@ class Engine:
         if force:
             token = token[:-1]
         hits = self.registry.resolve_prefix(token)
+        if not hits and ("/" in token or token.startswith(".")):
+            # A path is a script to run: ./tower 20, plinth/tower 20.
+            hits = self.registry.resolve_prefix("run")
+            rest = [token] + rest
+            token = "run"
         if not hits:
             self.bus.emit(_bus.ERROR, f"unknown command: {token}")
             return
@@ -575,7 +583,7 @@ class Engine:
             self.bus.emit(_bus.INFO, notice)
         self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
                       object=obj, picked=picked, typed=typed,
-                      record=verb.record)
+                      record=verb.record and not self.suppress_record)
         self._announce()
 
     def _only_optional_left(self) -> bool:

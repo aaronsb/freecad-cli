@@ -494,8 +494,15 @@ class CliDock(QtWidgets.QDockWidget):
         """The directory the terminal navigates, made on first run."""
         try:
             from . import root as _root
+            from . import scripts as _scripts
             for note in _root.layout():
                 self.console.write(f"root: {note}", "info")
+            added, notes = _scripts.register(REGISTRY)
+            for note in notes:
+                self.console.write(f"root: {note}", "info")
+            if added:
+                self.console.write(
+                    f"{len(added)} scripts in bin: {', '.join(added)}", "info")
         except Exception as exc:
             self.console.write(f"root: {exc}", "info")
 
