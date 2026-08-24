@@ -78,9 +78,25 @@ def _round_trips(text, value):
         return False
 
 
+def _internal_unit(unit):
+    """The unit a stored value is in. parse_quantity hands back FreeCAD's
+    internal value -- millimetres for any length, degrees for any angle
+    -- whatever unit the step names, so a step in inches stores 76.2 for
+    3in and must not be rendered as 76.2in."""
+    try:
+        kind = Units.Quantity(1, unit).Unit
+        if kind == Units.Unit("mm"):
+            return "mm"
+        if kind == Units.Unit("deg"):
+            return "deg"
+    except Exception:
+        pass
+    return unit
+
+
 def _as_quantity(value, unit):
     try:
-        return Units.Quantity(value, unit)
+        return Units.Quantity(value, _internal_unit(unit))
     except Exception:
         return None
 

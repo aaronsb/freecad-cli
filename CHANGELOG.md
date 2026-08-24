@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- **A value under a step in inches replayed as inches of millimetres.**
+  `parse_quantity` hands back FreeCAD's internal value -- millimetres for
+  any length -- and `format_quantity` built a Quantity in the step's unit
+  from it, so `3in` echoed and replayed as `76.2in`. Every hand-written
+  step is in millimetres, which is why nobody saw it until a script
+  declared a step in inches. A stored length is rendered as millimetres,
+  and a stored angle as degrees, whatever unit the step names.
 - **239 commands get their workbench.** The harvest snapshots
   `listCommands()` before activating anything, so whatever the startup
   workbench had already loaded -- Sketcher, Part and Part Design on a

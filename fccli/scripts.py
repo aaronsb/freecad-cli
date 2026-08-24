@@ -87,19 +87,29 @@ def _steps(front):
 
 
 def _typed(steps, values):
-    """Each answer as the text a person would have typed for it."""
+    """Each answer as the text it arrived as.
+
+    The engine keeps the typed form of every answer (`_typed`), and that
+    is what goes into the line: a person who typed `2in` gets `2in`. A
+    default the engine filled in arrives as its bare number and is
+    written in the step's own unit. A value with no typed form -- one an
+    option set -- is rendered as the parser would print it.
+    """
+    typed = values.get("_typed") or {}
     out = {}
     for step in steps:
         v = values.get(step.id)
-        if v is None and step.default is not None:
-            # A default is written in the step's own unit; the parsed
-            # value would be in FreeCAD's internal one.
+        text = typed.get(step.id)
+        if isinstance(text, list):
+            text = " ".join(text)
+        if v is None or (v == step.default and step.default is not None
+                         and text in (None, str(step.default))):
             d = step.default
-            out[step.id] = (f"{d}{step.unit}" if step.kind == QUANTITY
+            out[step.id] = ("" if d is None else
+                            f"{d}{step.unit}" if step.kind == QUANTITY
                             and isinstance(d, (int, float)) else str(d))
-            continue
-        if v is None:
-            out[step.id] = ""
+        elif text is not None:
+            out[step.id] = text
         elif step.kind == POINT and hasattr(v, "x"):
             out[step.id] = format_point(v)
         elif step.kind == QUANTITY and isinstance(v, (int, float)):
@@ -153,12 +163,15 @@ def run_lines(engine, lines, typed, label):
                     f"{label} stopped at line {n}: {line} -- still wants "
                     f"{wanted.prompt}")
     finally:
-        if engine.state != "idle":
-            engine.cancel()
+        # Counters first: cancel() reaches the picker, which is the one
+        # call here that could raise, and a raise must not leave history
+        # recording off for the session.
         engine.script_depth -= 1
         engine.suppress_record -= 1
         engine.repeat_hint = hint
         stop()
+        if engine.state != "idle":
+            engine.cancel()
     return len(lines)
 
 

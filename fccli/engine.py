@@ -118,6 +118,9 @@ class Engine:
         self.step_index = 0
         self.done: set = set()
         self.values: Dict[str, Any] = {}
+        # The text each answer arrived as, by step id, so a script can put
+        # an argument into a line exactly as it was typed.
+        self.typed: Dict[str, Any] = {}
         # Steps for this invocation, when the verb only learned them by
         # starting. None means the verb's own declared steps stand.
         self.steps: Optional[List[Step]] = None
@@ -270,6 +273,7 @@ class Engine:
         self.step_index = 0
         self.done = set()
         self.values = {}
+        self.typed = {}
         self.steps = None
         self.flags = {"force": force}
         self.replay = [self.verb.name + ("!" if force else "")]
@@ -464,8 +468,10 @@ class Engine:
             self.picked.append(len(self.replay))
         if step.repeat:
             self.values.setdefault(step.id, []).append(value)
+            self.typed.setdefault(step.id, []).append(typed)
         else:
             self.values[step.id] = value
+            self.typed[step.id] = typed
             self.done.add(step.id)
         self.replay.append(typed)
         if step.on_accept is not None and not self.dry:
@@ -537,6 +543,7 @@ class Engine:
 
     def _finish(self) -> None:
         verb, values, flags = self.verb, self.values, dict(self.flags)
+        typed_by_step = dict(self.typed)
         replay = " ".join(self.replay)
         # Capture provenance before the reset clears it.
         picked = list(self.picked)
@@ -559,7 +566,8 @@ class Engine:
             # and each of those must not reset it for the outer one.
             self.driving += 1
             with modals.intercepted(force=flags.get("force")) as caught:
-                obj = verb.emit({**values, "_flags": flags, "_engine": self})
+                obj = verb.emit({**values, "_flags": flags, "_engine": self,
+                                 "_typed": typed_by_step})
         except Exception as exc:
             _abort_transaction(doc)
             # _reset already cleared self.verb, so the verb has to be told
@@ -632,6 +640,7 @@ class Engine:
         self.step_index = 0
         self.done = set()
         self.values = {}
+        self.typed = {}
         self.steps = None
         self.replay = []
         self.picked = []

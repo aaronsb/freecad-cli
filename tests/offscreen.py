@@ -2325,6 +2325,12 @@ def _run():
         _sseen.clear(); _ssess.submit("inch")
         check("  a default is written in the step's unit",
               round(float(App.ActiveDocument.Objects[-1].Length), 2), 50.8)
+        _sseen.clear(); _ssess.submit("inch"); _ssess.submit("")
+        check("    and reads the same when Enter takes it at the prompt",
+              round(float(App.ActiveDocument.Objects[-1].Length), 2), 50.8)
+        _sseen.clear(); _ssess.submit("inch 3in")
+        check("    and an answer goes into the line as it was typed",
+              round(float(App.ActiveDocument.Objects[-1].Length), 2), 76.2)
         # By path, arguments inline; and the ./ sugar.
         os.makedirs(os.path.join(_r, "plinth"))
         with open(os.path.join(_r, "plinth", "tower.fccli"), "w") as _fh:
