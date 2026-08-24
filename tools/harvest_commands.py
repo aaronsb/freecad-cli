@@ -34,8 +34,9 @@ went wrong twice:
                 groups that declare no pixmap and inherit one from their
                 first child when the UI is built.
 
-whatsThis is harvested by getInfo and dropped: for all 147 it is the
-command name again.
+whatsThis is the wiki page name -- what F1 resolves -- and is recorded
+as `wiki`. For most commands it is the command name again, which is also
+the page name; for the rest it is the link nothing else carries.
 
 This file used to assert that getInfo did not exist, and that there was no
 Python-visible listToolbars. Both were wrong. listToolbars, getToolbarItems
@@ -218,6 +219,10 @@ def run():
                       or clean(act.statusTip() if act else ""),
             "shortcut": (act.shortcut().toString() if act else "")
                         or info.get("shortcut") or None,
+            # The wiki page. FreeCAD's F1 help resolves whatsThis against
+            # the wiki, so this is the official link from a command to its
+            # documentation rather than a guess from the name.
+            "wiki": substituted(info.get("whatsThis")) or None,
         })
         if act is not None:
             toolbar, menu = group_of(act)

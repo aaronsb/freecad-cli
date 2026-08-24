@@ -1407,6 +1407,14 @@ def _run():
                      or _by_stem.get(n.split("_", 1)[0].lower()))]
     check("  every command whose stem names a workbench carries it",
           (len(_orphans), _orphans[:5]), (0, []))
+    # whatsThis is the wiki page F1 resolves. getInfo had it all along and
+    # the harvest dropped it; it is the official link from a command to
+    # its documentation, and ADR-100 seeds every command file from it.
+    check("commands carry their wiki page",
+          sum(1 for v in _cmds.values() if v.get("wiki")) > 1000, True)
+    check("  Part_Box's is Part_Box", _cmds["Part_Box"].get("wiki"), "Part_Box")
+    check("  and one that differs from the name is kept as FreeCAD says it",
+          _cmds["TechDraw_Annotation"].get("wiki"), "TechDraw_NewAnnotation")
 
     # The check that would have caught it. 148 commands reached the
     # descriptor carrying only a name, because the harvest read everything
