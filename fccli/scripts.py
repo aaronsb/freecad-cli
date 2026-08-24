@@ -40,6 +40,8 @@ from .parsing import format_point, format_quantity
 
 FRONT = re.compile(r"\A---\n(.*?)\n---\n?", re.S)
 VAR = re.compile(r"\$\{(\w+)\}|\$(\w+)")
+COMMENT = re.compile(r"(^|\s)#.*$")
+MAX_DEPTH = 8
 EXT = ".fccli"
 MACRO = ".FCMacro"
 
@@ -57,18 +59,27 @@ def parse(text):
         text = text[m.end():]
     lines = []
     for raw in text.splitlines():
-        line = raw.split("#", 1)[0].strip() if not raw.lstrip().startswith("#") else ""
+        # A comment starts a line or follows whitespace; a # inside an
+        # argument -- a file called a#b.FCStd -- is the argument's.
+        line = COMMENT.sub("", raw).strip()
         if line:
             lines.append(line)
     return front, lines
 
 
 def _steps(front):
-    from .patches import _build_step
+    from .patches import KINDS, _build_step
     out = []
     for raw in front.get("steps") or []:
         if not isinstance(raw, dict) or "id" not in raw:
             raise ValueError(f"a step needs an id: {raw!r}")
+        if raw.get("kind", "text") not in KINDS:
+            raise ValueError(f"step {raw['id']}: kind {raw.get('kind')!r} is "
+                             f"not one of {sorted(KINDS)}")
+        if raw.get("optional") and raw.get("default") is None:
+            # An unanswered optional would substitute nothing and shift
+            # every argument after it on the line.
+            raise ValueError(f"step {raw['id']}: optional needs a default")
         step = _build_step(raw)
         if step is not None:
             out.append(step)
@@ -80,8 +91,13 @@ def _typed(steps, values):
     out = {}
     for step in steps:
         v = values.get(step.id)
-        if v is None:
-            v = step.default
+        if v is None and step.default is not None:
+            # A default is written in the step's own unit; the parsed
+            # value would be in FreeCAD's internal one.
+            d = step.default
+            out[step.id] = (f"{d}{step.unit}" if step.kind == QUANTITY
+                            and isinstance(d, (int, float)) else str(d))
+            continue
         if v is None:
             out[step.id] = ""
         elif step.kind == POINT and hasattr(v, "x"):
@@ -106,38 +122,64 @@ def substitute(line, typed):
 
 def run_lines(engine, lines, typed, label):
     """Feed lines to the engine, stopping at the first error or at a line
-    that still wants input. The lines are not recorded in history."""
+    that still wants input. The lines are not recorded in history, and
+    the script call stays what an empty Enter repeats."""
+    if engine.script_depth >= MAX_DEPTH:
+        raise RuntimeError(f"{label}: scripts {MAX_DEPTH} deep; one is "
+                           f"running itself")
     errors = []
     stop = engine.bus.subscribe(
         lambda m: errors.append(m.text) if m.kind == _bus.ERROR else None)
+    hint = engine.repeat_hint
     engine.suppress_record += 1
+    engine.script_depth += 1
     try:
         for n, raw in enumerate(lines, 1):
-            line = substitute(raw, typed)
+            try:
+                line = substitute(raw, typed)
+            except RuntimeError as exc:
+                raise RuntimeError(f"{label} line {n}: {exc}")
             errors.clear()
             engine.submit(line)
+            # A line can error and still be collecting -- a bad value at
+            # the second of three steps -- so the prompt is closed first.
+            wanted = engine.current_step() if engine.state != "idle" else None
+            if engine.state != "idle":
+                engine.cancel()
             if errors:
                 raise RuntimeError(f"{label} stopped at line {n}: {line}")
-            if engine.state != "idle":
-                wanted = engine.current_step()
-                engine.cancel()
+            if wanted is not None:
                 raise RuntimeError(
                     f"{label} stopped at line {n}: {line} -- still wants "
-                    f"{wanted.prompt if wanted else 'input'}")
+                    f"{wanted.prompt}")
     finally:
+        if engine.state != "idle":
+            engine.cancel()
+        engine.script_depth -= 1
         engine.suppress_record -= 1
+        engine.repeat_hint = hint
         stop()
     return len(lines)
 
 
 def run_macro(path):
-    """FreeCAD's Python tier, run the way its macro manager runs a file."""
+    """FreeCAD's Python tier, run the way its macro manager runs a file.
+
+    Through the GUI's console when there is one, so it shows there; as
+    Python here when there is none. A macro that raises is one failure,
+    reported once: the two are chosen by whether a console exists, never
+    by whether the macro succeeded.
+    """
+    runner = None
     try:
         import FreeCADGui as Gui
-        Gui.doCommand(f"exec(open({path!r}, encoding='utf-8').read())")
-        return
+        if getattr(Gui, "getMainWindow", None) and Gui.getMainWindow() is not None:
+            runner = Gui.doCommand
     except Exception:
-        pass            # no GUI console to run it through; run it here
+        runner = None
+    if runner is not None:
+        runner(f"exec(open({path!r}, encoding='utf-8').read())")
+        return
     with open(path, encoding="utf-8") as fh:
         code = compile(fh.read(), path, "exec")
     exec(code, {"__name__": "__main__", "__file__": path})
@@ -176,15 +218,25 @@ def register(registry, base=None):
             continue
         name = f[: -len(EXT)]
         path = os.path.join(bin_dir, f)
-        sitting = registry.get(name)
-        if sitting is not None and getattr(sitting, "script", None) != path:
-            notes.append(f"bin/{f}: {name} is taken by another verb")
-            continue
         try:
             verb = build(name, path)
         except Exception as exc:
             notes.append(f"bin/{f}: {exc}")
             continue
+        # The name it will register under, and every alias: each must be
+        # free or already this script's. Registry.add would take them.
+        sitting = registry.get(verb.name)
+        if sitting is not None and getattr(sitting, "script", None) != path:
+            notes.append(f"bin/{f}: {verb.name} is taken by another verb")
+            continue
+        kept = []
+        for alias in verb.aliases:
+            other = registry.get(alias)
+            if other is not None and getattr(other, "script", None) != path:
+                notes.append(f"bin/{f}: alias {alias} is taken; dropped")
+                continue
+            kept.append(alias)
+        verb.aliases = kept
         registry.add(verb)
         added.append(verb.name)
     return added, notes
@@ -204,34 +256,38 @@ def run_path(engine, cwd, path, args):
     if not real.endswith(EXT):
         raise RuntimeError(f"{virtual}: not a script (.fccli) or macro (.FCMacro)")
     verb = build(os.path.basename(real)[: -len(EXT)], real)
-    line = " ".join([verb.name] + list(args))
-    # Borrow the registry for the length of one run, so the script's
-    # declared steps are collected the way any verb's are.
+    verb.aliases = []               # a transient claims no alias
     registry = engine.registry
     sitting = registry.get(verb.name)
-    if sitting is not None and getattr(sitting, "script", None) != real:
-        verb.name = f"_{verb.name}"
-        line = " ".join([verb.name] + list(args))
-    registry.add(verb)
+    transient = None
+    if sitting is not None and getattr(sitting, "script", None) == real:
+        # This file is already a bin verb: run that one, add nothing.
+        verb = sitting
+    else:
+        if sitting is not None:
+            verb.name = f"_{verb.name}"     # a name nothing else has
+        transient = verb
+        registry.add(transient)
+    line = " ".join([verb.name] + list(args))
+    hint = engine.repeat_hint
+    errors = []
+    stop = engine.bus.subscribe(
+        lambda m: errors.append(m.text) if m.kind == _bus.ERROR else None)
+    # The run call is the history line; the transient's own result is not.
+    engine.suppress_record += 1
     try:
-        errors = []
-        stop = engine.bus.subscribe(
-            lambda m: errors.append(m.text) if m.kind == _bus.ERROR else None)
-        try:
-            engine.submit(line)
-        finally:
-            stop()
+        engine.submit(line)
+        wanted = engine.current_step() if engine.state != "idle" else None
         if engine.state != "idle":
-            wanted = engine.current_step()
             engine.cancel()
-            raise RuntimeError(f"{virtual} wants {wanted.prompt if wanted else 'more'}; "
-                               f"give it inline")
         if errors:
             raise RuntimeError(errors[-1])
+        if wanted is not None:
+            raise RuntimeError(f"{virtual} wants {wanted.prompt}; give it inline")
     finally:
-        if sitting is None or getattr(sitting, "script", None) == real:
-            registry.remove(verb.name) if hasattr(registry, "remove") else None
-        else:
-            registry.remove(verb.name) if hasattr(registry, "remove") else None
-            registry.add(sitting)
+        engine.suppress_record -= 1
+        engine.repeat_hint = hint
+        stop()
+        if transient is not None:
+            registry.remove(transient.name)
     return None

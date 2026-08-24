@@ -127,7 +127,7 @@ class Engine:
         # idle. Anything asking "did the command line cause this?" -- the
         # test suite's dialog watchdog, the socket's busy check -- wants
         # this rather than state.
-        self.driving = False
+        self.driving = 0
         self.replay: List[str] = []
         # Which replay tokens came from the viewport rather than the
         # keyboard. A command driven half by mouse can then hand back the
@@ -137,8 +137,10 @@ class Engine:
         self.repeat_hint: Optional[str] = None
         self.flags: Dict[str, Any] = {}
         # Above zero while a script runs its lines: the call is the one
-        # history line, the lines inside are not recorded.
+        # history line, the lines inside are not recorded. script_depth
+        # counts scripts inside scripts, so one that runs itself stops.
         self.suppress_record = 0
+        self.script_depth = 0
 
     # ---------------------------------------------------------------- query
 
@@ -288,18 +290,17 @@ class Engine:
                 # refuses the request says so -- and a modal raised with
                 # nothing armed waits for a click nobody is there to make,
                 # which is the whole of what modals.py exists to stop.
-                self.driving = True
+                self.driving += 1
                 with modals.intercepted(force=force) as caught:
                     found = self.verb.open(self)
             except Exception as exc:
-                self.driving = False
                 self._abort_verb()
                 self._reset()
                 self.bus.emit(_bus.ERROR, f"{name}: {exc}")
                 self._announce()
                 return
             finally:
-                self.driving = False
+                self.driving -= 1
             if caught:
                 self._abort_verb()
                 self._reset()
@@ -554,7 +555,9 @@ class Engine:
             return
         doc = _open_transaction(verb, replay, panel=flags.get("panel"))
         try:
-            self.driving = True
+            # A counter: a script's emit runs other lines through here,
+            # and each of those must not reset it for the outer one.
+            self.driving += 1
             with modals.intercepted(force=flags.get("force")) as caught:
                 obj = verb.emit({**values, "_flags": flags, "_engine": self})
         except Exception as exc:
@@ -567,7 +570,7 @@ class Engine:
             self._announce()
             return
         finally:
-            self.driving = False
+            self.driving -= 1
         if caught:
             # FreeCAD rejected the request. That is the same kind of answer
             # as a bad quantity, and it travels the same way -- rather than
