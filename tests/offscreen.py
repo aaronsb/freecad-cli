@@ -495,13 +495,26 @@ def _run():
     check("  and none displaced a name already taken",
           counts2.get("family_shadowed", 0) > 0, True)
 
-    constrain = fresh2.get("constrain")
-    check("a family verb exists", constrain is not None, True)
-    if constrain:
-        choices = constrain.steps[0].choices
-        check("  with the members as choices",
-              all(c in choices for c in
-                  ("coincident", "parallel", "perpendicular")), True)
+    # Named a family rather than assumed: `constrain` used to be one, and
+    # stopped when the harvest started reading real labels. Sketcher's own
+    # CompConstrainTools carries the label "Constrain", it is registered as
+    # a command before families are built, and a command verb takes the
+    # name. Whether a family should outrank a generated command verb is a
+    # real question -- it would move about thirty names, several of them
+    # to families not worth having (`free` is four CAD donation links) --
+    # and it is not this change's to answer. So the check asks the
+    # property of whatever family actually won.
+    fams = [fresh2.get(n) for n in fresh2.names()
+            if fresh2.get(n).family == n]
+    check("families own their names", len(fams) > 20, True)
+    check("  and every one offers its members as choices",
+          all(f.steps and len(f.steps[0].choices) >= 3 for f in fams), True)
+    check("  constrain is a command verb now, not a family",
+          fresh2.get("constrain").gui_command, "Sketcher_CompConstrainTools")
+    check("  and the constraints are still individually reachable",
+          all(fresh2.by_gui_command(c) is not None for c in
+              ("Sketcher_ConstrainCoincident", "Sketcher_ConstrainParallel",
+               "Sketcher_ConstrainPerpendicular")), True)
 
     # Nothing here names a command: the grouping is read off the registry.
     fam = _families(load_descriptor()["commands"])
@@ -1380,6 +1393,27 @@ def _run():
     check("what is there from the start claims no workbench",
           _cmds["Std_ViewFront"].get("workbench"), None)
     check("  including Part_Box", _cmds["Part_Box"].get("workbench"), None)
+
+    # The check that would have caught it. 148 commands reached the
+    # descriptor carrying only a name, because the harvest read everything
+    # off QActions and those have none. build_command_verb falls back
+    # `tooltip or label or name`, so the gap never showed as missing --
+    # it showed as a verb named arch_multimaterial whose whole
+    # documentation was the string "Arch_MultiMaterial".
+    _bare = [n for n, c in _cmds.items() if not c.get("label")]
+    check("every command has a label", _bare, ["Std_WindowsMenu"])
+    _echo = [n for n, c in _cmds.items()
+             if (c.get("tooltip") or "").strip() == n]
+    check("  and no command's documentation is its own name", _echo, [])
+
+    # Every command reaches a verb. A tier-0 name already taken used to be
+    # dropped without a word -- 90 of them before this, 133 after labels
+    # got better and more commands wanted the same short names.
+    _fresh = _Registry()
+    _c = register_all(_fresh, tier0=True, patches=PatchSet())
+    check("every command gets a tier-0 verb", _c["tier0"], len(_cmds))
+    check("  none is left unreachable", _c.get("unreachable", 0), 0)
+    check("  and the ones that had to move say so", _c["qualified"] > 100, True)
 
     print("\n5aa. FreeCAD's settings stay FreeCAD's")
     # The picker used to turn Draft's grid off on every snap because the

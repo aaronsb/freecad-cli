@@ -2,10 +2,21 @@
 
 """Pass B: the command registry. Needs a GUI, so it runs under Xvfb.
 
-Gui.listCommands() returns bare strings -- there is no getCommandInfo and no
-Python-visible listToolbars. Everything else comes off the QAction, and the
-grouping comes from the toolbar or menu the action was placed in, which is
-where FreeCAD already asserts what belongs with what.
+Most of it comes off the QAction: that is the rendered name, translated and
+with its placeholders substituted, and the toolbar or menu it was placed in
+is where FreeCAD already asserts what belongs with what.
+
+148 commands have no QAction anywhere. They are registered and runnable and
+never appear in any bar, so the walk below found nothing for them and they
+went into the descriptor carrying only a name -- which then slugged into
+verbs like `arch_multimaterial` with a doc that echoed the command name
+back. `Gui.Command.get(name).getInfo()` has had their menuText and toolTip
+all along; this file previously asserted that no such call existed.
+
+It fills in behind the QAction rather than replacing it, because the two
+disagree and the QAction is the better of the two where it exists. getInfo
+hands back the raw resource string: Std_About's is "About %1", which would
+have named the verb `about_1`.
 
     FCCLI_OUT=commands.json QT_QPA_PLATFORM=xcb \
         xvfb-run -a freecad tools/harvest_commands.py
@@ -50,6 +61,20 @@ def group_of(act):
         elif cls == "QMenu" and menu is None:
             menu = (w.title() or "").replace("&", "") or None
     return toolbar, menu
+
+
+def command_info(name):
+    """What FreeCAD's command registry says, for a command with no QAction.
+
+    Returns menuText, toolTip, whatsThis, statusTip, pixmap and shortcut.
+    Empty dict rather than raising, so one unreadable command does not cost
+    the harvest the other thousand.
+    """
+    try:
+        command = Gui.Command.get(name)
+        return (command.getInfo() if command else None) or {}
+    except Exception:
+        return {}
 
 
 def run():
@@ -110,6 +135,17 @@ def run():
                 "icon": not act.icon().isNull(),
                 "toolbar": toolbar,
                 "menu": menu,
+            })
+        else:
+            info = command_info(name)
+            entry.update({
+                "label": clean(info.get("menuText")),
+                "tooltip": clean(info.get("toolTip")),
+                "status": clean(info.get("statusTip")),
+                "shortcut": info.get("shortcut") or None,
+                "icon": bool(info.get("pixmap")),
+                "toolbar": None,
+                "menu": None,
             })
         commands[name] = entry
 

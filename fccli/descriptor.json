@@ -99,7 +99,14 @@
    "workbench": "BIMWorkbench"
   },
   "Arch_AxisTools": {
+   "icon": false,
+   "label": "Axis Tools",
+   "menu": null,
    "name": "Arch_AxisTools",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Axis tools",
    "workbench": "BIMWorkbench"
   },
   "Arch_Building": {
@@ -125,7 +132,14 @@
    "workbench": "BIMWorkbench"
   },
   "Arch_CloneComponent": {
+   "icon": true,
+   "label": "Clone Component",
+   "menu": null,
    "name": "Arch_CloneComponent",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Clones an object as an undefined architectural component",
    "workbench": "BIMWorkbench"
   },
   "Arch_CloseHoles": {
@@ -239,11 +253,25 @@
    "workbench": "BIMWorkbench"
   },
   "Arch_Material": {
+   "icon": true,
+   "label": "Material",
+   "menu": null,
    "name": "Arch_Material",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates or edits the material definition of a selected object.",
    "workbench": "BIMWorkbench"
   },
   "Arch_MaterialTools": {
+   "icon": false,
+   "label": "Material Tools",
+   "menu": null,
    "name": "Arch_MaterialTools",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Material tools",
    "workbench": "BIMWorkbench"
   },
   "Arch_MergeWalls": {
@@ -269,11 +297,25 @@
    "workbench": "BIMWorkbench"
   },
   "Arch_MultiMaterial": {
+   "icon": true,
+   "label": "Multi-Material",
+   "menu": null,
    "name": "Arch_MultiMaterial",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates or edits multi-materials",
    "workbench": "BIMWorkbench"
   },
   "Arch_Nest": {
+   "icon": true,
+   "label": "Nest",
+   "menu": null,
    "name": "Arch_Nest",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Nests a series of selected shapes in a container",
    "workbench": "BIMWorkbench"
   },
   "Arch_Panel": {
@@ -299,11 +341,25 @@
    "workbench": "BIMWorkbench"
   },
   "Arch_Panel_Cut": {
+   "icon": true,
+   "label": "Panel Cut",
+   "menu": null,
    "name": "Arch_Panel_Cut",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates 2D views of selected panels",
    "workbench": "BIMWorkbench"
   },
   "Arch_Panel_Sheet": {
+   "icon": true,
+   "label": "Panel Sheet",
+   "menu": null,
    "name": "Arch_Panel_Sheet",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a 2D sheet which can contain panel cuts",
    "workbench": "BIMWorkbench"
   },
   "Arch_Pipe": {
@@ -329,7 +385,14 @@
    "workbench": "BIMWorkbench"
   },
   "Arch_PipeTools": {
+   "icon": false,
+   "label": "Pipe Tools",
+   "menu": null,
    "name": "Arch_PipeTools",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Pipe tools",
    "workbench": "BIMWorkbench"
   },
   "Arch_Profile": {
@@ -476,11 +539,25 @@
    "workbench": "BIMWorkbench"
   },
   "Arch_StructuralSystem": {
+   "icon": true,
+   "label": "Structural System",
+   "menu": null,
    "name": "Arch_StructuralSystem",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Create a structural system from a selected structure and axis",
    "workbench": "BIMWorkbench"
   },
   "Arch_Structure": {
+   "icon": true,
+   "label": "Structure",
+   "menu": null,
    "name": "Arch_Structure",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a structure from scratch or from a selected object (sketch, wire, face or solid)",
    "workbench": "BIMWorkbench"
   },
   "Arch_StructureTools": {
@@ -495,7 +572,14 @@
    "workbench": "BIMWorkbench"
   },
   "Arch_StructuresFromSelection": {
+   "icon": true,
+   "label": "Multiple Structures",
+   "menu": null,
    "name": "Arch_StructuresFromSelection",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates multiple BIM Structures from a selected base, using each selected edge as an extrusion path",
    "workbench": "BIMWorkbench"
   },
   "Arch_Survey": {
@@ -620,7 +704,14 @@
    "workbench": "AssemblyWorkbench"
   },
   "Assembly_CreateJointBelt": {
+   "icon": true,
+   "label": "Belt Joint",
+   "menu": null,
    "name": "Assembly_CreateJointBelt",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a belt joint that links 2 rotating objects together. They will have the same rotation direction.Select the same coordinate systems as the revolute joints.",
    "workbench": "AssemblyWorkbench"
   },
   "Assembly_CreateJointCylindrical": {
@@ -668,7 +759,14 @@
    "workbench": "AssemblyWorkbench"
   },
   "Assembly_CreateJointGears": {
+   "icon": true,
+   "label": "Gears Joint",
+   "menu": null,
    "name": "Assembly_CreateJointGears",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a gears joint that links 2 rotating gears together. They will have inverse rotation direction.Select the same coordinate systems as the revolute joints.",
    "workbench": "AssemblyWorkbench"
   },
   "Assembly_CreateJointParallel": {
@@ -782,11 +880,25 @@
    "workbench": "AssemblyWorkbench"
   },
   "Assembly_InsertLink": {
+   "icon": true,
+   "label": "Component",
+   "menu": null,
    "name": "Assembly_InsertLink",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Inserts a component into the active assembly. This will create dynamic links to parts, bodies, primitives, and assemblies. To insert external components, make sure that the file is open in the current sessionInsert by left clicking items in the list.Remove by right clicking items in the list.Press shift to add several instances of the component while clicking on the view.",
    "workbench": "AssemblyWorkbench"
   },
   "Assembly_InsertNewPart": {
+   "icon": true,
+   "label": "New Part",
+   "menu": null,
    "name": "Assembly_InsertNewPart",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Insert a new part into the active assembly. The new part's origin can be positioned in the assembly.",
    "workbench": "AssemblyWorkbench"
   },
   "Assembly_SolveAssembly": {
@@ -812,7 +924,14 @@
    "workbench": "AssemblyWorkbench"
   },
   "BIM_Background": {
+   "icon": true,
+   "label": "Toggle Background",
+   "menu": null,
    "name": "BIM_Background",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Toggles the background of the 3D view between simple and gradient",
    "workbench": "BIMWorkbench"
   },
   "BIM_Beam": {
@@ -904,7 +1023,14 @@
    "workbench": "BIMWorkbench"
   },
   "BIM_Convert": {
+   "icon": true,
+   "label": "Convert to BIM",
+   "menu": null,
    "name": "BIM_Convert",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Converts any object to a BIM component",
    "workbench": "BIMWorkbench"
   },
   "BIM_Copy": {
@@ -1007,7 +1133,14 @@
    "workbench": "BIMWorkbench"
   },
   "BIM_EmptyTrash": {
+   "icon": true,
+   "label": "Empty Trash",
+   "menu": null,
    "name": "BIM_EmptyTrash",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Deletes all objects from the trash bin that are not used by any other",
    "workbench": "BIMWorkbench"
   },
   "BIM_Examples": {
@@ -1176,7 +1309,14 @@
    "workbench": "BIMWorkbench"
   },
   "BIM_MoveView": {
+   "icon": true,
+   "label": "Move View",
+   "menu": null,
    "name": "BIM_MoveView",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Moves this view to an existing page",
    "workbench": "BIMWorkbench"
   },
   "BIM_Nudge_Down": {
@@ -1334,11 +1474,25 @@
    "workbench": "BIMWorkbench"
   },
   "BIM_Reorder": {
+   "icon": true,
+   "label": "Reorder Children",
+   "menu": null,
    "name": "BIM_Reorder",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Reorders children of the selected object",
    "workbench": "BIMWorkbench"
   },
   "BIM_ResetCloneColors": {
+   "icon": true,
+   "label": "Reset Colors",
+   "menu": null,
    "name": "BIM_ResetCloneColors",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Resets the colors of this object from its cloned original",
    "workbench": "BIMWorkbench"
   },
   "BIM_Rewire": {
@@ -1529,7 +1683,14 @@
    "workbench": "BIMWorkbench"
   },
   "BIM_Ungroup": {
+   "icon": true,
+   "label": "Remove From Group",
+   "menu": null,
    "name": "BIM_Ungroup",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Removes this object from its parent group",
    "workbench": "BIMWorkbench"
   },
   "BIM_Views": {
@@ -1588,11 +1749,25 @@
    "workbench": "CAMWorkbench"
   },
   "CAM_Area": {
+   "icon": true,
+   "label": "Area",
+   "menu": null,
    "name": "CAM_Area",
+   "shortcut": null,
+   "status": "Creates a feature area from the selected objects",
+   "toolbar": null,
+   "tooltip": "Creates a feature area from the selected objects",
    "workbench": "CAMWorkbench"
   },
   "CAM_Area_Workplane": {
+   "icon": true,
+   "label": "Area Workplane",
+   "menu": null,
    "name": "CAM_Area_Workplane",
+   "shortcut": null,
+   "status": "Selects a workplane for a feature area",
+   "toolbar": null,
+   "tooltip": "Selects a workplane for a feature area",
    "workbench": "CAMWorkbench"
   },
   "CAM_Array": {
@@ -1618,7 +1793,14 @@
    "workbench": "CAMWorkbench"
   },
   "CAM_Compound": {
+   "icon": true,
+   "label": "Compound",
+   "menu": null,
    "name": "CAM_Compound",
+   "shortcut": null,
+   "status": "Creates a compound from the selected toolpaths",
+   "toolbar": null,
+   "tooltip": "Creates a compound from the selected toolpaths",
    "workbench": "CAMWorkbench"
   },
   "CAM_Custom": {
@@ -1798,7 +1980,14 @@
    "workbench": "CAMWorkbench"
   },
   "CAM_Fixture": {
+   "icon": true,
+   "label": "Fixture",
+   "menu": null,
    "name": "CAM_Fixture",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a fixture offset",
    "workbench": "CAMWorkbench"
   },
   "CAM_Helix": {
@@ -1868,7 +2057,14 @@
    "workbench": "CAMWorkbench"
   },
   "CAM_PathShapeTC": {
+   "icon": true,
+   "label": "Path From Shape TC",
+   "menu": null,
    "name": "CAM_PathShapeTC",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a path from the selected shapes with the tool controller",
    "workbench": "CAMWorkbench"
   },
   "CAM_Pocket3D": {
@@ -1960,11 +2156,25 @@
    "workbench": "CAMWorkbench"
   },
   "CAM_SetStartPoint": {
+   "icon": true,
+   "label": "Start Point Selection",
+   "menu": null,
    "name": "CAM_SetStartPoint",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Selects the start point",
    "workbench": "CAMWorkbench"
   },
   "CAM_Shape": {
+   "icon": true,
+   "label": "From Shape",
+   "menu": null,
    "name": "CAM_Shape",
+   "shortcut": null,
+   "status": "Creates a toolpath from a selected shape",
+   "toolbar": null,
+   "tooltip": "Creates a toolpath from a selected shape",
    "workbench": "CAMWorkbench"
   },
   "CAM_SimTools": {
@@ -2034,15 +2244,36 @@
    "workbench": "CAMWorkbench"
   },
   "CAM_Tapping": {
+   "icon": true,
+   "label": "Tapping",
+   "menu": null,
    "name": "CAM_Tapping",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a Tapping toolpath from the features of a base object",
    "workbench": "CAMWorkbench"
   },
   "CAM_ThreadMilling": {
+   "icon": true,
+   "label": "Thread Milling",
+   "menu": null,
    "name": "CAM_ThreadMilling",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a Thread Milling toolpath from features of a base object",
    "workbench": "CAMWorkbench"
   },
   "CAM_ToolBitCreate": {
+   "icon": true,
+   "label": "New Toolbit",
+   "menu": null,
    "name": "CAM_ToolBitCreate",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a new toolbit object",
    "workbench": "CAMWorkbench"
   },
   "CAM_ToolBitDock": {
@@ -2068,19 +2299,47 @@
    "workbench": "CAMWorkbench"
   },
   "CAM_ToolBitLoad": {
+   "icon": true,
+   "label": "Load Tool",
+   "menu": null,
    "name": "CAM_ToolBitLoad",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Loads an existing toolbit object from a file",
    "workbench": "CAMWorkbench"
   },
   "CAM_ToolBitSave": {
+   "icon": true,
+   "label": "Save Tool",
+   "menu": null,
    "name": "CAM_ToolBitSave",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Saves an existing toolbit object to a file",
    "workbench": "CAMWorkbench"
   },
   "CAM_ToolBitSaveAs": {
+   "icon": true,
+   "label": "Save Tool As\u2026",
+   "menu": null,
    "name": "CAM_ToolBitSaveAs",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Saves an existing toolbit object to a file",
    "workbench": "CAMWorkbench"
   },
   "CAM_ToolController": {
+   "icon": true,
+   "label": "Tool Controller",
+   "menu": null,
    "name": "CAM_ToolController",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Adds a new tool controller to the active job",
    "workbench": "CAMWorkbench"
   },
   "CAM_Vcarve": {
@@ -2205,7 +2464,14 @@
    "workbench": "DraftWorkbench"
   },
   "Draft_AutoGroup": {
+   "icon": true,
+   "label": "Auto-Group",
+   "menu": null,
    "name": "Draft_AutoGroup",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Adds new Draft and BIM objects to the selected layer or group",
    "workbench": "DraftWorkbench"
   },
   "Draft_BSpline": {
@@ -3078,7 +3344,14 @@
    "workbench": "FemWorkbench"
   },
   "FEM_ConstraintBearing": {
+   "icon": true,
+   "label": "Bearing Constraint",
+   "menu": null,
    "name": "FEM_ConstraintBearing",
+   "shortcut": null,
+   "status": "Creates a bearing constraint",
+   "toolbar": null,
+   "tooltip": "Creates a bearing constraint",
    "workbench": "FemWorkbench"
   },
   "FEM_ConstraintBodyHeatSource": {
@@ -3181,7 +3454,14 @@
    "workbench": "FemWorkbench"
   },
   "FEM_ConstraintFluidBoundary": {
+   "icon": true,
+   "label": "Fluid Boundary Condition",
+   "menu": null,
    "name": "FEM_ConstraintFluidBoundary",
+   "shortcut": null,
+   "status": "Create fluid boundary condition on face entity for Computional Fluid Dynamics",
+   "toolbar": null,
+   "tooltip": "Create fluid boundary condition on face entity for Computional Fluid Dynamics",
    "workbench": "FemWorkbench"
   },
   "FEM_ConstraintForce": {
@@ -3196,7 +3476,14 @@
    "workbench": "FemWorkbench"
   },
   "FEM_ConstraintGear": {
+   "icon": true,
+   "label": "Gear Constraint",
+   "menu": null,
    "name": "FEM_ConstraintGear",
+   "shortcut": null,
+   "status": "Creates a gear constraint",
+   "toolbar": null,
+   "tooltip": "Creates a gear constraint",
    "workbench": "FemWorkbench"
   },
   "FEM_ConstraintHeatflux": {
@@ -3277,7 +3564,14 @@
    "workbench": "FemWorkbench"
   },
   "FEM_ConstraintPulley": {
+   "icon": true,
+   "label": "Pulley Constraint",
+   "menu": null,
    "name": "FEM_ConstraintPulley",
+   "shortcut": null,
+   "status": "Creates a pulley constraint",
+   "toolbar": null,
+   "tooltip": "Creates a pulley constraint",
    "workbench": "FemWorkbench"
   },
   "FEM_ConstraintRigidBody": {
@@ -3369,15 +3663,36 @@
    "workbench": "FemWorkbench"
   },
   "FEM_CreateNodesSet": {
+   "icon": true,
+   "label": "Nodes Set",
+   "menu": null,
    "name": "FEM_CreateNodesSet",
+   "shortcut": null,
+   "status": "Creates a FEM mesh nodes set",
+   "toolbar": null,
+   "tooltip": "Creates a FEM mesh nodes set",
    "workbench": "FemWorkbench"
   },
   "FEM_DefineElementsSet": {
+   "icon": true,
+   "label": "Element Set From Polygon",
+   "menu": null,
    "name": "FEM_DefineElementsSet",
+   "shortcut": null,
+   "status": "Creates a collection of elements selected by a polygon",
+   "toolbar": null,
+   "tooltip": "Creates a collection of elements selected by a polygon",
    "workbench": "FemWorkbench"
   },
   "FEM_DefineNodesSet": {
+   "icon": true,
+   "label": "Node Set by Polygon",
+   "menu": null,
    "name": "FEM_DefineNodesSet",
+   "shortcut": null,
+   "status": "Creates a node set by polygon selection",
+   "toolbar": null,
+   "tooltip": "Creates a node set by polygon selection",
    "workbench": "FemWorkbench"
   },
   "FEM_ElementFluid1D": {
@@ -3425,19 +3740,47 @@
    "workbench": "FemWorkbench"
   },
   "FEM_EquationDeformation": {
+   "icon": true,
+   "label": "Deformation Equation",
+   "menu": null,
    "name": "FEM_EquationDeformation",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates an equation for deformation (nonlinear elasticity)",
    "workbench": "FemWorkbench"
   },
   "FEM_EquationElasticity": {
+   "icon": true,
+   "label": "Elasticity Equation",
+   "menu": null,
    "name": "FEM_EquationElasticity",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates an equation for elasticity (stress)",
    "workbench": "FemWorkbench"
   },
   "FEM_EquationElectricforce": {
+   "icon": true,
+   "label": "Electricforce Equation",
+   "menu": null,
    "name": "FEM_EquationElectricforce",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates an equation for electric forces",
    "workbench": "FemWorkbench"
   },
   "FEM_EquationElectrostatic": {
+   "icon": true,
+   "label": "Electrostatic Equation",
+   "menu": null,
    "name": "FEM_EquationElectrostatic",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates an equation for electrostatic",
    "workbench": "FemWorkbench"
   },
   "FEM_EquationFlow": {
@@ -3474,15 +3817,36 @@
    "workbench": "FemWorkbench"
   },
   "FEM_EquationMagnetodynamic": {
+   "icon": true,
+   "label": "Magnetodynamic Equation",
+   "menu": null,
    "name": "FEM_EquationMagnetodynamic",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates an equation for magnetodynamic forces",
    "workbench": "FemWorkbench"
   },
   "FEM_EquationMagnetodynamic2D": {
+   "icon": true,
+   "label": "Magnetodynamic 2D Equation",
+   "menu": null,
    "name": "FEM_EquationMagnetodynamic2D",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates an equation for 2D magnetodynamic forces",
    "workbench": "FemWorkbench"
   },
   "FEM_EquationStaticCurrent": {
+   "icon": true,
+   "label": "Static Current Equation",
+   "menu": null,
    "name": "FEM_EquationStaticCurrent",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates an equation for static current",
    "workbench": "FemWorkbench"
   },
   "FEM_Examples": {
@@ -3574,11 +3938,25 @@
    "workbench": "FemWorkbench"
   },
   "FEM_MeshClear": {
+   "icon": true,
+   "label": "Clear FEM Mesh",
+   "menu": null,
    "name": "FEM_MeshClear",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Clears the mesh of a FEM mesh object",
    "workbench": "FemWorkbench"
   },
   "FEM_MeshDisplayInfo": {
+   "icon": true,
+   "label": "Display Mesh Info",
+   "menu": null,
    "name": "FEM_MeshDisplayInfo",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Displays FEM mesh information",
    "workbench": "FemWorkbench"
   },
   "FEM_MeshGmshFromShape": {
@@ -3791,15 +4169,36 @@
    "workbench": "FemWorkbench"
   },
   "FEM_PostVisualizationHistogram": {
+   "icon": true,
+   "label": "Create Histogram",
+   "menu": null,
    "name": "FEM_PostVisualizationHistogram",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Create a Histogram post processing data visualization",
    "workbench": "FemWorkbench"
   },
   "FEM_PostVisualizationLineplot": {
+   "icon": true,
+   "label": "Create Lineplot",
+   "menu": null,
    "name": "FEM_PostVisualizationLineplot",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Create a Lineplot post processing data visualization",
    "workbench": "FemWorkbench"
   },
   "FEM_PostVisualizationTable": {
+   "icon": true,
+   "label": "Create Table",
+   "menu": null,
    "name": "FEM_PostVisualizationTable",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Create a Table post processing data visualization",
    "workbench": "FemWorkbench"
   },
   "FEM_ResultShow": {
@@ -3836,7 +4235,14 @@
    "workbench": "FemWorkbench"
   },
   "FEM_SolverCalculiXCcxTools": {
+   "icon": true,
+   "label": "Solver CalculiX Standard",
+   "menu": null,
    "name": "FEM_SolverCalculiXCcxTools",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a standard FEM solver CalculiX with ccx tools",
    "workbench": "FemWorkbench"
   },
   "FEM_SolverControl": {
@@ -3895,7 +4301,14 @@
    "workbench": "FemWorkbench"
   },
   "IFC_ConvertDocument": {
+   "icon": true,
+   "label": "Convert Document",
+   "menu": null,
    "name": "IFC_ConvertDocument",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Converts the active document to an IFC document",
    "workbench": "BIMWorkbench"
   },
   "IFC_Diff": {
@@ -3932,11 +4345,25 @@
    "workbench": "BIMWorkbench"
   },
   "IFC_Save": {
+   "icon": true,
+   "label": "Save IFC File",
+   "menu": null,
    "name": "IFC_Save",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Saves the current IFC document",
    "workbench": "BIMWorkbench"
   },
   "IFC_SaveAs": {
+   "icon": true,
+   "label": "Save IFC File As\u2026",
+   "menu": null,
    "name": "IFC_SaveAs",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Saves the current IFC document as another file",
    "workbench": "BIMWorkbench"
   },
   "IFC_UpdateIOS": {
@@ -4025,23 +4452,58 @@
    "workbench": "MeshWorkbench"
   },
   "MeshPart_CrossSections": {
+   "icon": false,
+   "label": "Cross-Sections",
+   "menu": null,
    "name": "MeshPart_CrossSections",
+   "shortcut": null,
+   "status": "Applies cross-sections to the mesh",
+   "toolbar": null,
+   "tooltip": "Applies cross-sections to the mesh",
    "workbench": "MeshWorkbench"
   },
   "MeshPart_CurveOnMesh": {
+   "icon": true,
+   "label": "Curve on Mesh",
+   "menu": null,
    "name": "MeshPart_CurveOnMesh",
+   "shortcut": null,
+   "status": "Creates an approximated curve on top of a mesh object",
+   "toolbar": null,
+   "tooltip": "Creates an approximated curve on top of a mesh object",
    "workbench": "MeshWorkbench"
   },
   "MeshPart_Mesher": {
+   "icon": false,
+   "label": "Mesh From Shape",
+   "menu": null,
    "name": "MeshPart_Mesher",
+   "shortcut": null,
+   "status": "Tessellate shape",
+   "toolbar": null,
+   "tooltip": "Tessellate shape",
    "workbench": "MeshWorkbench"
   },
   "MeshPart_SectionByPlane": {
+   "icon": false,
+   "label": "Section",
+   "menu": null,
    "name": "MeshPart_SectionByPlane",
+   "shortcut": null,
+   "status": "Creates a section from a mesh and plane",
+   "toolbar": null,
+   "tooltip": "Creates a section from a mesh and plane",
    "workbench": "MeshWorkbench"
   },
   "MeshPart_TrimByPlane": {
+   "icon": false,
+   "label": "Trim Mesh",
+   "menu": null,
    "name": "MeshPart_TrimByPlane",
+   "shortcut": null,
+   "status": "Trims a mesh with a plane",
+   "toolbar": null,
+   "tooltip": "Trims a mesh with a plane",
    "workbench": "MeshWorkbench"
   },
   "Mesh_AddFacet": {
@@ -4199,7 +4661,14 @@
    "workbench": "MeshWorkbench"
   },
   "Mesh_FromGeometry": {
+   "icon": false,
+   "label": "Mesh From Geometry",
+   "menu": null,
    "name": "Mesh_FromGeometry",
+   "shortcut": null,
+   "status": "Creates a mesh from the selected geometry",
+   "toolbar": null,
+   "tooltip": "Creates a mesh from the selected geometry",
    "workbench": "MeshWorkbench"
   },
   "Mesh_FromPartShape": {
@@ -4269,11 +4738,25 @@
    "workbench": "MeshWorkbench"
   },
   "Mesh_PolySegm": {
+   "icon": true,
+   "label": "Segment",
+   "menu": null,
    "name": "Mesh_PolySegm",
+   "shortcut": null,
+   "status": "Creates a mesh segment",
+   "toolbar": null,
+   "tooltip": "Creates a mesh segment",
    "workbench": "MeshWorkbench"
   },
   "Mesh_PolySplit": {
+   "icon": false,
+   "label": "Split",
+   "menu": null,
    "name": "Mesh_PolySplit",
+   "shortcut": null,
+   "status": "Splits a mesh into 2 meshes",
+   "toolbar": null,
+   "tooltip": "Splits a mesh into 2 meshes",
    "workbench": "MeshWorkbench"
   },
   "Mesh_PolyTrim": {
@@ -4420,11 +4903,25 @@
    "workbench": "MeshWorkbench"
   },
   "OpenSCAD_AddOpenSCADElement": {
+   "icon": true,
+   "label": "Add OpenSCAD Element",
+   "menu": null,
    "name": "OpenSCAD_AddOpenSCADElement",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Adds an OpenSCAD element based on entered OpenSCAD code using the OpenSCAD binary",
    "workbench": "OpenSCADWorkbench"
   },
   "OpenSCAD_ColorCodeShape": {
+   "icon": true,
+   "label": "Color Shapes",
+   "menu": null,
    "name": "OpenSCAD_ColorCodeShape",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Colors shapes by validity and type",
    "workbench": "OpenSCADWorkbench"
   },
   "OpenSCAD_Edgestofaces": {
@@ -4461,7 +4958,14 @@
    "workbench": "OpenSCADWorkbench"
   },
   "OpenSCAD_Hull": {
+   "icon": true,
+   "label": "Hull",
+   "menu": null,
    "name": "OpenSCAD_Hull",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a hull",
    "workbench": "OpenSCADWorkbench"
   },
   "OpenSCAD_IncreaseToleranceFeature": {
@@ -4476,11 +4980,25 @@
    "workbench": "OpenSCADWorkbench"
   },
   "OpenSCAD_MeshBoolean": {
+   "icon": true,
+   "label": "Mesh Boolean",
+   "menu": null,
    "name": "OpenSCAD_MeshBoolean",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Performs a boolean operation using the OpenSCAD binary",
    "workbench": "OpenSCADWorkbench"
   },
   "OpenSCAD_Minkowski": {
+   "icon": true,
+   "label": "Minkowski Sum",
+   "menu": null,
    "name": "OpenSCAD_Minkowski",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a Minkowski sum",
    "workbench": "OpenSCADWorkbench"
   },
   "OpenSCAD_MirrorMeshFeature": {
@@ -4620,7 +5138,14 @@
    "tooltip": "CloneCopies a solid object parametrically as the base feature of a new bodyPartDesign_Clone"
   },
   "PartDesign_CompDatums": {
-   "name": "PartDesign_CompDatums"
+   "icon": false,
+   "label": "Create Datum",
+   "menu": null,
+   "name": "PartDesign_CompDatums",
+   "shortcut": null,
+   "status": "Creates a datum object or local coordinate system",
+   "toolbar": null,
+   "tooltip": "Creates a datum object or local coordinate system"
   },
   "PartDesign_CompPrimitiveAdditive": {
    "icon": true,
@@ -4743,7 +5268,14 @@
    "tooltip": "Linear PatternDuplicates the selected features or the active body in a linear patternPartDesign_LinearPattern"
   },
   "PartDesign_Migrate": {
-   "name": "PartDesign_Migrate"
+   "icon": true,
+   "label": "Migrate",
+   "menu": null,
+   "name": "PartDesign_Migrate",
+   "shortcut": null,
+   "status": "Migrates the document to the modern Part Design workflow",
+   "toolbar": null,
+   "tooltip": "Migrates the document to the modern Part Design workflow"
   },
   "PartDesign_Mirrored": {
    "icon": true,
@@ -4756,13 +5288,34 @@
    "tooltip": "MirrorMirrors the selected features or active bodyPartDesign_Mirrored"
   },
   "PartDesign_MoveFeature": {
-   "name": "PartDesign_MoveFeature"
+   "icon": true,
+   "label": "Move Object To\u2026",
+   "menu": null,
+   "name": "PartDesign_MoveFeature",
+   "shortcut": null,
+   "status": "Moves the selected object to another body",
+   "toolbar": null,
+   "tooltip": "Moves the selected object to another body"
   },
   "PartDesign_MoveFeatureInTree": {
-   "name": "PartDesign_MoveFeatureInTree"
+   "icon": true,
+   "label": "Move Feature After\u2026",
+   "menu": null,
+   "name": "PartDesign_MoveFeatureInTree",
+   "shortcut": null,
+   "status": "Moves the selected feature after another feature in the same body",
+   "toolbar": null,
+   "tooltip": "Moves the selected feature after another feature in the same body"
   },
   "PartDesign_MoveTip": {
-   "name": "PartDesign_MoveTip"
+   "icon": true,
+   "label": "Set Tip",
+   "menu": null,
+   "name": "PartDesign_MoveTip",
+   "shortcut": null,
+   "status": "Moves the tip of the body to the selected feature",
+   "toolbar": null,
+   "tooltip": "Moves the tip of the body to the selected feature"
   },
   "PartDesign_MultiTransform": {
    "icon": true,
@@ -4925,7 +5478,14 @@
    "tooltip": "Shaft Design WizardStarts the shaft design wizardPartDesign_WizardShaft"
   },
   "PartDesign_WizardShaftCallBack": {
-   "name": "PartDesign_WizardShaftCallBack"
+   "icon": true,
+   "label": "Shaft design wizard...",
+   "menu": null,
+   "name": "PartDesign_WizardShaftCallBack",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Start the shaft design wizard"
   },
   "Part_Boolean": {
    "icon": true,
@@ -5180,7 +5740,14 @@
    "tooltip": "DefeaturingRemoves the selected features from a shapePart_Defeaturing"
   },
   "Part_EdgeSelection": {
-   "name": "Part_EdgeSelection"
+   "icon": true,
+   "label": "Edge Selection",
+   "menu": null,
+   "name": "Part_EdgeSelection",
+   "shortcut": null,
+   "status": "Only allows the selection of edges",
+   "toolbar": null,
+   "tooltip": "Only allows the selection of edges"
   },
   "Part_EditAttachment": {
    "icon": true,
@@ -5214,7 +5781,14 @@
    "workbench": "PartWorkbench"
   },
   "Part_Export": {
-   "name": "Part_Export"
+   "icon": true,
+   "label": "Export CAD File",
+   "menu": null,
+   "name": "Part_Export",
+   "shortcut": null,
+   "status": "Exports to a CAD file",
+   "toolbar": null,
+   "tooltip": "Exports to a CAD file"
   },
   "Part_Extrude": {
    "icon": true,
@@ -5227,7 +5801,14 @@
    "tooltip": "ExtrudeExtrudes the selected sketch or profilePart_Extrude"
   },
   "Part_FaceSelection": {
-   "name": "Part_FaceSelection"
+   "icon": true,
+   "label": "Face Selection",
+   "menu": null,
+   "name": "Part_FaceSelection",
+   "shortcut": null,
+   "status": "Only allows the selection of faces",
+   "toolbar": null,
+   "tooltip": "Only allows the selection of faces"
   },
   "Part_Fillet": {
    "icon": true,
@@ -5250,10 +5831,24 @@
    "tooltip": "UnionUnites the selected shapesPart_Fuse"
   },
   "Part_Import": {
-   "name": "Part_Import"
+   "icon": true,
+   "label": "Import CAD File",
+   "menu": null,
+   "name": "Part_Import",
+   "shortcut": null,
+   "status": "Imports a CAD file",
+   "toolbar": null,
+   "tooltip": "Imports a CAD file"
   },
   "Part_ImportCurveNet": {
-   "name": "Part_ImportCurveNet"
+   "icon": true,
+   "label": "Import Curve Network",
+   "menu": null,
+   "name": "Part_ImportCurveNet",
+   "shortcut": null,
+   "status": "Imports a curve network",
+   "toolbar": null,
+   "tooltip": "Imports a curve network"
   },
   "Part_JoinConnect": {
    "icon": true,
@@ -5349,7 +5944,14 @@
    "tooltip": "2D OffsetOffsets planar shapes in 2DPart_Offset2D"
   },
   "Part_PickCurveNet": {
-   "name": "Part_PickCurveNet"
+   "icon": true,
+   "label": "Pick Curve Network",
+   "menu": null,
+   "name": "Part_PickCurveNet",
+   "shortcut": null,
+   "status": "Picks a curve network",
+   "toolbar": null,
+   "tooltip": "Picks a curve network"
   },
   "Part_PointsFromMesh": {
    "icon": true,
@@ -5392,7 +5994,14 @@
    "tooltip": "Refine ShapeCreates a refined copy of the selected shapesPart_RefineShape"
   },
   "Part_RemoveSelectionGate": {
-   "name": "Part_RemoveSelectionGate"
+   "icon": true,
+   "label": "No Selection Filters",
+   "menu": null,
+   "name": "Part_RemoveSelectionGate",
+   "shortcut": null,
+   "status": "Clears all selection filters",
+   "toolbar": null,
+   "tooltip": "Clears all selection filters"
   },
   "Part_ReverseShape": {
    "icon": true,
@@ -5475,7 +6084,14 @@
    "tooltip": "Shape From MeshCreates a shape from the selected meshPart_ShapeFromMesh"
   },
   "Part_ShapeInfo": {
-   "name": "Part_ShapeInfo"
+   "icon": true,
+   "label": "Shape Info",
+   "menu": null,
+   "name": "Part_ShapeInfo",
+   "shortcut": null,
+   "status": "Displays information about the selected shape",
+   "toolbar": null,
+   "tooltip": "Displays information about the selected shape"
   },
   "Part_SimpleCopy": {
    "icon": true,
@@ -5488,7 +6104,14 @@
    "tooltip": "Simple CopyCreates a simple non-parametric copy of the selected shapesPart_SimpleCopy"
   },
   "Part_SimpleCylinder": {
-   "name": "Part_SimpleCylinder"
+   "icon": true,
+   "label": "Cylinder",
+   "menu": null,
+   "name": "Part_SimpleCylinder",
+   "shortcut": null,
+   "status": "Creates a solid cylinder",
+   "toolbar": null,
+   "tooltip": "Creates a solid cylinder"
   },
   "Part_Slice": {
    "icon": true,
@@ -5585,7 +6208,14 @@
    "workbench": "PartWorkbench"
   },
   "Part_VertexSelection": {
-   "name": "Part_VertexSelection"
+   "icon": true,
+   "label": "Vertex Selection",
+   "menu": null,
+   "name": "Part_VertexSelection",
+   "shortcut": null,
+   "status": "Only allows the selection of vertices",
+   "toolbar": null,
+   "tooltip": "Only allows the selection of vertices"
   },
   "Part_XOR": {
    "icon": true,
@@ -5972,7 +6602,14 @@
    "tooltip": "Toggle Circular Helper for ArcsToggles the visibility of the circular helpers for all arcsSketcher_ArcOverlay"
   },
   "Sketcher_BSplineComb": {
-   "name": "Sketcher_BSplineComb"
+   "icon": true,
+   "label": "Toggle B-Spline Curvature Comb",
+   "menu": null,
+   "name": "Sketcher_BSplineComb",
+   "shortcut": null,
+   "status": "Toggles the visibility of the curvature comb for all B-splines",
+   "toolbar": null,
+   "tooltip": "Toggles the visibility of the curvature comb for all B-splines"
   },
   "Sketcher_BSplineConvertToNURBS": {
    "icon": true,
@@ -6005,7 +6642,14 @@
    "tooltip": "Decrease Knot MultiplicityDecreases the multiplicity of the selected knot of a B-splineSketcher_BSplineDecreaseKnotMultiplicity"
   },
   "Sketcher_BSplineDegree": {
-   "name": "Sketcher_BSplineDegree"
+   "icon": true,
+   "label": "Toggle B-Spline Degree",
+   "menu": null,
+   "name": "Sketcher_BSplineDegree",
+   "shortcut": null,
+   "status": "Toggles the visibility of the degree for all B-splines",
+   "toolbar": null,
+   "tooltip": "Toggles the visibility of the degree for all B-splines"
   },
   "Sketcher_BSplineIncreaseDegree": {
    "icon": true,
@@ -6038,13 +6682,34 @@
    "tooltip": "Insert KnotInserts a knot at a given parameter. If a knot already exists at thatparameter, its multiplicity is increased by 1.Sketcher_BSplineInsertKnot"
   },
   "Sketcher_BSplineKnotMultiplicity": {
-   "name": "Sketcher_BSplineKnotMultiplicity"
+   "icon": true,
+   "label": "Toggle B-spline knot multiplicity",
+   "menu": null,
+   "name": "Sketcher_BSplineKnotMultiplicity",
+   "shortcut": null,
+   "status": "Toggles the visibility of the knot multiplicity for all B-splines",
+   "toolbar": null,
+   "tooltip": "Toggles the visibility of the knot multiplicity for all B-splines"
   },
   "Sketcher_BSplinePoleWeight": {
-   "name": "Sketcher_BSplinePoleWeight"
+   "icon": true,
+   "label": "Toggle B-Spline Control Point Weight",
+   "menu": null,
+   "name": "Sketcher_BSplinePoleWeight",
+   "shortcut": null,
+   "status": "Toggles the visibility of control point weights for all B-splines",
+   "toolbar": null,
+   "tooltip": "Toggles the visibility of control point weights for all B-splines"
   },
   "Sketcher_BSplinePolygon": {
-   "name": "Sketcher_BSplinePolygon"
+   "icon": true,
+   "label": "Toggle B-Spline Control Polygon",
+   "menu": null,
+   "name": "Sketcher_BSplinePolygon",
+   "shortcut": null,
+   "status": "Toggles the visibility of the control polygons for all B-splines",
+   "toolbar": null,
+   "tooltip": "Toggles the visibility of the control polygons for all B-splines"
   },
   "Sketcher_CarbonCopy": {
    "icon": true,
@@ -6057,10 +6722,24 @@
    "tooltip": "Carbon Copy (G, W)Copies the geometry of another sketchSketcher_CarbonCopy"
   },
   "Sketcher_ChangeDimensionConstraint": {
-   "name": "Sketcher_ChangeDimensionConstraint"
+   "icon": false,
+   "label": "Edit Value",
+   "menu": null,
+   "name": "Sketcher_ChangeDimensionConstraint",
+   "shortcut": null,
+   "status": "Edits the value of a dimensional constraint",
+   "toolbar": null,
+   "tooltip": "Edits the value of a dimensional constraint"
   },
   "Sketcher_Clone": {
-   "name": "Sketcher_Clone"
+   "icon": true,
+   "label": "Clone",
+   "menu": null,
+   "name": "Sketcher_Clone",
+   "shortcut": null,
+   "status": "Creates a clone of the geometry taking as reference the last selected point",
+   "toolbar": null,
+   "tooltip": "Creates a clone of the geometry taking as reference the last selected point"
   },
   "Sketcher_CompBSplineShowHideGeometryInformation": {
    "icon": true,
@@ -6073,13 +6752,34 @@
    "tooltip": "Toggle B-Spline Information LayerToggles the visibility of the information layer for all B-splinesSketcher_CompBSplineShowHideGeometryInformation"
   },
   "Sketcher_CompConstrainRadDia": {
-   "name": "Sketcher_CompConstrainRadDia"
+   "icon": false,
+   "label": "Radius/Diameter Dimension",
+   "menu": null,
+   "name": "Sketcher_CompConstrainRadDia",
+   "shortcut": null,
+   "status": "Constrains the radius or diameter of an arc or a circle",
+   "toolbar": null,
+   "tooltip": "Constrains the radius or diameter of an arc or a circle"
   },
   "Sketcher_CompConstrainTools": {
-   "name": "Sketcher_CompConstrainTools"
+   "icon": false,
+   "label": "Constrain",
+   "menu": null,
+   "name": "Sketcher_CompConstrainTools",
+   "shortcut": null,
+   "status": "Constrain tools",
+   "toolbar": null,
+   "tooltip": "Constrain tools"
   },
   "Sketcher_CompCopy": {
-   "name": "Sketcher_CompCopy"
+   "icon": false,
+   "label": "Clone",
+   "menu": null,
+   "name": "Sketcher_CompCopy",
+   "shortcut": null,
+   "status": "Creates a clone of the geometry taking as reference the last selected point",
+   "toolbar": null,
+   "tooltip": "Creates a clone of the geometry taking as reference the last selected point"
   },
   "Sketcher_CompCreateArc": {
    "icon": true,
@@ -6182,7 +6882,14 @@
    "tooltip": "Horizontal/Vertical ConstraintConstrains the selected elements either horizontally or vertically,based on their closest alignmentSketcher_ConstrainHorVer (Sketcher_CompHorVer:0)"
   },
   "Sketcher_CompLine": {
-   "name": "Sketcher_CompLine"
+   "icon": false,
+   "label": "Polyline",
+   "menu": null,
+   "name": "Sketcher_CompLine",
+   "shortcut": null,
+   "status": "Creates a continuous polyline",
+   "toolbar": null,
+   "tooltip": "Creates a continuous polyline"
   },
   "Sketcher_CompModifyKnotMultiplicity": {
    "icon": true,
@@ -6235,7 +6942,14 @@
    "tooltip": "Block Constraint (K, B)Constrains the selected edges as fixedSketcher_ConstrainBlock"
   },
   "Sketcher_ConstrainCoincident": {
-   "name": "Sketcher_ConstrainCoincident"
+   "icon": true,
+   "label": "Coincident Constraint",
+   "menu": null,
+   "name": "Sketcher_ConstrainCoincident",
+   "shortcut": null,
+   "status": "Constrains the selected elements to be coincident",
+   "toolbar": null,
+   "tooltip": "Constrains the selected elements to be coincident"
   },
   "Sketcher_ConstrainCoincidentUnified": {
    "icon": true,
@@ -6348,7 +7062,14 @@
    "tooltip": "Perpendicular Constraint (N)Constrains the selected lines to be perpendicularSketcher_ConstrainPerpendicular"
   },
   "Sketcher_ConstrainPointOnObject": {
-   "name": "Sketcher_ConstrainPointOnObject"
+   "icon": true,
+   "label": "Point-On-Object Constraint",
+   "menu": null,
+   "name": "Sketcher_ConstrainPointOnObject",
+   "shortcut": null,
+   "status": "Constrains the selected point onto the selected object",
+   "toolbar": null,
+   "tooltip": "Constrains the selected point onto the selected object"
   },
   "Sketcher_ConstrainRadiam": {
    "icon": true,
@@ -6411,7 +7132,14 @@
    "tooltip": "Vertical Constraint (V)Constrains the selected elements verticallySketcher_ConstrainVertical"
   },
   "Sketcher_Copy": {
-   "name": "Sketcher_Copy"
+   "icon": true,
+   "label": "Copy",
+   "menu": null,
+   "name": "Sketcher_Copy",
+   "shortcut": null,
+   "status": "Creates a simple copy of the geometry taking as reference the last selected point",
+   "toolbar": null,
+   "tooltip": "Creates a simple copy of the geometry taking as reference the last selected point"
   },
   "Sketcher_CopyClipboard": {
    "icon": true,
@@ -6784,7 +7512,14 @@
    "tooltip": "Extend Edge (G, Q)Extends an edge with respect to the selected positionSketcher_Extend"
   },
   "Sketcher_Grid": {
-   "name": "Sketcher_Grid"
+   "icon": false,
+   "label": "Toggle Grid",
+   "menu": null,
+   "name": "Sketcher_Grid",
+   "shortcut": null,
+   "status": "Toggles the grid display in the active sketch",
+   "toolbar": null,
+   "tooltip": "Toggles the grid display in the active sketch"
   },
   "Sketcher_Intersection": {
    "icon": true,
@@ -6847,7 +7582,14 @@
    "tooltip": "Mirror SketchCreates a new mirrored sketch for each selected sketch by using the X or Y axes, or the origin point, as mirroring referenceSketcher_MirrorSketch"
   },
   "Sketcher_Move": {
-   "name": "Sketcher_Move"
+   "icon": true,
+   "label": "Move",
+   "menu": null,
+   "name": "Sketcher_Move",
+   "shortcut": null,
+   "status": "Moves the geometry taking as reference the last selected point",
+   "toolbar": null,
+   "tooltip": "Moves the geometry taking as reference the last selected point"
   },
   "Sketcher_NewSketch": {
    "icon": true,
@@ -6880,7 +7622,14 @@
    "tooltip": "Paste Elements (Ctrl+V)Pastes the geometries and constraints from the clipboard into thesketchSketcher_Paste"
   },
   "Sketcher_ProfilesHexagon1": {
+   "icon": true,
+   "label": "Creates a hexagonal profile",
+   "menu": null,
    "name": "Sketcher_ProfilesHexagon1",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Creates a hexagonal profile in the sketch",
    "workbench": "SketcherWorkbench"
   },
   "Sketcher_Projection": {
@@ -6894,7 +7643,14 @@
    "tooltip": "External Projection (G, X)Creates the projection of external geometry in the sketch planeSketcher_Projection"
   },
   "Sketcher_RectangularArray": {
-   "name": "Sketcher_RectangularArray"
+   "icon": true,
+   "label": "Rectangular Array",
+   "menu": null,
+   "name": "Sketcher_RectangularArray",
+   "shortcut": null,
+   "status": "Creates a rectangular array pattern of the geometry taking as reference the last selected point",
+   "toolbar": null,
+   "tooltip": "Creates a rectangular array pattern of the geometry taking as reference the last selected point"
   },
   "Sketcher_RemoveAxesAlignment": {
    "icon": true,
@@ -6907,7 +7663,14 @@
    "tooltip": "Remove Axes Alignment (Z, R)Modifies the constraints to remove axes alignment while trying to preservethe constraint relationship of the selectionSketcher_RemoveAxesAlignment"
   },
   "Sketcher_RenderingOrder": {
-   "name": "Sketcher_RenderingOrder"
+   "icon": false,
+   "label": "Rendering Order",
+   "menu": null,
+   "name": "Sketcher_RenderingOrder",
+   "shortcut": null,
+   "status": "Reorders items in the rendering order",
+   "toolbar": null,
+   "tooltip": "Reorders items in the rendering order"
   },
   "Sketcher_ReorientSketch": {
    "icon": true,
@@ -7000,7 +7763,14 @@
    "tooltip": "Select Horizontal Axis (Z, H)Selects the local horizontal axis of the sketchSketcher_SelectHorizontalAxis"
   },
   "Sketcher_SelectMalformedConstraints": {
-   "name": "Sketcher_SelectMalformedConstraints"
+   "icon": false,
+   "label": "Select Malformed Constraints",
+   "menu": null,
+   "name": "Sketcher_SelectMalformedConstraints",
+   "shortcut": null,
+   "status": "Selects all malformed constraints",
+   "toolbar": null,
+   "tooltip": "Selects all malformed constraints"
   },
   "Sketcher_SelectOrigin": {
    "icon": true,
@@ -7013,7 +7783,14 @@
    "tooltip": "Select Origin (Z, O)Selects the local origin point of the sketchSketcher_SelectOrigin"
   },
   "Sketcher_SelectPartiallyRedundantConstraints": {
-   "name": "Sketcher_SelectPartiallyRedundantConstraints"
+   "icon": false,
+   "label": "Select Partially Redundant Constraints",
+   "menu": null,
+   "name": "Sketcher_SelectPartiallyRedundantConstraints",
+   "shortcut": null,
+   "status": "Selects all partially redundant constraints",
+   "toolbar": null,
+   "tooltip": "Selects all partially redundant constraints"
   },
   "Sketcher_SelectRedundantConstraints": {
    "icon": true,
@@ -7036,7 +7813,14 @@
    "tooltip": "Select Vertical Axis (Z, V)Selects the local vertical axis of the sketchSketcher_SelectVerticalAxis"
   },
   "Sketcher_Snap": {
-   "name": "Sketcher_Snap"
+   "icon": false,
+   "label": "Toggle Snap",
+   "menu": null,
+   "name": "Sketcher_Snap",
+   "shortcut": null,
+   "status": "Toggles snapping",
+   "toolbar": null,
+   "tooltip": "Toggles snapping"
   },
   "Sketcher_Split": {
    "icon": true,
@@ -7344,7 +8128,14 @@
    "tooltip": "About FreeCADDisplays information about FreeCADStd_About"
   },
   "Std_AboutQt": {
-   "name": "Std_AboutQt"
+   "icon": false,
+   "label": "About &Qt",
+   "menu": null,
+   "name": "Std_AboutQt",
+   "shortcut": null,
+   "status": "Displays information about Qt",
+   "toolbar": null,
+   "tooltip": "Displays information about Qt"
   },
   "Std_ActivateNextWindow": {
    "icon": true,
@@ -7467,7 +8258,14 @@
    "tooltip": "Close AllCloses all windowsStd_CloseAllWindows"
   },
   "Std_CommandLine": {
-   "name": "Std_CommandLine"
+   "icon": true,
+   "label": "Command &Line",
+   "menu": null,
+   "name": "Std_CommandLine",
+   "shortcut": null,
+   "status": "Opens a command line interface in the console",
+   "toolbar": null,
+   "tooltip": "Opens a command line interface in the console"
   },
   "Std_Copy": {
    "icon": true,
@@ -7750,7 +8548,14 @@
    "tooltip": "Export Dependency GraphExports the dependency graph as a Graphviz (.gv) fileStd_ExportDependencyGraph"
   },
   "Std_Expressions": {
-   "name": "Std_Expressions"
+   "icon": false,
+   "label": "Expression Actions",
+   "menu": null,
+   "name": "Std_Expressions",
+   "shortcut": null,
+   "status": "Actions that apply to expressions",
+   "toolbar": null,
+   "tooltip": "Actions that apply to expressions"
   },
   "Std_FreeCADDonation": {
    "icon": true,
@@ -7883,7 +8688,14 @@
    "tooltip": "Make LinkA link is an object that references another object, either withinthe same or in another document. Unlike clones, links reference the original shape directly, making them more memory-efficient, which helps with the creation of complex assemblies.Std_LinkMake"
   },
   "Std_LinkMakeGroup": {
-   "name": "Std_LinkMakeGroup"
+   "icon": true,
+   "label": "Link Group",
+   "menu": null,
+   "name": "Std_LinkMakeGroup",
+   "shortcut": null,
+   "status": "Creates a group of links",
+   "toolbar": null,
+   "tooltip": "Creates a group of links"
   },
   "Std_LinkMakeRelative": {
    "icon": true,
@@ -8086,7 +8898,14 @@
    "tooltip": "Help (F1)Opens the Help documentationStd_OnlineHelp"
   },
   "Std_OnlineHelpWebsite": {
-   "name": "Std_OnlineHelpWebsite"
+   "icon": false,
+   "label": "Help Website",
+   "menu": null,
+   "name": "Std_OnlineHelpWebsite",
+   "shortcut": null,
+   "status": "Opens the help documentation",
+   "toolbar": null,
+   "tooltip": "Opens the help documentation"
   },
   "Std_Open": {
    "icon": true,
@@ -8099,7 +8918,14 @@
    "tooltip": "Open\u2026 (Ctrl+O)Opens a document or imports filesStd_Open"
   },
   "Std_OpenMacrosFolder": {
-   "name": "Std_OpenMacrosFolder"
+   "icon": true,
+   "label": "Open Macro Folder",
+   "menu": null,
+   "name": "Std_OpenMacrosFolder",
+   "shortcut": null,
+   "status": "Opens the macros folder in the system file manager",
+   "toolbar": null,
+   "tooltip": "Opens the macros folder in the system file manager"
   },
   "Std_OrthographicCamera": {
    "icon": true,
@@ -8272,7 +9098,14 @@
    "tooltip": "Recent MacrosDisplays the list of recently used macrosStd_RecentMacros"
   },
   "Std_Recompute": {
-   "name": "Std_Recompute"
+   "icon": true,
+   "label": "&Recompute",
+   "menu": null,
+   "name": "Std_Recompute",
+   "shortcut": null,
+   "status": "Recomputes a feature or document",
+   "toolbar": null,
+   "tooltip": "Recomputes a feature or document"
   },
   "Std_Redo": {
    "icon": true,
@@ -8295,7 +9128,14 @@
    "tooltip": "Recompute (F5)Recomputes the active documentStd_Refresh"
   },
   "Std_ReloadStyleSheet": {
-   "name": "Std_ReloadStyleSheet"
+   "icon": true,
+   "label": "&Reload Stylesheet",
+   "menu": null,
+   "name": "Std_ReloadStyleSheet",
+   "shortcut": null,
+   "status": "Reloads the current stylesheet",
+   "toolbar": null,
+   "tooltip": "Reloads the current stylesheet"
   },
   "Std_ReportBug": {
    "icon": true,
@@ -8488,25 +9328,74 @@
    "tooltip": "Store Working View (Shift+End)Stores a temporary working view for the current documentStd_StoreWorkingView"
   },
   "Std_Test1": {
-   "name": "Std_Test1"
+   "icon": true,
+   "label": "Test1",
+   "menu": null,
+   "name": "Std_Test1",
+   "shortcut": null,
+   "status": "Test function 1",
+   "toolbar": null,
+   "tooltip": "Test function 1"
   },
   "Std_Test2": {
-   "name": "Std_Test2"
+   "icon": true,
+   "label": "Test2",
+   "menu": null,
+   "name": "Std_Test2",
+   "shortcut": null,
+   "status": "Test function 2",
+   "toolbar": null,
+   "tooltip": "Test function 2"
   },
   "Std_Test3": {
-   "name": "Std_Test3"
+   "icon": true,
+   "label": "Test3",
+   "menu": null,
+   "name": "Std_Test3",
+   "shortcut": null,
+   "status": "Test function 3",
+   "toolbar": null,
+   "tooltip": "Test function 3"
   },
   "Std_Test4": {
-   "name": "Std_Test4"
+   "icon": true,
+   "label": "Test4",
+   "menu": null,
+   "name": "Std_Test4",
+   "shortcut": null,
+   "status": "Test function 4",
+   "toolbar": null,
+   "tooltip": "Test function 4"
   },
   "Std_Test5": {
-   "name": "Std_Test5"
+   "icon": true,
+   "label": "Test5",
+   "menu": null,
+   "name": "Std_Test5",
+   "shortcut": null,
+   "status": "Test function 5",
+   "toolbar": null,
+   "tooltip": "Test function 5"
   },
   "Std_Test6": {
-   "name": "Std_Test6"
+   "icon": true,
+   "label": "Test6",
+   "menu": null,
+   "name": "Std_Test6",
+   "shortcut": null,
+   "status": "Test function 6",
+   "toolbar": null,
+   "tooltip": "Test function 6"
   },
   "Std_TestCmdFuncs": {
-   "name": "Std_TestCmdFuncs"
+   "icon": false,
+   "label": "Test Functions",
+   "menu": null,
+   "name": "Std_TestCmdFuncs",
+   "shortcut": null,
+   "status": "Test functions",
+   "toolbar": null,
+   "tooltip": "Test functions"
   },
   "Std_TestConsoleOutput": {
    "icon": false,
@@ -8639,7 +9528,14 @@
    "tooltip": "Clipping ViewToggles clipping of the active viewStd_ToggleClipPlane"
   },
   "Std_ToggleFreeze": {
-   "name": "Std_ToggleFreeze"
+   "icon": true,
+   "label": "Toggle Freeze",
+   "menu": null,
+   "name": "Std_ToggleFreeze",
+   "shortcut": null,
+   "status": "Toggles freeze state of the selected objects. A frozen object is not recomputed when its parents change.",
+   "toolbar": null,
+   "tooltip": "Toggles freeze state of the selected objects. A frozen object is not recomputed when its parents change."
   },
   "Std_ToggleNavigation": {
    "icon": true,
@@ -8672,10 +9568,24 @@
    "tooltip": "Toggle SelectabilityToggles the property of the objects to get selected in the 3D viewStd_ToggleSelectability"
   },
   "Std_ToggleSkipRecompute": {
-   "name": "Std_ToggleSkipRecompute"
+   "icon": false,
+   "label": "Skip Recomputes",
+   "menu": null,
+   "name": "Std_ToggleSkipRecompute",
+   "shortcut": null,
+   "status": "Enables or disables the recomputations of the document",
+   "toolbar": null,
+   "tooltip": "Enables or disables the recomputations of the document"
   },
   "Std_ToggleToolBarLock": {
-   "name": "Std_ToggleToolBarLock"
+   "icon": false,
+   "label": "Lock Toolbars",
+   "menu": null,
+   "name": "Std_ToggleToolBarLock",
+   "shortcut": null,
+   "status": "Locks toolbars so they are no longer moveable",
+   "toolbar": null,
+   "tooltip": "Locks toolbars so they are no longer moveable"
   },
   "Std_ToggleTransparency": {
    "icon": true,
@@ -8708,7 +9618,14 @@
    "tooltip": "ToolbarsToggles this windowStd_ToolBarMenu"
   },
   "Std_Transform": {
-   "name": "Std_Transform"
+   "icon": false,
+   "label": "Transform",
+   "menu": null,
+   "name": "Std_Transform",
+   "shortcut": null,
+   "status": "Transforms the selected object",
+   "toolbar": null,
+   "tooltip": "Transforms the selected object"
   },
   "Std_TransformManip": {
    "icon": true,
@@ -8721,7 +9638,14 @@
    "tooltip": "TransformTransforms the selected object in the 3D viewStd_TransformManip"
   },
   "Std_TreeCollapse": {
-   "name": "Std_TreeCollapse"
+   "icon": false,
+   "label": "Collapse Selected Items",
+   "menu": null,
+   "name": "Std_TreeCollapse",
+   "shortcut": null,
+   "status": "Collapses the currently selected tree items",
+   "toolbar": null,
+   "tooltip": "Collapses the currently selected tree items"
   },
   "Std_TreeCollapseDocument": {
    "icon": false,
@@ -8744,7 +9668,14 @@
    "tooltip": "Initiate Dragging (T, D)Initiates dragging of the currently selected tree itemsStd_TreeDrag"
   },
   "Std_TreeExpand": {
-   "name": "Std_TreeExpand"
+   "icon": false,
+   "label": "Expand Selected Items",
+   "menu": null,
+   "name": "Std_TreeExpand",
+   "shortcut": null,
+   "status": "Expands the currently selected tree items",
+   "toolbar": null,
+   "tooltip": "Expands the currently selected tree items"
   },
   "Std_TreeMultiDocument": {
    "icon": false,
@@ -8777,7 +9708,14 @@
    "tooltip": "5 Record Selection (T, 5)Records the selection in the tree view in order to go back/forwardusing the navigation buttonsStd_TreeRecordSelection"
   },
   "Std_TreeSelectAllInstances": {
-   "name": "Std_TreeSelectAllInstances"
+   "icon": true,
+   "label": "Select All Instances",
+   "menu": null,
+   "name": "Std_TreeSelectAllInstances",
+   "shortcut": null,
+   "status": "Selects all instances of the currently selected object",
+   "toolbar": null,
+   "tooltip": "Selects all instances of the currently selected object"
   },
   "Std_TreeSelection": {
    "icon": true,
@@ -8870,7 +9808,14 @@
    "tooltip": "Edit ModeDefines behavior when editing an object from the tree viewStd_UserEditMode"
   },
   "Std_UserInterface": {
-   "name": "Std_UserInterface"
+   "icon": false,
+   "label": "Dock Views",
+   "menu": null,
+   "name": "Std_UserInterface",
+   "shortcut": null,
+   "status": "Docks all top-level views",
+   "toolbar": null,
+   "tooltip": "Docks all top-level views"
   },
   "Std_VarSet": {
    "icon": true,
@@ -9133,7 +10078,14 @@
    "tooltip": "4 Rear (4)Sets the camera to the rear viewStd_ViewRear"
   },
   "Std_ViewRestoreCamera": {
-   "name": "Std_ViewRestoreCamera"
+   "icon": false,
+   "label": "Restore Saved Camera",
+   "menu": null,
+   "name": "Std_ViewRestoreCamera",
+   "shortcut": null,
+   "status": "Restores the saved camera settings",
+   "toolbar": null,
+   "tooltip": "Restores the saved camera settings"
   },
   "Std_ViewRight": {
    "icon": true,
@@ -9166,7 +10118,14 @@
    "tooltip": "Rotates Right (Shift+Right)Rotates the view by 90\u00b0 clockwiseStd_ViewRotateRight"
   },
   "Std_ViewSaveCamera": {
-   "name": "Std_ViewSaveCamera"
+   "icon": false,
+   "label": "Save Current Camera",
+   "menu": null,
+   "name": "Std_ViewSaveCamera",
+   "shortcut": null,
+   "status": "Saves the current camera settings",
+   "toolbar": null,
+   "tooltip": "Saves the current camera settings"
   },
   "Std_ViewScreenShot": {
    "icon": true,
@@ -9219,7 +10178,14 @@
    "tooltip": "Undocked (V, U)Displays the active view either in fullscreen, undocked, or dockedmodeStd_ViewUndock"
   },
   "Std_ViewVR": {
-   "name": "Std_ViewVR"
+   "icon": false,
+   "label": "FreeCAD VR",
+   "menu": null,
+   "name": "Std_ViewVR",
+   "shortcut": null,
+   "status": "Extends the FreeCAD 3D Window to a VR device",
+   "toolbar": null,
+   "tooltip": "Extends the FreeCAD 3D Window to a VR device"
   },
   "Std_ViewZoomIn": {
    "icon": true,
@@ -9524,11 +10490,25 @@
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ClipGroupAdd": {
+   "icon": true,
+   "label": "Add View To Clip Group",
+   "menu": null,
    "name": "TechDraw_ClipGroupAdd",
+   "shortcut": null,
+   "status": "Adds the selected view to a clip group",
+   "toolbar": null,
+   "tooltip": "Adds the selected view to a clip group",
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ClipGroupRemove": {
+   "icon": true,
+   "label": "Remove From Clip Group",
+   "menu": null,
    "name": "TechDraw_ClipGroupRemove",
+   "shortcut": null,
+   "status": "Removes a view based on the selected clip group",
+   "toolbar": null,
+   "tooltip": "Removes a view based on the selected clip group",
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_CommandAddOffsetVertex": {
@@ -9730,7 +10710,14 @@
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtensionCascadeDimensionGroup": {
+   "icon": false,
+   "label": "Cascade Horizontal Dimensions",
+   "menu": null,
    "name": "TechDraw_ExtensionCascadeDimensionGroup",
+   "shortcut": null,
+   "status": "Cascade Horizontal Dimensions",
+   "toolbar": null,
+   "tooltip": "Evenly spaces the selected horizontal dimensions:- Specify the cascade spacing (optional)- Select two or more horizontal dimensions- The first dimension defines the position- Click this tool",
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtensionCascadeHorizDimension": {
@@ -9767,7 +10754,14 @@
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtensionChamferDimensionGroup": {
+   "icon": false,
+   "label": "Horizontal Chamfer Dimension",
+   "menu": null,
    "name": "TechDraw_ExtensionChamferDimensionGroup",
+   "shortcut": null,
+   "status": "Horizontal Chamfer Dimension",
+   "toolbar": null,
+   "tooltip": "Inserts a horizontal size and angle dimension for a chamfer from 2 selected vertices",
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtensionChangeLineAttributes": {
@@ -9804,11 +10798,25 @@
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtensionCreateChainDimensionGroup": {
+   "icon": false,
+   "label": "Horizontal Chain Dimension",
+   "menu": null,
    "name": "TechDraw_ExtensionCreateChainDimensionGroup",
+   "shortcut": null,
+   "status": "Horizontal Chain Dimension",
+   "toolbar": null,
+   "tooltip": "Inserts a sequence of aligned horizontal dimensions to at least three selected vertices, where the first two define the direction",
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtensionCreateCoordDimensionGroup": {
+   "icon": false,
+   "label": "Horizontal Coordinate Dimension",
+   "menu": null,
    "name": "TechDraw_ExtensionCreateCoordDimensionGroup",
+   "shortcut": null,
+   "status": "Horizontal Coordinate Dimension",
+   "toolbar": null,
+   "tooltip": "Adds evenly spaced horizontal dimensions between 3 or more vertices aligned to a shared baseline",
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtensionCreateHorizChainDimension": {
@@ -10120,7 +11128,14 @@
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtensionPosChainDimensionGroup": {
+   "icon": false,
+   "label": "Align Horizontal Chain Dimensions",
+   "menu": null,
    "name": "TechDraw_ExtensionPosChainDimensionGroup",
+   "shortcut": null,
+   "status": "Align Horizontal Chain Dimensions",
+   "toolbar": null,
+   "tooltip": "Aligns the horizontal dimensions to create a chain dimension:- Select two or more horizontal dimensions- The first dimension defines the position- Click this tool",
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtensionPosHorizChainDimension": {
@@ -10267,7 +11282,14 @@
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_ExtentGroup": {
+   "icon": false,
+   "label": "Extent Dimension",
+   "menu": null,
    "name": "TechDraw_ExtentGroup",
+   "shortcut": null,
+   "status": "Inserts a dimension showing the extent (overall length) of an object or feature",
+   "toolbar": null,
+   "tooltip": "Inserts a dimension showing the extent (overall length) of an object or feature",
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_FaceCenterLine": {
@@ -10392,7 +11414,14 @@
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_MoveView": {
+   "icon": true,
+   "label": "Move View",
+   "menu": null,
    "name": "TechDraw_MoveView",
+   "shortcut": null,
+   "status": "",
+   "toolbar": null,
+   "tooltip": "Moves a view to a new page",
    "workbench": "TechDrawWorkbench"
   },
   "TechDraw_PageDefault": {
@@ -28799,7 +29828,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -28905,7 +29934,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -29126,7 +30155,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -29232,7 +30261,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -29296,7 +30325,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat hatch file. System use only.",
      "group": "GeomHatch",
      "kind": "path",
@@ -29359,7 +30388,7 @@
      "property_type": "App::PropertyLinkSub"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded SVG hatch file. System use only.",
      "group": "Hatch",
      "kind": "path",
@@ -30114,7 +31143,7 @@
      "property_type": "App::PropertyFile"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/blankTile.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/blankTile.svg",
      "doc": "Embedded Symbol. System use only.",
      "group": "TileWeld",
      "kind": "path",
@@ -30188,7 +31217,7 @@
      "property_type": "App::PropertyFile"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/blankTile.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/blankTile.svg",
      "doc": "Embedded Symbol. System use only.",
      "group": "TileWeld",
      "kind": "path",
@@ -31557,7 +32586,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -31650,7 +32679,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -31863,7 +32892,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -31956,7 +32985,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -36523,7 +37552,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -36629,7 +37658,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -36839,7 +37868,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -36945,7 +37974,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -37005,7 +38034,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat hatch file. System use only.",
      "group": "GeomHatch",
      "kind": "path",
@@ -37064,7 +38093,7 @@
      "property_type": "App::PropertyLinkSub"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded SVG hatch file. System use only.",
      "group": "Hatch",
      "kind": "path",
@@ -37753,7 +38782,7 @@
      "property_type": "App::PropertyFile"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/blankTile.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/blankTile.svg",
      "doc": "Embedded Symbol. System use only.",
      "group": "TileWeld",
      "kind": "path",
@@ -37822,7 +38851,7 @@
      "property_type": "App::PropertyFile"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/blankTile.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/blankTile.svg",
      "doc": "Embedded Symbol. System use only.",
      "group": "TileWeld",
      "kind": "path",
@@ -39100,7 +40129,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -39193,7 +40222,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -39396,7 +40425,7 @@
      "property_type": "App::PropertyString"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/FCPAT.pat",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/FCPAT.pat",
      "doc": "Embedded Pat pattern file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",
@@ -39489,7 +40518,7 @@
      "property_type": "App::PropertyLinkList"
     },
     {
-     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_f7372206-e0f0-4525-9215-aff5cd86d422_da39a3_371650/simple.svg",
+     "default": "/home/aaron/.cache/FreeCAD/v1-1/Cache/FreeCAD_Doc_d029b25d-5930-4906-9c70-c4d241a71c03_da39a3_735444/simple.svg",
      "doc": "Embedded Svg hatch file. System use only.",
      "group": "Cut Surface Format",
      "kind": "path",

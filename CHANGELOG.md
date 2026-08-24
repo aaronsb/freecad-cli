@@ -4,6 +4,32 @@
 
 ### Fixed
 
+- **148 commands get their real names and documentation.** The harvest read
+  everything off QActions, and 148 registered commands have none -- they are
+  runnable and appear in no toolbar and no menu. They reached the descriptor
+  carrying only a name, which slugged into verbs like `arch_multimaterial`
+  whose entire documentation was the string `Arch_MultiMaterial`. FreeCAD
+  had their menuText and toolTip the whole time behind
+  `Gui.Command.get(name).getInfo()`, which `harvest_commands.py` asserted
+  did not exist. `multi_material` is now "Creates or edits multi-materials",
+  `nest` is "Nests a series of selected shapes in a container".
+- **A command whose verb name is taken is no longer dropped in silence.**
+  Two commands whose labels slug the same are ordinary. The loser used to
+  vanish -- 90 commands before this, and 133 once labels got better and
+  more of them wanted the same short names. It now keeps the prefix its
+  command name already carries, falling back to the command's own slug and
+  then a suffix, so every one of the 1111 commands has a verb.
+
+### Changed
+
+- **`constrain` is a command verb rather than a family.** Sketcher's
+  CompConstrainTools carries the label "Constrain" and now claims the name.
+  Its 21 constraint commands stay individually reachable. Whether a family
+  should outrank a generated command verb is a real question -- it would
+  move about thirty names -- and is not settled here.
+
+### Fixed
+
 - **Draft's grid is left as the operator configured it.** The picker turned
   `show_always` and `show_during_command` off and hid the grid on every
   Draft bootstrap, every snap and every teardown, on the grounds that
