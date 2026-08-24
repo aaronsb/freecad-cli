@@ -35,17 +35,6 @@
   more of them wanted the same short names. It now keeps the prefix its
   command name already carries, falling back to the command's own slug and
   then a suffix, so every one of the 1111 commands has a verb.
-
-### Changed
-
-- **`constrain` is a command verb rather than a family.** Sketcher's
-  CompConstrainTools carries the label "Constrain" and now claims the name.
-  Its 21 constraint commands stay individually reachable. Whether a family
-  should outrank a generated command verb is a real question -- it would
-  move about thirty names -- and is not settled here.
-
-### Fixed
-
 - **Draft's grid is left as the operator configured it.** The picker turned
   `show_always` and `show_during_command` off and hid the grid on every
   Draft bootstrap, every snap and every teardown, on the grounds that
@@ -70,6 +59,14 @@
   one's 350ms saved the flashed state as the real one and left FreeCAD's
   button yellow until the workbench reloaded. The base is parked in a
   widget property and taken back once.
+
+### Changed
+
+- **`constrain` is a command verb rather than a family.** Sketcher's
+  CompConstrainTools carries the label "Constrain" and now claims the name.
+  Its 21 constraint commands stay individually reachable. Whether a family
+  should outrank a generated command verb is a real question -- it would
+  move about thirty names -- and is not settled here.
 
 ## 0.3.0 -- 2026-08-23
 
