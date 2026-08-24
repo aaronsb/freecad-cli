@@ -411,7 +411,8 @@ has changes; a released copy carries a stamped `fccli/_build.py`.
 | [docs/conventions.md](docs/conventions.md) | every rule the command line follows, in one place |
 | [docs/addons.md](docs/addons.md) | adding command-line support to an addon |
 | [docs/shell.md](docs/shell.md) | the terminal client's design |
-| [docs/design-notes/](docs/design-notes/) | the command dictionary, and the state machines as the code holds them |
+| [docs/state.md](docs/state.md) | the engine and the six machines around it: states, transitions, invariants |
+| [docs/architecture/](docs/architecture/INDEX.md) | decision records, by domain |
 | [FINDINGS.md](FINDINGS.md) | what was learned about FreeCAD's internals |
 | [CHANGELOG.md](CHANGELOG.md) | releases |
 

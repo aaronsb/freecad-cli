@@ -1,0 +1,56 @@
+# ADR Configuration
+# Domain numbering and validation for docs/scripts/adr.
+# Domains follow the seams in the code: what the verbs are, how one runs,
+# how it is presented and reached, how it lives inside FreeCAD, and how the
+# project is built and checked.
+
+project_name: FreeCAD CLI
+
+domains:
+  vocabulary:
+    range: [100, 199]
+    name: Vocabulary
+    description: What the verbs are — descriptor, harvest, factory tiers, families, patches, the dictionary, naming, curation
+    folder: vocabulary
+
+  engine:
+    range: [200, 299]
+    name: Engine
+    description: How a command runs — steps and getters, task panels, picking, modals, transactions, key routing
+    folder: engine
+
+  surface:
+    range: [300, 399]
+    name: Surface
+    description: How it is presented and reached — dock, prompt, colour, completion, message bus, socket, external shell, history
+    folder: surface
+
+  host:
+    range: [400, 499]
+    name: Host
+    description: Living inside FreeCAD — its settings, workbenches, undo, versions, install
+    folder: host
+
+  practice:
+    range: [500, 599]
+    name: Practice
+    description: How the project is built and checked — test tiers, review, release, reconcile, records
+    folder: practice
+
+statuses:
+  - Draft
+  - Proposed
+  - Accepted
+  - Superseded
+  - Deprecated
+  - Rejected
+
+defaults:
+  deciders: [aaronsb, claude]
+  status: Draft
+
+legacy:
+  range: [1, 99]
+  label: "Legacy"
+
+viewer: cat {file}

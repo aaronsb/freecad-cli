@@ -71,13 +71,15 @@
 
 ### Added
 
-- **Two design notes.** `docs/design-notes/command-dictionary.md` records
-  the hand-owned layer the command line is missing -- a versioned record of
-  where its vocabulary departs from what the factory derives, keyed by
-  command, linted in `make check`, reconciled by a tool rather than by
-  reading a descriptor diff. `docs/design-notes/state.md` is a reference
-  for the engine's two states and the six machines around it: states,
-  transitions, and the invariants the rest of the code depends on.
+- **Decision records.** `docs/architecture/` holds ADRs in five domains --
+  vocabulary, engine, surface, host, practice -- managed by
+  `docs/scripts/adr`, with lint in `make check`. ADR-500 records the
+  adoption; ADR-100 records the command dictionary, the hand-owned layer
+  tier 0 has lacked: a command-keyed third half of `PATCH` that records
+  divergence only, linted, reconciled against the descriptor by a tool.
+- **`docs/state.md`.** A reference for the engine's two states and the six
+  machines around it: states, transitions, and the invariants the rest of
+  the code depends on.
 
 ### Changed
 
