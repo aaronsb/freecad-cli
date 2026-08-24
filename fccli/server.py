@@ -150,7 +150,17 @@ class Server(QtCore.QObject):
 
         Busy is an ordinary condition, not a fault -- someone using FreeCAD
         has a dialog open a good fraction of the time.
+
+        Not when the panel is ours. A command line that drives a task panel
+        opens one and then needs to answer it, and refusing everything
+        while one is up refused the command line its own panel: `primitive`
+        opened it, listed what it wanted, and then answered every
+        assignment with "a task panel is open". A collecting engine means
+        the line arriving is input for the command already running, not a
+        second command competing with it.
         """
+        if self.session.engine.state != "idle":
+            return None
         try:
             import FreeCADGui as Gui
             if Gui.Control.activeDialog():

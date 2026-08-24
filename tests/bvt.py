@@ -702,10 +702,20 @@ def suite_panels_generic(dock):
     after_choice = {panels.key_for(f.name) for f in panels.fields()}
     truthy("  and the page under it swaps to match",
            any(k.startswith("cylinder") for k in after_choice))
+
+    # The number behind the text, not the text. setText changed what the
+    # box showed and left its value where it was, so the panel read 4 mm
+    # on screen and built a cylinder of 2 -- an assertion on the built
+    # object is the only one that would have caught it.
+    dock.engine.submit("cylinderradius=4 mm")
+    settle(15)
     dock.engine.submit("done")
     settle(35)
     made = sorted({o.Name for o in doc.Objects} - before)
     check("  builds the one that was chosen", made, ["Cylinder"])
+    built = doc.getObject(made[0]) if made else None
+    check("  at the size it was given, not the one it displayed",
+          round(built.Radius.Value, 3) if built else None, 4.0)
     check("  and closes", panels.is_open(), False)
 
     dock.engine.submit("close!")

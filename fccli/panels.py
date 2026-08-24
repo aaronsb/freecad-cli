@@ -159,21 +159,47 @@ class Field:
         except RuntimeError:
             return None         # the panel closed under us
 
+    def _write_quantity(self, w, value):
+        """Put a number into a spin box the way nothing else worked.
+
+        Gui::QuantitySpinBox declares rawValue as a Qt property, which
+        reaches it through the bare QAbstractSpinBox that PySide hands
+        back -- there is no setValue on that, and nothing else moved the
+        number:
+
+            setText            the text changed and the value did not, so
+                               Part_Primitives showed "4 mm" in its radius
+                               box and built a cylinder of 2
+            interpretText      protected in Qt; the call did nothing
+            focus, then type   the focus-out on panel close segfaulted in
+                               ViewProviderDragger::getDraggerPlacement
+            Return             deletes the widget -- in a task panel that
+                               keystroke means accept the dialog
+
+        rawValue is a plain double in FreeCAD's internal units, so the
+        text is read by the same parser the rest of this program uses,
+        with the unit the field itself says it measures in. `3/4 in` still
+        needs nothing from here.
+        """
+        from .parsing import parse_quantity
+        parsed = parse_quantity(str(value), unit_hint=self.unit() or "mm")
+        if not parsed.ok:
+            return parsed.error
+        try:
+            if not w.setProperty("rawValue", float(parsed.value)):
+                return (f"{self.name} would not take a value "
+                        "-- it is not a quantity box")
+            w.lineEdit().editingFinished.emit()
+        except RuntimeError:
+            return "the panel closed before that could be set"
+        return None
+
     def write(self, value):
         """Type it the way a person does, so the panel's parser runs."""
         w = self.widget
         try:
             if isinstance(w, QtWidgets.QAbstractSpinBox):
-                # setText is what drives it: textChanged reaches
-                # QuantitySpinBox::userInput and the panel applies. Taking
-                # focus first was a segfault waiting for the panel to
-                # close -- the focus-out ran validateInput against a
-                # TaskTransform whose dragger had already gone, in
-                # ViewProviderDragger::getDraggerPlacement. Nothing here
-                # needs the focus, and the operator is typing elsewhere.
-                line = w.lineEdit()
-                line.setText(str(value))
-                line.editingFinished.emit()
+                return self._write_quantity(w, value)
             elif isinstance(w, QtWidgets.QComboBox):
                 index = w.findText(str(value))
                 if index < 0:
