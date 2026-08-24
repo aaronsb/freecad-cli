@@ -614,6 +614,51 @@ def main():
     check("history clear empties the ring", session.history.entries, [])
     engine.submit("close!")
 
+    print("\n5l. curation -- FreeCAD's own ranking")
+    from fccli import curation as _cur
+    from fccli.factory import load_descriptor as _load_desc
+    _desc = _load_desc()
+    curated = _cur.load(_desc)
+    census = curated.census()
+    check("every command lands in exactly one rank",
+          sum(census.values()), len(_desc["commands"]))
+    check("a toolbar command outranks a registry-only one",
+          curated.rank("Part_Box") < curated.rank("Std_TestQuestion"), True)
+    check("placement is read off the descriptor",
+          curated.placement("Part_Box")[0], "Solids")
+    check("adjacency is the rest of the toolbar",
+          sorted(curated.adjacent("Part_Box")),
+          ["Part_Cone", "Part_Cylinder", "Part_Sphere", "Part_Torus",
+           "Part_Tube"])
+    check("a command is never adjacent to itself",
+          "Part_Box" in curated.adjacent("Part_Box"), False)
+
+    _ranked = curated.order(REGISTRY, ["sketcher_bsplinedegree", "box"])
+    check("order puts the promoted verb first", _ranked[0], "box")
+    check("order keeps everything reachable", len(_ranked), 2)
+    check("a hand-written verb outranks anything generated",
+          curated.rank_of(REGISTRY.get("box"))
+          < curated.rank_of(REGISTRY.get("sketcher_bsplinedegree")), True)
+    check("a family ranks as its best member",
+          curated.rank_of(REGISTRY.get("view")), _cur.PROMOTED)
+    check("an accented label slugs to a typeable name",
+          REGISTRY.get("bezier_curve") is not None, True)
+
+    _groups = curated.choice_groups("view")
+    check("a family's choices group by FreeCAD's own menus",
+          len(_groups) > 4, True)
+    check("  the biggest group leads",
+          _groups[0][0], "Standard Views")
+    check("  what FreeCAD filed nowhere comes last",
+          _groups[-1][0], None)
+    check("  and every member lands in exactly one group",
+          sum(len(g[1]) for g in _groups),
+          len(REGISTRY.get("view").steps[0].choices))
+    check("a family whose members fill their toolbar falls back to siblings",
+          bool(curated.neighbours(REGISTRY, REGISTRY.get("view"))), True)
+    check("a two-member step is not worth grouping",
+          curated.choice_groups("nonexistent_family"), [])
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

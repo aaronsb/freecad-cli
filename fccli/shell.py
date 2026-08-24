@@ -19,6 +19,7 @@ import os
 import FreeCAD as App
 
 from . import bus as _bus
+from . import curation as _curation
 from .grammar import (CHOICE, PATH, QUANTITY, TEXT, Option, Step, Verb,
                       REGISTRY)
 from .dirty import dirty_documents, is_dirty, mark_clean
@@ -577,16 +578,76 @@ def _emit_man(v):
             if step.prompt and step.prompt != step.id:
                 say(f"       {step.prompt}")
             if step.choices:
-                say(f"       one of: {', '.join(step.choices)}")
+                say("       one of:")
+                groups = _curation.current().choice_groups(verb.name)
+                if groups:
+                    for heading, names in groups:
+                        say(f"         {heading or 'ungrouped'}", "head")
+                        for row in _columns(names, width=64):
+                            say(f"           {row}", "quiet")
+                else:
+                    for row in _columns(step.choices):
+                        say(f"       {row}", "quiet")
             for opt in step.options:
                 say(f"       option {opt.name}: {opt.doc}")
 
+    curated = _curation.current()
     if verb.gui_command:
         say("GUI", "head")
         say(f"    {verb.gui_command}")
+        toolbar, menu = curated.placement(verb.gui_command)
+        if toolbar:
+            say(f"    toolbar   {toolbar}", "quiet")
+        if menu:
+            say(f"    menu      {menu}", "quiet")
+
     say("SEE ALSO", "head")
+    # What FreeCAD put beside this one. A toolbar is somebody's answer to
+    # "what goes with what", and it is a better answer than a guess from
+    # the names would be.
+    near = curated.neighbours(REGISTRY, verb)
+    if near:
+        say(f"    {', '.join(near)}", "ok")
     say("    man     (list every command)")
     return None
+
+
+def _columns(items, width=72, gap=2):
+    """Lay a list out down columns that fit the width.
+
+    A family can have forty members, and forty names joined by commas is one
+    line nobody reads -- least of all in a dock somebody has dragged to six
+    lines tall.
+    """
+    items = [str(i) for i in items]
+    if not items:
+        return []
+
+    def fits(columns):
+        """Column widths for a candidate count, or None if too wide."""
+        height = -(-len(items) // columns)          # ceiling division
+        widths = []
+        for start in range(0, len(items), height):
+            column = items[start:start + height]
+            widths.append(max(len(i) for i in column) + gap)
+        return widths if sum(widths) - gap <= width else None
+
+    # Widest layout that still fits. One column always does.
+    for columns in range(min(len(items), width // 2), 1, -1):
+        widths = fits(columns)
+        if widths:
+            break
+    else:
+        return items
+
+    height = -(-len(items) // len(widths))
+    grid = [items[i:i + height] for i in range(0, len(items), height)]
+    rows = []
+    for r in range(height):
+        cells = [column[r].ljust(widths[c])
+                 for c, column in enumerate(grid) if r < len(column)]
+        rows.append("".join(cells).rstrip())
+    return rows
 
 
 def _list_verbs(engine):

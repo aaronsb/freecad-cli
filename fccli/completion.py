@@ -7,6 +7,7 @@ would have needed its own copy that drifted. It lives here so the dock and
 the socket give the same answer, from the same live engine state.
 """
 
+from . import curation
 from .grammar import CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT
 
 
@@ -67,7 +68,8 @@ def candidates(engine, text, history=None, scope=None):
         recent = recent_commands(history)
         if recent:
             return head, tail, recent
-        return head, tail, sorted(_starter_verbs(engine))
+        return head, tail, curation.current().order(
+            engine.registry, _starter_verbs(engine))
 
     # The first token is a verb; everything after a space is an argument.
     # So verb names complete only at the start of a line, or at a step that
@@ -89,6 +91,14 @@ def candidates(engine, text, history=None, scope=None):
     if scope and not head:
         narrowed = [c for c in hits if in_scope(engine.registry, c, scope)]
         hits = narrowed or hits
+
+    # Completing a verb name means choosing among up to 1250 of them, and
+    # they are not equals: FreeCAD gives some a toolbar button and leaves
+    # others reachable only from code. Offer them in that order. Nothing is
+    # removed -- a launcher nobody promotes still completes, it just sorts
+    # after the things that do.
+    if not head:
+        hits = curation.current().order(engine.registry, hits)
 
     # The grammar has nothing left to offer, but a command run before may
     # know what came next here. Hand back one argument at a time, so Tab
