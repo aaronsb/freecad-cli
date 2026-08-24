@@ -170,6 +170,13 @@ class Server(QtCore.QObject):
             return {"kind": "state", **session.state(),
                     "clients": len(self._clients)}
 
+        if op == "complete":
+            from .completion import candidates
+            head, tail, hits = candidates(session.engine,
+                                          request.get("text", ""))
+            return {"kind": "completions", "head": head, "tail": tail,
+                    "candidates": hits[:200]}
+
         if op == "documents":
             return {"kind": "documents", "documents": session.documents()}
 

@@ -273,8 +273,121 @@ def find_freecad():
     return None
 
 
+def cmd_repl(client, args):
+    """An interactive session against the running FreeCAD.
+
+    Completions come from the server, so Tab offers what the dock would
+    offer -- verb names, the open getter's options, the schema's unit on a
+    bare number -- rather than a second implementation that drifts.
+    """
+    warn_protocol(client)
+    try:
+        import readline
+    except ImportError:
+        readline = None
+
+    if readline is not None:
+        _install_completer(client, readline, args)
+
+    pid = client.hello.get("pid")
+    print(f"attached to FreeCAD {pid}.")
+    print(paint("  detach (or Ctrl+D) leaves this session running.  "
+                "quit! shuts FreeCAD down.  Ctrl+C cancels a command.",
+                "quiet", sys.stdout))
+    state = client.hello
+
+    while True:
+        prompt = _prompt_for(state)
+        try:
+            line = input(prompt)
+        except EOFError:
+            print()
+            return EX_OK
+        except KeyboardInterrupt:
+            print()
+            state = client.ask(op="cancel") and client.ask(op="state")
+            continue
+
+        # Client-side words. detach is not a verb -- FreeCAD has nothing to
+        # do about it. It ends this connection and leaves the session, its
+        # documents and its undo stack exactly as they are.
+        if line.strip() in ("detach", "\\d"):
+            print(f"detached. FreeCAD {pid} is still running; "
+                  "fccli attach to come back.")
+            return EX_OK
+        if line.strip() in ("exit", "\\q"):
+            return EX_OK
+        if not line.strip():
+            state = client.ask(op="state")
+            continue
+
+        try:
+            reply = client.ask(op="submit", text=line, steal=args.steal)
+        except ConnectionError as exc:
+            # quit! takes the session down under us, which is what was asked
+            # for rather than a fault.
+            if line.strip().startswith(("quit", "exit")):
+                print("FreeCAD has shut down.")
+                return EX_OK
+            print(f"fccli: {exc}", file=sys.stderr)
+            return EX_NOINSTANCE
+
+        if reply.get("kind") == "busy":
+            detail = reply.get("detail") or reply.get("holder") or reply["reason"]
+            print(paint(f"not now: {detail}", "warn", sys.stdout))
+            continue
+
+        for msg in reply.get("messages", []):
+            if not msg["text"] or msg["kind"] in ("live", "prompt"):
+                continue
+            role = msg.get("role", msg["kind"])
+            prefix = {"error": "error: ", "result": "= "}.get(msg["kind"], "")
+            print(paint(prefix + msg["text"], role, sys.stdout))
+        state = reply
+
+
+def _prompt_for(state):
+    """The engine's own prompt, so the terminal shows what the dock shows."""
+    if state.get("engine") == "idle" or not state.get("prompt"):
+        return "> "
+    options = state.get("options") or []
+    tail = f" [{'/'.join(options)}]" if options else ""
+    return f"{state['prompt']}{tail}: "
+
+
+def _install_completer(client, readline, args):
+    cache = {"text": None, "hits": []}
+
+    def complete(text, index):
+        buffer = readline.get_line_buffer()[:readline.get_endidx()]
+        if cache["text"] != buffer:
+            try:
+                reply = client.ask(op="complete", text=buffer)
+                cache["hits"] = reply.get("candidates", [])
+            except (ConnectionError, ValueError):
+                cache["hits"] = []
+            cache["text"] = buffer
+        try:
+            return cache["hits"][index]
+        except IndexError:
+            return None
+
+    readline.set_completer(complete)
+    readline.set_completer_delims(" \t\n")
+    readline.parse_and_bind("tab: complete")
+    try:
+        history = client.ask(op="history", limit=500).get("entries", [])
+        for line in history:
+            readline.add_history(line)
+    except (ConnectionError, ValueError):
+        pass
+
+
 def cmd_start(args):
     """Launch FreeCAD and wait until its command line is reachable.
+
+    With -i, hand straight over to the interactive session, so one command
+    goes from nothing running to a prompt.
 
     So a whole session can be run from a terminal: start it, drive it, quit
     it, without touching the application window.
@@ -312,6 +425,12 @@ def cmd_start(args):
                                   "only": not before}))
                 return EX_OK
             print(f"started FreeCAD, pid {pid}")
+            if args.interactive:
+                try:
+                    return cmd_repl(Client(path), args)
+                except (OSError, ConnectionError) as exc:
+                    print(f"fccli: {exc}", file=sys.stderr)
+                    return EX_NOINSTANCE
             if not before:
                 print("commands attach to it with no --pid.")
             return EX_OK
@@ -385,6 +504,11 @@ Attaching:
   With one FreeCAD running, every command attaches to it. --pid is only
   needed when several are running; fccli ls names them.
 
+  fccli start -i        from nothing running to a prompt, in one command
+  fccli attach          attach to one that is already running
+  detach                inside the session: leave, and let it keep running
+  quit!                 inside the session: shut FreeCAD down
+
 Exit codes:
   0   done
   1   the command was rejected -- a fault, reason on stderr
@@ -453,6 +577,13 @@ def main():
     start.add_argument("--log", metavar="FILE", help="where FreeCAD's own output goes")
     start.add_argument("--force", action="store_true",
                        help="start another even if one is running")
+    start.add_argument("-i", "--interactive", "--attach", action="store_true",
+                       dest="interactive",
+                       help="attach to it as soon as it is up")
+
+    sub.add_parser("attach", help="an interactive session (aliases: repl, i)")
+    sub.add_parser("repl", help=argparse.SUPPRESS)
+    sub.add_parser("i", help=argparse.SUPPRESS)
     sub.add_parser("ls", help="running instances and what they have open")
     sub.add_parser("docs", help="documents open in one instance")
 
@@ -516,7 +647,9 @@ def main():
 
     try:
         handler = {"exec": cmd_exec, "check": cmd_check, "docs": cmd_docs,
-                   "history": cmd_history, "state": cmd_state}.get(args.op)
+                   "history": cmd_history, "state": cmd_state,
+                   "attach": cmd_repl, "repl": cmd_repl,
+                   "i": cmd_repl}.get(args.op)
         if handler is None:
             handler = cmd_exec          # stdin was a script
         return handler(client, args)

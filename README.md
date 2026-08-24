@@ -156,11 +156,34 @@ runs from any terminal or virtualenv.
 A whole session can run without touching the application window:
 
 ```bash
-$ fccli start --headless          # launch it and wait until it answers
+$ fccli start -i                  # from nothing running to a prompt
 started FreeCAD, pid 3074336
-commands attach to it with no --pid.
+attached to FreeCAD 3074336.
+  detach (or Ctrl+D) leaves this session running.  quit! shuts FreeCAD down.
 
-$ fccli exec 'new bracket'
+> box 0,0,0 40 30 20
+= box 0,0,0 40.00mm 30.00mm 20.00mm
+> polyline
+Start of polyline: 0,0,50
+Next point [Close/Undo]: 40,0,50
+Next point [Close/Undo]: close
+= polyline 0,0,50 40,0,50 close
+> detach
+detached. FreeCAD 3074336 is still running; fccli attach to come back.
+```
+
+The prompt is the engine's own, so a getter's options show in the terminal
+the way they show in the dock. Tab completions come from the server —
+verb names, the open getter's options, the schema's unit on a bare
+number — so there is one implementation of what completes, not two.
+
+`detach` ends the connection and leaves the session, its documents and its
+undo stack untouched. `quit!` shuts FreeCAD down.
+
+Scripted instead of interactive:
+
+```bash
+$ fccli start --headless
 $ fccli exec 'box 0,0,0 40 30 20'
 = box 0,0,0 40.00mm 30.00mm 20.00mm
 $ fccli exec 'save ~/parts/bracket.FCStd'
