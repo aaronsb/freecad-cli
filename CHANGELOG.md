@@ -69,6 +69,20 @@
   button yellow until the workbench reloaded. The base is parked in a
   widget property and taken back once.
 
+### Added
+
+- **Decision records.** `docs/architecture/` holds ADRs in six domains --
+  vocabulary, engine, surface, host, practice, system -- managed by
+  `docs/scripts/adr`, with lint in `make check`. ADR-500 records the
+  adoption. ADR-100 records the command dictionary: one generated file per
+  command, organised by workbench, the tool owning a `generated:` block
+  it rewrites on reconcile and a person owning the rest. ADR-600 is the
+  layer model; ADR-601 is the directory tree the terminal navigates, with
+  `.fccli` scripts, notes, and FreeCAD's macros symlinked in.
+- **`docs/state.md`.** A reference for the engine's two states and the six
+  machines around it: states, transitions, and the invariants the rest of
+  the code depends on.
+
 ### Changed
 
 - **`constrain` is a command verb rather than a family.** Sketcher's

@@ -228,9 +228,9 @@ invocation. `tools/generate_descriptor.py` harvests both into
 
 | Tier | Count | Source |
 |---|---|---|
-| 0 | ~1020 | every registered command, as a zero-step verb that runs it |
-| families | ~41 | a group FreeCAD spread apart, as one verb with a choice |
-| 1 | ~206 | every parametric type, with steps from its own properties |
+| 0 | 1111 | every registered command, as a zero-step verb that runs it |
+| families | 40 | a group FreeCAD spread apart, as one verb with a choice |
+| 1 | ~213 | every parametric type, with steps from its own properties |
 | 2 | hand-written + patched | point-picking verbs, ordering, inline options |
 
 Linking a command to the type it builds cannot be done reliably by machine —
@@ -280,9 +280,11 @@ fit_all  fit_selection  front  fullscreen
 ```
 
 `Module_CamelCaseRest` splits into a head the family shares and a remainder
-naming the member. 41 families cover ~480 commands. A single-letter head
-from a split acronym and FreeCAD's own UI prefixes are excluded, and a
-family never takes a name a hand-written or generated verb already owns.
+naming the member. 59 families are read off the registry, covering ~479
+commands; 40 register, the rest yielding to a verb someone wrote. A
+single-letter head from a split acronym and FreeCAD's own UI prefixes are
+excluded, and a family never takes a name a hand-written or generated verb
+already owns.
 
 Where a derived family reads worse than a curated verb, write the verb —
 `zoom` is that, gathering commands across two name stems the splitter cannot
@@ -409,6 +411,8 @@ has changes; a released copy carries a stamped `fccli/_build.py`.
 | [docs/conventions.md](docs/conventions.md) | every rule the command line follows, in one place |
 | [docs/addons.md](docs/addons.md) | adding command-line support to an addon |
 | [docs/shell.md](docs/shell.md) | the terminal client's design |
+| [docs/state.md](docs/state.md) | the engine and the six machines around it: states, transitions, invariants |
+| [docs/architecture/](docs/architecture/INDEX.md) | decision records, by domain |
 | [FINDINGS.md](FINDINGS.md) | what was learned about FreeCAD's internals |
 | [CHANGELOG.md](CHANGELOG.md) | releases |
 
