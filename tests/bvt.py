@@ -191,6 +191,21 @@ def suite_dock_geometry(dock):
         QtWidgets.QApplication.processEvents()
     check("re-docked, the docked height comes back, not the floating one",
           D.saved_height(), 380)
+
+    # A stored size below the floor -- hand-edited, or written by a build
+    # before the floor existed -- must not produce an unusable window.
+    from fccli.dock import params as _params
+    _params().SetInt("FloatWidth", 10)
+    _params().SetInt("FloatHeight", 10)
+    check("a stored size under the floor is clamped up",
+          list(D.saved_float_size()), list(D.MIN_FLOAT))
+    _params().SetInt("FloatWidth", 900)
+    _params().SetInt("FloatHeight", 600)
+    check("a stored size above it is taken as given",
+          list(D.saved_float_size()), [900, 600])
+    _params().SetInt("DockHeight", 10)
+    check("the docked height has a floor too", D.saved_height(), 70)
+    _params().SetInt("DockHeight", 380)
     dock.persist = False
 
 

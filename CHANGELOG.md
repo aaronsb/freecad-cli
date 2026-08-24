@@ -82,6 +82,13 @@ The command line reads FreeCAD's own opinion about itself, and then yours.
   section directly under the `<!-- next -->` marker, above the
   `## Unreleased` heading notes are written under. It retitles that
   heading instead.
+- **The test suites wrote into the operator's own command line history.**
+  The offscreen suite builds a real Session, so `History()` resolved to the
+  real file -- and one of its checks is "history clear empties the ring",
+  which truncated it. The live suites appended their commands to it. All
+  three now run against a scratch `XDG_STATE_HOME`. This mattered more once
+  history began feeding completion ranking: a test run was not just noise in
+  the ring, it was a vote.
 - **`make bvt` overwrote the dock height in real preferences.** Showing the
   dock fires a resize and the dock saves what it is resized to, which under
   Xvfb is the Xvfb window's shape. The run now captures and restores the

@@ -70,6 +70,18 @@ never executes either file — no error, no warning. Declaring
 `<content><workbench>` makes the loader run them. Verified by removing
 `package.xml` entirely, which also restores execution via the legacy path.
 
+**`XDG_DATA_HOME` relocates FreeCAD's own `Mod` directory.** A test harness
+that repoints it to a scratch directory — to keep a run's files out of the
+operator's — hides every installed addon from FreeCAD, and the run dies with
+*No module named 'fccli'* before it reaches a single check. `XDG_STATE_HOME`
+is safe to redirect and is where a history file belongs anyway, so the two
+suites that launch a real FreeCAD set only that one.
+
+**`GetInt(name, default)` does not create the entry it defaults.** Worth
+knowing before blaming a preference that reappears after being deleted:
+something is writing it, and reading is not what did. Verified directly
+against a group with no entries.
+
 **A class defined in `InitGui.py` does not survive a deferred callback.**
 FreeCAD executes that file in a namespace that is discarded, so
 `Gui.addCommand` from a `QTimer` callback fails with *name is not defined*.

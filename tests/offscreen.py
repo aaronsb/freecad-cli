@@ -27,6 +27,15 @@ sys.path[:0] = [
 ]
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+# Run against a scratch XDG root. The suite builds a real Session, which
+# means a real History at the real path, and one of the checks below is
+# "history clear empties the ring" -- so without this, running the tests
+# truncated the operator's own command history. Set before fccli is
+# imported: the paths are module-level constants.
+_XDG = tempfile.mkdtemp(prefix="fccli-tests-")
+os.environ["XDG_STATE_HOME"] = os.path.join(_XDG, "state")
+os.environ["XDG_DATA_HOME"] = os.path.join(_XDG, "data")
+
 import FreeCAD as App  # noqa: E402
 from PySide6 import QtCore, QtGui, QtWidgets  # noqa: E402
 

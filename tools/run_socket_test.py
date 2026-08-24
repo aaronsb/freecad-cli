@@ -82,6 +82,16 @@ def wait_for_socket(before, deadline):
 
 
 def main():
+    # A scratch state directory, inherited by the FreeCAD this launches, so
+    # the suite does not append its commands to the operator's history --
+    # which now feeds completion ranking.
+    #
+    # XDG_STATE_HOME only. XDG_DATA_HOME is where FreeCAD looks for its own
+    # Mod directory, so repointing it hides the installed addon. And
+    # XDG_RUNTIME_DIR is left alone: the socket belongs where it belongs.
+    scratch = tempfile.mkdtemp(prefix="fccli-socket-")
+    os.environ["XDG_STATE_HOME"] = os.path.join(scratch, "state")
+
     os.makedirs(socket_dir(), mode=0o700, exist_ok=True)
 
     # The suite assumes one reachable instance, so it will not run alongside
@@ -170,6 +180,13 @@ def main():
         check("history exits clean", code, 0)
         truthy("it holds what the socket ran", "box 0,0,0" in out)
         truthy("assembled, not fragments", "circle 0,0,0" in out)
+        # The file stores "<epoch>\tcommand"; the epoch is the file's
+        # business and must not reach anybody reading their history.
+        truthy("no stored timestamp leaks into what is printed",
+               not any(ln.strip()[:10].isdigit() and "\t" in ln
+                       for ln in out.splitlines()))
+        truthy("  and the commands are intact",
+               all("\t" not in ln for ln in out.splitlines()))
 
         print("\n8. two clients, one session")
         code, out, _ = fccli("--json", "state")
