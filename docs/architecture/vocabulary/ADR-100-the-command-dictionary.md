@@ -89,13 +89,14 @@ generated:                      # owned by the tool; rewritten on reconcile
   menu: Geometries
   shortcut: G, C
   workbench: SketcherWorkbench
+  wiki: Sketcher_CreateCircle   # whatsThis; the page name F1 resolves
+  wiki_rev: 3f1c2a9             # FreeCAD-documentation commit the body was seeded from
 verb: null                      # authored from here down; null means "as generated"
 aliases: []
 requires: [sketch-edit]
 panel: null
 family: null
 rank: null
-wiki: Sketcher_CreateCircle
 ---
 Creates a circle from a centre point and a point on the rim. Both are
 picked in the sketch; the radius is the distance between them.
@@ -141,7 +142,6 @@ small.
 | `panel` | `pick` — do not adopt the task panel |
 | `family`, `choice` | force into or out of a family, under what name |
 | `rank` | `registry` — sort last regardless of placement |
-| `wiki` | page name on wiki.freecad.org; `man` cites it |
 | `type` | tuning for the linked type: `steps`, `options`, `hide`, `point`, `strict` |
 
 **A file never holds runtime state.** Not a panel's field list, not
@@ -156,12 +156,33 @@ selections.
 2. `generated:` matches the descriptor field for field. A hand edit
    inside it fails, with the message that the edit belongs in an
    authored field or in `etc/`.
-3. `requires` values come from the closed vocabulary; `wiki` matches
-   `^[A-Za-z0-9_]+$`; `panel` is `pick` or null; `rank` is `registry` or
-   null; `type` keys are the five named.
+3. `requires` values come from the closed vocabulary; `panel` is `pick`
+   or null; `rank` is `registry` or null; `type` keys are the five named.
+   When the documentation clone is present, every `generated.wiki` names
+   a page in it.
 4. After composition, every verb name is unique and every `verb` a file
    asked for is the one granted.
 5. `fccli/dictionary.json` is the compilation of `lib/commands/`.
+
+**The official documentation is the source.** `wiki` is harvested, not
+authored: `Gui.Command.getInfo()` returns `whatsThis`, which is the wiki
+page name FreeCAD's own F1 help resolves against, and it moves into
+`generated:`. The page itself comes from
+[FreeCAD/FreeCAD-documentation](https://github.com/FreeCAD/FreeCAD-documentation),
+the markdown conversion of the wiki, whose `wiki/<page>.md` carries a
+`GuiCommand` frontmatter (`Name`, `MenuLocation`, `Workbenches`, `SeeAlso`)
+and a `## Description` section. The generator seeds each file's body from
+that description, stripped of images and links, and records the page's
+commit in `generated:` so a later reconcile can tell a wiki change from an
+authored one. The clone lives in the tool's cache and is refreshed by
+`make reconcile`; the lint checks every `wiki` value against it when the
+clone is present and says so when it is not. A person editing a body
+writes against the same page. FreeCAD's source
+([FreeCAD/FreeCAD](https://github.com/FreeCAD/FreeCAD)) is the reference
+for what a command does when the page and the tooltip disagree.
+
+*Amended 2026-08-24, same day as acceptance: the operator directed that
+the overlays stay referenced to the official documentation.*
 
 **Precondition, not workbench.** `requires` names what a command needs;
 `isActive()` reports it live; the prompt shows the context that determines
