@@ -3707,7 +3707,9 @@
    "file": "std/Std_ViewBottom.md"
   },
   "Std_ViewBoxZoom": {
+   "choice": "window",
    "doc": "The Std ViewBoxZoom command zooms in on a user defined rectangular area, a box, in the active 3D view.\n\n## See also\n\n- Std_ViewZoomIn\n- Std_ViewZoomOut",
+   "family": "zoom",
    "file": "std/Std_ViewBoxZoom.md"
   },
   "Std_ViewCreate": {
@@ -3739,11 +3741,18 @@
    "file": "std/Std_ViewExample3.md"
   },
   "Std_ViewFitAll": {
+   "also": [
+    "extents"
+   ],
+   "choice": "all",
    "doc": "The Std ViewFitAll command zooms and pans the camera so that all visible objects fit inside the active 3D view.\n\n## See also\n\n- Std_ViewFitSelection",
+   "family": "zoom",
    "file": "std/Std_ViewFitAll.md"
   },
   "Std_ViewFitSelection": {
+   "choice": "selection",
    "doc": "The Std ViewFitSelection command zooms and pans the camera so that all selected objects fit inside the active 3D view. This command is useful if for some reason objects are beyond the boundaries of the current 3D View or can't easily be found using 3D navigation.\n\n## See also\n\n- Std_ViewFitAll",
+   "family": "zoom",
    "file": "std/Std_ViewFitSelection.md"
   },
   "Std_ViewFront": {
@@ -3763,7 +3772,13 @@
    "file": "std/Std_ViewHome.md"
   },
   "Std_ViewIsometric": {
+   "also": [
+    "iso",
+    "axonometric"
+   ],
+   "choice": "isometric",
    "doc": "The Std ViewIsometric command realigns the camera in the active 3D view to obtain an isometric view. For a truly isometric view the 3D view must be in orthographic mode, but the command also works if the view is in perspective mode.\n\n## See also\n\n- Std_ViewDimetric\n- Std_ViewTrimetric",
+   "family": "view",
    "file": "std/Std_ViewIsometric.md"
   },
   "Std_ViewIvIssueCamPos": {
@@ -3799,7 +3814,12 @@
    "file": "std/Std_ViewLoadImage.md"
   },
   "Std_ViewRear": {
+   "also": [
+    "rear"
+   ],
+   "choice": "back",
    "doc": "The Std ViewRear command points the camera in the active 3D view in the direction of the negative Y axis.\n\n## See also\n\n- Std_ViewBottom\n- Std_ViewLeft",
+   "family": "view",
    "file": "std/Std_ViewRear.md"
   },
   "Std_ViewRestoreCamera": {
@@ -3847,11 +3867,15 @@
    "file": "std/Std_ViewVR.md"
   },
   "Std_ViewZoomIn": {
+   "choice": "in",
    "doc": "The Std ViewZoomIn command zooms in in the active 3D view.\n\n## See also\n\n- Std_ViewZoomOut\n- Std_ViewBoxZoom",
+   "family": "zoom",
    "file": "std/Std_ViewZoomIn.md"
   },
   "Std_ViewZoomOut": {
+   "choice": "out",
    "doc": "The Std ViewZoomOut command zooms out in the active 3D view.\n\n## See also\n\n- Std_ViewZoomIn\n- Std_ViewBoxZoom",
+   "family": "zoom",
    "file": "std/Std_ViewZoomOut.md"
   },
   "Std_WhatsThis": {
@@ -4470,7 +4494,17 @@
    "techdraw",
    "test",
    "web"
-  ]
+  ],
+  "verbs": {
+   "zoom": {
+    "aliases": [
+     "fit",
+     "zf"
+    ],
+    "default": "all",
+    "doc": "Zoom the view: all, selection, in, out, or a window you drag."
+   }
+  }
  },
  "freecad": "1.1.3",
  "generated_by": "tools/compile_dictionary.py",

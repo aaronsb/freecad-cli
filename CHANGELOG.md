@@ -166,6 +166,16 @@
 
 ### Changed
 
+- **The zoom and view tables moved from code into the command tree.**
+  `shell.py`'s `ZOOM_TARGETS` and `VIEW_TARGETS`, and the hand-written
+  `zoom` verb, are gone. The five fit/zoom commands carry `family: zoom`
+  in their command files; `zoom`'s aliases (`fit`, `zf`), default (`all`)
+  and doc live in `std/_families.yaml`. Alternate spellings -- `extents`
+  for `all`, `iso` and `axonometric` for `isometric`, `rear` for `back` --
+  are each a command file's `also`. A family verb now carries a default
+  and aliases, and the lint refuses two commands claiming one choice in a
+  family. `zoom front` is now `view front`, the two being separate
+  families; every other spelling is preserved.
 - **`constrain` is a command verb rather than a family.** Sketcher's
   CompConstrainTools carries the label "Constrain" and now claims the name.
   Its 21 constraint commands stay individually reachable. Whether a family

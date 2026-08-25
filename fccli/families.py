@@ -76,13 +76,16 @@ def families(commands, min_members=MIN_MEMBERS, overrides=None,
     groups = {}
     for name, meta in commands.items():
         if name in overrides:
-            family, choice = overrides[name]
+            family, choice, also = overrides[name]
             if family and choice:
-                groups.setdefault(slug([family]), {})[slug([choice])] = {
+                member = {
                     "command": name,
                     "label": (meta or {}).get("label") or name,
                     "module": name.partition("_")[0] if "_" in name else "",
                 }
+                fam = groups.setdefault(slug([family]), {})
+                for spelling in [choice] + list(also or []):
+                    fam[slug([spelling])] = member
             continue
         module, parts = split_command(name)
         if len(parts) < 2:
@@ -107,9 +110,17 @@ def overrides_of(dictionary):
     over = {}
     for name, entry in dictionary.get("commands", {}).items():
         if "family" in entry or "choice" in entry:
-            over[name] = (entry.get("family"), entry.get("choice"))
+            fam = entry.get("family")
+            over[name] = ((None, None, None) if fam is False
+                          else (fam, entry.get("choice"), entry.get("also")))
     exclude = (dictionary.get("families") or {}).get("exclude")
     return over, exclude
+
+
+def meta_of(dictionary, name):
+    """A curated family's aliases, default and doc, from _families.yaml."""
+    verbs = ((dictionary or {}).get("families") or {}).get("verbs") or {}
+    return verbs.get(name) or {}
 
 
 def report(commands, limit=12):

@@ -25,3 +25,13 @@ exclude:
 - techdraw
 - test
 - web
+
+# Curated families: a family whose members carry a family:/choice: in
+# their command files, and whose name, aliases and default live here
+# rather than being derived from the command names (ADR-100). This is
+# where the ZOOM_TARGETS and VIEW_TARGETS tables moved out of shell.py.
+verbs:
+  zoom:
+    aliases: [fit, zf]
+    default: all
+    doc: "Zoom the view: all, selection, in, out, or a window you drag."

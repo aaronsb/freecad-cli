@@ -16,8 +16,9 @@ verb: null
 aliases: []
 requires: []
 panel: null
-family: null
-choice: null
+family: "zoom"
+choice: "window"
+also: []
 rank: null
 type: null
 ---

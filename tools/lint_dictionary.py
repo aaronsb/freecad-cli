@@ -53,7 +53,7 @@ def lint(tree, descriptor_path, compiled_path):
     with open(descriptor_path, encoding="utf-8") as fh:
         descriptor = json.load(fh)
     commands = descriptor["commands"]
-    seen, verbs = {}, {}
+    seen, verbs, choices = {}, {}, {}
     for rel, full in cf.walk(tree):
         try:
             front, _body = cf.read(full)
@@ -107,6 +107,7 @@ def lint(tree, descriptor_path, compiled_path):
                        and all(isinstance(a, str) for a in authored["aliases"]),
             "requires": isinstance(authored["requires"], list)
                         and all(isinstance(r, str) for r in authored["requires"]),
+            "also": isinstance(authored.get("also") or [], list),
             "panel": _kind(authored["panel"], str),
             "family": _kind(authored["family"], str, bool),
             "choice": _kind(authored["choice"], str),
@@ -137,6 +138,15 @@ def lint(tree, descriptor_path, compiled_path):
                 problems.append(f"{rel}: family must be a name or false (rule 3)")
             elif isinstance(fam, str) != isinstance(choice, str):
                 problems.append(f"{rel}: family and choice go together (rule 3)")
+        if isinstance(authored.get("family"), str) and authored.get("choice"):
+            fam = authored["family"].lower()
+            for spelling in [authored["choice"]] + list(authored.get("also") or []):
+                key = (fam, str(spelling).lower())
+                if key in choices:
+                    problems.append(f"{rel}: choice {spelling!r} in family "
+                                    f"{authored['family']!r} is also "
+                                    f"{choices[key]} (rule 4)")
+                choices[key] = rel
         verb = authored["verb"]
         if verb and shape["verb"]:
             if verb in verbs:

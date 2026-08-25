@@ -477,10 +477,6 @@ def _run():
         line = (head + " " + got[0]) if head else got[0]
         walked.append(line)
     session.history.entries[:] = []
-    check("a choice step lists its choices on the space",
-          hits("zoom ")[:3], ["all", "extents", "in"])
-    check("  and narrows as you type", hits("zoom ex"), ["extents"])
-    check("  including the named views", hits("zoom f"), ["front"])
     session.history.entries[:] = ["polyline 0,0,0 40,0,0 close"]
 
     check("Tab walks a remembered command out",
@@ -686,7 +682,8 @@ def _run():
     from fccli import curation as _cur
     from fccli.factory import load_descriptor as _load_desc
     _desc = _load_desc()
-    curated = _cur.load(_desc)
+    from fccli.factory import load_dictionary as _ld_cur
+    curated = _cur.load(_desc, _ld_cur())
     census = curated.census()
     check("every command lands in exactly one rank",
           sum(census.values()), len(_desc["commands"]))
@@ -1123,7 +1120,7 @@ def _run():
         lambda m: _restart.append(m.text) if m.kind == "info" else None)
     engine.submit("check view sketch")
     check("a choice that is also a verb fills the step",
-          any("41 commands" in ln for ln in _restart), True)
+          any("39 commands" in ln for ln in _restart), True)
     check("  and does not cancel the command",
           any("cancelled" in ln for ln in _restart), False)
     _stopr()
@@ -1896,7 +1893,7 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    check("  and register_all counts the authored files", _wc.get("authored"), 2)
+    check("  and register_all counts the authored files", _wc.get("authored"), 9)
     # #19: every descriptor command is some verb's gui_command. Nine were
     # not, because a typed verb added over their launcher; _make_room
     # qualifies the launcher instead.
@@ -2517,6 +2514,69 @@ def _run():
             sys.modules.pop("FreeCADGui", None)
         else:
             sys.modules["FreeCADGui"] = _real_gui
+
+    print("\n5ai. the zoom and view tables moved into family/choice entries")
+    # ADR-100 test case. shell.py's ZOOM_TARGETS and VIEW_TARGETS are gone;
+    # the five fit/zoom commands carry family: zoom in their files, with
+    # the family's aliases and default in std/_families.yaml, and the view
+    # commands keep their alternate spellings as `also`.
+    check("the code tables are gone", (hasattr(_shell_mod, "ZOOM_TARGETS"),
+          hasattr(_shell_mod, "VIEW_TARGETS")), (False, False))
+    _reng5 = Engine(Bus(), REGISTRY)
+    from fccli.factory import load_dictionary as _ld5
+    _d5 = _ld5()
+    _zoom = REGISTRY.get("zoom")
+    check("  zoom is a curated family with its aliases and default",
+          (sorted(set(_zoom.steps[0].choices)),
+           sorted(_zoom.aliases), _zoom.steps[0].default),
+          (["all", "extents", "in", "out", "selection", "window"],
+           ["fit", "zf"], "all"))
+    check("  fit and zf reach it", (REGISTRY.get("fit") is _zoom,
+          REGISTRY.get("zf") is _zoom), (True, True))
+    from fccli.families import families as _fams, overrides_of as _oo, meta_of as _mo
+    _over, _exc = _oo(_d5)
+    _fam5 = _fams(_load_desc()["commands"], overrides=_over, exclude=_exc)
+    check("  extents and all are the same command",
+          (_fam5["zoom"]["extents"]["command"], _fam5["zoom"]["all"]["command"]),
+          ("Std_ViewFitAll", "Std_ViewFitAll"))
+    check("  the family's meta comes from _families.yaml",
+          _mo(_d5, "zoom").get("aliases"), ["fit", "zf"])
+    # A bare zoom finishes on the one optional step; the default runs.
+    _ran = []
+    class _RunGui:
+        def runCommand(self, c): _ran.append(c)
+    _rg = _RunGui(); _rgw = sys.modules.get("FreeCADGui")
+    sys.modules["FreeCADGui"] = _rg
+    try:
+        _zoom.emit({"_engine": None})
+        _zoom.emit({"target": "extents", "_engine": None})
+    finally:
+        if _rgw is None: sys.modules.pop("FreeCADGui", None)
+        else: sys.modules["FreeCADGui"] = _rgw
+    check("  a bare zoom runs its default, and extents is the same command",
+          _ran, ["Std_ViewFitAll", "Std_ViewFitAll"])
+    check("  a choice step lists the family's choices on the space",
+          _complete(_reng5, "zoom ")[2][:3], ["all", "extents", "in"])
+    check("  and narrows as it is typed", _complete(_reng5, "zoom ex")[2], ["extents"])
+    _view = REGISTRY.get("view")
+    check("  view keeps its alternate spellings",
+          all(x in set(_view.steps[0].choices)
+              for x in ("front", "back", "rear", "iso", "isometric", "axonometric")),
+          True)
+    # The lint refuses two commands claiming one choice in a family.
+    _cldir = tempfile.mkdtemp(prefix="fccli-choice-")
+    os.makedirs(os.path.join(_cldir, "std"))
+    for _n, _ch in (("Std_ViewFitAll", "all"), ("Std_ViewFitSelection", "all")):
+        _g = {k: _cmds[_n].get(k) for k in ("label", "tooltip", "toolbar",
+              "menu", "shortcut", "workbench", "wiki")}
+        _g["freecad"] = _load_desc()["freecad"]
+        with open(os.path.join(_cldir, "std", _n + ".md"), "w") as _fh:
+            _fh.write(_cf.render(_n, _g, {"family": "zoom", "choice": _ch}, "x"))
+    import lint_dictionary as _ld6
+    _ln, _lp = _ld6.lint(_cldir, _ld6.DESCRIPTOR, os.path.join(_cldir, "none.json"))
+    check("  a choice claimed twice in a family is a lint error",
+          any("is also" in p and "zoom" in p for p in _lp), True)
+    import shutil as _sh5; _sh5.rmtree(_cldir, ignore_errors=True)
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

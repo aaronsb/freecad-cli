@@ -29,6 +29,7 @@ AUTHORED = {
     "panel": None,
     "family": None,     # a name joins that family; false keeps it out of any
     "choice": None,
+    "also": [],         # other spellings of this choice (zoom extents = all)
     "rank": None,
     "type": None,
 }

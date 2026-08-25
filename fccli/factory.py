@@ -445,15 +445,19 @@ def _qualify(verb, tid, registry):
 
 # ------------------------------------------------------------ families
 
-def _emit_family(members):
-    """Run whichever member of the family was chosen."""
+def _emit_family(members, default=None):
+    """Run whichever member of the family was chosen.
+
+    A bare `zoom` finishes on the one optional step without visiting the
+    prompt, so the default is applied here rather than by the engine.
+    """
     def emit(values):
         import FreeCADGui as Gui
-        target = values.get("target")
+        target = values.get("target") or default
         entry = members.get(target)
         if entry is None:
             raise RuntimeError(
-                f"{target!r} is not one of: {', '.join(sorted(members))}")
+                f"{target!r} is not one of: {', '.join(sorted(set(members)))}")
         Gui.runCommand(entry["command"])
         return None
     return emit
@@ -469,20 +473,27 @@ def _label(text):
     return (text or "").replace("&", "").strip()
 
 
-def build_family_verb(name, members):
+def build_family_verb(name, members, meta=None):
     """One verb for a family FreeCAD spread across many commands.
 
     Each member stays reachable as its own tier 0 verb; this adds the door
-    that can be asked what is behind it.
+    that can be asked what is behind it. ``meta`` -- a family declared in
+    ``_families.yaml`` -- gives it aliases, a default choice and a doc,
+    which is what a curated family like `zoom` needs over a derived one.
     """
-    choices = sorted(members)
+    meta = meta or {}
+    choices = sorted(set(members))
+    default = meta.get("default")
     labels = ", ".join(_label(members[c]["label"]) for c in choices[:4])
     return Verb(
         name=name,
         steps=[Step("target", CHOICE, f"{name.capitalize()} what",
-                    choices=choices)],
-        emit=_emit_family(members),
-        doc=f"{len(choices)} commands FreeCAD spreads apart: {labels}...",
+                    choices=choices, optional=default is not None,
+                    default=default)],
+        emit=_emit_family(members, default),
+        aliases=list(meta.get("aliases") or []),
+        doc=meta.get("doc")
+            or f"{len(choices)} commands FreeCAD spreads apart: {labels}...",
         family=name, generated=True,
     )
 
@@ -612,12 +623,15 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
     # make a spread-out group discoverable without displacing anything
     # anyone wrote.
     if tier0:
+        from .families import meta_of
         for name, members in families(descriptor["commands"], overrides=over,
                                       exclude=exclude).items():
+            verb = build_family_verb(name, members, meta_of(dictionary, name))
+            _free_aliases(verb, registry, set(), counts)
             if _claimed(registry, name) or registry.get(name) is not None:
                 counts["family_shadowed"] = counts.get("family_shadowed", 0) + 1
                 continue
-            registry.add(build_family_verb(name, members))
+            registry.add(verb)
             counts["families"] = counts.get("families", 0) + 1
 
     # Verbs an addon declared outright win over everything generated: the
