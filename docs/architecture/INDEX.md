@@ -36,6 +36,7 @@ _How the project is built and checked — test tiers, review, release, reconcile
 | ADR | Title | Status |
 |-----|-------|--------|
 | [ADR-500](./practice/ADR-500-decisions-are-recorded-as-adrs.md) | Decisions are recorded as ADRs | Accepted |
+| [ADR-501](./practice/ADR-501-a-verification-ledger-for-the-command-set.md) | A verification ledger for the command set | Proposed |
 
 ## System
 _Cross-cutting — the layer model, the root the terminal navigates, anything spanning two or more domains_
