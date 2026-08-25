@@ -191,6 +191,22 @@ def main():
         code, out, _ = fccli("state")
         truthy("the instance is still idle afterwards", "engine    idle" in out)
 
+        print("\n4d. select sets the operands a command consumes (ADR-200)")
+        fccli("exec", "new seldoc")
+        fccli("exec", "box 0,0,0 40 30 20")
+        fccli("exec", "box 20,10,10 40 30 20")
+        code, out, err = fccli("exec", "select Box, Box001")
+        check("select exits clean", code, 0)
+        truthy("  and names what it selected", "Box001" in out)
+        code, out, err = fccli("exec", "part_cut")
+        check("a boolean now runs from the CLI, on that selection", code, 0)
+        fccli("exec", "select")             # bare select clears
+        code, out, _ = fccli("exec", "describe")
+        truthy("the cut was created", "Cut" in out)
+        code, out, err = fccli("exec", "select Nonesuch")
+        check("a missing name faults", code, 1)
+        truthy("  and names it", "Nonesuch" in err)
+
         print("\n4c. a session part-way through a command can be cleared")
         # Every line goes to the step being collected, so `exec quit!` was
         # answered with "still wants The radius" and an instance mid-command

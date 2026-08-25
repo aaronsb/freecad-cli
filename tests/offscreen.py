@@ -462,6 +462,8 @@ def _run():
     check("  including check", "polyline" in hits("check pol"), True)
     check("a selection step completes document objects",
           hits("move Brac"), ["Bracket"])
+    check("select completes document objects too",
+          hits("select Brac"), ["Bracket"])
     check("the schema step completes schemas",
           all("imperial" in h for h in hits("units imp")), True)
 

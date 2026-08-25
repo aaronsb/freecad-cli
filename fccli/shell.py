@@ -144,6 +144,47 @@ def _emit_delete(v):
     return None
 
 
+def _emit_select(v):
+    """Set FreeCAD's selection from names, so the next command has operands.
+
+    ADR-200. Names resolve through the same lookup a selection step uses.
+    A name may carry a subelement -- Box.Edge1 -- and the whole thing is
+    written into Gui.Selection, which every command and the mouse share.
+    Bare, it selects nothing, which clears the selection.
+    """
+    gui = _gui()
+    doc = App.ActiveDocument
+    if gui is None or doc is None:
+        raise RuntimeError("no active document")
+    selection = getattr(gui, "Selection", None)
+    if selection is None:
+        raise RuntimeError("select needs the GUI's selection service")
+    text = (v.get("names") or "").strip()
+    if not text:
+        selection.clearSelection()
+        _say(v, "selection cleared")
+        return None
+    resolved, missing = [], []
+    for part in (p.strip() for p in text.split(",") if p.strip()):
+        name, _, sub = part.partition(".")
+        objects = _engine_mod._resolve_names(name)
+        if not objects:
+            missing.append(part)
+            continue
+        for obj in objects:
+            resolved.append((obj, sub.strip(), part))
+    if missing:
+        raise RuntimeError(f"no such object: {', '.join(missing)}")
+    selection.clearSelection()
+    for obj, sub, _label in resolved:
+        if sub:
+            selection.addSelection(obj.Document.Name, obj.Name, sub)
+        else:
+            selection.addSelection(obj.Document.Name, obj.Name)
+    _say(v, "selected " + ", ".join(label for _o, _s, label in resolved))
+    return None
+
+
 # -------------------------------------------------------------------- verbs
 
 REGISTRY.add(Verb(
@@ -197,6 +238,16 @@ REGISTRY.add(Verb(
     name="delete", aliases=["del"], gui_command="Std_Delete",
     doc="Delete the selected objects.",
     steps=[], emit=_emit_delete,
+))
+
+
+REGISTRY.add(Verb(
+    name="select", aliases=["sel"], transactional=False,
+    doc="Select objects by label, or a subelement like Box.Edge1. Bare, it clears.",
+    steps=[Step("names", TEXT,
+                "Objects to select, comma-separated; Enter clears",
+                optional=True, raw=True, completes="objects")],
+    emit=_emit_select,
 ))
 
 
