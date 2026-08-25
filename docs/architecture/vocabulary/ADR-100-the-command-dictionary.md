@@ -222,6 +222,13 @@ lives in, and for ordering completion — never for refusing.
 
 ### Neutral
 
+- A `type` block in the tree wins wholesale over a Python patch
+  (`patches/*.py`) for the same type: the block replaces the patch rather
+  than merging field by field. An addon that ships a Python type patch for
+  a type the shipped tree also tunes is overridden. Type tuning belongs in
+  the tree; a Python patch is for a declared verb the factory cannot make.
+
+
 - Two runtime facts stay runtime: a panel cancelled in the panel still
   reports success, and Space belongs to the command line for the whole of
   a panel verb. The dictionary describes; it never drives.
