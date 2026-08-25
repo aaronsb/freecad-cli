@@ -87,6 +87,13 @@
 
 ### Added
 
+- **A mode map for every command.** `fccli/modemap.json` classifies all
+  1111 commands by interaction mode -- 383 selection, 272 panel, 246
+  positional, 210 manual -- with a drafted example, what must be selected
+  first, and a confidence grade per command. Produced by the GH #50
+  classification campaign over the offline wiki and each verb's steps;
+  it sizes the verification tiers and feeds the selection and panel
+  harnesses (GH #52, #53).
 - **The socket replays the session from a message ring.** The server keeps
   the last 4096 durable messages, sequence-numbered: `fccli tail -n` reads
   the recent scrollback without touching anything, `fccli attach --resume
