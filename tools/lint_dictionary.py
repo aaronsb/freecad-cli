@@ -11,8 +11,8 @@ ADR-100's five rules:
   2. a file's generated: block matches the descriptor field for field --
      a hand edit inside it belongs in an authored field or in etc/
   3. authored fields are well-formed: requires from the closed
-     vocabulary, panel pick or null, rank registry or null, type keys
-     from the five
+     vocabulary, panel pick or null, rank registry or null, a type
+     block's keys from the named set with an `of` that is a real type
   4. verb names asked for are unique across the tree
   5. the compiled dictionary is what the tree compiles to
 
