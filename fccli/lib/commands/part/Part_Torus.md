@@ -22,8 +22,11 @@ also: []
 rank: null
 type:
   of: Part::Torus
-  doc: Create a torus from two radii.
+  doc: Create a torus from a path radius and a tube radius.
   steps: [Radius1, Radius2]
+  prompts:
+    Radius1: radius of the circular path, from the origin to the tube center
+    Radius2: radius of the swept tube
   options: [Angle1, Angle2, Angle3]
   strict: true
 ---

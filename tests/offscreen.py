@@ -1893,7 +1893,7 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    check("  and register_all counts the authored files", _wc.get("authored"), 14)
+    check("  and register_all counts the authored files", _wc.get("authored"), 15)
     # #19: every descriptor command is some verb's gui_command. Nine were
     # not, because a typed verb added over their launcher; _make_room
     # qualifies the launcher instead.
@@ -1918,6 +1918,12 @@ def _run():
           _cc.manual.startswith("The Sketcher CreateCircle tool"), True)
     check("  and its one-line doc is still the tooltip",
           _cc.doc, _cmds["Sketcher_CreateCircle"]["tooltip"])
+    # A launcher with an authored summary shows it over FreeCAD's tooltip.
+    _pf = _with.by_gui_command("Part_Fuse")
+    check("  an authored summary is the launcher's one-liner",
+          _pf.doc, _dict["commands"]["Part_Fuse"]["summary"])
+    check("    and it is not the tooltip",
+          _pf.doc == _cmds["Part_Fuse"]["tooltip"], False)
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the
