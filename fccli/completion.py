@@ -95,8 +95,14 @@ def candidates(engine, text, history=None, scope=None):
     lowered = tail.lower()
     # A candidate identical to what is already typed adds nothing. Dropping
     # it is what lets a fully typed verb fall through to its arguments.
-    hits = [c for c in pool
-            if c.lower().startswith(lowered) and c.lower() != lowered]
+    #
+    # A verb name matches by substring (ADR-301): the meaningful word of a
+    # qualified name -- the `cut` in `part_cut` -- sits past the prefix. One
+    # character stays prefix, so a lone letter does not pull the registry.
+    # The step pools keep prefix matching; substring is the verb-head only.
+    substring = not head and len(lowered) >= 2
+    hits = [c for c in pool if c.lower() != lowered and (
+            lowered in c.lower() if substring else c.lower().startswith(lowered))]
     if scope and not head:
         narrowed = [c for c in hits if in_scope(engine.registry, c, scope)]
         hits = narrowed or hits
@@ -112,6 +118,11 @@ def candidates(engine, text, history=None, scope=None):
         hits = curation.current().order(engine.registry, hits,
                                         workbench=_context.workbench())
         hits = _by_habit(hits, history)
+        if substring:
+            # Prefix first: a name the typed text begins leads the ones it
+            # only appears inside, each tier keeping its curated order.
+            hits = ([c for c in hits if c.lower().startswith(lowered)] +
+                    [c for c in hits if not c.lower().startswith(lowered)])
 
     # The grammar has nothing left to offer, but a command run before may
     # know what came next here. Hand back one argument at a time, so Tab
