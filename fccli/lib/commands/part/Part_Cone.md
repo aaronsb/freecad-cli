@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::Cone
+  doc: Create a cone from two radii and a height.
+  steps: [Radius1, Radius2, Height]
+  options: [Angle]
+  strict: true
 ---
 
 The Part Cone command creates a parametric cone solid. In the coordinate system defined by its Placement property, the bottom face of the cone lies on the XY plane with its center at the origin.

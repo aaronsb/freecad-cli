@@ -146,7 +146,7 @@ small.
 | `panel` | `pick` — do not adopt the task panel |
 | `family`, `choice` | force into or out of a family, under what name |
 | `rank` | `registry` — sort last regardless of placement |
-| `type` | tuning for the linked type: `steps`, `options`, `hide`, `point`, `strict` |
+| `type` | tuning for a tier-1 verb, keyed by `of` (the type): `of`, `verb`, `aliases`, `doc`, `steps`, `options`, `hide`, `point`, `prompts`, `strict`, `skip` |
 
 **A file never holds runtime state.** Not a panel's field list, not
 whether the command is currently active. `generated:` holds harvest
@@ -221,6 +221,13 @@ lives in, and for ordering completion — never for refusing.
   not provide.
 
 ### Neutral
+
+- A `type` block in the tree wins wholesale over a Python patch
+  (`patches/*.py`) for the same type: the block replaces the patch rather
+  than merging field by field. An addon that ships a Python type patch for
+  a type the shipped tree also tunes is overridden. Type tuning belongs in
+  the tree; a Python patch is for a declared verb the factory cannot make.
+
 
 - Two runtime facts stay runtime: a panel cancelled in the panel still
   reports success, and Space belongs to the command line for the whole of

@@ -1,0 +1,13 @@
+# Tuning for a Part type with no command of its own, so no command file
+# can carry it (ADR-100 option A). Keyed by type, read at compile like
+# std/_families.yaml. Box, Cylinder, Sphere, Cone and Torus carry theirs
+# on their Part_* command files; these two have no command.
+types:
+  Part::Wedge:
+    steps: [Xmin, Ymin, Zmin, Xmax, Ymax, Zmax]
+    strict: true
+  Part::Helix:
+    doc: Create a helix from a pitch, a height and a radius.
+    steps: [Pitch, Height, Radius]
+    options: [Angle, LocalCoord, Style]
+    strict: true

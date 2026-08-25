@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::Box
+  aliases: [bx]
+  doc: Create a box from three dimensions.
+  steps: [Length, Width, Height]
+  strict: true
 ---
 
 The Part Box command creates a parametric box solid, a rectangular cuboid. In the coordinate system defined by its Placement property, the bottom face of the box lies on the XY plane with its front left corner at the origin, and its front edge parallel to the X axis.

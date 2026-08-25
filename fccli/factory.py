@@ -537,6 +537,10 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
     curation.load(descriptor, dictionary)
 
     patches = patches if patches is not None else load_patches()
+    # Type tuning from the command tree (ADR-100), keyed by type. It is
+    # the same spec patches.apply reads, and it wins over a Python patch
+    # for the same type -- part.py moved here.
+    dict_types = dict(dictionary.get("types") or {})
     counts = {"tier0": 0, "tier1": 0, "patched": 0, "skipped": 0}
     by_type = {l["type"]: {**descriptor["commands"].get(n, {}), "name": n}
                for n, l in descriptor.get("links", {}).items()}
@@ -574,7 +578,7 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
         if NOISE_TYPES.match(tid):
             counts["skipped"] += 1
             continue
-        patch = patches.for_type(tid)
+        patch = dict_types.get(tid) or patches.for_type(tid)
         if patch and patch.get("skip"):
             counts["skipped"] += 1
             continue

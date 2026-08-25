@@ -1893,7 +1893,7 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    check("  and register_all counts the authored files", _wc.get("authored"), 9)
+    check("  and register_all counts the authored files", _wc.get("authored"), 14)
     # #19: every descriptor command is some verb's gui_command. Nine were
     # not, because a typed verb added over their launcher; _make_room
     # qualifies the launcher instead.
@@ -2577,6 +2577,82 @@ def _run():
     check("  a choice claimed twice in a family is a lint error",
           any("is also" in p and "zoom" in p for p in _lp), True)
     import shutil as _sh5; _sh5.rmtree(_cldir, ignore_errors=True)
+
+    print("\n5aj. a command file's type block tunes the tier-1 verb")
+    # ADR-100 option A. patches/part.py is gone; the Part primitives'
+    # tuning is a `type` block on each Part_* command file, and the two
+    # with no command (Wedge, Helix) are in part/_types.yaml. Measured
+    # against a run with no dictionary, so each check is the difference.
+    _tb_bare = _Registry()
+    register_all(_tb_bare, tier0=True, patches=PatchSet(), dictionary={})
+    _tb = _Registry()
+    register_all(_tb, tier0=True, patches=PatchSet())
+    check("part.py is gone", os.path.exists(os.path.join(
+          os.path.dirname(__file__), "..", "fccli", "patches", "part.py")), False)
+    from fccli.factory import load_dictionary
+    _dt = load_dictionary().get("types")
+    check("  the dictionary carries type tuning keyed by type",
+          sorted(_dt), ["Part::Box", "Part::Cone", "Part::Cylinder",
+                        "Part::Helix", "Part::Sphere", "Part::Torus",
+                        "Part::Wedge"])
+    check("  a type block names its command's type",
+          _dt["Part::Cylinder"].get("of") is None
+          and _dt["Part::Cylinder"]["steps"], ["Radius", "Height"])
+    # The tuning reaches the verb: ordered, strict, aliased.
+    _cyl = _tb.by_gui_command("Part_Cylinder") or _tb.get("cylinder")
+    check("  cylinder is ordered and strict from its file",
+          [st.id for st in _tb.get("cylinder").steps], ["Radius", "Height"])
+    check("  and without the tree it is alphabetical and optional",
+          [st.id for st in _tb_bare.get("cylinder").steps][:1], ["Angle"])
+    check("  cyl reaches it", _tb.get("cyl") is _tb.get("cylinder"), True)
+    check("  box keeps its bx alias, and helix its doc",
+          (_tb.get("bx") is _tb.by_gui_command("Part_Box") or
+           _tb.get("bx").creates == "Part::Box",
+           _tb.get("helix").doc.startswith("Create a helix")), (True, True))
+    # Part::Line has no skip now: against the full registry (hand-written
+    # line included) it collides and re-homes rather than shadowing.
+    check("  the hand-written line stays, Part::Line re-homes to part_line",
+          (REGISTRY.get("line").gui_command,
+           REGISTRY.get("part_line") and REGISTRY.get("part_line").creates),
+          ("Draft_Line", "Part::Line"))
+    # An orphan type, tuned from _types.yaml.
+    check("  a type with no command is tuned from _types.yaml",
+          [st.id for st in _tb.get("wedge").steps],
+          ["Xmin", "Ymin", "Zmin", "Xmax", "Ymax", "Zmax"])
+    # A type block's `of` must name a real type, and one type is tuned once.
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "tools"))
+    import command_files as _cf2, lint_dictionary as _ld7
+    _ttmp = tempfile.mkdtemp(prefix="fccli-type-")
+    os.makedirs(os.path.join(_ttmp, "part"))
+    _g = {k: _cmds["Part_Cylinder"].get(k) for k in ("label", "tooltip",
+          "toolbar", "menu", "shortcut", "workbench", "wiki")}
+    _g["freecad"] = _load_desc()["freecad"]
+    with open(os.path.join(_ttmp, "part", "Part_Cylinder.md"), "w") as _fh:
+        _fh.write(_cf2.render("Part_Cylinder", _g,
+                              {"type": {"steps": ["Radius"]}}, "x"))
+    _tn, _tp = _ld7.lint(_ttmp, _ld7.DESCRIPTOR, os.path.join(_ttmp, "none.json"))
+    check("  a type block with no `of` is a lint error",
+          any("needs `of`" in x for x in _tp), True)
+    import shutil as _sh7; _sh7.rmtree(_ttmp, ignore_errors=True)
+    # _types.yaml: a bad key and a non-mapping are compile errors; a type
+    # tuned in both a command file and _types.yaml is one too.
+    import compile_dictionary as _cd7
+    _yt = tempfile.mkdtemp(prefix="fccli-yt-"); os.makedirs(os.path.join(_yt, "part"))
+    _gc7 = {k: _cmds["Part_Cylinder"].get(k) for k in ("label", "tooltip",
+            "toolbar", "menu", "shortcut", "workbench", "wiki")}
+    _gc7["freecad"] = _load_desc()["freecad"]
+    open(os.path.join(_yt, "part", "Part_Cylinder.md"), "w").write(
+        _cf2.render("Part_Cylinder", _gc7, {}, "x"))
+    open(os.path.join(_yt, "part", "_types.yaml"), "w").write(
+        "types:\n  Part::Wedge:\n    stepz: [X]\n")
+    _yerr = None
+    try:
+        _cd7.compile_tree(_yt)
+    except ValueError as _e:
+        _yerr = str(_e)
+    check("  a bad _types.yaml key is a compile error",
+          _yerr is not None and "stepz" in _yerr, True)
+    _sh7.rmtree(_yt, ignore_errors=True)
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

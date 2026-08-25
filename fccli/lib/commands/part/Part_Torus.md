@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::Torus
+  doc: Create a torus from two radii.
+  steps: [Radius1, Radius2]
+  options: [Angle1, Angle2, Angle3]
+  strict: true
 ---
 
 The Part Torus command creates a parametric torus solid, a doughnut shape. It is the result of sweeping a circular profile around a circular path. In the coordinate system defined by its Placement property, the circular path of the torus lies on the XY plane with its center at the origin.
