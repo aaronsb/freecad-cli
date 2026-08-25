@@ -2473,6 +2473,22 @@ def _run():
         check("  and leaves the order alone without a workbench",
               _cur3.current().order(REGISTRY, ["cube", "circle_from_center"]),
               _cur3.current().order(REGISTRY, ["cube", "circle_from_center"], workbench=None))
+        # ADR-301: a verb name matches by substring, so a name the factory
+        # qualified behind a workbench prefix is reachable by its meaningful
+        # word. REGISTRY here holds the tier-0 launchers, so part_cut exists.
+        _cut_hits = _cand(_ceng, "cut", history=None)[2]
+        check("  substring reaches a qualified verb by its middle word",
+              "part_cut" in _cut_hits, True)
+        _cut_pref = [c for c in _cut_hits if c.startswith("cut")]
+        _cut_sub = [c for c in _cut_hits if not c.startswith("cut")]
+        check("    prefix hits lead the substring-only ones",
+              _cut_hits, _cut_pref + _cut_sub)
+        check("    and a real prefix hit leads", "cutout_shape" in _cut_pref, True)
+        check("  one character is prefix only",
+              all(h.startswith("c") for h in _cand(_ceng, "c", history=None)[2]),
+              True)
+        check("    so a middle-word match needs two characters",
+              "part_cut" in _cand(_ceng, "c", history=None)[2], False)
         # Part active: a Part command first, PartDesign's not counted as
         # Part's by prefix. additive_helix is PartDesign_Helix and
         # appearance_per_face is a Part command, both promoted; the
