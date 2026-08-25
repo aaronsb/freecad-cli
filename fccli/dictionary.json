@@ -2067,11 +2067,16 @@
    "doc": "The Part Cone command creates a parametric cone solid. In the coordinate system defined by its Placement property, the bottom face of the cone lies on the XY plane with its center at the origin.\n\nThe default Part Cone is truncated. It can be turned into a full, untruncated, cone by changing its Radius1 or Radius2 property to zero. It can be turned into a segment of a cone by changing its Angle property.\n\n## See also\n\n- Part_Primitives",
    "file": "part/Part_Cone.md",
    "type": {
-    "doc": "Create a cone from two radii and a height.",
+    "doc": "Create a truncated cone from a base radius, a top radius, and a height.",
     "of": "Part::Cone",
     "options": [
      "Angle"
     ],
+    "prompts": {
+     "Height": "height along the Z axis",
+     "Radius1": "radius of the bottom face",
+     "Radius2": "radius of the top face"
+    },
     "steps": [
      "Radius1",
      "Radius2",
@@ -2168,8 +2173,9 @@
    "file": "part/Part_Fillet.md"
   },
   "Part_Fuse": {
-   "doc": "The !_Part_Fuse tool fuses (unites) selected Part objects into one. This operation is fully parametric and the components can be modified and the result recomputed.\n\nNote: This command is an automated form of the Boolean operation.\n\n## See also\n\n- Part_Boolean\n- Part_Cut\n- Part_Common",
-   "file": "part/Part_Fuse.md"
+   "doc": "The Part Fuse command fuses (unites) selected solids into one. Select two or more solids, then run. The operation is parametric: the operands stay editable and the result recomputes.\n\nIt is an automated form of the Part Boolean operation.\n\n## See also\n\n- Part_Boolean\n- Part_Cut\n- Part_Common",
+   "file": "part/Part_Fuse.md",
+   "summary": "Fuse selected solids into one."
   },
   "Part_Import": {
    "doc": "The Part Import command imports geometry from a different file format into the active document. The supported file formats are: STEP (with or without colors), IGES (with or without colors), and BREP.\n\n## See also\n\n- Std_Import\n- Import_Export",
@@ -2327,13 +2333,17 @@
    "doc": "The Part Torus command creates a parametric torus solid, a doughnut shape. It is the result of sweeping a circular profile around a circular path. In the coordinate system defined by its Placement property, the circular path of the torus lies on the XY plane with its center at the origin.\n\nA Part Torus can be turned into a segment of a torus by changing its Angle3 property. By changing its Angle1 and/or Angle2 properties the swept profile can become a segment of a circle.\n\n## See also\n\n- Part_Primitives",
    "file": "part/Part_Torus.md",
    "type": {
-    "doc": "Create a torus from two radii.",
+    "doc": "Create a torus from a path radius and a tube radius.",
     "of": "Part::Torus",
     "options": [
      "Angle1",
      "Angle2",
      "Angle3"
     ],
+    "prompts": {
+     "Radius1": "radius of the circular path, from the origin to the tube center",
+     "Radius2": "radius of the swept tube"
+    },
     "steps": [
      "Radius1",
      "Radius2"
@@ -4598,11 +4608,16 @@
    "strict": true
   },
   "Part::Cone": {
-   "doc": "Create a cone from two radii and a height.",
+   "doc": "Create a truncated cone from a base radius, a top radius, and a height.",
    "file": "part/Part_Cone.md",
    "options": [
     "Angle"
    ],
+   "prompts": {
+    "Height": "height along the Z axis",
+    "Radius1": "radius of the bottom face",
+    "Radius2": "radius of the top face"
+   },
    "steps": [
     "Radius1",
     "Radius2",
@@ -4661,13 +4676,17 @@
    "strict": true
   },
   "Part::Torus": {
-   "doc": "Create a torus from two radii.",
+   "doc": "Create a torus from a path radius and a tube radius.",
    "file": "part/Part_Torus.md",
    "options": [
     "Angle1",
     "Angle2",
     "Angle3"
    ],
+   "prompts": {
+    "Radius1": "radius of the circular path, from the origin to the tube center",
+    "Radius2": "radius of the swept tube"
+   },
    "steps": [
     "Radius1",
     "Radius2"

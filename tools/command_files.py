@@ -24,6 +24,7 @@ GENERATED = ("freecad", "label", "tooltip", "toolbar", "menu", "shortcut",
 # Authored fields, their defaults, and what the lint accepts.
 AUTHORED = {
     "verb": None,
+    "summary": None,    # the one-liner for a launcher verb, over FreeCAD's tooltip
     "aliases": [],
     "requires": [],
     "panel": None,

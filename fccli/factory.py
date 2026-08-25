@@ -184,8 +184,8 @@ def build_command_verb(command, entry=None):
     ``entry`` is the command's compiled file (ADR-100): the authored
     fields a person set, and the page `man` shows. The verb's name is the
     file's `verb` when it has one and the slugged label otherwise; the
-    one-line doc stays the harvested tooltip, which is what a one-liner
-    is for, and the body becomes the manual.
+    one-line doc is the file's `summary` when a person wrote one and the
+    harvested tooltip otherwise, and the body becomes the manual.
 
     It runs the command, and if a task panel opens it reads that panel and
     offers its parameters as prompts rather than leaving them to a mouse.
@@ -205,7 +205,7 @@ def build_command_verb(command, entry=None):
                 open=_open_panel(name),
                 emit=_emit_panel,
                 abort=_abort_panel,
-                doc=command.get("tooltip") or label,
+                doc=entry.get("summary") or command.get("tooltip") or label,
                 aliases=list(entry.get("aliases") or []),
                 manual=entry.get("doc") or "",
                 requires=list(entry.get("requires") or []),

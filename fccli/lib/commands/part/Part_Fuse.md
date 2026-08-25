@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "f042edebc7ae"
 # authored from here down; the tool never rewrites these
 verb: null
+summary: Fuse selected solids into one.
 aliases: []
 requires: []
 panel: null
@@ -23,9 +24,9 @@ rank: null
 type: null
 ---
 
-The !_Part_Fuse tool fuses (unites) selected Part objects into one. This operation is fully parametric and the components can be modified and the result recomputed.
+The Part Fuse command fuses (unites) selected solids into one. Select two or more solids, then run. The operation is parametric: the operands stay editable and the result recomputes.
 
-Note: This command is an automated form of the Boolean operation.
+It is an automated form of the Part Boolean operation.
 
 ## See also
 

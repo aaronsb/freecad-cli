@@ -22,8 +22,12 @@ also: []
 rank: null
 type:
   of: Part::Cone
-  doc: Create a cone from two radii and a height.
+  doc: Create a truncated cone from a base radius, a top radius, and a height.
   steps: [Radius1, Radius2, Height]
+  prompts:
+    Radius1: radius of the bottom face
+    Radius2: radius of the top face
+    Height: height along the Z axis
   options: [Angle]
   strict: true
 ---
