@@ -241,7 +241,7 @@ lives in, and for ordering completion — never for refusing.
 - `Sketcher_CompConstrainTools` carries the label "Constrain" and takes
   the name from the 21-member family. `family: constrain, choice: tools`
   on the composite moves one name.
-- `ZOOM_TARGETS` and `VIEW_TARGETS` become `family`/`choice` on each
+- `ZOOM_TARGETS` and `VIEW_TARGETS` moved: each command carries `family`/`choice` (and `also` for a spelling), the curated `zoom` family's aliases and default live in `std/_families.yaml`, and `shell.py` lost both tables and its hand-written verb.
   `Std_View*` file.
 - `NOT_ACTIONS` becomes a `families.exclude` list in `lib/commands/
   std/_families.yaml`, beside the commands it speaks for.
