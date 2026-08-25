@@ -2002,6 +2002,9 @@
    "doc": "The Part Box command creates a parametric box solid, a rectangular cuboid. In the coordinate system defined by its Placement property, the bottom face of the box lies on the XY plane with its front left corner at the origin, and its front edge parallel to the X axis.\n\n## See also\n\n- Part_Primitives",
    "file": "part/Part_Box.md",
    "type": {
+    "aliases": [
+     "bx"
+    ],
     "doc": "Create a box from three dimensions.",
     "of": "Part::Box",
     "steps": [
@@ -4582,6 +4585,9 @@
  "generated_by": "tools/compile_dictionary.py",
  "types": {
   "Part::Box": {
+   "aliases": [
+    "bx"
+   ],
    "doc": "Create a box from three dimensions.",
    "file": "part/Part_Box.md",
    "steps": [
@@ -4624,6 +4630,7 @@
    "strict": true
   },
   "Part::Helix": {
+   "doc": "Create a helix from a pitch, a height and a radius.",
    "file": "part/_types.yaml",
    "options": [
     "Angle",

@@ -22,6 +22,7 @@ also: []
 rank: null
 type:
   of: Part::Box
+  aliases: [bx]
   doc: Create a box from three dimensions.
   steps: [Length, Width, Height]
   strict: true

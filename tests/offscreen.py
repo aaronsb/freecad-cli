@@ -2605,6 +2605,16 @@ def _run():
     check("  and without the tree it is alphabetical and optional",
           [st.id for st in _tb_bare.get("cylinder").steps][:1], ["Angle"])
     check("  cyl reaches it", _tb.get("cyl") is _tb.get("cylinder"), True)
+    check("  box keeps its bx alias, and helix its doc",
+          (_tb.get("bx") is _tb.by_gui_command("Part_Box") or
+           _tb.get("bx").creates == "Part::Box",
+           _tb.get("helix").doc.startswith("Create a helix")), (True, True))
+    # Part::Line has no skip now: against the full registry (hand-written
+    # line included) it collides and re-homes rather than shadowing.
+    check("  the hand-written line stays, Part::Line re-homes to part_line",
+          (REGISTRY.get("line").gui_command,
+           REGISTRY.get("part_line") and REGISTRY.get("part_line").creates),
+          ("Draft_Line", "Part::Line"))
     # An orphan type, tuned from _types.yaml.
     check("  a type with no command is tuned from _types.yaml",
           [st.id for st in _tb.get("wedge").steps],
@@ -2624,6 +2634,25 @@ def _run():
     check("  a type block with no `of` is a lint error",
           any("needs `of`" in x for x in _tp), True)
     import shutil as _sh7; _sh7.rmtree(_ttmp, ignore_errors=True)
+    # _types.yaml: a bad key and a non-mapping are compile errors; a type
+    # tuned in both a command file and _types.yaml is one too.
+    import compile_dictionary as _cd7
+    _yt = tempfile.mkdtemp(prefix="fccli-yt-"); os.makedirs(os.path.join(_yt, "part"))
+    _gc7 = {k: _cmds["Part_Cylinder"].get(k) for k in ("label", "tooltip",
+            "toolbar", "menu", "shortcut", "workbench", "wiki")}
+    _gc7["freecad"] = _load_desc()["freecad"]
+    open(os.path.join(_yt, "part", "Part_Cylinder.md"), "w").write(
+        _cf2.render("Part_Cylinder", _gc7, {}, "x"))
+    open(os.path.join(_yt, "part", "_types.yaml"), "w").write(
+        "types:\n  Part::Wedge:\n    stepz: [X]\n")
+    _yerr = None
+    try:
+        _cd7.compile_tree(_yt)
+    except ValueError as _e:
+        _yerr = str(_e)
+    check("  a bad _types.yaml key is a compile error",
+          _yerr is not None and "stepz" in _yerr, True)
+    _sh7.rmtree(_yt, ignore_errors=True)
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

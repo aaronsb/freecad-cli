@@ -66,16 +66,25 @@ def compile_tree(tree):
                                  f"tuned by {types[tid]['file']}")
             types[tid] = {k: v for k, v in block.items() if k != "of"}
             types[tid]["file"] = entry["file"]
-    for dirpath, _dirs, files in os.walk(tree):
-        if "_types.yaml" in files:
-            with open(os.path.join(dirpath, "_types.yaml"), encoding="utf-8") as fh:
-                doc = yaml.safe_load(fh) or {}
-            rel = os.path.relpath(os.path.join(dirpath, "_types.yaml"), tree)
-            for tid, spec in (doc.get("types") or {}).items():
-                if tid in types:
-                    raise ValueError(f"{rel}: type {tid} is already tuned by "
-                                     f"{types[tid]['file']}")
-                types[tid] = {**spec, "file": rel.replace(os.sep, "/")}
+    import command_files as _cf
+    for dirpath, dirs, files in sorted(os.walk(tree)):
+        dirs.sort()
+        if "_types.yaml" not in files:
+            continue
+        with open(os.path.join(dirpath, "_types.yaml"), encoding="utf-8") as fh:
+            doc = yaml.safe_load(fh) or {}
+        rel = os.path.relpath(os.path.join(dirpath, "_types.yaml"), tree).replace(os.sep, "/")
+        for tid, spec in (doc.get("types") or {}).items():
+            if not isinstance(spec, dict):
+                raise ValueError(f"{rel}: {tid} must be a mapping")
+            bad = set(spec) - (_cf.TYPE_KEYS - {"of"})
+            if bad:
+                raise ValueError(f"{rel}: {tid} has keys {sorted(bad)} not in "
+                                 f"{sorted(_cf.TYPE_KEYS - {'of'})}")
+            if tid in types:
+                raise ValueError(f"{rel}: type {tid} is already tuned by "
+                                 f"{types[tid]['file']}")
+            types[tid] = {**spec, "file": rel}
     def common(values):
         # The stamp most files carry. A version sorts wrong as a string
         # (1.9 above 1.10) and a commit hash does not sort at all.

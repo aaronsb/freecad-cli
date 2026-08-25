@@ -7,6 +7,7 @@ types:
     steps: [Xmin, Ymin, Zmin, Xmax, Ymax, Zmax]
     strict: true
   Part::Helix:
+    doc: Create a helix from a pitch, a height and a radius.
     steps: [Pitch, Height, Radius]
     options: [Angle, LocalCoord, Style]
     strict: true
