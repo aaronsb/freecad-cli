@@ -53,7 +53,10 @@ def lint(tree, descriptor_path, compiled_path):
     with open(descriptor_path, encoding="utf-8") as fh:
         descriptor = json.load(fh)
     commands = descriptor["commands"]
-    seen, verbs, choices = {}, {}, {}
+    seen, verbs, choices, tuned = {}, {}, {}, {}
+    # Every type a tier-1 verb is built from, for `of` to be checked
+    # against. Read from the descriptor's own verb table.
+    types_built = {v.get("type") for v in descriptor.get("verbs", {}).values()}
     for rel, full in cf.walk(tree):
         try:
             front, _body = cf.read(full)
@@ -130,6 +133,17 @@ def lint(tree, descriptor_path, compiled_path):
             for key in sorted(set(authored["type"]) - cf.TYPE_KEYS):
                 problems.append(f"{rel}: type.{key} is not one of "
                                 f"{sorted(cf.TYPE_KEYS)} (rule 3)")
+            of = authored["type"].get("of")
+            if not of:
+                problems.append(f"{rel}: a type block needs `of` (rule 3)")
+            elif of not in types_built:
+                problems.append(f"{rel}: type of {of!r} is not a type any "
+                                f"command builds (rule 3)")
+            elif of in tuned:
+                problems.append(f"{rel}: type {of} is also tuned by "
+                                f"{tuned[of]} (rule 4)")
+            else:
+                tuned[of] = rel
         fam, choice = authored["family"], authored["choice"]
         if shape["family"] and shape["choice"]:
             if fam is False and choice is not None:

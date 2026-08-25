@@ -146,7 +146,7 @@ small.
 | `panel` | `pick` — do not adopt the task panel |
 | `family`, `choice` | force into or out of a family, under what name |
 | `rank` | `registry` — sort last regardless of placement |
-| `type` | tuning for the linked type: `steps`, `options`, `hide`, `point`, `strict` |
+| `type` | tuning for a tier-1 verb, keyed by `of` (the type): `of`, `verb`, `aliases`, `doc`, `steps`, `options`, `hide`, `point`, `prompts`, `strict`, `skip` |
 
 **A file never holds runtime state.** Not a panel's field list, not
 whether the command is currently active. `generated:` holds harvest

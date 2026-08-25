@@ -38,7 +38,10 @@ REQUIRES = {"document", "body", "sketch-edit", "selection", "selection:face",
             "selection:sketch", "selection:mesh"}
 PANEL = {None, "pick"}
 RANK = {None, "registry"}
-TYPE_KEYS = {"steps", "options", "hide", "point", "strict"}
+# A command file's type block: tuning for the tier-1 verb built from
+# `of` (ADR-100 option A). The same spec patches.apply reads, plus `of`.
+TYPE_KEYS = {"of", "verb", "aliases", "doc", "steps", "options", "hide",
+             "point", "prompts", "strict", "skip"}
 
 FRONT = re.compile(r"\A---\n(.*?)\n---\n?", re.S)
 

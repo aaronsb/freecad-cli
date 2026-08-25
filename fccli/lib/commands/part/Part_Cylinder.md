@@ -20,7 +20,14 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::Cylinder
+  aliases: [cyl]
+  doc: Create a cylinder from a radius and a height.
+  steps: [Radius, Height]
+  options: [Angle]
+  hide: [FirstAngle, SecondAngle]
+  strict: true
 ---
 
 The Part Cylinder command creates a parametric cylinder solid. It is the result of extruding a circular arc along a straight path. In the coordinate system defined by its Placement property, the bottom face of the cylinder lies on the XY plane with its center at the origin.

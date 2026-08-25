@@ -20,7 +20,13 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::Sphere
+  aliases: [sph]
+  doc: Create a sphere from a radius.
+  steps: [Radius]
+  options: [Angle1, Angle2, Angle3]
+  strict: true
 ---
 
 The Part Sphere command creates a parametric sphere solid. It is the result of revolving a circular arc profile around an axis. In the coordinate system defined by its Placement property, the center of the sphere is positioned at the origin, and its axis of revolution is the Z axis.

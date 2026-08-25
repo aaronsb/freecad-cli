@@ -45,14 +45,37 @@ def compile_tree(tree):
             if value not in (None, [], {}):
                 entry[key] = value
         commands[name] = entry
+    import yaml
     families = {}
     extra = os.path.join(tree, "std", "_families.yaml")
     if os.path.exists(extra):
-        import yaml
         with open(extra, encoding="utf-8") as fh:
             families = yaml.safe_load(fh) or {}
         if not isinstance(families.get("exclude", []), list):
             raise ValueError("std/_families.yaml: exclude must be a list")
+    # Type tuning, keyed by the type it retunes. A command file's `type`
+    # block names its type in `of`; a workbench's _types.yaml holds tuning
+    # for a type with no command of its own (Part::Wedge, Part::Helix).
+    types = {}
+    for name, entry in commands.items():
+        block = entry.get("type")
+        if isinstance(block, dict) and block.get("of"):
+            tid = block["of"]
+            if tid in types:
+                raise ValueError(f"{entry['file']}: type {tid} is already "
+                                 f"tuned by {types[tid]['file']}")
+            types[tid] = {k: v for k, v in block.items() if k != "of"}
+            types[tid]["file"] = entry["file"]
+    for dirpath, _dirs, files in os.walk(tree):
+        if "_types.yaml" in files:
+            with open(os.path.join(dirpath, "_types.yaml"), encoding="utf-8") as fh:
+                doc = yaml.safe_load(fh) or {}
+            rel = os.path.relpath(os.path.join(dirpath, "_types.yaml"), tree)
+            for tid, spec in (doc.get("types") or {}).items():
+                if tid in types:
+                    raise ValueError(f"{rel}: type {tid} is already tuned by "
+                                     f"{types[tid]['file']}")
+                types[tid] = {**spec, "file": rel.replace(os.sep, "/")}
     def common(values):
         # The stamp most files carry. A version sorts wrong as a string
         # (1.9 above 1.10) and a commit hash does not sort at all.
@@ -61,6 +84,7 @@ def compile_tree(tree):
     return {
         "generated_by": "tools/compile_dictionary.py",
         "families": families,
+        "types": types,
         "freecad": common(stamps),
         "wiki_rev": common(revs),
         "commands": commands,
