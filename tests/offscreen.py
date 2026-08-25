@@ -1120,7 +1120,7 @@ def _run():
         lambda m: _restart.append(m.text) if m.kind == "info" else None)
     engine.submit("check view sketch")
     check("a choice that is also a verb fills the step",
-          any("39 commands" in ln for ln in _restart), True)
+          any("36 commands" in ln for ln in _restart), True)
     check("  and does not cancel the command",
           any("cancelled" in ln for ln in _restart), False)
     _stopr()

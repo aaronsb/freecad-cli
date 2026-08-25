@@ -484,6 +484,9 @@ def build_family_verb(name, members, meta=None):
     meta = meta or {}
     choices = sorted(set(members))
     default = meta.get("default")
+    # Count commands, not spellings: `also` gives one command several
+    # choice keys, and "39 commands" for 36 of them reads wrong.
+    ncommands = len({m["command"] for m in members.values()})
     labels = ", ".join(_label(members[c]["label"]) for c in choices[:4])
     return Verb(
         name=name,
@@ -493,7 +496,7 @@ def build_family_verb(name, members, meta=None):
         emit=_emit_family(members, default),
         aliases=list(meta.get("aliases") or []),
         doc=meta.get("doc")
-            or f"{len(choices)} commands FreeCAD spreads apart: {labels}...",
+            or f"{ncommands} commands FreeCAD spreads apart: {labels}...",
         family=name, generated=True,
     )
 
