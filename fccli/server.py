@@ -18,16 +18,125 @@ Socket path is per process, so several FreeCADs do not collide::
 Never TCP. This executes commands in a live CAD session.
 """
 
+import collections
 import json
 import os
 import tempfile
+import time
+import uuid
 
 import FreeCAD as App
 
 from . import bus as _bus
 from .qt import QtCore, QtNetwork
 
-PROTOCOL = 1
+PROTOCOL = 2
+
+# What the ring retains: the kinds the dock's scrollback keeps, plus CLEAR
+# as a cut point. LIVE, BUFFER, PROMPT, OPTIONS and STATE describe the
+# present moment and are not history (ADR-302).
+DURABLE = {_bus.ECHO, _bus.INFO, _bus.ERROR, _bus.RESULT, _bus.CLEAR}
+
+RING_LIMIT = 4096
+RESUME_IDS = 512
+
+
+def _object_summary(obj):
+    """A created object as facts a wire can carry.
+
+    ``state`` is read the way ``describe`` reads it: everything but the
+    unremarkable ``Up-to-date``, so a clean object shows ``[]`` and the
+    fillet that computed ``Touched, Invalid`` says so.
+    """
+    if obj is None:
+        return None
+    try:
+        state = [s for s in (getattr(obj, "State", []) or [])
+                 if s != "Up-to-date"]
+        return {"name": getattr(obj, "Name", "") or "",
+                "label": getattr(obj, "Label", "") or "",
+                "type": getattr(obj, "TypeId", "") or "",
+                "state": state}
+    except Exception:
+        return None
+
+
+def wire(msg, registry=None):
+    """One bus message in wire form.
+
+    The submit reply, the live broadcast and the ring all ship this same
+    shape, so every reader -- a terminal replaying scrollback, the verify
+    harness, a watch pane -- parses one format.
+    """
+    payload = {"kind": msg.kind, "text": msg.text}
+    role = msg.data.get("role")
+    if role:
+        payload["role"] = role
+    if msg.kind == _bus.BUFFER:
+        payload["who"] = msg.data.get("who")
+    if msg.kind in (_bus.RESULT, _bus.LIVE, _bus.ECHO):
+        # Ship the spans, not just the text. A terminal then paints a
+        # command the way the dock paints it -- axis colours on a
+        # coordinate, the dimension on a number, italic where the unit
+        # was implied -- from the same computation rather than its own.
+        payload["spans"] = _spans(registry, msg.text)
+    if msg.kind == _bus.RESULT:
+        payload["replay"] = msg.data.get("replay")
+        payload["dry"] = bool(msg.data.get("dry"))
+        payload["object"] = _object_summary(msg.data.get("object"))
+    return payload
+
+
+def _spans(registry, text):
+    if registry is None or not text:
+        return []
+    try:
+        from .highlight import command_spans
+        return [[start, length, role, bool(implicit)]
+                for start, length, role, implicit
+                in command_spans(registry, text)]
+    except Exception:
+        return []
+
+
+class Ring:
+    """The session's output, retained (ADR-302).
+
+    Entries are wire-form payloads stamped with a monotonic ``seq``. Reads
+    never change anything; an entry leaving the ring is appended to the
+    transcript file, one JSON object per line.
+    """
+
+    def __init__(self, limit=RING_LIMIT, transcript=None):
+        self.limit = limit
+        self.transcript = transcript
+        self.entries = collections.deque()
+        self.seq = 0
+
+    def append(self, payload):
+        self.seq += 1
+        entry = {"seq": self.seq, "ts": int(time.time()), **payload}
+        self.entries.append(entry)
+        while len(self.entries) > self.limit:
+            self._spill(self.entries.popleft())
+        return entry
+
+    def since(self, seq):
+        return [e for e in self.entries if e["seq"] > seq]
+
+    def tail(self, n):
+        return list(self.entries)[-max(0, n):]
+
+    def _spill(self, entry):
+        if not self.transcript:
+            return
+        try:
+            from . import paths
+            if paths.ensure(self.transcript):
+                with open(self.transcript, "a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(entry, default=str) + "\n")
+        except Exception:
+            pass                        # history must never break a command
 
 
 def socket_dir():
@@ -48,6 +157,9 @@ class Server(QtCore.QObject):
         self._clients = {}          # QLocalSocket -> dict
         self._next_id = 1
         self._unsubscribe = None
+        from . import paths
+        self.ring = Ring(transcript=paths.state("transcript.jsonl"))
+        self._cursors = collections.OrderedDict()   # resume id -> seq
 
     # ------------------------------------------------------------ lifecycle
 
@@ -66,7 +178,7 @@ class Server(QtCore.QObject):
         except OSError:
             pass
         self._server.newConnection.connect(self._accept)
-        self._unsubscribe = self.session.bus.subscribe(self._broadcast)
+        self._unsubscribe = self.session.bus.subscribe(self._on_message)
         return self.path
 
     def stop(self):
@@ -91,12 +203,21 @@ class Server(QtCore.QObject):
             sock = self._server.nextPendingConnection()
             name = f"client:{self._next_id}"
             self._next_id += 1
+            # The resume id outlives the connection: the cursor it names
+            # stays in the table after a disconnect, so supplying it later
+            # replays what happened in between.
+            resume = uuid.uuid4().hex[:12]
             self._clients[sock] = {"name": name, "buffer": b"",
-                                   "subscribed": False}
+                                   "subscribed": False, "resume": resume}
+            # Register the cursor at the current seq: "away" starts now,
+            # so a resume replays what happened after this attach, not
+            # the whole ring.
+            self._advance(resume, self.ring.seq)
             sock.readyRead.connect(lambda s=sock: self._read(s))
             sock.disconnected.connect(lambda s=sock: self._drop(s))
             self._send(sock, {"kind": "hello", "protocol": PROTOCOL,
                               "pid": os.getpid(), "client": name,
+                              "resume": resume,
                               "clients": len(self._clients),
                               **self.session.state()})
 
@@ -113,11 +234,17 @@ class Server(QtCore.QObject):
         except Exception:
             pass
 
-    def _broadcast(self, msg):
+    def _on_message(self, msg):
+        payload = wire(msg, self.session.engine.registry)
+        if msg.kind in DURABLE:
+            entry = self.ring.append(payload)
+            self._broadcast(entry, durable=True)
+        else:
+            self._broadcast(payload, durable=False)
+
+    def _broadcast(self, payload, durable):
         if not self._clients:
             return
-        payload = {"kind": msg.kind, "text": msg.text, **msg.data}
-        payload.pop("object", None)          # not JSON serialisable
         line = (json.dumps(payload, default=str) + "\n").encode("utf-8")
         for sock, info in list(self._clients.items()):
             if info["subscribed"]:
@@ -125,7 +252,18 @@ class Server(QtCore.QObject):
                     sock.write(line)
                     sock.flush()
                 except Exception:
-                    pass
+                    continue
+                if durable:
+                    self._advance(info["resume"], payload["seq"])
+
+    # ------------------------------------------------------------- cursors
+
+    def _advance(self, resume, seq):
+        """A delivery moves this client's cursor; use bumps it to the top."""
+        self._cursors[resume] = seq
+        self._cursors.move_to_end(resume)
+        while len(self._cursors) > RESUME_IDS:
+            self._cursors.popitem(last=False)
 
     # ------------------------------------------------------------ dispatch
 
@@ -220,6 +358,35 @@ class Server(QtCore.QObject):
             return {"kind": "history",
                     "entries": session.history.tail(request.get("limit"))}
 
+        if op == "replay":
+            # A one-shot read of the ring. Never moves a cursor: only
+            # delivery to a live subscriber advances one.
+            try:
+                if "since" in request:
+                    entries = self.ring.since(int(request["since"]))
+                else:
+                    entries = self.ring.tail(int(request.get("last") or 40))
+            except (TypeError, ValueError):
+                return {"kind": "error",
+                        "text": "replay: since and last must be integers"}
+            return {"kind": "replay", "entries": entries,
+                    "seq": self.ring.seq}
+
+        if op == "resume":
+            # This connection adopts the presented id and its cursor. An
+            # id the table no longer holds gets the whole ring -- the best
+            # reconstruction there is -- and is told so.
+            presented = str(request.get("id") or "")
+            expired = presented not in self._cursors
+            entries = (list(self.ring.entries) if expired
+                       else self.ring.since(self._cursors[presented]))
+            token = presented or info["resume"]
+            info["resume"] = token
+            self._advance(token, self.ring.seq)
+            return {"kind": "replay", "entries": entries,
+                    "seq": self.ring.seq, "resume": token,
+                    "expired": expired}
+
         if op == "subscribe":
             info["subscribed"] = True
             return {"kind": "subscribed"}
@@ -274,6 +441,10 @@ class Server(QtCore.QObject):
                 collected.stop()
                 if session.engine.state == "idle":
                     floor.release(who)
+            # The reply below hands this client everything the line
+            # produced, so its cursor catches up -- a later resume must
+            # not replay what it watched itself run.
+            self._advance(info["resume"], self.ring.seq)
             return {"kind": "done", **collected.summary(),
                     **session.state()}
 
@@ -291,31 +462,7 @@ class _Collector:
     def _on(self, msg):
         if msg.kind == _bus.STATE:
             return          # where the session is, not what the line did
-        payload = {"kind": msg.kind, "text": msg.text}
-        role = msg.data.get("role")
-        if role:
-            payload["role"] = role
-        if msg.kind in (_bus.RESULT, _bus.LIVE, _bus.ECHO):
-            # Ship the spans, not just the text. A terminal then paints a
-            # command the way the dock paints it -- axis colours on a
-            # coordinate, the dimension on a number, italic where the unit
-            # was implied -- from the same computation rather than its own.
-            payload["spans"] = self._spans(msg.text)
-        if msg.kind == _bus.RESULT:
-            payload["replay"] = msg.data.get("replay")
-            payload["dry"] = bool(msg.data.get("dry"))
-        self.messages.append(payload)
-
-    def _spans(self, text):
-        if self.registry is None or not text:
-            return []
-        try:
-            from .highlight import command_spans
-            return [[start, length, role, bool(implicit)]
-                    for start, length, role, implicit
-                    in command_spans(self.registry, text)]
-        except Exception:
-            return []
+        self.messages.append(wire(msg, self.registry))
 
     def stop(self):
         self._stop()

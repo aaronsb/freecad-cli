@@ -12,11 +12,14 @@ socket, so a command is verified through the same door a person uses.
 
 The result is what running the example did:
 
-    ok         the example ran to completion, engine idle, no fault
+    ok         ran to completion, engine idle, and every object in the
+               active document is valid
+    invalid    ran to completion but left an invalid object -- FreeCAD
+               computed it and rejected the result (ADR-302, GH #51)
+    panel      a task panel is open -- the command is not positional and
+               belongs to the panel tier
     incomplete the command is still collecting -- the example did not drive
                it to the end, so the example needs fixing
-    panel      a task panel holds the floor -- the command is not positional
-               and belongs to the panel tier
     busy       the floor was held by someone else (EX_TEMPFAIL)
     broken     the example was rejected outright -- a fault, reason in `detail`
 
@@ -49,41 +52,70 @@ def running():
     return fccli("ls")[0] == 0
 
 
-def _state_field(name):
-    """One line of `state` by its leading label, the value after it."""
-    _, out, _ = fccli("state")
-    for line in out.splitlines():
-        if line.startswith(name):
-            parts = line.split(None, 1)
-            return parts[1].strip() if len(parts) > 1 else ""
-    return ""
+def _snapshot():
+    """The session's state, as the JSON the server sent.
+
+    The server's own facts, not a scrape of their human rendering
+    (ADR-302).
+    """
+    _, out, _ = fccli("--json", "state")
+    try:
+        return json.loads(out)
+    except ValueError:
+        return {}
 
 
-def classify(code, engine, floor):
+def classify(code, engine, panel, invalid):
     """The result, from the exec exit code and the state after it.
 
-    A clean positional command returns to `engine idle` with the floor free.
-    A command still `collecting` did not finish -- the example is short or
-    malformed. A task panel leaves the floor `held` with the engine idle.
+    ``panel`` is the server's word that a task panel is open. ``invalid``
+    is what the run left invalid. A 75 exit means the command never ran
+    at all -- the floor or a dialog belongs to someone else -- and an
+    open panel may be that very dialog, so busy outranks panel. A panel
+    outranks the engine reading: a panel driven from the command line
+    keeps the engine collecting, and that is the panel tier, not a short
+    example. `ok` requires a clean exit AND nothing left invalid -- a
+    command that computes an object FreeCAD rejects has not verified,
+    however cleanly it returned.
     """
-    if engine != "idle":
-        return "incomplete"
-    if "held" in floor:
-        return "panel"
     if code == 75:
         return "busy"
-    if code == 0:
-        return "ok"
-    return "broken"
+    if panel:
+        return "panel"
+    if engine != "idle":
+        return "incomplete"
+    if code != 0:
+        return "broken"
+    if invalid:
+        return "invalid"
+    return "ok"
+
+
+def _invalid(snap):
+    active = next((d for d in snap.get("documents") or []
+                   if d.get("active")), {})
+    return active.get("invalid") or []
 
 
 def verify_one(example):
-    """Run one example, classify what happened. Leaves the engine idle."""
+    """Run one example, classify what happened. Leaves the engine idle.
+
+    Invalidity is judged on the delta: what this run made invalid, not
+    what it found already broken. An invalid run is undone, so one bad
+    example cannot mark every example after it.
+    """
     fccli("cancel")                       # clear whatever the last one left
+    before = _invalid(_snapshot())
     code, _out, err = fccli("exec", example)
-    result = classify(code, _state_field("engine"), _state_field("floor"))
+    snap = _snapshot()
+    fresh = [n for n in _invalid(snap) if n not in before]
+    result = classify(code, snap.get("engine") or "",
+                      snap.get("panel"), fresh)
     if result in ("incomplete", "panel"):
         fccli("cancel")
+    if result == "invalid":
+        fccli("exec", "undo")
+        return result, ", ".join(fresh)
     return result, (err if result in ("incomplete", "broken") else "")
 
 
@@ -110,6 +142,12 @@ def main(argv=None):
             print(f"could not start FreeCAD: {err}", file=sys.stderr)
             return 3
         started = True
+
+    if "panel" not in _snapshot():
+        print("this FreeCAD predates ADR-302 and cannot report panel or "
+              "validity facts -- restart it with the current addon",
+              file=sys.stderr)
+        return 3
 
     ledger = {}
     if os.path.exists(LEDGER):

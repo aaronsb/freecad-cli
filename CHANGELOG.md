@@ -87,6 +87,18 @@
 
 ### Added
 
+- **The socket replays the session from a message ring.** The server keeps
+  the last 4096 durable messages, sequence-numbered: `fccli tail -n` reads
+  the recent scrollback without touching anything, `fccli attach --resume
+  ID` replays what happened while a client was away (the id prints on
+  exit), and what leaves the ring lands in `transcript.jsonl` under the
+  state directory. A RESULT now names the object it made -- `{name, label,
+  type, state}` -- instead of dropping it at the wire; the state reply says
+  whether a task panel is open and which objects in each document are
+  invalid, and `fccli state` prints both. The verify harness reads those
+  facts instead of scraping rendered text, and a command that computes an
+  object FreeCAD rejects is `invalid`, not `ok` -- the fillet that
+  vanished in the live demo is caught at every door. Protocol 2. ADR-302.
 - **The prompt shows where the session is.** `PartDesign Body › Sketch* [2]
   /plinth > `: the workbench, the active Body or Part and the object in
   edit, a `*` when the document is dirty, the selection count, the working
