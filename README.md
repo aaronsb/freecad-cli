@@ -9,10 +9,11 @@ option keyword — through the same door, in any order. Every value records its
 typed form as it lands, so a command driven half by mouse replays from
 history as text.
 
-Roughly 1250 commands: a dozen hand-written verbs that pick points in the
-viewport, ~200 generated from FreeCAD's type registry, ~40 families that
-gather a scattered group under one name, and every registered command as a
-launcher.
+1111 commands (FreeCAD 1.1.3): a dozen hand-written verbs that pick points
+in the viewport, ~210 generated from FreeCAD's type registry, 59 families
+that gather a scattered group under one name, and every registered command
+as a launcher. Each has a documentation file, seeded from the FreeCAD wiki,
+where its name, aliases, preconditions and grouping are tuned by hand.
 
 ## How it feels
 
@@ -179,10 +180,22 @@ and falls back to a precise conversion when it fails.
 ### The root
 
 `~/.local/share/fccli` is a directory the terminal navigates: `cd`, `ls`,
-`pwd`, `cat`, a working directory shown in the prompt and shared by both
-terminals. `lib/commands` is the command tree, `lib/addons/<name>` what
-each addon ships, `macros` FreeCAD's own macro directory, and the rest is
-yours. [ADR-601](docs/architecture/system/ADR-601-a-root-the-terminal-navigates.md).
+`pwd`, `cat`, a working directory shared by both terminals. `lib/commands`
+is the command tree, `lib/addons/<name>` what each addon ships, `macros`
+FreeCAD's own macro directory, and the rest is yours.
+
+A `.fccli` file is a script: YAML frontmatter declaring its arguments and a
+body of command lines with `$id` where each argument goes. One in `bin/` is
+a verb by file name; elsewhere `run plinth/tower 20` or `./tower 20` runs it
+with the arguments inline. A `.FCMacro` runs through FreeCAD's Python
+console. [ADR-601](docs/architecture/system/ADR-601-a-root-the-terminal-navigates.md).
+
+The prompt shows where the session is, the way a shell prompt shows the
+branch: `PartDesign Body › Sketch* [2] /plinth > ` — the workbench, the
+active Body and the object in edit, a `*` when the document is dirty, the
+selection count, the working directory, each left out when empty. A command
+FreeCAD cannot run here is refused before running, with the reason from its
+file. [ADR-300](docs/architecture/surface/ADR-300-the-prompt-shows-where-the-session-is.md).
 
 ### Shell builtins
 
@@ -196,7 +209,7 @@ These take their arguments inline instead:
 > alias b box                    unalias b       history   history clear
 > use sketcher                   commands part   use off
 > undo    redo    delete         quit    quit!
-> units imperialbuilding         zoom extents / selection / front / iso
+> units imperialbuilding         zoom extents / selection    view front / iso
 > screenshot ~/shots/plate.png   saves it, and prints the path
 ```
 
@@ -300,26 +313,25 @@ join.
 
 ### Patches
 
-A generated verb is functional and generic. A patch makes it feel like the
-tool it represents:
+Shipped tuning lives in the command tree (below). A Python patch remains for
+the one thing a data file cannot express: an addon **declaring a verb the
+factory cannot generate**, because its objects are `Part::FeaturePython`
+with a proxy that FreeCAD's type registry never sees.
 
 ```python
 PATCH = {
-    "key": "Part",
-    "types": {
-        "Part::Cylinder": {
-            "verb": "cylinder", "aliases": ["cyl"],
-            "steps": ["Radius", "Height"],   # order, and required
-            "options": ["Angle"],            # inline keyword
-            "hide": ["FirstAngle", "SecondAngle"],
-            "strict": True,
+    "key": "CurvedShapes",
+    "verbs": {
+        "curved_array": {
+            "doc": "Array a shape along hull curves.",
+            "steps": [{"id": "base", "kind": "selection", "prompt": "Base"}],
+            "emit": make_curved_array,   # a callable you supply
         },
     },
 }
 ```
 
-Patches are keyed by namespace — a type module (`Part`) or an addon identity
-(`CurvedShapes`) — and discovered from three roots, each overriding the last:
+Patches are discovered from three roots, each overriding the last:
 
 ```
 fccli/patches/*.py                     shipped here
@@ -328,11 +340,10 @@ fccli/patches/*.py                     shipped here
 ```
 
 An addon that drops an `fccli_patch.py` is picked up with no registration.
-Its commands already work through tier 0; the patch upgrades them. A patch
-can also **declare verbs outright**, which is what an addon whose objects are
-`Part::FeaturePython` needs — FreeCAD's type registry never sees those.
-`examples/curvedshapes_fccli_patch.py` is a worked example against a real
-installed addon.
+Its commands already work through tier 0 and gain a documentation file the
+first time the tree is generated; the patch is only for verbs the factory
+cannot make. `examples/curvedshapes_fccli_patch.py` is a worked example
+against a real installed addon.
 
 ### The command tree
 

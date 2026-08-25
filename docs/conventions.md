@@ -161,9 +161,9 @@ it back.
 
 | Rank | Meaning | Commands |
 |---|---|---|
-| `promoted` | in a default toolbar | 510 |
-| `menu` | reachable from a menu, no button | 399 |
-| `registry` | neither — internals, test hooks, context-menu-only | 215 |
+| `promoted` | in a default toolbar | 501 |
+| `menu` | reachable from a menu, no button | 396 |
+| `registry` | neither — internals, test hooks, context-menu-only | 214 |
 
 - **Rank orders; it never hides.** Every verb stays reachable by typing its
   name. Finding out the program does something you did not know it did is
