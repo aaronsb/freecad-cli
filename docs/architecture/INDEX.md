@@ -22,6 +22,13 @@ _What the verbs are — descriptor, harvest, factory tiers, families, patches, t
 |-----|-------|--------|
 | [ADR-100](./vocabulary/ADR-100-the-command-dictionary.md) | The command dictionary | Accepted |
 
+## Engine
+_How a command runs — steps and getters, task panels, picking, modals, transactions, key routing_
+
+| ADR | Title | Status |
+|-----|-------|--------|
+| [ADR-200](./engine/ADR-200-a-select-verb-sets-the-selection-commands-consume.md) | A select verb sets the selection commands consume | Proposed |
+
 ## Surface
 _How it is presented and reached — dock, prompt, colour, completion, message bus, socket, external shell, history_
 
