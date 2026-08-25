@@ -27,7 +27,7 @@ _How a command runs — steps and getters, task panels, picking, modals, transac
 
 | ADR | Title | Status |
 |-----|-------|--------|
-| [ADR-200](./engine/ADR-200-a-select-verb-sets-the-selection-commands-consume.md) | A select verb sets the selection commands consume | Proposed |
+| [ADR-200](./engine/ADR-200-a-select-verb-sets-the-selection-commands-consume.md) | A select verb sets the selection commands consume | Accepted |
 
 ## Surface
 _How it is presented and reached — dock, prompt, colour, completion, message bus, socket, external shell, history_
@@ -43,7 +43,7 @@ _How the project is built and checked — test tiers, review, release, reconcile
 | ADR | Title | Status |
 |-----|-------|--------|
 | [ADR-500](./practice/ADR-500-decisions-are-recorded-as-adrs.md) | Decisions are recorded as ADRs | Accepted |
-| [ADR-501](./practice/ADR-501-a-verification-ledger-for-the-command-set.md) | A verification ledger for the command set | Proposed |
+| [ADR-501](./practice/ADR-501-a-verification-ledger-for-the-command-set.md) | A verification ledger for the command set | Accepted |
 
 ## System
 _Cross-cutting — the layer model, the root the terminal navigates, anything spanning two or more domains_
