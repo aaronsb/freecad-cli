@@ -16,8 +16,9 @@ verb: null
 aliases: []
 requires: []
 panel: null
-family: null
-choice: null
+family: "view"
+choice: "back"
+also: [rear]
 rank: null
 type: null
 ---

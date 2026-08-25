@@ -129,51 +129,6 @@ def _emit_redo(v):
     return None
 
 
-ZOOM_TARGETS = {
-    "extents": ("Std_ViewFitAll", "everything in the document"),
-    "all": ("Std_ViewFitAll", "everything in the document"),
-    "selection": ("Std_ViewFitSelection", "just what is selected"),
-    "in": ("Std_ViewZoomIn", "closer"),
-    "out": ("Std_ViewZoomOut", "further away"),
-    "window": ("Std_ViewBoxZoom", "a box you drag in the viewport"),
-}
-
-VIEW_TARGETS = {
-    "front": "Std_ViewFront", "back": "Std_ViewRear", "rear": "Std_ViewRear",
-    "top": "Std_ViewTop", "bottom": "Std_ViewBottom",
-    "left": "Std_ViewLeft", "right": "Std_ViewRight",
-    "iso": "Std_ViewIsometric", "isometric": "Std_ViewIsometric",
-    "axonometric": "Std_ViewIsometric",
-}
-
-
-def _emit_fit(v):
-    """Zoom, with a target rather than only fit-all.
-
-    FreeCAD spreads these across Std_ViewFitAll, Std_ViewFitSelection,
-    Std_ViewZoomIn, Std_ViewZoomOut and Std_ViewBoxZoom -- five commands
-    with no shared name. One verb with a choice reads better and is
-    completable.
-    """
-    gui = _gui()
-    if gui is None:
-        raise RuntimeError("zoom needs the GUI")
-    target = (v.get("target") or "extents").lower()
-    if target in ZOOM_TARGETS:
-        command, _doc = ZOOM_TARGETS[target]
-        if target in ("extents", "all"):
-            gui.SendMsgToActiveView("ViewFit")
-        else:
-            gui.runCommand(command)
-        return None
-    if target in VIEW_TARGETS:
-        gui.runCommand(VIEW_TARGETS[target])
-        return None
-    raise RuntimeError(
-        f"zoom where? one of: {', '.join(sorted(ZOOM_TARGETS))}, "
-        f"{', '.join(sorted(set(VIEW_TARGETS)))}")
-
-
 def _emit_delete(v):
     gui = _gui()
     doc = App.ActiveDocument
@@ -237,15 +192,6 @@ REGISTRY.add(Verb(
     steps=[], emit=_emit_redo,
 ))
 
-REGISTRY.add(Verb(
-    name="zoom", transactional=False, aliases=["fit", "zf"],
-    gui_command="Std_ViewFitAll",
-    doc="Zoom the view: extents, selection, in, out, window, or a named view.",
-    steps=[Step("target", CHOICE, "Zoom to", optional=True,
-                default="extents",
-                choices=sorted(ZOOM_TARGETS) + sorted(set(VIEW_TARGETS)))],
-    emit=_emit_fit,
-))
 
 REGISTRY.add(Verb(
     name="delete", aliases=["del"], gui_command="Std_Delete",
