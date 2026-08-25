@@ -50,6 +50,10 @@ bvt:  ## Drive a real FreeCAD GUI end to end, unattended
 socket:  ## Drive a real FreeCAD from outside, over the socket
 	@python3 tools/run_socket_test.py
 
+.PHONY: verify
+verify:  ## Drive each command's example, stamp fccli/verified.json (ADR-501)
+	@python3 tools/verify.py
+
 .PHONY: check
 check: lint version-check test  ## lint + version-check + test
 

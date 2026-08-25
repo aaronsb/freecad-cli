@@ -25,6 +25,7 @@ GENERATED = ("freecad", "label", "tooltip", "toolbar", "menu", "shortcut",
 AUTHORED = {
     "verb": None,
     "summary": None,    # the one-liner for a launcher verb, over FreeCAD's tooltip
+    "example": None,    # the canonical invocation: shown in man, driven by verify (ADR-501)
     "aliases": [],
     "requires": [],
     "panel": None,
