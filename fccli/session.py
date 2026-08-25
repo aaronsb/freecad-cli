@@ -308,10 +308,20 @@ class Session:
                 "label": doc.Label,
                 "file": doc.FileName or None,
                 "objects": len(doc.Objects),
+                "invalid": [o.Name for o in doc.Objects
+                            if "Invalid" in (getattr(o, "State", []) or [])],
                 "dirty": is_dirty(doc),
                 "active": active is not None and doc.Name == active.Name,
             })
         return out
+
+    def _panel_open(self):
+        """Whether a task panel is up, from the GUI itself."""
+        try:
+            import FreeCADGui as Gui
+            return bool(Gui.Control.activeDialog())
+        except Exception:
+            return False
 
     def state(self):
         import FreeCAD as App
@@ -320,6 +330,7 @@ class Session:
         doc = App.ActiveDocument
         return {
             "document": doc.Name if doc is not None else None,
+            "panel": self._panel_open(),
             "documents": self.documents(),
             "objects": len(doc.Objects) if doc is not None else 0,
             "engine": engine.state,

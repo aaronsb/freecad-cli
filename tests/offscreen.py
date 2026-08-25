@@ -1931,16 +1931,22 @@ def _run():
     check("  an authored example compiles into the dictionary",
           _dict["commands"]["Part_Box"].get("example"), "box 0,0,0 40 30 20")
     import verify as _verify
-    check("  a clean positional run is ok",
-          _verify.classify(0, "idle", "free"), "ok")
+    check("  a clean positional run with a clean document is ok",
+          _verify.classify(0, "idle", False, []), "ok")
+    check("    a clean run that left an invalid object is invalid",
+          _verify.classify(0, "idle", False, ["Fillet"]), "invalid")
+    check("    an open task panel is panel, even mid-collection",
+          (_verify.classify(0, "idle", True, []),
+           _verify.classify(1, "collecting", True, [])),
+          ("panel", "panel"))
     check("    a command still collecting is incomplete",
-          _verify.classify(1, "collecting", "free (busy)"), "incomplete")
-    check("    a held floor is a panel",
-          _verify.classify(0, "idle", "held"), "panel")
+          _verify.classify(1, "collecting", False, []), "incomplete")
     check("    a non-zero exit with the engine idle is broken",
-          _verify.classify(1, "idle", "free"), "broken")
+          _verify.classify(1, "idle", False, []), "broken")
+    check("    a broken example does not read as invalid",
+          _verify.classify(1, "idle", False, ["Fillet"]), "broken")
     check("    a held-elsewhere floor code is busy",
-          _verify.classify(75, "idle", "free"), "busy")
+          _verify.classify(75, "idle", False, []), "busy")
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the
@@ -2692,6 +2698,74 @@ def _run():
     check("  a bad _types.yaml key is a compile error",
           _yerr is not None and "stepz" in _yerr, True)
     _sh7.rmtree(_yt, ignore_errors=True)
+
+    print("\n5ak. the socket retains the session as a message ring (ADR-302)")
+    import json as _json
+    from fccli import server as _srv
+    from fccli.bus import Message as _Msg
+
+    class _FakeObj:
+        Name, Label, TypeId = "Fillet", "Fillet", "Part::Fillet"
+        State = ["Touched", "Invalid", "Up-to-date"]
+
+    _w = _srv.wire(_Msg(kind=RESULT, text="fillet 3",
+                        data={"replay": "fillet 3", "object": _FakeObj()}))
+    check("  RESULT carries what it made",
+          (_w["object"]["name"], _w["object"]["type"]),
+          ("Fillet", "Part::Fillet"))
+    check("    with Up-to-date filtered from its state",
+          _w["object"]["state"], ["Touched", "Invalid"])
+    check("    and the whole payload crosses a wire",
+          _json.loads(_json.dumps(_w))["object"]["state"],
+          ["Touched", "Invalid"])
+    check("    a verb that made nothing says so",
+          _srv.wire(_Msg(kind=RESULT, text="x",
+                         data={"object": None}))["object"], None)
+
+    _rdir = tempfile.mkdtemp(prefix="fccli-ring-")
+    _rpath = os.path.join(_rdir, "transcript.jsonl")
+    _ring = _srv.Ring(limit=3, transcript=_rpath)
+    for _i in range(5):
+        _ring.append({"kind": "info", "text": f"line {_i}"})
+    check("  the ring keeps the last N, seq monotonic",
+          [e["seq"] for e in _ring.entries], [3, 4, 5])
+    check("    what leaves the ring lands in the transcript",
+          [_json.loads(_l)["seq"] for _l in open(_rpath)], [1, 2])
+    check("    tail and since read without consuming",
+          ([e["seq"] for e in _ring.tail(2)],
+           [e["seq"] for e in _ring.since(4)],
+           [e["seq"] for e in _ring.entries]),
+          ([4, 5], [5], [3, 4, 5]))
+
+    class _StubFloor:
+        holder = None
+
+    class _StubSession:
+        floor = _StubFloor()
+
+    _sv = _srv.Server(None)
+    _sv.session = _StubSession()
+    _sv.ring = _ring
+    _sinfo = {"name": "client:1", "resume": "tok-a",
+              "subscribed": False, "buffer": b""}
+    _rep = _sv._dispatch(_sinfo, {"op": "replay", "last": 2})
+    check("  op=replay reads the tail and moves no cursor",
+          ([e["seq"] for e in _rep["entries"]], len(_sv._cursors)),
+          ([4, 5], 0))
+    _res = _sv._dispatch(_sinfo, {"op": "resume", "id": "tok-a"})
+    check("    an unknown resume id gets everything, and says expired",
+          (_res["expired"], [e["seq"] for e in _res["entries"]]),
+          (True, [3, 4, 5]))
+    _ring.append({"kind": "info", "text": "later"})
+    _res2 = _sv._dispatch(_sinfo, {"op": "resume", "id": "tok-a"})
+    check("    a known id replays only what it missed",
+          (_res2["expired"], [e["seq"] for e in _res2["entries"]]),
+          (False, [6]))
+    for _i in range(_srv.RESUME_IDS + 5):
+        _sv._advance(f"tok-{_i}", _i)
+    check("    the cursor table stays capped, oldest out",
+          (len(_sv._cursors), "tok-0" in _sv._cursors),
+          (_srv.RESUME_IDS, False))
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

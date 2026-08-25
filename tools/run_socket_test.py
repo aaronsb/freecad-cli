@@ -207,6 +207,58 @@ def main():
         check("a missing name faults", code, 1)
         truthy("  and names it", "Nonesuch" in err)
 
+        print("\n4e. the ring replays the session, results carry facts "
+              "(ADR-302)")
+        code, out, _ = fccli("--json", "exec", "box 5,5,5 10 10 10")
+        reply = json.loads(out)
+        made = [m for m in reply.get("messages", [])
+                if m.get("kind") == "result"]
+        boxname = (made[-1].get("object") or {}).get("name") if made else None
+        truthy("a result names the object it made", boxname)
+        check("  and a sound object's state is clean",
+              (made[-1].get("object") or {}).get("state"), [])
+        code, out, _ = fccli("tail", "-n", "10")
+        check("tail exits clean", code, 0)
+        truthy("  and replays the box", "box 5,5,5" in out)
+        code, out, _ = fccli("--json", "tail", "-n", "200")
+        entries = json.loads(out)
+        truthy("  entries carry seq and kind",
+               entries and all("seq" in e and "kind" in e for e in entries))
+
+        # The case that motivated GH #51: a fillet whose radius exceeds
+        # what the edges can take computes to Touched, Invalid and hides
+        # its base, while the command returns clean. The socket must say
+        # so at every door.
+        # An edge, not the whole box: the fillet panel fills its checklist
+        # from the selection, and a bare object checks nothing.
+        fccli("exec", f"select {boxname}.Edge1")
+        fccli("exec", "part_fillet")
+        code, out, _ = fccli("state")
+        truthy("a task panel announces itself in state", "panel     open" in out)
+        code, out, _ = fccli("--json", "state")
+        truthy("  and in the JSON reply", json.loads(out).get("panel"))
+        fccli("exec", "filletstartradius=9999")
+        fccli("exec", "done")
+        code, out, _ = fccli("--json", "state")
+        snap = json.loads(out)
+        active = next((d for d in snap.get("documents", [])
+                       if d.get("active")), {})
+        truthy("an impossible fillet shows up as an invalid object",
+               active.get("invalid"))
+        code, out, _ = fccli("state")
+        truthy("  and the friendly rendering says so", "invalid" in out)
+        sys.path.insert(0, os.path.join(ROOT, "tools"))
+        import verify as _verify
+        check("the harness classifies that run invalid, not ok",
+              _verify.classify(0, "idle", False, active.get("invalid") or []),
+              "invalid")
+        fccli("exec", "undo")
+        fccli("exec", "select")
+        code, out, _ = fccli("--json", "state")
+        active = next((d for d in json.loads(out).get("documents", [])
+                       if d.get("active")), {})
+        check("undo clears the invalid object", active.get("invalid"), [])
+
         print("\n4c. a session part-way through a command can be cleared")
         # Every line goes to the step being collected, so `exec quit!` was
         # answered with "still wants The radius" and an instance mid-command

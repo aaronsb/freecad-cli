@@ -48,7 +48,7 @@ EX_TEMPFAIL = 75
 # interactive start should stay on whatever the desktop is running.
 HEADLESS_ENV = {"QT_QPA_PLATFORM": "xcb"}
 
-PROTOCOL = 1
+PROTOCOL = 2
 
 
 def socket_dir():
@@ -173,9 +173,11 @@ def show_document(doc, indent="  "):
     count = doc.get("objects")
     count = f"{count:>4} objects" if isinstance(count, int) else " " * 12
     dirty = " [unsaved]" if doc.get("dirty") else ""
+    broken = doc.get("invalid") or []
+    broken = f" [{len(broken)} invalid: {', '.join(broken[:4])}]" if broken else ""
     where = doc.get("file") or "(never saved)"
     print(f"{indent}{mark} {doc.get('label') or doc.get('name'):<20}"
-          f"{count}  {where}{dirty}")
+          f"{count}  {where}{dirty}{broken}")
 
 
 def warn_protocol(client):
@@ -239,6 +241,33 @@ def render(reply, args):
                     "warn", sys.stderr), file=sys.stderr)
         return EX_REJECTED
     return EX_OK if reply.get("ok", True) else EX_REJECTED
+
+
+def render_entries(entries):
+    """Print ring entries the way the live session printed them.
+
+    A CLEAR entry is a cut: nothing before the latest one is shown, the
+    same as the dock's scrollback after a `clear`.
+    """
+    cut = 0
+    for i, entry in enumerate(entries):
+        if entry.get("kind") == "clear":
+            cut = i + 1
+    for entry in entries[cut:]:
+        kind = entry.get("kind")
+        text = entry.get("text", "")
+        if not text:
+            continue
+        role = entry.get("role", kind)
+        prefix = {"error": "error: ", "result": "= "}.get(kind, "")
+        body = paint_spans(text, entry.get("spans"), role, sys.stdout)
+        print(paint(prefix, role, sys.stdout) + body)
+
+
+def _print_resume(token):
+    if token:
+        print(paint(f"resume this scrollback: fccli attach --resume {token}",
+                    "quiet", sys.stdout))
 
 
 # ---------------------------------------------------------------- commands
@@ -311,6 +340,22 @@ def cmd_history(client, args):
     return EX_OK
 
 
+def cmd_tail(client, args):
+    """The session's recent output, without touching anything."""
+    warn_protocol(client)
+    reply = client.ask(op="replay", last=args.limit)
+    if reply.get("kind") != "replay":
+        print("fccli: this session predates replay -- restart FreeCAD",
+              file=sys.stderr)
+        return EX_NOINSTANCE
+    entries = reply.get("entries", [])
+    if args.json:
+        print(json.dumps(entries))
+        return EX_OK
+    render_entries(entries)
+    return EX_OK
+
+
 def find_freecad():
     for name in ("freecad", "FreeCAD"):
         found = shutil.which(name)
@@ -340,6 +385,18 @@ def cmd_repl(client, args):
     print(paint("  detach (or Ctrl+D) leaves this session running.  "
                 "quit! shuts FreeCAD down.  Ctrl+C cancels a command.",
                 "quiet", sys.stdout))
+    token = getattr(args, "resume", None) or client.hello.get("resume")
+    if getattr(args, "resume", None):
+        reply = client.ask(op="resume", id=args.resume)
+        if reply.get("kind") == "replay":
+            if reply.get("expired"):
+                print(paint("that resume id has expired; "
+                            "showing everything retained", "warn", sys.stdout))
+            render_entries(reply.get("entries", []))
+            token = reply.get("resume") or token
+        else:
+            print(paint("this session predates resume -- restart FreeCAD",
+                        "warn", sys.stdout))
     state = client.hello
 
     while True:
@@ -354,6 +411,7 @@ def cmd_repl(client, args):
             line = input(prompt)
         except EOFError:
             print()
+            _print_resume(token)
             return EX_OK
         except KeyboardInterrupt:
             print()
@@ -366,8 +424,10 @@ def cmd_repl(client, args):
         if line.strip() in ("detach", "\\d"):
             print(f"detached. FreeCAD {pid} is still running; "
                   "fccli attach to come back.")
+            _print_resume(token)
             return EX_OK
         if line.strip() in ("exit", "\\q"):
+            _print_resume(token)
             return EX_OK
         if not line.strip():
             state = client.ask(op="state")
@@ -613,6 +673,8 @@ def cmd_state(client, args):
     floor = reply.get("floor") or {}
     print(f"floor     {floor.get('holder') or 'free'}"
           f"{' (busy)' if floor.get('busy') else ''}")
+    if reply.get("panel"):
+        print("panel     open")
     for doc in documents_of(reply):
         show_document(doc)
     return EX_OK
@@ -720,9 +782,15 @@ def main():
                        dest="interactive",
                        help="attach to it as soon as it is up")
 
-    sub.add_parser("attach", help="an interactive session (aliases: repl, i)")
-    sub.add_parser("repl", help=argparse.SUPPRESS)
-    sub.add_parser("i", help=argparse.SUPPRESS)
+    att = sub.add_parser("attach",
+                         help="an interactive session (aliases: repl, i)")
+    att.add_argument("--resume", metavar="ID",
+                     help="replay the scrollback of a previous connection")
+    for hidden in ("repl", "i"):
+        alias = sub.add_parser(hidden, help=argparse.SUPPRESS)
+        alias.add_argument("--resume", metavar="ID")
+    tailp = sub.add_parser("tail", help="the session's recent output")
+    tailp.add_argument("-n", "--limit", type=int, default=40)
     sub.add_parser("watch", help="live view of what the session is doing")
     sub.add_parser("ls", help="running instances and what they have open")
     sub.add_parser("docs", help="documents open in one instance")
@@ -788,7 +856,7 @@ def main():
     try:
         handler = {"exec": cmd_exec, "check": cmd_check, "docs": cmd_docs,
                    "history": cmd_history, "state": cmd_state,
-                   "cancel": cmd_cancel,
+                   "cancel": cmd_cancel, "tail": cmd_tail,
                    "attach": cmd_repl, "repl": cmd_repl,
                    "i": cmd_repl, "watch": cmd_watch}.get(args.op)
         if handler is None:

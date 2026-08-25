@@ -12,11 +12,14 @@ socket, so a command is verified through the same door a person uses.
 
 The result is what running the example did:
 
-    ok         the example ran to completion, engine idle, no fault
+    ok         ran to completion, engine idle, and every object in the
+               active document is valid
+    invalid    ran to completion but left an invalid object -- FreeCAD
+               computed it and rejected the result (ADR-302, GH #51)
+    panel      a task panel is open -- the command is not positional and
+               belongs to the panel tier
     incomplete the command is still collecting -- the example did not drive
                it to the end, so the example needs fixing
-    panel      a task panel holds the floor -- the command is not positional
-               and belongs to the panel tier
     busy       the floor was held by someone else (EX_TEMPFAIL)
     broken     the example was rejected outright -- a fault, reason in `detail`
 
@@ -49,41 +52,57 @@ def running():
     return fccli("ls")[0] == 0
 
 
-def _state_field(name):
-    """One line of `state` by its leading label, the value after it."""
-    _, out, _ = fccli("state")
-    for line in out.splitlines():
-        if line.startswith(name):
-            parts = line.split(None, 1)
-            return parts[1].strip() if len(parts) > 1 else ""
-    return ""
+def _snapshot():
+    """The session's state, as the JSON the server sent.
+
+    The server's own facts, not a scrape of their human rendering
+    (ADR-302).
+    """
+    _, out, _ = fccli("--json", "state")
+    try:
+        return json.loads(out)
+    except ValueError:
+        return {}
 
 
-def classify(code, engine, floor):
+def classify(code, engine, panel, invalid):
     """The result, from the exec exit code and the state after it.
 
-    A clean positional command returns to `engine idle` with the floor free.
-    A command still `collecting` did not finish -- the example is short or
-    malformed. A task panel leaves the floor `held` with the engine idle.
+    ``panel`` is the server's word that a task panel is open. ``invalid``
+    is the active document's invalid objects. A panel outranks the engine
+    reading: a panel being driven from the command line keeps the engine
+    collecting, and that is the panel tier, not a short example. `ok`
+    requires a clean exit AND a document with nothing invalid in it -- a
+    command that computes an object FreeCAD rejects has not verified,
+    however cleanly it returned.
     """
+    if panel:
+        return "panel"
     if engine != "idle":
         return "incomplete"
-    if "held" in floor:
-        return "panel"
     if code == 75:
         return "busy"
-    if code == 0:
-        return "ok"
-    return "broken"
+    if code != 0:
+        return "broken"
+    if invalid:
+        return "invalid"
+    return "ok"
 
 
 def verify_one(example):
     """Run one example, classify what happened. Leaves the engine idle."""
     fccli("cancel")                       # clear whatever the last one left
     code, _out, err = fccli("exec", example)
-    result = classify(code, _state_field("engine"), _state_field("floor"))
+    snap = _snapshot()
+    active = next((d for d in snap.get("documents") or []
+                   if d.get("active")), {})
+    invalid = active.get("invalid") or []
+    result = classify(code, snap.get("engine") or "",
+                      snap.get("panel"), invalid)
     if result in ("incomplete", "panel"):
         fccli("cancel")
+    if result == "invalid":
+        return result, ", ".join(invalid)
     return result, (err if result in ("incomplete", "broken") else "")
 
 
