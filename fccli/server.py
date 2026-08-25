@@ -134,7 +134,7 @@ class Ring:
             from . import paths
             if paths.ensure(self.transcript):
                 with open(self.transcript, "a", encoding="utf-8") as fh:
-                    fh.write(json.dumps(entry) + "\n")
+                    fh.write(json.dumps(entry, default=str) + "\n")
         except Exception:
             pass                        # history must never break a command
 
@@ -209,6 +209,10 @@ class Server(QtCore.QObject):
             resume = uuid.uuid4().hex[:12]
             self._clients[sock] = {"name": name, "buffer": b"",
                                    "subscribed": False, "resume": resume}
+            # Register the cursor at the current seq: "away" starts now,
+            # so a resume replays what happened after this attach, not
+            # the whole ring.
+            self._advance(resume, self.ring.seq)
             sock.readyRead.connect(lambda s=sock: self._read(s))
             sock.disconnected.connect(lambda s=sock: self._drop(s))
             self._send(sock, {"kind": "hello", "protocol": PROTOCOL,
@@ -357,10 +361,14 @@ class Server(QtCore.QObject):
         if op == "replay":
             # A one-shot read of the ring. Never moves a cursor: only
             # delivery to a live subscriber advances one.
-            if "since" in request:
-                entries = self.ring.since(int(request["since"]))
-            else:
-                entries = self.ring.tail(int(request.get("last") or 40))
+            try:
+                if "since" in request:
+                    entries = self.ring.since(int(request["since"]))
+                else:
+                    entries = self.ring.tail(int(request.get("last") or 40))
+            except (TypeError, ValueError):
+                return {"kind": "error",
+                        "text": "replay: since and last must be integers"}
             return {"kind": "replay", "entries": entries,
                     "seq": self.ring.seq}
 
@@ -433,6 +441,10 @@ class Server(QtCore.QObject):
                 collected.stop()
                 if session.engine.state == "idle":
                     floor.release(who)
+            # The reply below hands this client everything the line
+            # produced, so its cursor catches up -- a later resume must
+            # not replay what it watched itself run.
+            self._advance(info["resume"], self.ring.seq)
             return {"kind": "done", **collected.summary(),
                     **session.state()}
 

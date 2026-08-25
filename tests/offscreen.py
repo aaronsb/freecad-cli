@@ -1947,6 +1947,8 @@ def _run():
           _verify.classify(1, "idle", False, ["Fillet"]), "broken")
     check("    a held-elsewhere floor code is busy",
           _verify.classify(75, "idle", False, []), "busy")
+    check("    busy outranks a panel someone else left open",
+          _verify.classify(75, "idle", True, []), "busy")
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the

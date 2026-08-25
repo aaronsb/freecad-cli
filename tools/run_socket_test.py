@@ -252,12 +252,39 @@ def main():
         check("the harness classifies that run invalid, not ok",
               _verify.classify(0, "idle", False, active.get("invalid") or []),
               "invalid")
+        # An invalid object someone ELSE left must not be charged to the
+        # next example: the harness classifies what a run changed, not
+        # what it found.
+        res, _det = _verify.verify_one("box 20,20,20 2 2 2")
+        check("a pre-existing invalid object is not charged to the next "
+              "example", res, "ok")
+        fccli("exec", "undo")           # the harness's box
         fccli("exec", "undo")
         fccli("exec", "select")
         code, out, _ = fccli("--json", "state")
         active = next((d for d in json.loads(out).get("documents", [])
                        if d.get("active")), {})
         check("undo clears the invalid object", active.get("invalid"), [])
+
+        print("\n4f. resume replays only what a client missed (ADR-302)")
+        import re as _re
+        code, out, _ = fccli("attach", input="detach\n")
+        m = _re.search(r"--resume (\w+)", out)
+        truthy("attach prints a resume id", m)
+        tok = m.group(1) if m else ""
+        fccli("exec", "box 21,21,21 3 3 3")
+        code, out, _ = fccli("attach", "--resume", tok, input="detach\n")
+        truthy("a known id is not told expired", "expired" not in out)
+        truthy("  and it replays what happened while away",
+               "box 21,21,21" in out)
+        code, out, _ = fccli("attach", input="box 22,22,22 3 3 3\ndetach\n")
+        tok2 = _re.search(r"--resume (\w+)", out).group(1)
+        code, out, _ = fccli("attach", "--resume", tok2, input="detach\n")
+        truthy("what a client watched itself run does not replay",
+               "box 22,22,22" not in out)
+        fccli("exec", "undo")
+        fccli("exec", "undo")
+        fccli("exec", "undo")
 
         print("\n4c. a session part-way through a command can be cleared")
         # Every line goes to the step being collected, so `exec quit!` was

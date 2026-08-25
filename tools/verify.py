@@ -69,19 +69,21 @@ def classify(code, engine, panel, invalid):
     """The result, from the exec exit code and the state after it.
 
     ``panel`` is the server's word that a task panel is open. ``invalid``
-    is the active document's invalid objects. A panel outranks the engine
-    reading: a panel being driven from the command line keeps the engine
-    collecting, and that is the panel tier, not a short example. `ok`
-    requires a clean exit AND a document with nothing invalid in it -- a
+    is what the run left invalid. A 75 exit means the command never ran
+    at all -- the floor or a dialog belongs to someone else -- and an
+    open panel may be that very dialog, so busy outranks panel. A panel
+    outranks the engine reading: a panel driven from the command line
+    keeps the engine collecting, and that is the panel tier, not a short
+    example. `ok` requires a clean exit AND nothing left invalid -- a
     command that computes an object FreeCAD rejects has not verified,
     however cleanly it returned.
     """
+    if code == 75:
+        return "busy"
     if panel:
         return "panel"
     if engine != "idle":
         return "incomplete"
-    if code == 75:
-        return "busy"
     if code != 0:
         return "broken"
     if invalid:
@@ -89,20 +91,31 @@ def classify(code, engine, panel, invalid):
     return "ok"
 
 
-def verify_one(example):
-    """Run one example, classify what happened. Leaves the engine idle."""
-    fccli("cancel")                       # clear whatever the last one left
-    code, _out, err = fccli("exec", example)
-    snap = _snapshot()
+def _invalid(snap):
     active = next((d for d in snap.get("documents") or []
                    if d.get("active")), {})
-    invalid = active.get("invalid") or []
+    return active.get("invalid") or []
+
+
+def verify_one(example):
+    """Run one example, classify what happened. Leaves the engine idle.
+
+    Invalidity is judged on the delta: what this run made invalid, not
+    what it found already broken. An invalid run is undone, so one bad
+    example cannot mark every example after it.
+    """
+    fccli("cancel")                       # clear whatever the last one left
+    before = _invalid(_snapshot())
+    code, _out, err = fccli("exec", example)
+    snap = _snapshot()
+    fresh = [n for n in _invalid(snap) if n not in before]
     result = classify(code, snap.get("engine") or "",
-                      snap.get("panel"), invalid)
+                      snap.get("panel"), fresh)
     if result in ("incomplete", "panel"):
         fccli("cancel")
     if result == "invalid":
-        return result, ", ".join(invalid)
+        fccli("exec", "undo")
+        return result, ", ".join(fresh)
     return result, (err if result in ("incomplete", "broken") else "")
 
 
@@ -129,6 +142,12 @@ def main(argv=None):
             print(f"could not start FreeCAD: {err}", file=sys.stderr)
             return 3
         started = True
+
+    if "panel" not in _snapshot():
+        print("this FreeCAD predates ADR-302 and cannot report panel or "
+              "validity facts -- restart it with the current addon",
+              file=sys.stderr)
+        return 3
 
     ledger = {}
     if os.path.exists(LEDGER):
