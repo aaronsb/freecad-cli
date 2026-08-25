@@ -1893,7 +1893,7 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    check("  and register_all counts the authored files", _wc.get("authored"), 15)
+    check("  and register_all counts the authored files", _wc.get("authored"), 17)
     # #19: every descriptor command is some verb's gui_command. Nine were
     # not, because a typed verb added over their launcher; _make_room
     # qualifies the launcher instead.
@@ -1924,6 +1924,21 @@ def _run():
           _pf.doc, _dict["commands"]["Part_Fuse"]["summary"])
     check("    and it is not the tooltip",
           _pf.doc == _cmds["Part_Fuse"]["tooltip"], False)
+    # ADR-501: an authored example reaches the dictionary, and the verify
+    # harness reads the state after a run to say what happened.
+    check("  an authored example compiles into the dictionary",
+          _dict["commands"]["Part_Box"].get("example"), "box 0,0,0 40 30 20")
+    import verify as _verify
+    check("  a clean positional run is ok",
+          _verify.classify(0, "idle", "free"), "ok")
+    check("    a command still collecting is incomplete",
+          _verify.classify(1, "collecting", "free (busy)"), "incomplete")
+    check("    a held floor is a panel",
+          _verify.classify(0, "idle", "held"), "panel")
+    check("    a non-zero exit with the engine idle is broken",
+          _verify.classify(1, "idle", "free"), "broken")
+    check("    a held-elsewhere floor code is busy",
+          _verify.classify(75, "idle", "free"), "busy")
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the

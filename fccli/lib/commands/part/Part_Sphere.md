@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "fee20a18adab"
 # authored from here down; the tool never rewrites these
 verb: null
+example: sphere 15
 aliases: []
 requires: []
 panel: null

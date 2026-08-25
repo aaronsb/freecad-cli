@@ -962,6 +962,7 @@
   },
   "Draft_Line": {
    "doc": "The Draft Line command creates a straight line.\n\nA Draft Line is in fact a Draft Wire with only two points.\n\n## See also\n\n- Draft_Wire",
+   "example": "line 0,0,0 50,0,0",
    "file": "draft/Draft_Line.md"
   },
   "Draft_Mirror": {
@@ -998,6 +999,7 @@
   },
   "Draft_Point": {
    "doc": "The Draft Point command creates a simple point. Draft points can be useful as a reference for placing lines, wires or other objects.",
+   "example": "point 10,10,0",
    "file": "draft/Draft_Point.md"
   },
   "Draft_PointArray": {
@@ -2000,6 +2002,7 @@
   },
   "Part_Box": {
    "doc": "The Part Box command creates a parametric box solid, a rectangular cuboid. In the coordinate system defined by its Placement property, the bottom face of the box lies on the XY plane with its front left corner at the origin, and its front edge parallel to the X axis.\n\n## See also\n\n- Part_Primitives",
+   "example": "box 0,0,0 40 30 20",
    "file": "part/Part_Box.md",
    "type": {
     "aliases": [
@@ -2065,6 +2068,7 @@
   },
   "Part_Cone": {
    "doc": "The Part Cone command creates a parametric cone solid. In the coordinate system defined by its Placement property, the bottom face of the cone lies on the XY plane with its center at the origin.\n\nThe default Part Cone is truncated. It can be turned into a full, untruncated, cone by changing its Radius1 or Radius2 property to zero. It can be turned into a segment of a cone by changing its Angle property.\n\n## See also\n\n- Part_Primitives",
+   "example": "cone 20 10 40",
    "file": "part/Part_Cone.md",
    "type": {
     "doc": "Create a truncated cone from a base radius, a top radius, and a height.",
@@ -2099,6 +2103,7 @@
   },
   "Part_Cylinder": {
    "doc": "The Part Cylinder command creates a parametric cylinder solid. It is the result of extruding a circular arc along a straight path. In the coordinate system defined by its Placement property, the bottom face of the cylinder lies on the XY plane with its center at the origin.\n\nA Part Cylinder can be turned into a segment of a cylinder by changing its Angle property.\n\n## See also\n\n- Part_Primitives",
+   "example": "cylinder 12 40",
    "file": "part/Part_Cylinder.md",
    "type": {
     "aliases": [
@@ -2299,6 +2304,7 @@
   },
   "Part_Sphere": {
    "doc": "The Part Sphere command creates a parametric sphere solid. It is the result of revolving a circular arc profile around an axis. In the coordinate system defined by its Placement property, the center of the sphere is positioned at the origin, and its axis of revolution is the Z axis.\n\nA Part Sphere can be truncated at the top and/or bottom by changing its Angle1 and/or Angle2 properties. It can be turned into a segment of a sphere by changing its Angle3 property.\n\n## See also\n\n- Part_Primitives",
+   "example": "sphere 15",
    "file": "part/Part_Sphere.md",
    "type": {
     "aliases": [
@@ -2331,6 +2337,7 @@
   },
   "Part_Torus": {
    "doc": "The Part Torus command creates a parametric torus solid, a doughnut shape. It is the result of sweeping a circular profile around a circular path. In the coordinate system defined by its Placement property, the circular path of the torus lies on the XY plane with its center at the origin.\n\nA Part Torus can be turned into a segment of a torus by changing its Angle3 property. By changing its Angle1 and/or Angle2 properties the swept profile can become a segment of a circle.\n\n## See also\n\n- Part_Primitives",
+   "example": "torus 30 8",
    "file": "part/Part_Torus.md",
    "type": {
     "doc": "Create a torus from a path radius and a tube radius.",
