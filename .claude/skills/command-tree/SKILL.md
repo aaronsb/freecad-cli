@@ -49,7 +49,7 @@ belongs in an authored field or is a harvest fix.
 | `panel` | `pick` on a panel whose real input is a viewport pick |
 | `family` / `choice` / `also` | fold a spread-apart group into one verb with a choice; `also` gives one command an alternate spelling |
 | `rank` | `registry` demotes a promoted-but-useless command |
-| `type` | `{of: <Type>, steps, options, hide, point, prompts, strict, aliases, doc}` — tunes the tier-1 verb built from `of` |
+| `type` | `{of: <Type>, verb, aliases, doc, steps, options, hide, point, prompts, strict, skip}` — tunes the tier-1 verb built from `of` |
 
 A **curated family** (its own aliases and default, like `zoom`) is declared
 in `<workbench>/_families.yaml` under `verbs:`; the members carry
@@ -69,13 +69,15 @@ is tuned in `<workbench>/_types.yaml`, keyed by type.
 A lint error names the file, the field and the rule. Rule 2 firing means a
 hand edit landed in the generated block; move it to an authored field.
 
-## Adding an entry earns its place
+## An entry earns its place
 
-The lint refuses an **identity** entry — a `verb` equal to what the factory
-already produces, a `doc` equal to the tooltip. If a harvest fix would make
-your entry redundant, fix the harvest instead. The 148 "unlabeled" commands
-were a harvest bug, not a case for 148 hand-written entries. Ask FreeCAD
-properly first.
+Every command has a file; that is not the same as every command needing an
+authored field. An authored field that only restates the harvest — a `verb`
+equal to the slugged label, a `doc` equal to the tooltip — is noise. If a
+harvest fix would make your entry redundant, fix the harvest instead. The
+148 "unlabeled" commands were a harvest bug, not a case for 148 hand-written
+entries. Ask FreeCAD properly first. (This is discipline, not a lint rule —
+the lint checks shape and consistency, not whether an entry adds anything.)
 
 ## Reconciling a new FreeCAD
 

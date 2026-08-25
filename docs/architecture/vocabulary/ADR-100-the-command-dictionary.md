@@ -162,7 +162,8 @@ selections.
    authored field or in `etc/`.
 3. `requires` values come from the closed vocabulary; `panel` is `pick`
    or null; `rank` is `registry` or null; `family` is a name or `false`;
-   `type` keys are the five named. `generated.wiki` is not checked
+   a `type` block's keys are the named set and it needs an `of` that names
+   a real type. `generated.wiki` is not checked
    against the clone: 195 of 1106 name no page (composite tool groups,
    Std internals, test hooks), and the body falls back to the tooltip.
 4. After composition, every verb name is unique and every `verb` a file
