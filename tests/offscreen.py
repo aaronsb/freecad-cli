@@ -1881,6 +1881,249 @@ def _run():
     check("  the tree in the repository is clean", (_n, _problems[:3]),
           (len(_cmds), []))
 
+    print("\n5al. every description rule fails when its fault is put back")
+    # GH #48, the description spec's mechanical half (A2, A3, A5, A6). A
+    # check nobody has seen fail is a check nobody has seen: each case
+    # here is one fault, reintroduced, and the rule it must fire. The
+    # first is the control -- the same command, correct, silent.
+    import descriptions as _dsc
+    _spec_desc = _load_desc()
+    _spec_modes = _dsc.load_modemap()
+
+    def _spec(commands, types=None, body="a body that is nobody's summary"):
+        files = {n: (c["file"], {"generated": {}}, body)
+                 for n, c in commands.items()}
+        return _dsc.inspect(_spec_desc,
+                            {"commands": commands, "types": types or {},
+                             "families": {}}, files, modemap=_spec_modes)
+
+    def _raises(fn):
+        try:
+            fn()
+        except Exception:
+            return True
+        return False
+
+    def _fired(found, needle, channel):
+        lines = found.problems if channel == "problems" else found.reports
+        return sum(1 for line in lines if needle in line)
+
+    def _box(**kw):
+        return {"Part_Box": {"file": "part/Part_Box.md", "doc": "x", **kw}}
+
+    def _tune(**kw):
+        return {"Part::Box": {"file": "part/Part_Box.md", **kw}}
+
+    # Part_Box is claimed by fccli/verbs.py, so the two shape rules
+    # decline for it on purpose. Part_Cylinder is the same shape of
+    # command with nobody's hand on it, and is what those cases use.
+    def _cyl(**kw):
+        return {"Part_Cylinder": {"file": "part/Part_Cylinder.md",
+                                  "doc": "x", **kw}}
+
+    def _tune_cyl(**kw):
+        return {"Part::Cylinder": {"file": "part/Part_Cylinder.md", **kw}}
+
+    _good = _tune(steps=["Length", "Width", "Height"], strict=True)
+    _good_cyl = _tune_cyl(steps=["Radius", "Height"], strict=True)
+    _cases = [
+        ("a correct command says nothing",
+         _box(example="box 40 30 20", type={"of": "Part::Box"}), _good,
+         "part/Part_Box.md", "problems", 0),
+        ("type.steps naming no property of the type",
+         _box(type={"of": "Part::Box"}),
+         _tune(steps=["Lenght", "Width"], strict=True),
+         "type.steps names 'Lenght'", "problems", 1),
+        ("the same property spoken for twice",
+         _box(type={"of": "Part::Box"}),
+         _tune(steps=["Length"], hide=["Length"], strict=True),
+         "type.hide names 'Length', which type.steps already", "problems", 1),
+        ("two authored arguments under one gloss",
+         _cyl(type={"of": "Part::Cylinder"}),
+         _tune_cyl(steps=["Radius", "Height"], strict=True,
+                   prompts={"Radius": "a length", "Height": "a length"}),
+         "Radius and Height share one gloss", "problems", 1),
+        ("an example naming no verb at all",
+         _cyl(example="cylnider 12 40"), _good_cyl,
+         "'cylnider', which is no verb", "problems", 1),
+        ("an example naming somebody else's verb",
+         _cyl(example="sphere 15"), _good_cyl,
+         "does not reach this command", "problems", 1),
+        ("  and the same on a command a hand-written verb owns, which "
+         "this module cannot name",
+         _box(example="sphere 15"), _good,
+         "does not reach this command", "problems", 0),
+        ("  which is a report there instead",
+         _box(example="sphere 15"), _good,
+         "does not reach this command", "reports", 1),
+        ("an example written as a shell line",
+         _box(example="fccli exec 'box 1 2 3'"), _good,
+         "is a shell line", "problems", 1),
+        ("  but not a path with a backslash in it, which is not a shell",
+         _cyl(example="image_plane C:\\images\\plan.png 100 75"), _good_cyl,
+         "is a shell line", "problems", 0),
+        ("an example on two lines",
+         _box(example="box 1 2 3\nbox 4 5 6"), _good,
+         "spans more than one line", "problems", 1),
+        ("an example passing more than the synopsis takes",
+         _cyl(example="cylinder 12 40 5 5"), _good_cyl,
+         "passes 4 arguments to a synopsis that takes 2", "reports", 1),
+        ("a tuning line that names nothing and so does nothing",
+         _box(), _tune(steps=["Length"], options=["Nope"], strict=True),
+         "type.options names 'Nope'", "reports", 1),
+        ("two generated arguments under one gloss",
+         {"Part_Cone": {"file": "part/Part_Cone.md", "doc": "x"}}, {},
+         "Radius1 and Radius2 share one gloss", "reports", 1),
+        ("a positional command with no example",
+         {"Arch_Axis": {"file": "arch/Arch_Axis.md", "doc": "x"}}, {},
+         "a positional command with no example", "reports", 1),
+        ("an example on a command the mode map calls panel",
+         {"Draft_Point": {"file": "draft/Draft_Point.md", "doc": "x",
+                          "example": "point 10,10,0"}}, {},
+         "an example on a panel-mode command", "reports", 1),
+        ("the family door with the wrong choice behind it",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "view top"}}, {},
+         "does not reach this command", "problems", 1),
+        ("the family door with the right one",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "view front"}}, {},
+         "std/Std_ViewFront.md", "problems", 0),
+        ("a family where only some members carry an example",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "view front"}}, {},
+         "family view: 1 of 41 members carries an example", "reports", 1),
+        ("a family whose examples are typed two ways",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "view front"},
+          "Std_ViewTop": {"file": "std/Std_ViewTop.md", "doc": "x",
+                          "example": "3_top"}}, {},
+         "the examples are typed two ways", "reports", 1),
+        ("a collapsed point built from a property that is not there",
+         _box(type={"of": "Part::Box"}),
+         _tune(steps=["Length"], point={"base": ["Nope"]}, strict=True),
+         "type.point[base] collapses 'Nope'", "problems", 1),
+        ("an example passing arguments to a verb with no synopsis",
+         {"Draft_Arc": {"file": "draft/Draft_Arc.md", "doc": "x",
+                        "example": "arc 0,0,0 15 0 90"}}, {},
+         "has no synopsis of its own", "reports", 1),
+        ("and one passing none, which is how a launcher is called",
+         {"Arch_Axis": {"file": "arch/Arch_Axis.md", "doc": "x",
+                        "example": "axis"}}, {},
+         "has no synopsis of its own", "reports", 0),
+        ("two tuned siblings disagreeing on argument order", {},
+         {"Part::Cylinder": {"file": "a", "steps": ["Radius", "Height"]},
+          "Part::Helix": {"file": "b", "steps": ["Pitch", "Height", "Radius"]}},
+         "disagree about which comes first", "reports", 1),
+    ]
+    for _label, _commands, _types, _needle, _channel, _want in _cases:
+        check("  " + _label,
+              _fired(_spec(_commands, _types), _needle, _channel), _want)
+    # The hand-authored tier. `box` is `corner length width height` in
+    # fccli/verbs.py and `Length Width Height` in the generated one, and
+    # fccli.verbs needs FreeCAD to import -- so the two shape rules must
+    # decline for the commands those files claim rather than answer from
+    # the wrong verb. Deleting the skip puts the false positive back.
+    _claimed = _dsc.authored_commands()
+    # 14 is a tripwire, not a constant: writing a hand-authored verb for
+    # a fifteenth command fails this until somebody moves the number and
+    # reads what the rules stopped seeing.
+    check("  the hand-authored tier is found by name, and its verb with it",
+          (len(_claimed), _claimed.get("Part_Box"), _claimed.get("Std_Save"),
+           "Draft_Arc" in _claimed),
+          (14, ("box", "fccli/verbs.py"), ("save", "fccli/shell.py"), False))
+    check("  a source with no gui_command= raises rather than claiming none",
+          _raises(lambda: _dsc.authored_commands(
+              (os.path.join(os.path.dirname(__file__), "offscreen.py"),))),
+          True)
+    _blind = _spec(_box(example="box 0,0,0 40 30 20",
+                        type={"of": "Part::Box"}), _good)
+    check("  a command a hand-written verb owns is not measured against "
+          "the generated one",
+          (_fired(_blind, "passes 4 arguments", "reports"),
+           _blind.records["Part_Box"]["checks"]["A2"],
+           _blind.records["Part_Box"]["checks"]["A3"]),
+          (0, "unread", "unread"))
+    check("    and the record says why, naming the verb that owns it",
+          ([n for n in _blind.records["Part_Box"]["notes"]
+            if "`box` in fccli/verbs.py" in n] != [],
+           _blind.records["Part_Box"].get("authored_verb")),
+          (True, "box"))
+    # One note per command, not one note mentioning one command: `notes`
+    # is machine-read, and a record that talks about somebody else is a
+    # record the campaign has to disbelieve.
+    _other = _spec({"Draft_Circle": {"file": "draft/Draft_Circle.md",
+                                     "doc": "x"}})
+    check("    and it is that command's verb, not another's",
+          ([n for n in _other.records["Draft_Circle"]["notes"]
+            if "`circle`" in n and "box" not in n] != [],
+           _other.records["Draft_Circle"].get("authored_verb")),
+          (True, "circle"))
+    # F5's half in this module: a registry that will not build takes the
+    # whole hard-fail tier with it, so it cannot be a report.
+    _old_build = _dsc.build_registry
+    try:
+        _dsc.build_registry = lambda descriptor, dictionary: None
+        _unbuilt = _dsc.inspect(_spec_desc, {"commands": {}}, {})
+    finally:
+        _dsc.build_registry = _old_build
+    check("  a registry that will not build is a problem, not a quiet report",
+          (len(_unbuilt.problems), _unbuilt.reports), (1, []))
+    # And F5's other half, in the lint: the catch around inspect() keeps a
+    # traceback off the operator, and must not keep the failure off too.
+    _old_inspect = _dsc.inspect
+    try:
+        def _boom(*a, **kw):
+            raise RuntimeError("a shape descriptions.py did not expect")
+        _dsc.inspect = _boom
+        _n5, _p5 = _ld.lint(_cd.DEFAULT_TREE, _ld.DESCRIPTOR, _cd.DEFAULT_OUT)
+    finally:
+        _dsc.inspect = _old_inspect
+    check("    and so is a description pass that raised",
+          [p for p in _p5 if "did not run: RuntimeError" in p] != [], True)
+    # A tuning fault is registry-independent, so it is still a problem
+    # for a command whose verb this module cannot see -- and it has to
+    # reach the record, which is where the campaign reads verdicts.
+    _tuned_bad = _spec(_box(type={"of": "Part::Box"}),
+                       _tune(steps=["Lenght"], strict=True))
+    check("  a tuning fault reaches the record of the file that carries it",
+          (_tuned_bad.records["Part_Box"]["checks"]["A2"],
+           any("not a property" in n
+               for n in _tuned_bad.records["Part_Box"]["notes"])),
+          ("fail", True))
+    _typed = _spec({}, {"Part::Helix": {"file": "part/_types.yaml",
+                                        "options": ["Style"]}})
+    check("    and a type with no command file is filed under its type",
+          _typed.types.get("Part::Helix", {}).get("verdict"), "report")
+    _typed_bad = _spec({}, {"Part::Helix": {"file": "part/_types.yaml",
+                                            "steps": ["Lenght"]}})
+    check("      with a problem filed as one, not softened to a report",
+          (_typed_bad.types.get("Part::Helix", {}).get("verdict"),
+           len(_typed_bad.problems)), ("fail", 1))
+
+    # A1 and A4 are a person's reading; these three are the damage a
+    # reader meets before the reading starts.
+    check("  a summary left as a letter by the label strip",
+          _fired(_spec(_box(summary="S the selected profiles.")),
+                 "the label was stripped off", "reports"), 1)
+    check("  and an article, which is a word",
+          _fired(_spec(_box(summary="A link is an object that references "
+                                    "another.")),
+                 "the label was stripped off", "reports"), 0)
+    check("  a body that only says the summary again",
+          _fired(_spec(_box(summary="Compound tools."), body="Compound tools"),
+                 "one line twice", "reports"), 1)
+    check("  a body whose link never closes",
+          _fired(_spec(_box(), body="[Part Boolean\n\nis a generic tool."),
+                 "prints the bracket", "reports"), 1)
+    check("  a body that is not there at all",
+          _fired(_spec(_box(), body=""), "there is no body", "reports"), 1)
+    # The rules run at all: a report the whole tree cannot produce means
+    # something silently declined to build the registry.
+    _live = _spec({"Part_Box": {"file": "part/Part_Box.md", "doc": "x"}})
+    check("  and the registry they read is really built",
+          bool(_live.records["Part_Box"]["synopsis"]), True)
+
     print("\n5ad. the command tree is read, and what it says changes the verbs")
     # ADR-100. fccli/dictionary.json is the compiled tree. A file's verb,
     # aliases, rank, family/choice and body reach the registry through

@@ -4,7 +4,7 @@
 
     python3 tools/lint_dictionary.py [--tree ...] [--descriptor ...] [--compiled ...]
 
-ADR-100's five rules:
+ADR-100's five rules, and the description spec's mechanical half:
 
   1. every file names a command in the descriptor, and every command has
      a file
@@ -15,6 +15,15 @@ ADR-100's five rules:
      block's keys from the named set with an `of` that is a real type
   4. verb names asked for are unique across the tree
   5. the compiled dictionary is what the tree compiles to
+
+and, from GH #47's group A, what a person reads before typing a command:
+A2 the synopsis, A3 the argument glosses, A5 the example, A6 the family.
+Those live in descriptions.py, which builds the registry to check the
+verbs themselves rather than a second model of them. A description fault
+that silently changes what a command does is a problem like any other; the
+rest is a report -- `--describe` prints it, `--report FILE` writes it as
+the per-command JSON the verification campaign reads, and
+`--strict-descriptions` makes every line of it fail.
 
 Exit 1 on any error. Rule 2 is the one that keeps a generated field safe
 to regenerate.
@@ -32,6 +41,7 @@ sys.path.insert(0, HERE)
 
 import command_files as cf  # noqa: E402
 import compile_dictionary as cd  # noqa: E402
+import descriptions as dsc  # noqa: E402
 
 DESCRIPTOR = os.path.join(ROOT, "fccli", "descriptor.json")
 
@@ -48,12 +58,15 @@ def _kind(value, *types):
     return value is None or isinstance(value, types)
 
 
-def lint(tree, descriptor_path, compiled_path):
+def lint(tree, descriptor_path, compiled_path, described=None):
     problems = []
     with open(descriptor_path, encoding="utf-8") as fh:
         descriptor = json.load(fh)
     commands = descriptor["commands"]
     seen, verbs, choices, tuned = {}, {}, {}, {}
+    # The parsed files, for the description pass: it wants the body and
+    # the generated block, and the tree is worth walking once.
+    files = {}
     # Every type a tier-1 verb is built from, for `of` to be checked
     # against. Read from the descriptor's own verb table.
     types_built = {v.get("type") for v in descriptor.get("verbs", {}).values()}
@@ -72,6 +85,7 @@ def lint(tree, descriptor_path, compiled_path):
         if name in seen:
             problems.append(f"{rel}: {name} is also {seen[name]} (rule 1)")
         seen[name] = rel
+        files[name] = (rel.replace(os.sep, "/"), front, _body)
         want_dir = cf.workbench_dir(entry.get("workbench"))
         if os.path.dirname(rel) != want_dir:
             problems.append(f"{rel}: belongs in {want_dir}/ (rule 1)")
@@ -191,6 +205,24 @@ def lint(tree, descriptor_path, compiled_path):
     else:
         problems.append(f"{os.path.relpath(compiled_path, ROOT)} is missing; "
                         f"run make dictionary (rule 5)")
+    # The description spec (A2, A3, A5, A6), over the tree as compiled --
+    # not over the file on disk, so a tree the lint was pointed at is
+    # checked as itself and rule 5 stays the one that compares the two.
+    try:
+        found = dsc.inspect(descriptor, cd.compile_tree(tree), files)
+    except Exception as exc:
+        # A problem, not a report. The catch is here so a tree that will
+        # not compile is rule 5's message rather than a traceback -- but
+        # five hard-fail classes live inside inspect(), and a pass that
+        # declined to run and said so quietly is the vacuous pass this
+        # lint exists to refuse. Nothing else notices: rule 5 compares the
+        # compiled dictionary to the tree and knows nothing about these.
+        found = dsc.Findings()
+        found.problems.append(f"the description rules did not run: "
+                              f"{exc.__class__.__name__}: {exc} (A2)")
+    problems.extend(found.problems)
+    if described is not None:
+        described.append(found)
     return len(seen), problems
 
 
@@ -199,14 +231,40 @@ def main():
     ap.add_argument("--tree", default=cd.DEFAULT_TREE)
     ap.add_argument("--descriptor", default=DESCRIPTOR)
     ap.add_argument("--compiled", default=cd.DEFAULT_OUT)
+    ap.add_argument("--describe", action="store_true",
+                    help="print the description report (A2, A3, A5, A6) "
+                         "rather than only counting it")
+    ap.add_argument("--report", metavar="FILE",
+                    help="write the per-command description record, which "
+                         "is what A1 and A4 are read from")
+    ap.add_argument("--strict-descriptions", action="store_true",
+                    help="fail on every description report, not only on "
+                         "the faults that change what a command does")
     args = ap.parse_args()
-    count, problems = lint(args.tree, args.descriptor, args.compiled)
+    described = []
+    count, problems = lint(args.tree, args.descriptor, args.compiled,
+                           described=described)
+    found = described[0] if described else dsc.Findings()
+    if args.strict_descriptions:
+        problems = problems + found.reports
+    reports = [] if args.strict_descriptions else found.reports
+    if args.describe:
+        for r in reports:
+            print(r)
+    if args.report:
+        with open(args.descriptor, encoding="utf-8") as fh:
+            dsc.write_report(found, args.report, json.load(fh))
+        print(f"{args.report}: {len(found.records)} commands described")
     for p in problems:
         print(p, file=sys.stderr)
     if problems:
         print(f"{count} command files, {len(problems)} problems", file=sys.stderr)
         return 1
-    print(f"{count} command files, clean")
+    tail = ""
+    if reports:
+        tail = (f", {len(reports)} description reports"
+                + ("" if args.describe else " (--describe to read them)"))
+    print(f"{count} command files, clean{tail}")
     return 0
 
 
