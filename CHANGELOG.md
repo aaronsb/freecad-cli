@@ -95,6 +95,22 @@
 
 ### Added
 
+- **The grammar spec gets a lint (GH #49, of #47).** `tools/interaction.py`
+  checks the D group over the compiled tree and the built registry: D1
+  every listed choice is a value some input selects, D3 every step has a
+  pool to offer, D4 a verb answers to the word it is about, D5 a quantity
+  echoes in the unit it was read in. `make grammar` prints it and writes
+  the per-command verdicts into the same record `make descriptions`
+  writes, so one file carries every rule that has spoken about a command.
+  It finds GH #55 (`view iso`, shadowed by `isometric`) and 16 more of
+  that shape, 4 choices two commands answer to, 264 dimensionless steps
+  echoing in millimetres, and 79 commands whose prefix names a workbench
+  they do not ship in (GH #21). All of it is report-tier: the three
+  problem classes -- an authored choice a second command took, a step
+  completing from a pool that is not one, a unit the chain was not
+  written for -- are empty today, which is what lets the lint join `make
+  check`.
+
 - **154 commands gain a verified example.** The GH #47 positional sweep
   drove all 246 mode-map drafts against a live headless instance; 159
   ran to completion with a valid result, of which 4 were already

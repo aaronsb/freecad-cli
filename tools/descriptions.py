@@ -750,7 +750,7 @@ def _a6_order(found, tuned):
 
 # ---------------------------------------------------------------- report
 
-def write_report(found, path, descriptor):
+def write_report(found, path, descriptor, grammar=None):
     """The per-command record, for the campaign to read.
 
     A1 (voice) and A4 (faithfulness) are not decidable here; what they
@@ -761,6 +761,11 @@ def write_report(found, path, descriptor):
     what a family looks like across its members; `types` carries the
     tuning findings for the two types tuned in a _types.yaml, which have
     no command record to land in.
+
+    ``grammar`` is interaction.py's findings for the same tree (GH #49).
+    Its records are keyed the same way, so the D verdicts merge into the
+    A record rather than landing in a second file the campaign would have
+    to join by hand: one command, one record, every rule that has spoken.
     """
     data = {
         "generated_by": "tools/descriptions.py",
@@ -775,6 +780,26 @@ def write_report(found, path, descriptor):
         "types": found.types,
         "commands": found.records,
     }
+    if grammar is not None:
+        import interaction as ixn
+        for name, record in grammar.records.items():
+            into = found.records.get(name)
+            if into is None:
+                found.records[name] = record
+                continue
+            into["checks"].update(record["checks"])
+            into["notes"].extend(record["notes"])
+            for key in ("verb", "family", "authored_verb"):
+                into.setdefault(key, record.get(key))
+        data["spec"] += (" Group D (GH #49) is in the same records: D1 "
+                         "choices, D3 pools, D4 naming, D5 units. A command "
+                         "with authored_verb has D3/D4/D5 unread for the "
+                         "same reason A2/A3 are.")
+        data["totals"] = dict(sorted({**totals(found),
+                                      **{f"grammar {k}": v for k, v
+                                         in ixn.totals(grammar).items()}}.items()))
+        data["grammar"] = ixn.sections(grammar)
+        data["commands"] = found.records
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(data, fh, indent=1, sort_keys=True, ensure_ascii=False)
         fh.write("\n")
