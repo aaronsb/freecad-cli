@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "674f9466f627"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Wire; part_revolve
 aliases: []
 requires: []
 panel: null

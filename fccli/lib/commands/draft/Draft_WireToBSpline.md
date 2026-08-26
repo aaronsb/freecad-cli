@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "0485a60d1361"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Wire; convert_wire_b_spline
 aliases: []
 requires: []
 panel: null

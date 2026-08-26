@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "e380933d8f70"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; embed_shapes
 aliases: []
 requires: []
 panel: null

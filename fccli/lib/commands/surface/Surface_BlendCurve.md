@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "7d2b41b1803f"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box.Edge1, Box.Edge2; blend_curve
 aliases: []
 requires: []
 panel: null

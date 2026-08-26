@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "336f7d2968d0"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; fit_selection
 aliases: []
 requires: []
 panel: null

@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "d913f94e344b"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; split_shapes
 aliases: []
 requires: []
 panel: null

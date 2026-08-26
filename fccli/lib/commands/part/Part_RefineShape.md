@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "e3b8db012165"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; refine_shape
 aliases: []
 requires: []
 panel: null

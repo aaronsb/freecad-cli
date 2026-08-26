@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "677ba80a5643"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; send_to_python_console
 aliases: []
 requires: []
 panel: null

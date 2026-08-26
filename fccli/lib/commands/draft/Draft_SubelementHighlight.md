@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "dcfbf471aebb"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Wire; highlight_subelements
 aliases: []
 requires: []
 panel: null

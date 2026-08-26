@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "1dab7b1462e4"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box.Edge1; part_fillet filletstartradius=3
 aliases: []
 requires: []
 panel: null

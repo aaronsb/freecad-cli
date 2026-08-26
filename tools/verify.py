@@ -26,6 +26,11 @@ The result is what running the example did:
                by later sweeps unless --force
     no_fixture the command never ran: the operands its selection hint
                names could not be built, so there was nothing to select
+    manual     the command is nobody's to drive: ADR-501's fourth mode is
+               one a person confirms and the harness only records
+    cancelled  the line abandoned the command it named: a token that would
+               not parse at a step matched another verb, and the engine ran
+               that one instead (GH #72)
 
 The panel tier adds five of its own, because a panel command can fail in
 ways a positional one cannot (GH #53):
@@ -51,6 +56,17 @@ A sweep survives its own targets: a command that kills FreeCAD is recorded
 as `hazard`, a fresh headless instance is started, and the sweep continues.
 The ledger is written after every command, so a stopped sweep loses at most
 the command it was on.
+
+The ledger sweep is mode-routed: `fccli/modemap.json` says how each
+authored example is driven, and the entry records which (GH #54). A
+positional example runs bare. A selection example runs behind the fixture
+its hint names, and only its verb half is judged (ADR-200). A panel
+example is driven through the panel step. A `manual` one is not driven at
+all. Every entry carries its `mode`, so an entry says what kind of driving
+produced it -- and an entry recorded in a mode the command is no longer
+in, or against an older FreeCAD, is re-run by the next sweep. That, with
+the checkpoint after every command, is what makes `make verify` resumable:
+stop it and start it again and it picks up where it stopped.
 
 `--modemap` drives the drafted examples in `fccli/modemap.json` instead of
 the dictionary's authored ones, and records the outcomes in
@@ -372,12 +388,35 @@ def _exec(line):
     return fccli("exec", line)
 
 
+# The state the harness restores before every command, in the order it has
+# to happen in. `close!` drops the last command's scratch document, a fresh
+# one is opened, and only then can Part's selection gate be lifted:
+# `no_selection_filters` needs an active document and answers "is not
+# available here" without one, which is how a first attempt at this left
+# the gate standing.
+#
+# The gate is a mode and not a document. `vertex_selection` and its two
+# siblings turn one on, closing the document does not clear it, and with
+# one on `select Box` answers `= select Box` and selects nothing -- after
+# which every command that needs a selection says "is not available here".
+# One live sweep ran `Part_VertexSelection` at command 141 of 266 and
+# charged the 20 commands after it with its consequences (GH #73).
+PREPARE = ["close!", "new verify", "no_selection_filters"]
+
+# Which of those lines may fail without the fixture having failed. There is
+# nothing to close before the first command and, on most commands, no gate
+# to lift. The document is not on the list: without one there is nothing to
+# build the fixture in.
+BEST_EFFORT = ("close!", "no_selection_filters")
+
+
 def build_fixture(lines, run=None):
     """A scratch document holding the fixture, ready to be consumed.
 
     ``lines`` is the recipe and the `select` that hands it over. The
-    document reset is best-effort -- `close!` has nothing to close on the
-    first command -- and every recipe line after it must succeed: an
+    ``PREPARE`` runs first, and two of its three lines are best-effort:
+    there is nothing to close before the first command and usually no
+    selection gate to lift. Every other line must succeed -- an
     operand the harness could not present is the harness's failure, not
     the command's, so the caller records `no_fixture` rather than blaming
     the verb.
@@ -385,10 +424,9 @@ def build_fixture(lines, run=None):
     Returns (ok, detail); the detail names the line that faulted.
     """
     run = run or _exec
-    run("close!")                       # drop the last command's scratch
-    for line in ["new verify"] + list(lines):
+    for line in PREPARE + list(lines):
         code, _out, err = run(line)
-        if code != 0:
+        if code != 0 and line not in BEST_EFFORT:
             return False, f"{line} -- {err or f'exit {code}'}"[:200]
     return True, ""
 
@@ -402,6 +440,18 @@ def verb_line(example):
     """
     _select, _, verb = example.partition(";")
     return verb.strip() or example.strip()
+
+
+def select_half(example):
+    """The setup half of a two-part selection example (ADR-200).
+
+    The other side of `verb_line`: `select Box, Box001; part_cut` is one
+    line a person types as two, and this is the first of them -- what puts
+    the operands in place before the verb is judged. A one-part example
+    has no setup half and answers "".
+    """
+    select, sep, _verb = (example or "").partition(";")
+    return select.strip() if sep else ""
 
 
 def selection_targets(modemap):
@@ -493,6 +543,30 @@ def _invalid(snap):
     return active.get("invalid") or []
 
 
+# The engine's own word for a command it abandoned mid-line. A token at a
+# step that will not parse as that step's value, but does match a verb's
+# name, cancels the command and starts that verb instead: `loft standard`
+# answers "loft cancelled" and runs `standard_views` (GH #72). When the verb
+# it escaped to takes no steps, the line exits 0 with the engine idle and
+# nothing invalid -- every reading `classify` makes says the command
+# verified, and this line is the only thing that says otherwise. It is what
+# earned `subtractive_pipe standard constant transformed` an `ok` for
+# running a view command.
+_CANCELLED = re.compile(r"^(\S+) cancelled\s*$", re.M)
+
+
+def cancelled_in(out):
+    """The command the engine says it abandoned while running this line.
+
+    Read rather than matched against the verb that was typed, because a
+    verb may be reached by an abbreviation (ADR-301) and the engine names
+    what it cancelled by its full name. One line is run at a time, so any
+    cancellation in it is this line's.
+    """
+    hit = _CANCELLED.search(out or "")
+    return hit.group(1) if hit else ""
+
+
 def verify_one(example):
     """Run one example, classify what happened. Leaves the engine idle.
 
@@ -502,7 +576,7 @@ def verify_one(example):
     """
     fccli("cancel")                       # clear whatever the last one left
     before = _invalid(_snapshot())
-    code, _out, err = fccli("exec", example)
+    code, out, err = fccli("exec", example)
     snap = _snapshot()
     fresh = [n for n in _invalid(snap) if n not in before]
     result = classify(code, snap.get("engine") or "",
@@ -511,6 +585,15 @@ def verify_one(example):
         fccli("cancel")
     if result == "invalid":
         fccli("exec", "undo")
+    abandoned = cancelled_in(out)
+    if abandoned and result != "busy":
+        # The engine dropped the command under test, so no reading after
+        # that is about it -- the same argument `blocked` makes. `busy` is
+        # left alone because nothing of this line ran at all.
+        return "cancelled", (f"the engine cancelled {abandoned}; what ran "
+                             f"was another verb this line's own arguments "
+                             f"matched (GH #72)")
+    if result == "invalid":
         return result, ", ".join(fresh)
     return result, (err if result in ("incomplete", "broken") else "")
 
@@ -664,6 +747,10 @@ def cleared(snapshot, cancel, tries=3):
 def verify_panel(example, run=None, snapshot=None, cancel=None):
     """Drive one panel draft: open, set what it names, `done`.
 
+    A verb the engine abandoned mid-line (GH #72) reaches this tier as
+    `no_panel`, since a cancelled verb opens no panel, so the read
+    `verify_one` makes is not repeated here.
+
     C1 for panels. The verb runs on its own, the panel's fields are read
     off the engine, the draft's `name=value` pairs are set one at a time
     so a refused name is attributed to the pair that was refused, and
@@ -814,6 +901,36 @@ PANEL_OFF_LIMITS = {
 }
 
 
+def panel_operands(cid, entry):
+    """What a panel command's operands are, if it needs any.
+
+    Returns (lines, gives, why_not). ``lines`` of None is a punt and
+    ``why_not`` says which: a panel that applies outside its document, a
+    `panel_fixture` naming nothing, or a hint this tier cannot build.
+    ``gives`` of None with no lines is a panel that asks for no operands
+    -- a scratch document, and nothing in it.
+
+    Shared by the panel tier and the mode-routed ledger, because the two
+    ask the same question of the same mode map entry and must not answer
+    it two ways.
+    """
+    off_limits = PANEL_OFF_LIMITS.get(cid)
+    if off_limits:
+        return None, None, off_limits
+    authored = entry.get("panel_fixture")
+    if authored:
+        if authored not in FIXTURES:
+            return None, None, f"panel_fixture names no fixture: {authored}"
+        lines, gives = FIXTURES[authored]
+        return list(lines), gives, ""
+    if entry.get("needs_selection"):
+        name, lines, gives = fixture_for(cid, entry.get("selection_hint"))
+        if name is None:
+            return None, None, gives  # with no fixture, that slot is the reason
+        return list(lines), gives, ""
+    return [], None, ""
+
+
 def panel_targets(modemap):
     """What the panel tier drives, and what it cannot.
 
@@ -844,9 +961,9 @@ def panel_targets(modemap):
     for cid, entry in modemap["commands"].items():
         if entry.get("mode") != "panel":
             continue
-        off_limits = PANEL_OFF_LIMITS.get(cid)
-        if off_limits:
-            punted[cid] = off_limits
+        lines, gives, why = panel_operands(cid, entry)
+        if lines is None:
+            punted[cid] = why
             continue
         draft = (entry.get("example") or "").strip()
         verb = (entry.get("verb") or "").strip()
@@ -854,19 +971,7 @@ def panel_targets(modemap):
             punted[cid] = "the mode map named no verb to run"
             continue
         line = draft or verb
-        authored = entry.get("panel_fixture")
-        if authored:
-            if authored not in FIXTURES:
-                punted[cid] = f"panel_fixture names no fixture: {authored}"
-                continue
-            lines, gives = FIXTURES[authored]
-            lines = list(lines)
-        elif entry.get("needs_selection"):
-            name, lines, gives = fixture_for(cid, entry.get("selection_hint"))
-            if name is None:
-                punted[cid] = gives   # with no fixture, that slot is the reason
-                continue
-        else:
+        if gives is None:
             targets[cid] = line
             fixtures[cid] = []       # a scratch document, and nothing in it
             continue
@@ -874,6 +979,157 @@ def panel_targets(modemap):
         targets[cid] = f"{select}; {line}"
         fixtures[cid] = lines + [select]
     return targets, fixtures, punted
+
+
+# ------------------------------------------------------------ the ledger
+
+# The modes the harness drives. The fourth ADR-501 names, `manual`, is a
+# person's: the harness records what they confirmed and drives nothing.
+DRIVEN_MODES = ("positional", "selection", "panel")
+
+
+def drive(mode, example, positional=None, panel=None):
+    """Run one authored example the way its mode is driven.
+
+    The mode map answers which (GH #50). A positional example is the whole
+    line and runs bare. A selection example's operands were built and
+    selected by the setup, so what is left to judge is the verb half
+    (ADR-200) -- driving the whole line would run `select` twice and judge
+    the select rather than the verb. A panel example goes through the
+    panel step: the verb, the fields the panel answers with, the draft's
+    `name=value` pairs, and `done` (GH #53).
+
+    This is the whole of what `make verify` gained: before it, every
+    example ran bare, so a selection example judged its own `select` line
+    and a panel example was recorded `panel` for opening the panel it is
+    supposed to open.
+
+    A mode with no route here is refused rather than driven bare. Nothing
+    reaches it today -- `ledger_targets` punts `manual` and every mode it
+    does not know before a target is made -- but driving an unrouted mode
+    bare is the exact bug this function was extracted to make visible, and
+    a fifth mode added to the map later would inherit it in silence.
+    """
+    positional = positional or verify_one
+    panel = panel or verify_panel
+    if mode == "panel":
+        return panel(example)
+    if mode == "selection":
+        return positional(verb_line(example))
+    if mode == "positional":
+        return positional(example)
+    raise ValueError(
+        f"no way to drive a {mode!r} command: the ledger drives "
+        f"{', '.join(DRIVEN_MODES)} and punts everything else, so a mode "
+        f"arriving here is one nothing routes")
+
+
+def ledger_targets(commands, modemap, tier=None):
+    """What `make verify` drives, and in which mode.
+
+    ``commands`` is the dictionary's, so the examples are the authored
+    ones: the ledger is a record of authored examples and nothing else
+    (ADR-501), and the drafts belong to `modemap_sweep.json`. ``modemap``
+    is {cid: entry} and says how each is driven.
+
+    Returns (targets, fixtures, modes, punted). ``fixtures`` is the setup
+    a command needs before its example -- the recipe lines and the
+    `select` that hands them over, empty for a positional one. ``modes``
+    is the mode every target and every punt was read in, which is what the
+    ledger stamps. ``punted`` is {cid: reason} for an authored example the
+    harness cannot drive on its own: a selection or panel hint whose
+    operands this vocabulary does not build, or a mode that is a person's
+    to confirm.
+
+    A selection example's setup ends with the example's own `select` half,
+    not with the fixture's canonical one, so the example is driven exactly
+    as it is written. A `select` naming something the recipe did not build
+    is `no_fixture` with the line that faulted -- which is the disagreement
+    said out loud rather than papered over by substituting a select that
+    works.
+    """
+    targets, fixtures, modes, punted = {}, {}, {}, {}
+    for cid, entry in commands.items():
+        example = (entry.get("example") or "").strip()
+        if not example:
+            continue
+        spec = modemap.get(cid) or {}
+        # A command the mode map does not classify is driven the way the
+        # ledger drove every command before the mode map existed: bare.
+        mode = spec.get("mode") or "positional"
+        if tier and mode != tier:
+            continue
+        modes[cid] = mode
+        if mode == "positional":
+            targets[cid], fixtures[cid] = example, []
+            continue
+        if mode == "selection":
+            name, lines, gives = fixture_for(cid, spec.get("selection_hint"))
+            if name is None:
+                punted[cid] = gives
+                continue
+        elif mode == "panel":
+            lines, gives, why = panel_operands(cid, spec)
+            if lines is None:
+                punted[cid] = why
+                continue
+        else:
+            punted[cid] = (f"mode {mode}: a person confirms this one and the "
+                           f"harness records it (ADR-501)")
+            continue
+        select = select_half(example) or (f"select {gives}" if gives else "")
+        targets[cid] = example
+        fixtures[cid] = list(lines) + ([select] if select else [])
+    return targets, fixtures, modes, punted
+
+
+def ledger_hooks(fixtures, modes, build=None, route=None):
+    """The two hooks a mode-routed ledger sweep gives `sweep`.
+
+    Extracted so the wiring itself is checkable. A `run_one` that ignored
+    the mode would drive every example bare and stamp the result as
+    verified -- which is the state GH #54 found: a selection example
+    judging its own `select` line, a panel example recorded `panel` for
+    opening the panel it exists to open.
+    """
+    build = build or build_fixture
+    route = route or drive
+    return {"setup": lambda cid: build(fixtures[cid]),
+            "run_one": lambda cid, example: route(modes[cid], example)}
+
+
+def punt_result(mode):
+    """What a command the harness did not drive is recorded as.
+
+    A hint whose operands this vocabulary cannot build is the harness's
+    own gap: `no_fixture`, which a later sweep with a wider vocabulary
+    retries. A mode only a person can confirm is not a gap at all -- it is
+    `manual`, ADR-501's fourth mode, and it stands until a person answers
+    it.
+    """
+    return "no_fixture" if mode in DRIVEN_MODES else "manual"
+
+
+def by_mode(entries):
+    """The ledger, counted by mode and result.
+
+    A ledger of one number says how much is verified; a ledger of nine
+    says what kind of verification each part of it is. A selection `ok` and
+    a positional `ok` are different facts, and the campaign is spent
+    moving commands between them, so the tally that answers for it is the
+    two-way one. The modes come out in ADR-501's order -- positional,
+    selection, panel, then what neither drives.
+    """
+    counts = {}
+    for entry in entries.values():
+        key = (entry.get("mode") or "-", entry.get("result") or "-")
+        counts[key] = counts.get(key, 0) + 1
+    order = {m: i for i, m in enumerate(DRIVEN_MODES)}
+    return [f"{mode:11} {result:11} {n}"
+            for (mode, result), n in
+            sorted(counts.items(),
+                   key=lambda kv: (order.get(kv[0][0], len(order)), kv[0][0],
+                                   -kv[1], kv[0][1]))]
 
 
 def _load(path):
@@ -888,7 +1144,7 @@ def _load(path):
                  f"repair or remove it")
 
 
-def resumable(targets, entries):
+def resumable(targets, entries, version=None, modes=None):
     """Which targets a resumed sweep still runs.
 
     A result already recorded for the same example is an answer and
@@ -898,11 +1154,26 @@ def resumable(targets, entries):
     by something else stood in front of, which is no answer about the
     command at all; and `hazard`, which stays in the targets so plan()
     reports the skip.
+
+    ``version`` is the FreeCAD this sweep is about to run against. It is
+    what makes the ledger resumable without freezing it: an entry stamped
+    against an older FreeCAD is stale (ADR-501) and runs again, so a sweep
+    stopped halfway resumes where it stopped and a sweep after an upgrade
+    starts over. ``modes`` is the mode each target is driven in now; an
+    entry recorded in a different one -- or in none, which is every entry
+    a mode-blind sweep wrote -- asserts something about a driving that no
+    longer happens, and runs again too.
     """
-    return {c: e for c, e in targets.items()
-            if entries.get(c, {}).get("example") != e
-            or entries[c].get("result") in ("hazard", "busy", "no_fixture",
-                                            "blocked")}
+    again = ("hazard", "busy", "no_fixture", "blocked")
+    todo = {}
+    for cid, example in targets.items():
+        entry = entries.get(cid) or {}
+        if (entry.get("example") != example
+                or entry.get("result") in again
+                or (version is not None and entry.get("freecad") != version)
+                or (modes is not None and entry.get("mode") != modes.get(cid))):
+            todo[cid] = example
+    return todo
 
 
 def plan(targets, prior, force=False, start_at=None):
@@ -1060,8 +1331,10 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
 
     ``record(cid, example, result, detail, extra)`` is called after
     every command, hazards included -- it owns persistence, so a stopped
-    sweep keeps everything already run. ``run_one`` answers (result,
-    detail) or (result, detail, extra); ``extra`` is what the tier learned
+    sweep keeps everything already run. ``run_one(cid, example)`` answers
+    (result, detail) or (result, detail, extra) -- it takes the command id
+    because a mode-routed sweep drives one command one way and the next
+    another, and the mode is the command's; ``extra`` is what the tier learned
     that is neither of those, and the panel tier puts the field names the
     panel answered with there. ``setup(cid)`` prepares what the
     command needs and returns (ok, detail); the selection tier builds its
@@ -1090,7 +1363,7 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
 
     Returns (tally, finished, restarts).
     """
-    run_one = run_one or verify_one
+    run_one = run_one or (lambda _cid, example: verify_one(example))
     alive = alive or running
     healthy = healthy or _healthy
     restart = restart or _restart
@@ -1144,7 +1417,7 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
         try:
             # Two values or three: a tier with nothing extra to say keeps
             # the shorter contract.
-            result, detail, *rest = run_one(example)
+            result, detail, *rest = run_one(cid, example)
             extra = rest[0] if rest else None
         except subprocess.TimeoutExpired:
             result, detail = "hazard", "client timed out; instance wedged"
@@ -1185,13 +1458,14 @@ def main(argv=None):
                     help="drive the mode map's drafts instead, recording to "
                          "modemap_sweep.json; the tree and the ledger are "
                          "untouched")
-    ap.add_argument("--tier", choices=("positional", "selection", "panel"),
-                    default="positional",
-                    help="which mode's drafts --modemap drives: positional "
-                         "runs the example alone, selection builds the "
-                         "fixture the hint names and selects it first, "
-                         "panel runs the verb and then drives the task "
-                         "panel it opens with name=value and done")
+    ap.add_argument("--tier", choices=DRIVEN_MODES, default=None,
+                    help="one mode only: positional runs the example alone, "
+                         "selection builds the fixture the hint names and "
+                         "selects it first, panel runs the verb and then "
+                         "drives the task panel it opens with name=value and "
+                         "done. A --modemap sweep defaults to positional, "
+                         "since its tiers are driven one at a time; the "
+                         "ledger defaults to every mode the mode map names")
     ap.add_argument("--start-at", metavar="COMMAND",
                     help="skip every command id before this one")
     ap.add_argument("--force", action="store_true",
@@ -1203,17 +1477,19 @@ def main(argv=None):
                          "`after` field each failure records")
     args = ap.parse_args(argv)
 
-    version = json.load(open(DICT)).get("freecad")
-    fixtures, punted = {}, {}
+    data = json.load(open(DICT))
+    version = data.get("freecad")
+    modemap = json.load(open(MODEMAP))
+    fixtures, modes, punted = {}, {}, {}
     if args.modemap:
-        modemap = json.load(open(MODEMAP))
-        if args.tier == "selection":
+        tier = args.tier or "positional"
+        source = modemap["commands"]
+        if tier == "selection":
             targets, fixtures, punted = selection_targets(modemap)
-        elif args.tier == "panel":
+        elif tier == "panel":
             targets, fixtures, punted = panel_targets(modemap)
         else:
-            targets = {cid: e["example"]
-                       for cid, e in modemap["commands"].items()
+            targets = {cid: e["example"] for cid, e in source.items()
                        if e.get("mode") == "positional" and e.get("example")}
         store_path = SWEEP_REPORT
         store = _load(store_path)
@@ -1222,16 +1498,16 @@ def main(argv=None):
         if not args.force:
             targets = resumable(targets, entries)
     else:
-        if args.tier != "positional":
-            sys.exit(f"verify: --tier {args.tier} drives the mode map's "
-                     "drafts; pass --modemap")
-        data = json.load(open(DICT))
-        targets = {cid: e["example"] for cid, e in data["commands"].items()
-                   if e.get("example")}
+        source = data["commands"]
+        targets, fixtures, modes, punted = ledger_targets(
+            source, modemap["commands"], tier=args.tier)
         store_path = LEDGER
         store = _load(store_path)
         entries = store.setdefault("commands", {})
         prior = dict(entries)
+        if not args.force:
+            targets = resumable(targets, entries, version=version,
+                                modes=modes)
 
     if args.only:
         targets = {k: v for k, v in targets.items() if k == args.only}
@@ -1253,6 +1529,11 @@ def main(argv=None):
         if not args.modemap:
             entry["date"] = today
             entry["freecad"] = version
+            # The mode is what the driving was, and the entry means
+            # different things in each: ADR-501's schema has the field for
+            # that reason, and the resume rule reads it back.
+            if modes.get(cid):
+                entry["mode"] = modes[cid]
         if detail:
             entry["detail"] = detail[:200]
         entries[cid] = entry
@@ -1270,15 +1551,16 @@ def main(argv=None):
     # Skips are recorded too, so the report says why a command was not run.
     for cid, reason in skipped.items():
         record(cid, targets[cid], "hazard", reason)
-    # So is a hint this tier does not build: the report answers "why was
-    # this command not driven" for every selection command, not just the
-    # ones the fixture vocabulary reaches.
+    # So is a command the harness cannot drive on its own: the report
+    # answers "why was this one not driven" for every command in the tier,
+    # not just the ones the fixture vocabulary reaches. A mode only a
+    # person can confirm is `manual`, not the harness's own gap.
     for cid, reason in punted.items():
-        example = (modemap["commands"][cid].get("example") or "")
-        record(cid, example, "no_fixture", reason)
+        example = (source[cid].get("example") or "")
+        record(cid, example, punt_result(modes.get(cid, "selection")), reason)
     if punted:
-        print(f"  {len(punted)} selection commands have no fixture this "
-              f"tier can build")
+        print(f"  {len(punted)} commands were not driven; the report says "
+              f"why for each")
 
     if not run:
         print("nothing to verify -- no examples, or all already recorded")
@@ -1300,12 +1582,22 @@ def main(argv=None):
     # The selection tier builds a fixture per command and judges only the
     # verb after it; the panel tier does the same and then drives the
     # panel the verb opens; the positional tier runs its example whole.
+    #
+    # A ledger sweep does all three in one pass, per command, because its
+    # targets are of every mode at once -- which is the whole of GH #54's
+    # ledger half. Every command gets a scratch document, positional ones
+    # included: in a mixed sweep the command before this one may have built
+    # a fixture, and a positional result that depends on which fixture
+    # preceded it is not reproducible.
     hooks = {}
-    if args.modemap and args.tier in ("selection", "panel"):
-        one = verify_panel if args.tier == "panel" else \
-            (lambda example: verify_one(verb_line(example)))
+    if args.modemap and tier in ("selection", "panel"):
+        one = (lambda _cid, example: verify_panel(example)) \
+            if tier == "panel" \
+            else (lambda _cid, example: verify_one(verb_line(example)))
         hooks = {"setup": lambda cid: build_fixture(fixtures[cid]),
                  "run_one": one}
+    elif not args.modemap:
+        hooks = ledger_hooks(fixtures, modes)
 
     owned = {"it": started}
     fccli("exec", "new verify")
@@ -1313,6 +1605,14 @@ def main(argv=None):
         tally, finished, restarts = sweep(
             run, record, restart=lambda: _restart_owned(owned),
             restart_every=args.restart_every, **hooks)
+    except KeyboardInterrupt:
+        # The checkpoint is what makes this safe, so say what it holds
+        # rather than leaving a traceback to be read as a lost sweep. The
+        # instance still gets shut down: that is the `finally` below.
+        print(f"\nstopped. {os.path.relpath(store_path, ROOT)} holds "
+              f"{len(entries)} results -- run again to resume where this "
+              f"stopped.", file=sys.stderr)
+        return 130
     finally:
         if owned["it"] and running():
             fccli("cancel")
@@ -1323,6 +1623,11 @@ def main(argv=None):
             if restarts else "")
     print(f"\n{len(run)} run, {len(skipped)} skipped ({summary}{note}). "
           f"{os.path.relpath(store_path, ROOT)}")
+    if not args.modemap:
+        # The whole ledger, not just this run's part of it: what the
+        # campaign holds is the question the tally answers.
+        for line in by_mode(entries):
+            print(f"  {line}")
     return 0 if finished else 3
 
 

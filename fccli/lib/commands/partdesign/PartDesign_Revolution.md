@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "d8502bb433c2"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Sketch001; revolve revolveangle=270
 aliases: []
 requires: []
 panel: null

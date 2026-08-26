@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "904560078222"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Link; go_to_linked_object
 aliases: []
 requires: []
 panel: null

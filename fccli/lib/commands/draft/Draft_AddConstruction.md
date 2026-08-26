@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "dfeedfe619cc"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; add_to_construction_group
 aliases: []
 requires: []
 panel: null

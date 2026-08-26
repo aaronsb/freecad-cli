@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "e83b719f0e5f"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box.Face6; shape_element_copy
 aliases: []
 requires: []
 panel: null

@@ -589,7 +589,38 @@ def _tuned_elsewhere(tuned, verb):
 # line. Not the backslash: `image_plane C:\images\plan.png 100 75` is a
 # path, and refusing it would be a hard failure over somebody's operating
 # system.
-_SHELLISH = re.compile(r"[|&;<>$`]")
+# What makes a line a shell line rather than one typed at the command
+# line. The semicolon is not in it, because ADR-200 spends it: a selection
+# command's example is `select <what>; <verb> <params>`, two lines a person
+# types in turn. `_halves` takes the semicolon before this pattern sees
+# either side of it.
+_SHELLISH = re.compile(r"[|&<>$`]")
+
+# The only verb that may stand in an example's setup half. ADR-200 gives a
+# selection command exactly one way to present its operands.
+SETUP_VERB = "select"
+
+# Which example shape each mode wants, for the modes that want one. A
+# positional command's example is the whole command and takes no setup; a
+# selection command's names its operands first, or it runs against
+# whatever the last command happened to leave selected. A panel command
+# may want either -- some panels fillet a selected edge, some open on
+# nothing -- so it asks for neither and is not listed.
+_WANTS_SETUP = {TYPED_MODE: False, "selection": True}
+
+
+def _halves(example):
+    """An example, split into ADR-200's two halves: setup, then command.
+
+    `select Box, Box001; part_cut` is one written line and two typed ones,
+    and the half after the semicolon is the command the rest of A5 is
+    about -- the verb it names, the arguments it carries. A one-part
+    example has no setup half and is all command.
+    """
+    setup, sep, command = (example or "").partition(";")
+    if not sep:
+        return "", (example or "").strip()
+    return setup.strip(), command.strip()
 
 
 def _a5(found, rel, name, entry, mode, verb, direct, through, registry,
@@ -600,6 +631,13 @@ def _a5(found, rel, name, entry, mode, verb, direct, through, registry,
     and stamps the result in the ledger (ADR-501). So an example that
     names a verb this command cannot be reached by is a fault -- it
     verifies something else, or nothing.
+
+    An example may come in two halves, `select <what>; <verb> <params>`,
+    which is ADR-200's form for a selection command and what the ledger's
+    selection tier drives (GH #54): the setup half puts the operands in
+    place and the command half is what gets judged. So the rules below
+    read the command half, and the setup half is held to one thing --
+    that it is a `select`, because nothing else may stand there.
 
     Except where a hand-written verb owns the command (``blind``): the
     door it opens may be named something the generated tier never
@@ -615,16 +653,38 @@ def _a5(found, rel, name, entry, mode, verb, direct, through, registry,
         found.problem(rel, "the example is empty or spans more than one "
                            "line; it is one line a person could type", "A5")
         return
-    head = example.split()[0]
-    if _SHELLISH.search(example) or head in ("fccli", "bin/fccli", "$"):
+    setup, command = _halves(example)
+    if setup and setup.split()[0] != SETUP_VERB:
+        found.problem(rel, f"the example's setup half is {setup!r}; ADR-200 "
+                           f"writes a two-part example as "
+                           f"`{SETUP_VERB} <what>; <verb>`, and only a "
+                           f"{SETUP_VERB} may stand before the semicolon",
+                      "A5")
+        return
+    if not command:
+        found.problem(rel, f"the example {example!r} has a setup half and no "
+                           f"command after it", "A5")
+        return
+    head = command.split()[0]
+    if (_SHELLISH.search(example) or ";" in command
+            or head in ("fccli", "bin/fccli", "$")):
         found.problem(rel, f"the example {example!r} is a shell line, not a "
                            f"line typed at the command line", "A5")
         return
-    if mode and mode != TYPED_MODE:
+    wants = _WANTS_SETUP.get(mode)
+    if wants is True and not setup:
+        found.report(rel, f"a selection command whose example names no "
+                          f"operands: {example!r} -- it runs against "
+                          f"whatever was selected last", "A5")
+    elif wants is False and setup:
+        found.report(rel, f"a {mode}-mode command whose example selects "
+                          f"operands first: {example!r} -- either the mode "
+                          f"is wrong or the example is", "A5")
+    elif mode and wants is None and mode != "panel":
         found.report(rel, f"an example on a {mode}-mode command: {example!r} "
                           f"-- either the mode is wrong or the example is "
                           f"driving something the mode says it cannot", "A5")
-    reached = _reaches(registry, head, example, direct.get(name, []),
+    reached = _reaches(registry, head, command, direct.get(name, []),
                        through.get(name, []))
     say = found.report if blind else found.problem
     if reached is None:

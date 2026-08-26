@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "3ab95da585cf"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select BaseFeature; set_tip
 aliases: []
 requires: []
 panel: null

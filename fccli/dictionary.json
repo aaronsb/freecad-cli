@@ -858,6 +858,7 @@
   },
   "Draft_AddConstruction": {
    "doc": "The Draft AddConstruction command moves objects to the Draft construction group. It also applies the construction geometry color to the objects.\n\n## See also\n\n- Draft_ToggleConstructionMode\n- Draft_AddToGroup",
+   "example": "select Box; add_to_construction_group",
    "file": "draft/Draft_AddConstruction.md"
   },
   "Draft_AddNamedGroup": {
@@ -878,6 +879,7 @@
   },
   "Draft_ApplyStyle": {
    "doc": "The Draft ApplyStyle command applies the current style settings to selected objects. This command handles only five of the settings the Draft SetStyle command offers. This command changes the view properties of objects. It applies all settings the Draft SetStyle command offers. It also changes these additional properties:\n\n- Decimals(for dimensions): See Draft Preferences.\n\n- ShowLine(for dimensions): Idem.\n\n## See also\n\n- Draft_SetStyle",
+   "example": "select Box; apply_current_style",
    "file": "draft/Draft_ApplyStyle.md"
   },
   "Draft_Arc": {
@@ -923,6 +925,7 @@
   },
   "Draft_Clone": {
    "doc": "The Draft Clone command creates linked copies, clones, of selected objects. The shape of a clone is parametric, it will update if its source object changes. But a clone does have its own position, rotation, and scale, and its own View properties. For BIM objects the command creates a special type of clone: an Arch clone.\n\nThe command can be used on 2D objects created with the Draft Workbench or Sketcher Workbench, but also on many 3D objects such as those created with the Part Workbench, PartDesign Workbench or BIM Workbench. Clones of 2D objects can be used in PartDesign Bodies.\n\n## See also\n\n- Draft_Scale",
+   "example": "select Box; draft_clone",
    "file": "draft/Draft_Clone.md"
   },
   "Draft_CubicBezCurve": {
@@ -935,10 +938,12 @@
   },
   "Draft_Downgrade": {
    "doc": "The Draft Downgrade command downgrades selected objects. The result depends on the number of selected objects and their type. The command can for example deconstruct a 3D solid into separate faces and a wire into separate edges. If two face are selected a Part Cut object is created from them. Note that not all objects can be downgraded. This command is the counterpart of the Draft Upgrade command.\n\n## See also\n\n- Draft_Upgrade\n- Part_Cut",
+   "example": "select Wire; downgrade",
    "file": "draft/Draft_Downgrade.md"
   },
   "Draft_Draft2Sketch": {
    "doc": "The Draft Draft2Sketch command converts Draft objects to Sketcher Sketches and vice versa.",
+   "example": "select Wire; draft_to_sketch",
    "file": "draft/Draft_Draft2Sketch.md"
   },
   "Draft_Edit": {
@@ -951,6 +956,7 @@
   },
   "Draft_Facebinder": {
    "doc": "The Draft Facebinder command creates a surface object from selected faces. A Draft Facebinder is parametric, it will update if you modify its source object(s).\n\nIt can be used to create an extrusion from a collection of faces. This extrusion can for example represent a wall finish in architectural design.",
+   "example": "select Box.Face6; facebinder",
    "file": "draft/Draft_Facebinder.md"
   },
   "Draft_Fillet": {
@@ -972,6 +978,7 @@
   },
   "Draft_Join": {
    "doc": "The Draft Join command joins Draft Lines and Draft Wires into a single wire. This command is the counterpart of the Draft Split command.\n\n## See also\n\n- Draft_Split",
+   "example": "select Wire; join",
    "file": "draft/Draft_Join.md"
   },
   "Draft_Label": {
@@ -1010,10 +1017,12 @@
   },
   "Draft_PathArray": {
    "doc": "The Draft PathArray command creates a regular array from a selected object by placing copies along a path. Use the Draft PathLinkArray command to create a more efficient Link array instead. Except for the type of array that is created, Link array or regular array, the Draft PathLinkArray command is identical to this command.\n\nBoth commands can be used on 2D objects created with the Draft Workbench or Sketcher Workbench, but also on many 3D objects such as those created with the Part Workbench, PartDesign Workbench or BIM Workbench.\n\n## See also\n\n- Draft_OrthoArray\n- Draft_PolarArray\n- Draft_CircularArray\n- Draft_PathLinkArray\n- Draft_PointArray\n- Draft_PointLinkArray",
+   "example": "select Box, Line; path_array",
    "file": "draft/Draft_PathArray.md"
   },
   "Draft_PathLinkArray": {
    "doc": "The Draft PathLinkArray command creates a Link array from a selected object by placing copies along a path. Use the Draft PathArray command to create a less efficient regular array instead. Except for the type of array that is created, Link array or regular array, this command is identical to the Draft PathArray command. See there for more information.\n\n## See also\n\n- Draft_OrthoArray\n- Draft_PolarArray\n- Draft_CircularArray\n- Draft_PathArray\n- Draft_PointArray\n- Draft_PointLinkArray",
+   "example": "select Box, Line; path_link_array",
    "file": "draft/Draft_PathLinkArray.md"
   },
   "Draft_PathTwistedArray": {
@@ -1031,10 +1040,12 @@
   },
   "Draft_PointArray": {
    "doc": "The Draft PointArray command creates a regular array from a selected base object by placing copies at the points from a point object. Use the Draft PointLinkArray command to create a more efficient Link array instead. Except for the type of array that is created, Link array or regular array, the Draft PointLinkArray command is identical to this command.\n\nThe base object can be a 2D object created with the Draft Workbench or Sketcher Workbench, but also a 3D object such as those created with the Part Workbench, PartDesign Workbench or BIM Workbench.\n\nThe point object can be any object with a shape and vertices (including a Std Part containing one or more of such objects), as well as a mesh and a point cloud. Duplicate points in the point object are filtered out.\n\n## See also\n\n- Draft_OrthoArray\n- Draft_PolarArray\n- Draft_CircularArray\n- Draft_PathArray\n- Draft_PathLinkArray\n- Draft_PointLinkArray",
+   "example": "select Box, Box001; point_array",
    "file": "draft/Draft_PointArray.md"
   },
   "Draft_PointLinkArray": {
    "doc": "The Draft PointLinkArray command creates a Link array from a selected object by placing copies at the points from a point compound. Use the Draft PointArray command to create a less efficient regular array instead. Except for the type of array that is created, Link array or regular array, this command is identical to the Draft PointArray command. See there for more information.\n\n## See also\n\n- Draft_OrthoArray\n- Draft_PolarArray\n- Draft_CircularArray\n- Draft_PathArray\n- Draft_PathLinkArray\n- Draft_PointArray",
+   "example": "select Box, Box001; point_link_array",
    "file": "draft/Draft_PointLinkArray.md"
   },
   "Draft_PolarArray": {
@@ -1059,6 +1070,7 @@
   },
   "Draft_SelectGroup": {
    "doc": "The Draft SelectGroup command selects the contents of selected Std Groups or group-like BIM objects. For selected non-group objects, the contents of the group they are in is selected.\n\n## See also\n\n- Std_Group\n- Draft_AddToGroup\n- Draft_AddConstruction\n- Draft_AutoGroup",
+   "example": "select Group; select_group",
    "file": "draft/Draft_SelectGroup.md"
   },
   "Draft_SelectPlane": {
@@ -1165,6 +1177,7 @@
   },
   "Draft_SubelementHighlight": {
    "doc": "The Draft SubelementHighlight command temporarily highlights selected objects, or the base objects of selected objects. It is intended to be used in conjunction with the subelement mode of the Draft Move command, the Draft Rotate command or the Draft Scale command. Currently subelement mode only works properly for Draft Lines and Draft Wires.\n\n## See also\n\n- Draft_Move\n- Draft_Rotate\n- Draft_Scale",
+   "example": "select Wire; highlight_subelements",
    "file": "draft/Draft_SubelementHighlight.md"
   },
   "Draft_Text": {
@@ -1178,6 +1191,7 @@
   },
   "Draft_ToggleDisplayMode": {
    "doc": "The Draft ToggleDisplayMode command switches the Display Mode property of selected objects between and . When this property is set to only the vertices and edges of an object are visible making it possible to view and select objects behind it.\n\n## See also\n\n- Std_ToggleVisibility",
+   "example": "select Box; toggle_wireframe",
    "file": "draft/Draft_ToggleDisplayMode.md"
   },
   "Draft_ToggleGrid": {
@@ -1191,6 +1205,7 @@
   },
   "Draft_Upgrade": {
    "doc": "The Draft Upgrade command upgrades selected objects. The result depends on the number of selected objects and their type. The command can for example fuse elements and create faces. It is worth trying to upgrade a selection several times to see if a better result can be obtained. See the example in the image. Note that not all objects can be upgraded. This command is the counterpart of the Draft Downgrade command.\n\n## See also\n\n- Draft_Downgrade",
+   "example": "select Wire; upgrade",
    "file": "draft/Draft_Upgrade.md"
   },
   "Draft_Wire": {
@@ -1199,6 +1214,7 @@
   },
   "Draft_WireToBSpline": {
    "doc": "The Draft WireToBSpline command converts Draft Wires to Draft BSplines and vice versa.\n\n## See also\n\n- Draft_Wire\n- Draft_BSpline",
+   "example": "select Wire; convert_wire_b_spline",
    "file": "draft/Draft_WireToBSpline.md"
   },
   "Draft_WorkingPlaneProxy": {
@@ -1821,26 +1837,32 @@
   },
   "OpenSCAD_ColorCodeShape": {
    "doc": "Colors shapes by validity and type.",
+   "example": "select Box; color_shapes",
    "file": "openscad/OpenSCAD_ColorCodeShape.md"
   },
   "OpenSCAD_Edgestofaces": {
    "doc": "Convert edges to faces. Useful to prepare imported DXF geometry for extrusion.\n\n## See also\n\n- Draft_Upgrade",
+   "example": "select Box.Edge1; convert_edges_to_faces",
    "file": "openscad/OpenSCAD_Edgestofaces.md"
   },
   "OpenSCAD_ExpandPlacements": {
    "doc": "Expand all placements downwards in the Tree view.",
+   "example": "select Box; expand_placements",
    "file": "openscad/OpenSCAD_ExpandPlacements.md"
   },
   "OpenSCAD_ExplodeGroup": {
    "doc": "This feature explodes a fusion or a compound back to single parts applying random colours to these parts.",
+   "example": "select Compound; explode_group",
    "file": "openscad/OpenSCAD_ExplodeGroup.md"
   },
   "OpenSCAD_Hull": {
    "doc": "Applies a hull to selected shapes.\n\nExample of a hull operation performed on two cylinders",
+   "example": "select Box, Box001; hull",
    "file": "openscad/OpenSCAD_Hull.md"
   },
   "OpenSCAD_IncreaseToleranceFeature": {
    "doc": "Increases tolerance of edges/faces/vertex of selected object(s).",
+   "example": "select Box; increase_tolerance_feature",
    "file": "openscad/OpenSCAD_IncreaseToleranceFeature.md"
   },
   "OpenSCAD_MeshBoolean": {
@@ -1849,6 +1871,7 @@
   },
   "OpenSCAD_Minkowski": {
    "doc": "Applies a Minkowski sum to selected shapes.\n\n## Mathematical Definition\n\nAdd each element of subset A to each element of subset B to get Minkowski sum.\n\n## Geometrical Definition\n\nSweep element A along all boundaries of element B. Resulting space which is occupied by both elements is Minkowski sum.\n\nExample of Minkowski sum applied to cylinder and cube. Note: that the height of Minkowski sum is height of cylinder plus height of cube.",
+   "example": "select Box, Box001; minkowski_sum",
    "file": "openscad/OpenSCAD_Minkowski.md"
   },
   "OpenSCAD_MirrorMeshFeature": {
@@ -1857,14 +1880,17 @@
   },
   "OpenSCAD_RefineShapeFeature": {
    "doc": "Cleans unnecessary lines. After a Boolean operation, some lines defining the previous form remain visible, this tool creates a copy of the totally cleaned.\n\n## See also\n\n- Part_RefineShape",
+   "example": "select Box; refine_shape_feature",
    "file": "openscad/OpenSCAD_RefineShapeFeature.md"
   },
   "OpenSCAD_RemoveSubtree": {
    "doc": "Removes the selected objects and all children that are not referenced from other objects.",
+   "example": "select Box; remove_objects_and_children",
    "file": "openscad/OpenSCAD_RemoveSubtree.md"
   },
   "OpenSCAD_ReplaceObject": {
    "doc": "Replace an object in the feature tree view.",
+   "example": "select Box, Box001, Box002; replace_object",
    "file": "openscad/OpenSCAD_ReplaceObject.md"
   },
   "OpenSCAD_ResizeMeshFeature": {
@@ -1916,6 +1942,7 @@
   },
   "PartDesign_Boolean": {
    "doc": "PartDesign Boolean imports one or more PartDesign Bodies or PartDesign Clones (designated as \"tool bodies\") into the active PartDesign Body and applies a Boolean operation (fuse, cut or common).",
+   "example": "select Body; boolean_operation combotype=Cut",
    "file": "partdesign/PartDesign_Boolean.md"
   },
   "PartDesign_Chamfer": {
@@ -1939,6 +1966,7 @@
   },
   "PartDesign_Clone": {
    "doc": "PartDesign Clone creates a linked copy of a selected object which will follow any future edits to the original object (except placement). For example, one use case is when you want to do PartDesign Boolean on an object created in another workbench. Most types of objects are accepted, as long as they are single solids. If you need to clone multiple objects (i.e., bodies) or a Part Container, you may use Draft Workbench's clone. One caveat is that the Part Design Workbench's clone sets the current placement of the clone as zero (both Cartesian translation and spatial orientations). While the Draft's workbenches clone calculates and sets the numerical values of the current placement and orientation of the cloned objects with respect to the cloned object container.\n\n## See also\n\n- Draft_Clone",
+   "example": "select Box; partdesign_clone",
    "file": "partdesign/PartDesign_Clone.md"
   },
   "PartDesign_CompDatums": {
@@ -1947,6 +1975,7 @@
   },
   "PartDesign_CompPrimitiveAdditive": {
    "doc": "Creates an additive primitive.",
+   "example": "additive_primitive",
    "file": "partdesign/PartDesign_CompPrimitiveAdditive.md"
   },
   "PartDesign_CompPrimitiveSubtractive": {
@@ -1955,6 +1984,7 @@
   },
   "PartDesign_CompSketches": {
    "doc": "Creates a datum object or local coordinate system.",
+   "example": "create_datum",
    "file": "partdesign/PartDesign_CompSketches.md"
   },
   "PartDesign_CoordinateSystem": {
@@ -1967,6 +1997,7 @@
   },
   "PartDesign_DuplicateSelection": {
    "doc": "Duplicates the selected object and adds it to the active body.",
+   "example": "select Box; duplicate_object",
    "file": "partdesign/PartDesign_DuplicateSelection.md"
   },
   "PartDesign_Fillet": {
@@ -2025,6 +2056,7 @@
   },
   "PartDesign_Line": {
    "doc": "Creates a datum line which can be used as reference for sketches, other datum geometry or features. For example it can be used as revolution axis for Revolution and Groove features.\n\n## See also\n\n- PartDesign_Point\n- PartDesign_Plane",
+   "example": "select BaseFeature.Edge1; datum_line attachmentoffsetz=5",
    "file": "partdesign/PartDesign_Line.md"
   },
   "PartDesign_LinearPattern": {
@@ -2037,6 +2069,7 @@
   },
   "PartDesign_Mirrored": {
    "doc": "The PartDesign Mirrored tool mirrors one or more features.\n\n## See also\n\n- PartDesign_MultiTransform",
+   "example": "select AdditiveBox001; partdesign_mirror comboplane=Base XZ-plane",
    "file": "partdesign/PartDesign_Mirrored.md"
   },
   "PartDesign_MoveFeature": {
@@ -2049,14 +2082,17 @@
   },
   "PartDesign_MoveTip": {
    "doc": "Set tip, as this command is labeled in the context menu, redefines the tip, which is the feature exposed outside of the Body. By default, the tip is the last feature added to the Body; but sometimes it can be useful to temporarily set the tip to a feature earlier in the tree. This may be done to add a sketch, datum geometry or a feature which in retrospect should have been created earlier in the Body's history.\n\nThe tip is visually distinguished in the Model tree by a small white down arrow in a green circle overlayed on the feature's icon. For example, the following feature is the tip:\n\n## See also\n\n- PartDesign_MoveFeature\n- PartDesign_MoveFeatureInTree",
+   "example": "select BaseFeature; set_tip",
    "file": "partdesign/PartDesign_MoveTip.md"
   },
   "PartDesign_MultiTransform": {
    "doc": "The PartDesign MultiTransform tool creates a pattern of one or more features. The pattern can include multiple transformations where each subsequent transformation is applied to the result of the previous transformation.\n\nThe available transformations are: Mirrored, LinearPattern, PolarPattern and Scaled. The first three are also available as separate tools.\n\n## See also\n\n- PartDesign_Mirrored\n- PartDesign_LinearPattern\n- PartDesign_PolarPattern\n- PartDesign_Scaled",
+   "example": "select AdditiveBox001; partdesign_multi_transform",
    "file": "partdesign/PartDesign_MultiTransform.md"
   },
   "PartDesign_NewSketch": {
    "doc": "This tool creates a new sketch, creates a new PartDesign Body to contain the sketch if one does not exist and automatically opens the Sketcher workbench after creation.\n\nWhen creating models using the PartDesign workbench, this tool should be preferred to the [Sketcher NewSketch tool found in the Sketcher workbench.\n\n## See also\n\n- Sketcher_NewSketch",
+   "example": "partdesign_new_sketch",
    "file": "partdesign/PartDesign_NewSketch.md"
   },
   "PartDesign_Pad": {
@@ -2087,6 +2123,7 @@
   },
   "PartDesign_Plane": {
    "doc": "Creates a datum plane which can be used as reference for sketches or other datum geometry. Sketches can be attached to datum planes.\n\n## See also\n\n- PartDesign_Point\n- PartDesign_Line",
+   "example": "select BaseFeature.Face6; datum_plane attachmentoffsetz=5",
    "file": "partdesign/PartDesign_Plane.md"
   },
   "PartDesign_Pocket": {
@@ -2125,6 +2162,7 @@
   },
   "PartDesign_Revolution": {
    "doc": "The Revolution tool creates a solid by revolving a selected sketch or 2D object about a given axis.\n\n## See also\n\n- PartDesign_Groove",
+   "example": "select Sketch001; revolve revolveangle=270",
    "file": "partdesign/PartDesign_Revolution.md"
   },
   "PartDesign_ShapeBinder": {
@@ -2137,6 +2175,7 @@
   },
   "PartDesign_SubShapeBinder": {
    "doc": "The PartDesign SubShapeBinder tool creates a shape binder referencing geometry from one or more parent objects. A SubShapeBinder is typically used inside a PartDesign Body to reference geometry outside the Body. Using external geometry directly in a Body is not allowed and will lead to out of scope errors. But a SubShapeBinder can also be used without being nested in a Body.\n\nA SubShapeBinder will track the relative placement of the referenced geometry, which is useful in the context of creating assemblies, but on top of that also has its own placement.\n\nThe referenced geometry can consist of one or multiple elements. Each element can be an individual object (for example a PartDesign Body), a subobject (for example a Part Box inside a Std Part, or a sketch or Feature inside a Body), or a subelement (a face, edge or vertex). Which geometry should be selected depends on the intended purpose of the SubShapeBinder. For a Boolean operation you would need to select a solid. For a Pad operation a face, a sketch or a planar wire can be used. And for the external geometry in a sketch, or to attach a sketch, any combination of subelements may be appropriate. Elements can belong to different parent objects, and can even belong to the Body the SubShapeBinder is nested in. Because a SubShapeBinder is Link-based the referenced geometry can also belong to an external document.\n\n## See also\n\n- PartDesign_Clone",
+   "example": "select Box; sub_shape_binder 0 arc",
    "file": "partdesign/PartDesign_SubShapeBinder.md"
   },
   "PartDesign_SubtractiveHelix": {
@@ -2203,6 +2242,7 @@
   },
   "Part_BooleanFragments": {
    "doc": "The Part BooleanFragments tool computes all fragments that can result from applying Boolean operations between input shapes. For example, for two intersecting spheres, three non-overlapping but touching solids are generated.\n\nThe output shape is always a compound. The content of the compound depends on input shape types and operation mode. That means, you don't immediately get access to individual pieces of the result - the pieces remain grouped together. The individual pieces can be extracted by exploding the compound (Draft Downgrade).\n\nThe tool has three modes: \"Standard\", \"Split\", and \"CompSolid\".\n\n\"Standard\" and \"Split\" differ by the action of the tool on wires, shells and compsolids. If \"Split\", those are separated. If \"Standard\", they are kept together (get extra segments).\n\nCompounding structure in \"Standard\" and \"Split\" modes follows the compounding structure of inputs. That is, if you feed in two compounds, each containing a sphere like on example above, the result will also contain two compounds, each containing the pieces of the originally contained sphere. That means, the common piece will be repeated twice in the result. Only if the input spheres are both not in compounds, the result will contain the common piece once.\n\nIn \"CompSolid\" mode, the solids are joined into a compsolid (compsolid is a set of solids connected by faces; they are related to solids like wires are related to edges, and shells are related to faces; the name is probably a shortened phrase \"composite solid\"). The output is a non-nested compound of compsolids.\n\n## See also\n\n- Part_Slice\n- Part_XOR\n- Part_CompJoinFeatures\n- Part_Boolean",
+   "example": "select Box, Box001; boolean_fragments",
    "file": "part/Part_BooleanFragments.md"
   },
   "Part_Box": {
@@ -2233,6 +2273,7 @@
   },
   "Part_Chamfer": {
    "doc": "Part Chamfer chamfers the selected edge(s) of an object. A dialog allows you to choose which edge(s) to work on as well as modify various chamfer parameters.\n\n## See also\n\n- Part_Fillet",
+   "example": "select Box.Edge1; part_chamfer",
    "file": "part/Part_Chamfer.md"
   },
   "Part_CheckGeometry": {
@@ -2245,6 +2286,7 @@
   },
   "Part_Common": {
    "doc": "Extracts the common part (intersection) between selected Part objects. This operation is fully parametric and the components can be modified and the result recomputed.\n\n## See also\n\n- Part_Boolean\n- Part_Cut\n- Part_Fuse",
+   "example": "select Box, Box001; part_intersection",
    "file": "part/Part_Common.md"
   },
   "Part_CompCompoundTools": {
@@ -2253,6 +2295,7 @@
   },
   "Part_CompJoinFeatures": {
    "doc": "Joins the selected walled shapes.",
+   "example": "select Box, Box001; join_shapes",
    "file": "part/Part_CompJoinFeatures.md"
   },
   "Part_CompOffset": {
@@ -2261,14 +2304,17 @@
   },
   "Part_CompSplitFeatures": {
    "doc": "Shape splitting and compsolid creation tools.",
+   "example": "select Box, Box001; split_shapes",
    "file": "part/Part_CompSplitFeatures.md"
   },
   "Part_Compound": {
    "doc": "This command creates a compound of objects with a topological shape such as solid objects and other objects with faces and/or edges. It cannot handle meshes as they do not have a topological shape.\n\n## See also\n\n- Part_Fuse\n- Part_CompoundFilter\n- Part_ExplodeCompound",
+   "example": "select Box, Box001; compound",
    "file": "part/Part_Compound.md"
   },
   "Part_CompoundFilter": {
    "doc": "The CompoundFilter can be used to extract the individual pieces of the result of e.g. a Part Slice operation, with which you have split an object.\n\nIt can extract children by their indexes, test children for collisions with stencil shape, and filter children based on their properties, such as length, area, volume.\n\nIf there is only one child in the result, the output is the child. If there is more than one child to output, the output is a new compound.",
+   "example": "select Compound; compound_filter",
    "file": "part/Part_CompoundFilter.md"
   },
   "Part_Cone": {
@@ -2296,14 +2342,17 @@
   },
   "Part_CoordinateSystem": {
    "doc": "The Part CoordinateSystem command creates a coordinate system object that can be attached to other objects. A coordinate system is one of several datum objects. A datum object is typically used to attach multiple other objects to. If the position or orientation of a datum object changes, all objects attached to it will follow.\n\n## See also\n\n- Part_DatumPlane\n- Part_DatumLine\n- Part_DatumPoint",
+   "example": "coordinate_system",
    "file": "part/Part_CoordinateSystem.md"
   },
   "Part_CrossSections": {
    "doc": "The Cross-sections utility creates one or more cross-sections through the selected shape, parallel to one of the default global planes (XY, XZ or YZ).\n\n## See also\n\n- Part_Section",
+   "example": "select Box; part_cross_sections",
    "file": "part/Part_CrossSections.md"
   },
   "Part_Cut": {
    "doc": "The Part Cut tool cuts (subtracts) selected Part objects, the last one being subtracted from the first one. This operation is fully parametric and the components can be modified and the result recomputed.\n\nThis tool is an automated form of the Boolean operation.\n\n## See also\n\n- Part_Boolean\n- Part_Fuse\n- Part_Common",
+   "example": "select Box, Box001; part_cut",
    "file": "part/Part_Cut.md"
   },
   "Part_Cylinder": {
@@ -2332,22 +2381,27 @@
   },
   "Part_DatumLine": {
    "doc": "The Part DatumLine command creates a datum line object that can be attached to other objects. A datum line is one of several datum objects. A datum object is typically used to attach multiple other objects to. If the position or orientation of a datum object changes, all objects attached to it will follow.\n\n## See also\n\n- Part_CoordinateSystem\n- Part_DatumPlane\n- Part_DatumPoint",
+   "example": "part_datum_line",
    "file": "part/Part_DatumLine.md"
   },
   "Part_DatumPlane": {
    "doc": "The Part DatumPlane command creates a datum plane object that can be attached to other objects. A datum plane is one of several datum objects. A datum object is typically used to attach multiple other objects to. If the position or orientation of a datum object changes, all objects attached to it will follow.\n\n## See also\n\n- Part_CoordinateSystem\n- Part_DatumLine\n- Part_DatumPoint",
+   "example": "part_datum_plane",
    "file": "part/Part_DatumPlane.md"
   },
   "Part_DatumPoint": {
    "doc": "The Part DatumPoint command creates a datum point object that can be attached to other objects. A datum point is one of several datum objects. A datum object is typically used to attach multiple other objects to. If the position or orientation of a datum object changes, all objects attached to it will follow.\n\n## See also\n\n- Part_CoordinateSystem\n- Part_DatumPlane\n- Part_DatumLine",
+   "example": "part_datum_point",
    "file": "part/Part_DatumPoint.md"
   },
   "Part_Datums": {
    "doc": "Creates a datum object (coordinate system, plane, line, or point) that can be attached to other objects.",
+   "example": "datums",
    "file": "part/Part_Datums.md"
   },
   "Part_Defeaturing": {
    "doc": "The Defeaturing tool is intended for removal of selected features from the model. In this context, features are meant as holes, protrusions, gaps, chamfers, fillets etc. found on the model.\n\nThe defeaturing tool can be very useful in different contexts:\n\n- To edit an imported solid where no history of operations is available.\n- Fixing defects in the model, e.g. filling gaps, holes etc.\n- Model simplification for numeric analysis, display on mobile devices, etc.\n\nThe removed features are filled by the extension of the adjacent faces, thus no unexpected parts should appear in the result. Please note that the result is a new shape that is not linked to the original; thus, it is non-parametric.\n\nTo be available, this tool requires FreeCAD to be based on Open Cascade 7.3.0 or greater. If it is not available in your version of FreeCAD, you may have a look at the Defeaturing Workbench add-on, which proposes similar functionality even with older versions of OCC or FreeCAD.\n\n## See also\n\n- Defeaturing_Workbench\n- Macro_Parametric_Defeaturing",
+   "example": "select Box.Face6; defeaturing",
    "file": "part/Part_Defeaturing.md"
   },
   "Part_EdgeSelection": {
@@ -2361,10 +2415,12 @@
   },
   "Part_ElementCopy": {
    "doc": "The Part ElementCopy command creates non-parametric copies of subelements: vertices, edges and faces.",
+   "example": "select Box.Face6; shape_element_copy",
    "file": "part/Part_ElementCopy.md"
   },
   "Part_ExplodeCompound": {
    "doc": "The Part ExplodeCompound tool splits a compound of shapes, to make each contained shape (child) available as a separate object. The children are automatically put into a Group if there is more than one child.\n\nIt is semi-parametric: the shapes of the children will update as the source compound changes, but if the number of children in the compound is changed, the explosion will be either missing some shapes, or have redundant objects in an error state.\n\nPlacements of extracted shapes follow the placements of the originals, plus the Placement property of each child.\n\nThe tool will also explode non-compound shapes into their lower-level constituents: compsolids into solids, solids into shells, shells into faces, faces into wires, wires into edges, edges into vertices.\n\n## See also\n\n- Part_Compound\n- Draft_Downgrade",
+   "example": "select Compound; explode_compound",
    "file": "part/Part_ExplodeCompound.md"
   },
   "Part_Export": {
@@ -2382,10 +2438,12 @@
   },
   "Part_Fillet": {
    "doc": "Part Fillet creates fillets (rounds) on the selected edges of a shape. A dialog allows choosing which shape and which edges to work on.\n\n## See also\n\n- Part_Chamfer",
+   "example": "select Box.Edge1; part_fillet filletstartradius=3",
    "file": "part/Part_Fillet.md"
   },
   "Part_Fuse": {
    "doc": "The Part Fuse command fuses (unites) selected solids into one. Select two or more solids, then run. The operation is parametric: the operands stay editable and the result recomputes.\n\nIt is an automated form of the Part Boolean operation.\n\n## See also\n\n- Part_Boolean\n- Part_Cut\n- Part_Common",
+   "example": "select Box, Box001; part_union",
    "file": "part/Part_Fuse.md",
    "summary": "Fuse selected solids into one."
   },
@@ -2399,30 +2457,37 @@
   },
   "Part_JoinConnect": {
    "doc": "The Part JoinConnect tool connects the interiors of two walled objects (e.g. pipes). It can also join shells and wires.\n\n## See also\n\n- Part_JoinEmbed\n- Part_JoinCutout\n- Part_Boolean\n- Part_Thickness",
+   "example": "select Box, Box001; connect_shapes",
    "file": "part/Part_JoinConnect.md"
   },
   "Part_JoinCutout": {
    "doc": "The Part JoinCutout tool creates a cutout in a walled object (e.g. a pipe) to fit another walled object.\n\n## See also\n\n- Part_JoinConnect\n- Part_JoinEmbed\n- Part_Boolean\n- Part_Thickness",
+   "example": "select Box, Box001; cutout_shape",
    "file": "part/Part_JoinCutout.md"
   },
   "Part_JoinEmbed": {
    "doc": "The Part JoinEmbed tool embeds a walled object (e.g. a pipe) into another walled object.\n\n## See also\n\n- Part_JoinConnect\n- Part_JoinCutout\n- Part_Boolean\n- Part_Thickness",
+   "example": "select Box, Box001; embed_shapes",
    "file": "part/Part_JoinEmbed.md"
   },
   "Part_Loft": {
    "doc": "The Part Loft command creates a face, a shell, or a solid shape from two or more profiles (cross-sections).\n\n## See also\n\n- Part_Sweep",
+   "example": "select Wire, Wire001; loft 5",
    "file": "part/Part_Loft.md"
   },
   "Part_MakeFace": {
    "doc": "The Part MakeFace command creates a planar face from one or more coplanar closed wires (contours). They can be any valid wire, i.e. created with the Part Workbench, the Draft Workbench or the Sketcher Workbench. The contours should not self-intersect, or intersect each other. They can be nested to create voids.\n\n## See also\n\n- Part_RuledSurface",
+   "example": "select Wire; face_from_wires",
    "file": "part/Part_MakeFace.md"
   },
   "Part_MakeSolid": {
    "doc": "The Part MakeSolid command creates solids from shape objects.\n\nThis command is typically used as one of the steps to create a solid from a mesh. See Part ShapeFromMesh for more information.\n\n## See also\n\n- Part_ShapeFromMesh",
+   "example": "select Compound; convert_to_solid",
    "file": "part/Part_MakeSolid.md"
   },
   "Part_Mirror": {
    "doc": "Part Mirror creates a new object (image) which is a reflection of the original object (source). The image object is created behind a mirror plane. The mirror plane may be standard plane (XY, YZ, or XZ), any plane parallel to a standard plane, or ( ) any arbitrary plane by using a reference object.\n\nAn example:",
+   "example": "select Box; part_mirror",
    "file": "part/Part_Mirror.md"
   },
   "Part_Offset": {
@@ -2431,6 +2496,7 @@
   },
   "Part_Offset2D": {
    "doc": "The Part Offset2D tool constructs a wire, parallel to the original wire, at a certain distance from it. Or enlarges/shrinks a planar face, similarly.\n\nThe wire/face must be planar. There can be multiple wires in one object, not necessarily coplanar.\n\n## See also\n\n- Part_Offset\n- Part_Thickness\n- Draft_Offset",
+   "example": "select Wire; part_2d_offset offset=2",
    "file": "part/Part_Offset2D.md"
   },
   "Part_PickCurveNet": {
@@ -2443,14 +2509,17 @@
   },
   "Part_Primitives": {
    "doc": "The Part Primitives command opens a dialog to create one or more parametric primitives. 16 primitive types are available.\n\n## See also\n\n- Part_Builder",
+   "example": "primitive",
    "file": "part/Part_Primitives.md"
   },
   "Part_ProjectionOnSurface": {
    "doc": "[Part ProjectionOnSurface\n\nis used to project a Shape on top of a face from another object; this can be used to project a logo or textual object (see [Draft ShapeString) onto different surfaces to create interesting effects.\n\nGiven a source Shape, this tool can project edges, wires (closed edges), or entire faces from it; the result can be new edges, new wires, new faces, or even new extruded solids which can be used in boolean operations for effects such as engraving or stamping.",
+   "example": "part_project_on_surface",
    "file": "part/Part_ProjectionOnSurface.md"
   },
   "Part_RefineShape": {
    "doc": "The Part RefineShape command creates parametric copies with a refined shape from selected objects. It removes unnecessary edges from planar and cylindrical faces.",
+   "example": "select Box; refine_shape",
    "file": "part/Part_RefineShape.md"
   },
   "Part_RemoveSelectionGate": {
@@ -2460,10 +2529,12 @@
   },
   "Part_ReverseShape": {
    "doc": "The Part ReverseShape command creates parametric copies with reversed face normals from selected objects.",
+   "example": "select Box; reverse_shapes",
    "file": "part/Part_ReverseShape.md"
   },
   "Part_Revolve": {
    "doc": "Revolves the selected object around a given axis. The following shape types are allowed, and lead to the listed output shapes:\n\nInput shape Output shape\n\nVertex Edge Edge Face Wire Shell Face Solid Shell Compound solid (Compsolid)\n\nA Sketch can be used as well. Solids or compound solids are not allowed as input shapes. Normal compounds are currently not allowed either.\n\nThe Angle argument specifies how far the object is to be turned. The coordinates move the origin of the axis of revolving, relative to the origin of the coordinate system.\n\nIf you select a user defined axis, the numbers define the direction of the revolving axis with respect to the coordinate system: If the Z coordinate is 0 and the Y and X coordinate are non-zero, then the axis will lie in the X-Y-plane. Its angle is such that its tangent is the ratio of the given X and Y coordinates.",
+   "example": "select Wire; part_revolve",
    "file": "part/Part_Revolve.md"
   },
   "Part_RuledSurface": {
@@ -2487,6 +2558,7 @@
   },
   "Part_Section": {
    "doc": "The Part Section command creates wire geometry at the intersections of two objects. The result is fully parametric.\n\n- An intersection of two solids/faces results in one or more section lines.\n- An intersection of two lines, or a line and a solid/face, results in one or more points.\n\n## See also\n\n- Part_CrossSections",
+   "example": "select Box, Box001; section",
    "file": "part/Part_Section.md"
   },
   "Part_SectionCut": {
@@ -2503,10 +2575,12 @@
   },
   "Part_ShapeInfo": {
    "doc": "Displays information about the selected shape.",
+   "example": "select Box; shape_info",
    "file": "part/Part_ShapeInfo.md"
   },
   "Part_SimpleCopy": {
    "doc": "The Part SimpleCopy command creates non-parametric copies of objects.\n\n## See also\n\n- Part_TransformedCopy\n- Std_Copy\n- Std_DuplicateSelection",
+   "example": "select Box; part_simple_copy",
    "file": "part/Part_SimpleCopy.md"
   },
   "Part_SimpleCylinder": {
@@ -2515,10 +2589,12 @@
   },
   "Part_Slice": {
    "doc": "The Part Slice also known as Slice to compound tool is used to split shapes by intersection with other shapes. For example, for a box and a plane, a compound of two solids is created.\n\nThere are two commands to slice a shape: Part Slice apart and Part Slice to compound. They both create a 'Slice' parametric feature, that puts the sliced pieces into a compound. However, Part Slice Apart explodes the resulting compound into separate objects. \"Slice to compound\" is fully-parametric, and causes no trouble as the number of pieces changes. \"Slice apart\" will not update the number of objects as the number of pieces changes.\n\nThe output shape occupies the same space as the original. But it is split where it intersects with other shapes. The split pieces are put into a compound (or compsolid), so the object appears to remain in one piece. You need to explode the compound to get the individual pieces. If you want to access the individual pieces in a parametric way you can use Part Compound Filter for this purpose. For quick non-parametric access use Draft Downgrade.\n\nThe tool has three modes: \"Standard\", \"Split\", and \"CompSolid\". There is no selection form, they are predefined but can be accessed after the operation on the resulting slices level.\n\n\"Standard\" and \"Split\" differ by the action of the tool on wires, shells and compsolids: if \"Split\", those are separated; if \"Standard\", they are kept together (get extra segments).\n\nCompounding structure in \"Standard\" and \"Split\" modes follows the compounding structure of shape being sliced.\n\nIn \"CompSolid\" mode, the output is a compsolid (or a compound of compsolids, if the resulting solids form more than one island of connectedness). Compsolid is a set of solids connected by faces; they are related to solids like wires are related to edges, and shells are related to faces; the name is probably a shortened phrase \"composite solid\".\n\nThe overall action of the tool is very similar to Part Boolean Fragments, except only the pieces from the first shape are in the result.\n\n## See also\n\n- Part_BooleanFragments\n- Part_XOR\n- Part_CompJoinFeatures\n- Part_Boolean",
+   "example": "select Box, Box001; slice_to_compound",
    "file": "part/Part_Slice.md"
   },
   "Part_SliceApart": {
    "doc": "Tool to split shapes by intersection with other shapes. For example, for a box and a plane, two solids are created.\n\n- Above: the pieces were moved apart manually afterwards, to reveal the slicing.*\n\nSlice apart is the same as Part Slice followed by Part Explode Compound. While \"Slice to compound\" is fully-parametric, and causes no trouble as the number of pieces changes, \"Slice apart\" will not update the number of objects as the number of pieces changes. They both create Slice parametric feature, that puts the sliced pieces into a compound, but \"Slice apart\" explodes the resulting compound into separate objects.\n\nThe output shape occupies the same space as the original. But it is split where it intersects with other shapes. The split pieces are individual pieces.\n\nPlease visit Part Slice page for more info.\n\n## Tree structure of Slice Apart\n\nThe Slice Apart command creates more than only the sliced object. In the following example a cube is sliced by a face.\n\nThe slice is created and for each piece of it there is a Part CompoundFilter created, thus the same slice occurs multiple times below each CompoundFilter. All these CompoundFilters are united in a Compound.\n\n## See also\n\n- Part_Slice\n- Part_ExplodeCompound",
+   "example": "select Box, Box001; slice_apart",
    "file": "part/Part_SliceApart.md"
   },
   "Part_Sphere": {
@@ -2579,6 +2655,7 @@
   },
   "Part_TransformedCopy": {
    "doc": "The Part TransformedCopy command creates non-parametric copies of objects. It is intended for objects nested in containers.\n\nThe Placement of the copies is adjusted, accounting for the placement of the container(s), so that their position and rotation relative to the global coordinate system is the same as that of the original objects. If the selected objects are not nested, or nested in a container with a default placement, this command produces the same results as Part SimpleCopy.\n\n## See also\n\n- Part_SimpleCopy",
+   "example": "select Box; transformed_copy",
    "file": "part/Part_TransformedCopy.md"
   },
   "Part_Tube": {
@@ -2592,6 +2669,7 @@
   },
   "Part_XOR": {
    "doc": "The Part XOR command removes geometry shared by an even number of objects and leaves a void space between the involved objects. For two objects it represents a symmetric version of Part Cut.\n\n## See also\n\n- Part_BooleanFragments\n- Part_Slice\n- Part_CompJoinFeatures\n- Part_Boolean",
+   "example": "select Box, Box001; boolean_xor",
    "file": "part/Part_XOR.md"
   },
   "Points_Convert": {
@@ -3357,6 +3435,7 @@
   },
   "Std_AlignToSelection": {
    "doc": "The Std AlignToSelection command points the camera in the active 3D view in the opposite direction of the normal of a planar face, or the opposite direction of a straight edge.",
+   "example": "select Box.Face6; align_to_selection",
    "file": "std/Std_AlignToSelection.md"
   },
   "Std_Alignment": {
@@ -3398,6 +3477,7 @@
   },
   "Std_Copy": {
    "doc": "The Std Copy command copies objects to the Clipboard.\n\n## See also\n\n- Std_Cut\n- Std_Paste\n- Std_DuplicateSelection",
+   "example": "select Box; std_copy",
    "file": "std/Std_Copy.md"
   },
   "Std_Cut": {
@@ -3406,6 +3486,7 @@
   },
   "Std_Delete": {
    "doc": "The Std Delete command deletes selected objects.",
+   "example": "select Box; delete",
    "file": "std/Std_Delete.md"
   },
   "Std_DemoMode": {
@@ -3505,6 +3586,7 @@
   },
   "Std_DuplicateSelection": {
    "doc": "The Std DuplicateSelection command duplicates objects within the active document.\n\n## See also\n\n- Std_Cut\n- Std_Copy\n- Std_Paste",
+   "example": "select Box; duplicate_selection",
    "file": "std/Std_DuplicateSelection.md"
   },
   "Std_Edit": {
@@ -3559,6 +3641,7 @@
   },
   "Std_HideSelection": {
    "doc": "The Std HideSelection command hides selected objects in 3D views.\n\n## See also\n\n- Std_ToggleVisibility\n- Std_ShowSelection\n- Std_ToggleObjects\n- Std_ShowObjects\n- Std_HideObjects",
+   "example": "select Box; hide_selection",
    "file": "std/Std_HideSelection.md"
   },
   "Std_Import": {
@@ -3579,14 +3662,17 @@
   },
   "Std_LinkMake": {
    "doc": "[Std LinkMake\n\ncreates an App Link (`App::Link` class), a type of object that references or links to another object in the same document, or in another document. It is especially designed to efficiently duplicate a single object multiple times, which helps with the creation of complex assemblies from smaller subassemblies, and from multiple reusable components like screws, nuts, and similar fasteners.\n\nThe App Link object was newly introduced in v0.19; in the past, simple duplication of objects could be achieved with [Draft Clone, but this is a less efficient solution due to its implementation, which essentially creates a copy of the internal Shape of the source object. Instead, a Link directly references the original Shape, so it is more memory-efficient.\n\nBy itself the Link object can behave like an array, duplicating its base object many times; this can be done by setting its Element Count property to or larger. This \"Link Array\" object can also be created with the different array tools of the Draft Workbench, for example, [Draft OrthoArray, [Draft PolarArray, and [Draft CircularArray.\n\nWhen used with the PartDesign Workbench, Links are intended to be used with [PartDesign Bodies, so it is recommended to set Display Mode Body to to select the features of the entire Body, and not the individual features. To create arrays of the internal PartDesign Features, use [PartDesign LinearPattern, [PartDesign PolarPattern, and [PartDesign MultiTransform.\n\nThe [Std LinkMake tool is not defined by a particular workbench, but by the base system, thus it is found in the structure toolbar that is available in all workbenches. The Link object, used in conjunction with [Std Part to group various objects, forms the basis of the Assembly3 and Assembly4 Workbenches.\n\n## See also\n\n- Std_Part\n- Std_Group\n- PartDesign_Body",
+   "example": "select Link; make_link",
    "file": "std/Std_LinkMake.md"
   },
   "Std_LinkMakeGroup": {
    "doc": "Creates a group of links.",
+   "example": "select Link; std_link_group",
    "file": "std/Std_LinkMakeGroup.md"
   },
   "Std_LinkMakeRelative": {
    "doc": "[Std LinkMakeRelative\n\ncreates an App Link (`App::Link` class), just like [Std LinkMake, but it operates on selected subelements first, and sets the Link Transform to `True`.\n\n## See also\n\n- Std_Part\n- Std_Group\n- Std_LinkMake",
+   "example": "select Box.Face6; make_sub_link",
    "file": "std/Std_LinkMakeRelative.md"
   },
   "Std_LinkReplace": {
@@ -3599,10 +3685,12 @@
   },
   "Std_LinkSelectAllLinks": {
    "doc": "The Std LinkSelectAllLinks command selects all App Link objects, links, that directly or indirectly link to the same source object.\n\n## See also\n\n- Std_LinkSelectLinked\n- Std_LinkSelectLinkedFinal",
+   "example": "select Box; select_all_links",
    "file": "std/Std_LinkSelectAllLinks.md"
   },
   "Std_LinkSelectLinked": {
    "doc": "The Std LinkSelectLinked command selects the Linked Object, the source object, of an App Link object, a link.\n\n## See also\n\n- Std_LinkSelectLinkedFinal\n- Std_LinkSelectAllLinks",
+   "example": "select Link; go_to_linked_object",
    "file": "std/Std_LinkSelectLinked.md"
   },
   "Std_LinkSelectLinkedFinal": {
@@ -3704,6 +3792,7 @@
   },
   "Std_Placement": {
    "doc": "The Std Placement command displays the Placement task panel for a selected object.\n\n## See also\n\n- Std_Alignment\n- Placement",
+   "example": "select Box; placement",
    "file": "std/Std_Placement.md"
   },
   "Std_Print": {
@@ -3741,6 +3830,7 @@
   },
   "Std_RandomColor": {
    "doc": "The Std RandomColor command applies a random Diffuse Color to the Shape Appearance of selected objects.\n\nThis page has been updated for version 1.0.",
+   "example": "select Box; random_color",
    "file": "std/Std_RandomColor.md"
   },
   "Std_RecallWorkingView": {
@@ -3757,6 +3847,7 @@
   },
   "Std_Recompute": {
    "doc": "Recomputes a feature or document.",
+   "example": "select Box; std_recompute",
    "file": "std/Std_Recompute.md"
   },
   "Std_Redo": {
@@ -3831,6 +3922,7 @@
   },
   "Std_SendToPythonConsole": {
    "doc": "The Std SendToPythonConsole command creates variables in the Python console referencing a selected object and its selected subshapes, along with some other useful references. The variables and the code involved can be used in the development of Python code.\n\nDepending on the selected object and its selected subshapes, if any, the following variables are created:\n\n+++ | Variable name | Referenced object(s) | +=================+=========================================================================================================================================================+ | | The document containing the selected object | | | | | | | +++ | | The selected Link object (only created if the selected object is a Link) | | | | | | | +++ | | Depending on the selected object: | | | The selected object itself (if the selected object is not a Link) | | | The Linked object (if the selected object is a Link) | +++ | | Depending on the type of | | | The property of (for objects derived from the class) | | | The property of (for Mesh objects) | | | The property of (for Points objects) | +++ | | The first selected subshape (only created if at least one subshape is selected) | | | | | | | +++ | | A list containing all subshapes (only created if two or more subshapes are selected) | | | | | | | +++\n\n>>> ### Begin command Std_SendToPythonConsole >>> try: >>> del(doc,lnk,obj,shp,sub,subs) >>> except Exception: >>> pass >>> >>> doc = App.getDocument(\"Unnamed\") >>> lnk = doc.getObject(\"Link\") >>> obj = lnk.getLinkedObject() >>> shp = obj.Shape >>> sub = obj.getSubObject(\"Edge10\") >>> subs = [obj.getSubObject(\"Edge10\"),obj.getSubObject(\"Face3\"),obj.getSubObject(\"Vertex5\"),] >>> ### End command Std_SendToPythonConsole",
+   "example": "select Box; send_to_python_console",
    "file": "std/Std_SendToPythonConsole.md"
   },
   "Std_SetAppearance": {
@@ -3848,6 +3940,7 @@
   },
   "Std_ShowSelection": {
    "doc": "The Std ShowSelection command shows selected objects in 3D views.\n\n## See also\n\n- Std_ToggleVisibility\n- Std_HideSelection\n- Std_ToggleObjects\n- Std_ShowObjects\n- Std_HideObjects",
+   "example": "select Box; show_selection",
    "file": "std/Std_ShowSelection.md"
   },
   "Std_StoreWorkingView": {
@@ -3949,6 +4042,7 @@
   },
   "Std_ToggleFreeze": {
    "doc": "The Std ToggleFreeze command toggles the freeze state of objects. A frozen object is not recomputed when the objects it depends on change. The freeze state of objects is not stored in the document.",
+   "example": "select Box; toggle_freeze",
    "file": "std/Std_ToggleFreeze.md"
   },
   "Std_ToggleNavigation": {
@@ -3962,6 +4056,7 @@
   },
   "Std_ToggleSelectability": {
    "doc": "The Std ToggleSelectability command toggles the selectability of objects in 3D views.",
+   "example": "select Box; toggle_selectability",
    "file": "std/Std_ToggleSelectability.md"
   },
   "Std_ToggleSkipRecompute": {
@@ -3975,10 +4070,12 @@
   },
   "Std_ToggleTransparency": {
    "doc": "The Std ToggleTransparency command toggles the transparency of selected objects between 0% (opaque) and 70%.",
+   "example": "select Box; toggle_transparency",
    "file": "std/Std_ToggleTransparency.md"
   },
   "Std_ToggleVisibility": {
    "doc": "The Std ToggleVisibility command toggles the visibility of selected objects in 3D views.\n\n## See also\n\n- Std_ShowSelection\n- Std_HideSelection\n- Std_ToggleObjects\n- Std_ShowObjects\n- Std_HideObjects",
+   "example": "select Box; toggle_visibility",
    "file": "std/Std_ToggleVisibility.md"
   },
   "Std_ToolBarMenu": {
@@ -3995,6 +4092,7 @@
   },
   "Std_TreeCollapse": {
    "doc": "Collapses the currently selected tree items.",
+   "example": "select Box; collapse_selected_items",
    "file": "std/Std_TreeCollapse.md"
   },
   "Std_TreeCollapseDocument": {
@@ -4008,6 +4106,7 @@
   },
   "Std_TreeExpand": {
    "doc": "Expands the currently selected tree items.",
+   "example": "select Box; expand_selected_items",
    "file": "std/Std_TreeExpand.md"
   },
   "Std_TreeMultiDocument": {
@@ -4027,10 +4126,12 @@
   },
   "Std_TreeSelectAllInstances": {
    "doc": "The Std TreeSelectAllInstances command expands the Tree view to reveal all instances of the same object and selects them.",
+   "example": "select Box; select_all_instances",
    "file": "std/Std_TreeSelectAllInstances.md"
   },
   "Std_TreeSelection": {
    "doc": "The Std TreeSelection command scrolls the Tree view to the first created object in a 3D view selection.\n\nIf the Tree view SyncSelection mode is off, the Tree view is scrolled to the first created object in the selection whose parent is already expanded in the Tree view. If none of the objects' parents are expanded the command will have no effect in that mode.",
+   "example": "select Box; go_to_selection",
    "file": "std/Std_TreeSelection.md"
   },
   "Std_TreeSingleDocument": {
@@ -4134,6 +4235,7 @@
   "Std_ViewFitSelection": {
    "choice": "selection",
    "doc": "The Std ViewFitSelection command zooms and pans the camera so that all selected objects fit inside the active 3D view. This command is useful if for some reason objects are beyond the boundaries of the current 3D View or can't easily be found using 3D navigation.\n\n## See also\n\n- Std_ViewFitAll",
+   "example": "select Box; fit_selection",
    "family": "zoom",
    "file": "std/Std_ViewFitSelection.md"
   },
@@ -4297,6 +4399,7 @@
   },
   "Surface_BlendCurve": {
    "doc": "[Surface Blend Curve\n\ncreates a Bezier curve between two edges, with desired continuity.\n\nThe base geometry can belong to curves created with the Draft Workbench or the Sketcher Workbench, but can also belong to solid objects such as those created with the Part Workbench.",
+   "example": "select Box.Edge1, Box.Edge2; blend_curve",
    "file": "surface/Surface_BlendCurve.md"
   },
   "Surface_CurveOnMesh": {
@@ -4305,6 +4408,7 @@
   },
   "Surface_ExtendFace": {
    "doc": "[Surface ExtendFace\n\nextrapolates an existing face or surface at its boundaries with its local U and V parameters.",
+   "example": "select Box.Face6; extend_face",
    "file": "surface/Surface_ExtendFace.md"
   },
   "Surface_Filling": {
@@ -4317,6 +4421,7 @@
   },
   "Surface_Sections": {
    "doc": "[Surface Sections\n\nis used to create a surface from edges that represent transversal sections of a surface.",
+   "example": "select Wire, Wire001; sections",
    "file": "surface/Surface_Sections.md"
   },
   "TechDraw_2LineCenterLine": {

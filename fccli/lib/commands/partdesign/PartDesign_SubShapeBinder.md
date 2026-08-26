@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "1f544ad6e5ee"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; sub_shape_binder 0 arc
 aliases: []
 requires: []
 panel: null

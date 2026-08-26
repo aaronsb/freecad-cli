@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "b58815397d07"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select AdditiveBox001; partdesign_mirror comboplane=Base XZ-plane
 aliases: []
 requires: []
 panel: null

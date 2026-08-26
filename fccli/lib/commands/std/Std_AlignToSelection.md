@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "7b7a986ed013"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box.Face6; align_to_selection
 aliases: []
 requires: []
 panel: null

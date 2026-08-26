@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "0d1546eeafb4"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; toggle_visibility
 aliases: []
 requires: []
 panel: null

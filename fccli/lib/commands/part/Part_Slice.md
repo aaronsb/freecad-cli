@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "94910a62ab2f"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; slice_to_compound
 aliases: []
 requires: []
 panel: null

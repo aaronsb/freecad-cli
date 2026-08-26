@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "65cc2369cce0"
 # authored from here down; the tool never rewrites these
 verb: null
+example: part_project_on_surface
 aliases: []
 requires: []
 panel: null

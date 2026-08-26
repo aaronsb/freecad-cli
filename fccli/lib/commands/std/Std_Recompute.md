@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "dff8a6124c64"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; std_recompute
 aliases: []
 requires: []
 panel: null

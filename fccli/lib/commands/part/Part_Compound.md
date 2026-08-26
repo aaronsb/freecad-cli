@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "b5fae704b511"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; compound
 aliases: []
 requires: []
 panel: null

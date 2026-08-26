@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "801bf464bcf4"
 # authored from here down; the tool never rewrites these
 verb: null
+example: additive_primitive
 aliases: []
 requires: []
 panel: null

@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "6ceafd2fe36b"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; toggle_freeze
 aliases: []
 requires: []
 panel: null

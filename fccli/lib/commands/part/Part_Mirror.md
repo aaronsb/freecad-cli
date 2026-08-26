@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "e7da605bf3be"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; part_mirror
 aliases: []
 requires: []
 panel: null

@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "d5392035df03"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; boolean_xor
 aliases: []
 requires: []
 panel: null

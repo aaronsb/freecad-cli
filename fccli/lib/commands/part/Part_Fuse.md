@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "f042edebc7ae"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; part_union
 summary: Fuse selected solids into one.
 aliases: []
 requires: []

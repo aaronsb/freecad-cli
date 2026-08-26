@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "18ea41e64b60"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box.Face6; extend_face
 aliases: []
 requires: []
 panel: null

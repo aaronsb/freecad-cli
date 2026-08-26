@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "cfd5efbdf5a0"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Wire; part_2d_offset offset=2
 aliases: []
 requires: []
 panel: null

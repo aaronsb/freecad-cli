@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "f327f88759bd"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Compound; convert_to_solid
 aliases: []
 requires: []
 panel: null

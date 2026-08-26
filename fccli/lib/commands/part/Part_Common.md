@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "c92e1e42ae95"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; part_intersection
 aliases: []
 requires: []
 panel: null

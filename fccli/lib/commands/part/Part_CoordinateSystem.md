@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "3c16d973d603"
 # authored from here down; the tool never rewrites these
 verb: null
+example: coordinate_system
 aliases: []
 requires: []
 panel: null

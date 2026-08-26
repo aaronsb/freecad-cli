@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "cba9f9a35f0b"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Compound; compound_filter
 aliases: []
 requires: []
 panel: null
