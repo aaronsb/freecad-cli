@@ -2232,14 +2232,31 @@ def _run():
 
     # --- D1: a choice no input selects.
     _live_d1 = _grammar(dictionary=_tree)
-    check("  the exact choice GH #55 found, shadowed by the longer one",
-          _fired(_live_d1, "the family door `view` lists 'iso', and "
-                           "'isometric' begins with it", "reports"), 1)
-    check("    and its sibling, which is not shadowed and says nothing",
-          _fired(_live_d1, "lists 'isometric'", "reports"), 0)
-    check("  a shadowed value in a harvested enumeration, not a family",
-          _fired(_live_d1, "`draw_view_annotation <TextStyle>` lists 'Bold'",
-                 "reports"), 1)
+    check("  no choice on the tree is unreachable, exact winning over prefix",
+          _fired(_live_d1, "no input selects", "reports"), 0)
+    # The fault, put back. D1 asks `grammar.match_choice` rather than
+    # keeping a copy, so stripping the exact tier off the matcher -- the
+    # engine GH #55 was filed against -- brings the whole class back, and
+    # the two lines below are the ones this suite used to pin.
+    import fccli.grammar as _gmod
+    _old_match = _gmod.match_choice
+    try:
+        _gmod.match_choice = lambda choices, text: [
+            c for c in choices if c.lower().startswith(text.lower())]
+        _prefix_only = _grammar(dictionary=_tree)
+    finally:
+        _gmod.match_choice = _old_match
+    check("    and the prefix-only matcher put back brings 21 of them back",
+          (_fired(_prefix_only, "the family door `view` lists 'iso', and "
+                                "typing it also selects 'isometric'",
+                  "reports"),
+           _fired(_prefix_only, "`draw_view_annotation <TextStyle>` lists "
+                                "'Bold'", "reports"),
+           _fired(_prefix_only, "no input selects", "reports")),
+          (1, 1, 21))
+    check("    the sibling that shadows is never the one reported",
+          (_fired(_live_d1, "lists 'isometric'", "reports"),
+           _fired(_prefix_only, "lists 'isometric'", "reports")), (0, 0))
     check("  two commands under one choice, which is silent where it happens",
           _fired(_live_d1, "`save as` is two commands", "reports"), 1)
     # The problem half of D1: the tree authored the spelling. Three
@@ -2516,18 +2533,36 @@ def _run():
     # the comparison could be made case-sensitive with the suite green and
     # the tree's D1 output byte-identical, because every shadowed pair the
     # tree carries agrees in case. This is the pair that does not.
+    #
+    # Calling it is also what re-aimed the rule when the matcher took an
+    # exact value first (GH #55). The class it was written for -- a value
+    # a longer value begins -- is settled at the matcher and gone from the
+    # report; the class left is two spellings of one word in a door, which
+    # is a case-insensitive question, so the case-sensitive mutant still
+    # dies here.
     from fccli.grammar import match_choice as _match
-    check("  the engine's matcher is prefix, and case is not the difference",
+    check("  the engine's matcher takes an exact value before a prefix",
           (_match(["iso", "isometric"], "iso"),
-           _match(["Iso", "isometric"], "Iso"),
+           _match(["Iso", "isometric"], "iso"),
+           _match(["iso", "isometric"], "isom"),
            _match(["front", "top"], "FRONT"),
            _match(["front", "top"], "zzz")),
-          (["iso", "isometric"], ["Iso", "isometric"], ["front"], []))
+          (["iso"], ["Iso"], ["isometric"], ["front"], []))
+    check("    and two spellings of one word are exact together, so neither wins",
+          _match(["Iso", "iso", "front"], "ISO"), ["Iso", "iso"])
     _mixed = _copy_registry()
-    _mixed.get("view").steps[0].choices = ["Iso", "isometric", "front"]
-    check("    so a shadow in mixed case is one D1 finds",
-          _fired(_grammar(dictionary=_tree, registry=_mixed),
-                 "lists 'Iso', and 'isometric' begins with it", "reports"), 1)
+    _mixed.get("view").steps[0].choices = ["Iso", "iso", "front"]
+    check("    so a door carrying both spellings is one D1 finds",
+          (_fired(_grammar(dictionary=_tree, registry=_mixed),
+                  "lists 'Iso', and typing it also selects 'iso'", "reports"),
+           _fired(_grammar(dictionary=_tree, registry=_mixed),
+                  "lists 'iso', and typing it also selects 'Iso'", "reports")),
+          (1, 1))
+    _unshadowed = _copy_registry()
+    _unshadowed.get("view").steps[0].choices = ["iso", "isometric", "front"]
+    check("    and one a longer value begins is not, the matcher having settled it",
+          _fired(_grammar(dictionary=_tree, registry=_unshadowed),
+                 "no input selects", "reports"), 0)
 
     # --- the choice collision is above the line, with the four the tree
     # carries grandfathered by name. The criterion is the consequence: a
@@ -2657,8 +2692,23 @@ def _run():
           _verify.classify(1, "collecting", False, []), "incomplete")
     check("    a non-zero exit with the engine idle is broken",
           _verify.classify(1, "idle", False, []), "broken")
-    check("    a broken example does not read as invalid",
-          _verify.classify(1, "idle", False, ["Fillet"]), "broken")
+    # GH #57 turned this reading round. The engine reports an object
+    # FreeCAD rejected as an error, so a non-zero exit is what an invalid
+    # run looks like from out here; reading the code first would file all
+    # fourteen named instances as `broken`, which does not name the object.
+    check("    an invalid object outranks the exit code it caused",
+          _verify.classify(1, "idle", False, ["Fillet"]), "invalid")
+    check("    and a run that only raised keeps its own message",
+          (_verify.rejection_only("error: pad: FreeCAD computed Pad and "
+                                  "marked it invalid -- the command ran, "
+                                  "the result is not usable"),
+           _verify.rejection_only("error: pad failed: boom"),
+           _verify.rejection_only("error: pad failed: boom\n"
+                                  "error: pad: FreeCAD computed Pad and "
+                                  "marked it invalid -- the command ran, "
+                                  "the result is not usable"),
+           _verify.rejection_only("")),
+          (True, False, False, False))
     check("    a held-elsewhere floor code is busy",
           _verify.classify(75, "idle", False, []), "busy")
     check("    busy outranks a panel someone else left open",
@@ -5035,6 +5085,183 @@ def _run():
     check("    the cursor table stays capped, oldest out",
           (len(_sv._cursors), "tok-0" in _sv._cursors),
           (_srv.RESUME_IDS, False))
+
+    print("\n5am. a line reports what it did, and does nothing else "
+          "(GH #55, #72, #57)")
+    # --- GH #55: an exact choice a longer one shadowed. `view iso` asked
+    # again for the view it had just been given, because `iso` also starts
+    # `isometric` and the matcher insists on one hit. A dry engine
+    # resolves and parses exactly as the live one does and stops before
+    # running FreeCAD's command, so this is the real `view` door with the
+    # real choices from the tree on it.
+    _dbus = Bus()
+    _dvals, _derrs = [], []
+    _dbus.subscribe(lambda m: _dvals.append(m.data.get("values"))
+                    if m.kind == RESULT else None)
+    _dbus.subscribe(lambda m: _derrs.append(m.text) if m.kind == ERROR else None)
+    _deng = Engine(_dbus, REGISTRY, dry=True)
+    _vstep = REGISTRY.get("view").steps[0].id
+    _deng.submit("view iso")
+    _deng.submit("view isometric")
+    check("`view iso` reaches the choice it names, and iso is not isometric",
+          ([v.get(_vstep) for v in _dvals], _deng.state, _derrs),
+          (["iso", "isometric"], "idle", []))
+    _deng.submit("view is")
+    check("  a prefix two choices answer to is still ambiguous",
+          (len([e for e in _derrs if "expected one of" in e]), _deng.state),
+          (1, "collecting"))
+    _deng.cancel()
+    # The fault, put back: the matcher without its exact tier.
+    import fccli.engine as _emod
+    _old_mc = _emod.match_choice
+    try:
+        _emod.match_choice = lambda choices, text: [
+            c for c in choices if c.lower().startswith(text.lower())]
+        _dvals.clear(); _derrs.clear()
+        _deng.submit("view iso")
+        check("  and the prefix-only matcher put back makes it unreachable",
+              (_dvals, len([e for e in _derrs if "expected one of" in e]),
+               _deng.state), ([], 1, "collecting"))
+    finally:
+        _emod.match_choice = _old_mc
+    _deng.cancel()
+
+    # --- GH #72: a token that will not parse at a step used to cancel the
+    # command and run the verb it named, inside one submitted line, and
+    # the line reported the escape target's success as its own. Two verbs
+    # of the shape that did it: `loft standard` ran `standard_views`.
+    from fccli.grammar import (Registry as _R72, Step as _S72, Verb as _V72,
+                               CHOICE as _CH72)
+    _ran72 = []
+    _reg72 = _R72()
+    _reg72.add(_V72(name="loftish", transactional=False,
+                    steps=[_S72(id="transition", kind=_CH72,
+                                prompt="Transition",
+                                choices=["transformed", "rotated"])],
+                    emit=lambda v: _ran72.append("loftish")))
+    _reg72.add(_V72(name="standard_views", steps=[], transactional=False,
+                    emit=lambda v: _ran72.append("standard_views")))
+    _bus72 = Bus()
+    _msg72 = []
+    _bus72.subscribe(lambda m: _msg72.append((m.kind, m.text)))
+    _eng72 = Engine(_bus72, _reg72)
+    _eng72.submit("loftish standard")
+    check("a verb name mid-line is refused, and starts nothing",
+          (_ran72, _eng72.state,
+           _eng72.verb.name if _eng72.verb else None),
+          ([], "collecting", "loftish"))
+    check("  the refusal names the command it did not start, and the step",
+          [t for k, t in _msg72 if k == ERROR],
+          ["'standard' is the command 'standard_views', and a command does "
+           "not start inside a line -- loftish is still asking for "
+           "Transition"])
+    check("  and nothing was cancelled",
+          [t for k, t in _msg72 if "cancelled" in t], [])
+    # The same token at a prompt is the interactive escape, which stays:
+    # a person typing a new verb to abandon the one they are in the middle
+    # of sees the switch happen and can undo it.
+    _msg72.clear()
+    _eng72.submit("standard")
+    check("  the same token at a prompt still abandons and starts",
+          (_ran72, _eng72.state,
+           [t for k, t in _msg72 if k == "info"]),
+          (["standard_views"], "idle", ["loftish cancelled"]))
+    # The two doors are two functions, and the prompt one is the one that
+    # escapes: fed the same token at the same step of the same command,
+    # `_feed_text` restarts where `_start`'s own walk refuses.
+    _ran72.clear(); _msg72.clear()
+    _eng72.submit("loftish")
+    _eng72._feed_text("standard", step=_eng72.current_step())
+    check("  the prompt door, called directly, still escapes",
+          (_ran72, [t for k, t in _msg72 if "cancelled" in t]),
+          (["standard_views"], ["loftish cancelled"]))
+    # A refused line stops where it was refused. The tokens after the bad
+    # one were answers to the command it refused, and a verb that learned
+    # its steps by starting runs as soon as any value lands -- which is
+    # how `loft standard` came back live as a loft with no sections in it
+    # and an invalid Loft in the document.
+    _ran72b = []
+    _reg72.add(_V72(name="paneled", steps=[], transactional=False,
+                    open=lambda eng: [
+                        _S72(id="sections", kind=_CH72, prompt="Sections",
+                             choices=["one", "two"]),
+                        _S72(id="transition", kind=_CH72,
+                             prompt="Transition",
+                             choices=["transformed", "rotated"])],
+                    emit=lambda v: _ran72b.append("paneled")))
+    _msg72.clear()
+    _eng72.submit("paneled one transformed")
+    check("  a verb that learned its steps runs on the values it was given",
+          (_ran72b, _eng72.state), (["paneled"], "idle"))
+    _ran72b.clear(); _msg72.clear()
+    _eng72.submit("paneled standard one")
+    check("  but a refused token stops the line before anything runs",
+          (_ran72b, _eng72.state, _eng72.values,
+           len([t for k, t in _msg72 if k == ERROR])),
+          ([], "collecting", {}, 1))
+    _eng72.cancel()
+
+    # --- GH #57: a command that ran to completion over an object FreeCAD
+    # computed and rejected reported success and said nothing. A Part::Cut
+    # with no operands is the smallest thing FreeCAD marks Invalid.
+    _doc57 = App.newDocument("rejected")
+
+    def _cut57(_v):
+        obj = _doc57.addObject("Part::Cut", "Cut")
+        _doc57.recompute()
+        return obj
+
+    def _box57(_v):
+        obj = _doc57.addObject("Part::Box", "Box")
+        _doc57.recompute()
+        return obj
+
+    _reg57 = _R72()
+    _reg57.add(_V72(name="goodbox", steps=[], emit=_box57))
+    _reg57.add(_V72(name="badcut", steps=[], emit=_cut57))
+    _bus57 = Bus()
+    _msg57 = []
+    _bus57.subscribe(lambda m: _msg57.append((m.kind, m.text)))
+    _eng57 = Engine(_bus57, _reg57)
+    _eng57.submit("goodbox")
+    check("a command whose object computes clean reports only the result",
+          ([t for k, t in _msg57 if k == RESULT],
+           [t for k, t in _msg57 if k == ERROR]), (["goodbox"], []))
+    _msg57.clear()
+    _eng57.submit("badcut")
+    check("a command that left an object FreeCAD rejected says so",
+          [t for k, t in _msg57 if k == ERROR],
+          ["badcut: FreeCAD computed Cut and marked it invalid -- "
+           "the command ran, the result is not usable"])
+    check("  and the result stands beside it, the line having run",
+          [t for k, t in _msg57 if k == RESULT], ["badcut"])
+    # The delta, which is what makes the reading fair: one bad object does
+    # not make every line after it a failure.
+    _msg57.clear()
+    _eng57.submit("goodbox")
+    check("  a later clean line is not charged with what it found",
+          [t for k, t in _msg57 if k == ERROR], [])
+    _msg57.clear()
+    _eng57.submit("badcut")
+    check("  and a second one is charged with its own",
+          [t for k, t in _msg57 if k == ERROR],
+          ["badcut: FreeCAD computed Cut001 and marked it invalid -- "
+           "the command ran, the result is not usable"])
+    # A verb that switched documents leaves nothing to compare against.
+    # The document it switched *to* has two invalid objects in it by now,
+    # and they have been there since before this line was typed -- so a
+    # reading that ignored which document it was in would charge a verb
+    # that made nothing with both of them.
+    _other57 = App.newDocument("other57")
+    _reg57.add(_V72(name="goback", steps=[], transactional=False,
+                    emit=lambda v: App.setActiveDocument(_doc57.Name)))
+    _msg57.clear()
+    _eng57.submit("goback")
+    check("  a line that switched documents is charged with neither's",
+          ([t for k, t in _msg57 if k == ERROR], App.ActiveDocument.Name),
+          ([], _doc57.Name))
+    App.closeDocument(_other57.Name)
+    App.closeDocument(_doc57.Name)
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],

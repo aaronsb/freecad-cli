@@ -16,7 +16,9 @@ over the socket.
 | **Enter** on an empty prompt repeats | The last command, minus anything a click supplied — so it waits for a fresh one. Rhino and AutoCAD do the same. |
 | **Right-click** repeats, or picks from recent | Rhino repeats on a right-click here; AutoCAD offers a Recent Commands menu. Both are on it — the top item repeats, the rest are what came before. |
 | **Space** is a separator, not Enter | Rhino and AutoCAD submit on Space, because they take one value per prompt. This grammar takes a whole command on one line, so Space separates arguments and passes through to FreeCAD when idle. Enter, right-click and Tab already reach the repeat. |
-| A verb typed **mid-command** restarts | Only when the token cannot be read as input for the open step, so `c` stays `Close` inside `polyline`. |
+| A verb typed **at a prompt** restarts | Only when the token cannot be read as input for the open step, so `c` stays `Close` inside `polyline`. |
+| A verb typed **inside a line** is refused | One submitted line is one command (ADR-201). `loft standard` used to cancel loft and run `standard_views`, exit 0. |
+| An **exact choice** wins over a longer one | `view iso` is `iso`, not an ambiguity with `isometric`. The head has read names this way all along. |
 
 ## Arguments
 
@@ -410,7 +412,7 @@ they look.
 | `prompt` | the open getter, its prompt and its options |
 | `live` | the command being built, rewritten in place |
 | `result` | it ran; carries the replay text, what was picked, and what was typed |
-| `error` | it did not |
+| `error` | it did not — or it did, and left an object FreeCAD marked `Invalid` (ADR-202). Both messages go out for that one: the line ran, and the result is not usable |
 | `info` | chatter, optionally carrying a role: `head`, `value`, `ok`, `warn`, `bad`, `quiet` |
 
 **Roles travel, colours do not.** The dock resolves a role to a colour, the
@@ -423,7 +425,7 @@ terminal to ANSI. Neither hard-codes the other's palette.
 | | |
 |---|---|
 | 0 | done |
-| 1 | the command was rejected — a fault, reason on stderr |
+| 1 | the command was rejected — a fault, reason on stderr. Also what a command that ran and left something invalid returns, the invalidity being an `error` |
 | 2 | usage |
 | 3 | no running instance, or it went away |
 | 4 | several instances, pass `--pid` |

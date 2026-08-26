@@ -52,7 +52,8 @@ stateDiagram-v2
     COLLECTING --> IDLE : last step filled → _finish
     COLLECTING --> IDLE : option action returns True → _finish
     COLLECTING --> IDLE : cancel() · open() raises · open() catches a fault
-    COLLECTING --> COLLECTING : verb name typed → cancel, then _start
+    COLLECTING --> COLLECTING : verb name typed at a prompt → cancel, then _start
+    COLLECTING --> COLLECTING : verb name inside a line → refused, line stops
 ```
 
 ### Start
@@ -72,8 +73,10 @@ stateDiagram-v2
    fault aborts the verb, resets, and reports an error. A returned list
    becomes `steps`.
 4. Feed each remaining token to the pending step whose kind matches it
-   (`_step_for_token`). A step marked `raw` takes the rest of the line
-   as one value.
+   (`_step_for_token`). A token that will not parse there and names a
+   verb (`_verb_at_step`) is refused with an error, and the line stops:
+   one submitted line is one command (ADR-201). A step marked `raw` takes
+   the rest of the line as one value.
 5. Finish immediately when the line was a complete command: a verb with
    discovered steps that received at least one value, or a verb with
    declared steps whose remaining steps are all optional or defaulted. A
@@ -90,13 +93,17 @@ has a value and is not `repeat`. A repeating step is filled only by `done`.
 
 1. Resolve the step the text belongs to. With no pending step the text is
    dropped without a message.
-2. `_is_restart`: on a step that is not `raw`, `TEXT` or `PATH`, a token
-   that cannot be read as input for it — not an option prefix, not a
-   parsable point or quantity, not one of the step's choices, not the
+2. `_verb_at_step`: on a step that is not `raw`, `TEXT` or `PATH`, a
+   token that cannot be read as input for it — not an option prefix, not
+   a parsable point or quantity, not one of the step's choices, not the
    label of an existing object — and that resolves to exactly one verb
-   cancels the current verb and starts that one. A `raw`, `TEXT` or
-   `PATH` step accepts any text, so no verb name restarts from one; an
-   adopted panel is such a step.
+   names that verb. A `raw`, `TEXT` or `PATH` step accepts any text, so
+   no verb name is read out of one; an adopted panel is such a step.
+
+   This is the prompt door, and here the name means a restart: `_restart`
+   cancels the current verb and starts the named one. The other door is
+   the rest of a submitted line, which `_start` walks itself and where
+   the same token is refused (ADR-201).
 3. If the token is a prefix of one of the step's options, run its action.
    An action returning `True` finishes the verb.
 4. Otherwise parse by the step's kind and call `_accept`.
@@ -153,7 +160,12 @@ has a value and is not `repeat`. A repeating step is filled only by `done`.
 7. On a caught fault: abort the transaction, emit `ERROR`.
 8. Otherwise: commit the transaction, emit each caught notice as `INFO`,
    emit `RESULT` with the replay text.
-9. Clear `driving`; announce.
+9. `_report_rejected`: the objects the active document has marked
+   `Invalid` are read before `emit` and again after, and anything in the
+   delta is an `ERROR` beside the `RESULT` — the line ran, and what it
+   made is not usable (ADR-202). Skipped when the verb switched or closed
+   the active document, there being nothing to compare against.
+10. Clear `driving`; announce.
 
 ### Cancel
 

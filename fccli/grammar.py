@@ -74,10 +74,19 @@ class Step:
 def match_choice(choices, text) -> List[str]:
     """Which of a choice step's values a typed token selects.
 
-    Prefix, case-insensitive. The accept path insists on exactly one: a
-    token that matches two is ambiguous and one that matches none is not
-    a choice at all. So an exact value that begins a longer one selects
-    nothing -- `iso` where `isometric` is also listed, which is GH #55.
+    Prefix, case-insensitive, and an exact value wins outright. The accept
+    path insists on exactly one: a token that matches two is ambiguous and
+    one that matches none is not a choice at all. Without the exact tier a
+    value that begins a longer one selected nothing -- `view iso` could not
+    reach `iso` because `isometric` is listed beside it (GH #55), while
+    `view isometric` worked. The head does this already:
+    `Registry.resolve_prefix` returns the exact name before it looks at
+    prefixes, so a verb whose name starts another verb's is still typeable.
+    A choice step now reads the same way.
+
+    What no input selects is therefore two choices that differ only in
+    case. Those are exact together, so neither is reachable, and that is
+    the fault the D1 lint is left looking for.
 
     One function because there were four copies of the comparison: the
     accept path, the restart guard, and two in the highlighter. The lint
@@ -86,6 +95,9 @@ def match_choice(choices, text) -> List[str]:
     matcher the engine no longer uses.
     """
     lowered = text.lower()
+    exact = [c for c in choices if c.lower() == lowered]
+    if exact:
+        return exact
     return [c for c in choices if c.lower().startswith(lowered)]
 
 
