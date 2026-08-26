@@ -4378,6 +4378,109 @@ def _run():
            _arc in [n.strip() for n in _line.split(",")]),
           (1, False, True))
 
+    print("\n5ad2. man carries the page and the example to the typed verb")
+    # GH #38 and GH #44, one lookup gap between them: a tier-1 verb is
+    # built from the type and never saw the linked command's file, so
+    # `man cylinder` had no DESCRIPTION and could have no EXAMPLE.
+    import json as _mjson
+    from fccli import ledger as _ledger_mod
+
+    def _man(topic):
+        _seen_man.clear()
+        _eng.submit(f"man {topic}")
+        return [(m.text, m.data.get("role", "")) for m in _seen_man
+                if m.kind == _INFO]
+
+    def _section(rows, head):
+        """The lines under a heading, up to the next heading."""
+        out, taking = [], False
+        for text, role in rows:
+            if role == "head":
+                taking = text == head
+                continue
+            if taking:
+                out.append(text.strip())
+        return out
+
+    _cyl = _man("cylinder")
+    _heads = [t for t, r in _cyl if r == "head"]
+    check("  a typed verb shows the linked command's page (GH #38)",
+          ("DESCRIPTION" in _heads,
+           any("parametric cylinder" in t for t, _ in _cyl)),
+          (True, True))
+    def _at(heads, name):
+        """Where a heading sits, or -1. A missing heading is a result, not
+        an exception: a check that raises takes the suite down with it and
+        says nothing about the eight below."""
+        return heads.index(name) if name in heads else -1
+    check("  and its authored example, between ARGUMENTS and DESCRIPTION",
+          (_section(_cyl, "EXAMPLE")[:1],
+           _at(_heads, "EXAMPLE") - _at(_heads, "ARGUMENTS"),
+           _at(_heads, "DESCRIPTION") - _at(_heads, "EXAMPLE")),
+          (["cylinder 12 40"], 1, 1))
+    # The stamp, joined from the ledger by command id (ADR-501).
+    check("  with the sweep's date and FreeCAD version beside it",
+          any(t.strip() == "verified 2026-08-26 on FreeCAD 1.1.3"
+              for t, _ in _cyl), True)
+    # A launcher the factory re-homed around the typed verb is the same
+    # command, so it keeps the page -- and loses the example, which names
+    # the other door.
+    _other = next(v.name for v in REGISTRY._verbs.values()
+                  if v.gui_command == "Part_Cylinder" and v.name != "cylinder")
+    _qual = _man(_other)
+    check("  the re-homed launcher keeps the page and drops the example",
+          ([t for t, r in _qual if r == "head"].count("DESCRIPTION"),
+           any(t == "EXAMPLE" for t, r in _qual if r == "head")),
+          (1, False))
+    # A verb with no authored example has no EXAMPLE section at all.
+    check("  a verb with no example shows no EXAMPLE",
+          (REGISTRY.get("fillet").example,
+           any(t == "EXAMPLE" for t, r in _man("fillet") if r == "head")),
+          ("", False))
+    # A two-part selection example says whose objects it names.
+    _loft = _man("loft")
+    check("  a selection example keeps its select, and says it is a fixture's",
+          (_section(_loft, "EXAMPLE")[:2],),
+          (["select Wire, Wire001; loft 5",
+            "the select names objects in the verifier's fixture."],))
+    check("  a one-part example gets no such line",
+          any("fixture" in t for t, _ in _cyl), False)
+    # A result the sweep did not call ok is said outright, with its detail.
+    _solve = _man("solve_assembly")
+    check("  a broken result is stamped as broken, and warns",
+          (_section(_solve, "EXAMPLE"),
+           [r for t, r in _solve if "broken" in t]),
+          (["solve_assembly", "2026-08-26 on FreeCAD 1.1.3: broken",
+            "error: solve_assembly: is not available here"], ["warn"]))
+    # Two ways the stamp is withheld: no entry, and an entry that drove a
+    # different invocation. Both leave the example itself standing.
+    _ledger_dir = tempfile.mkdtemp(prefix="fccli-ledger-")
+    _ledger_path = os.path.join(_ledger_dir, "verified.json")
+    with open(_ledger_path, "w") as _fh:
+        _mjson.dump({"commands": {"Part_Cylinder": {
+            "date": "2001-01-01", "freecad": "0.0.0", "mode": "positional",
+            "example": "cylinder 1 2", "result": "ok"}}}, _fh)
+    _real_ledger = _ledger_mod.LEDGER
+    _ledger_mod.LEDGER = _ledger_path
+    _ledger_mod.forget()
+    _drift = _man("cylinder")
+    _absent = _man("solve_assembly")
+    _ledger_mod.LEDGER = _real_ledger
+    _ledger_mod.forget()
+    check("  a stamp for a different invocation is not shown for this one",
+          (_section(_drift, "EXAMPLE"), any("2001" in t for t, _ in _drift)),
+          (["cylinder 12 40"], False))
+    check("  and a command the ledger never saw shows the example bare",
+          _section(_absent, "EXAMPLE"), ["solve_assembly"])
+    # A ledger that will not parse costs the stamps, not the pages.
+    with open(_ledger_path, "w") as _fh:
+        _fh.write("{not json")
+    try:
+        _torn = _ledger_mod._read(_ledger_path)
+    except Exception as _exc:                                # noqa: BLE001
+        _torn = repr(_exc)
+    check("  a broken ledger is treated as absent", _torn, {})
+
     print("\n5ae. reconcile reads a new harvest and brings the tree to it")
     # ADR-100's prize. A copy of the tree and a descriptor with one of
     # every kind of change; the report names each, --apply performs each,
