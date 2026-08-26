@@ -1949,6 +1949,51 @@ def _run():
           _verify.classify(75, "idle", False, []), "busy")
     check("    busy outranks a panel someone else left open",
           _verify.classify(75, "idle", True, []), "busy")
+    # A sweep survives its own targets: known and recorded hazards are
+    # planned out, --force plans them back in, --start-at resumes.
+    check("  a known hazard is planned out of a sweep",
+          _verify.plan({"Std_ToggleToolBarLock": "lock_toolbars",
+                        "Part_Box": "box 1 1 1"}, {}),
+          ({"Part_Box": "box 1 1 1"},
+           {"Std_ToggleToolBarLock":
+            _verify.KNOWN_HAZARDS["Std_ToggleToolBarLock"]}))
+    check("    so is one an earlier sweep recorded",
+          _verify.plan({"Mod_X": "x"},
+                       {"Mod_X": {"result": "hazard",
+                                  "detail": "killed the FreeCAD instance"}}),
+          ({}, {"Mod_X": "killed the FreeCAD instance"}))
+    check("    --force plans it back in",
+          _verify.plan({"Mod_X": "x"},
+                       {"Mod_X": {"result": "hazard"}}, force=True),
+          ({"Mod_X": "x"}, {}))
+    check("    --start-at drops everything before it",
+          _verify.plan({"A_One": "a", "B_Two": "b"}, {}, start_at="B")[0],
+          {"B_Two": "b"})
+    # GH #62: FreeCAD never holds a --log file; a bounded copier does. The
+    # cap holds however much the instance spams, and the pipe is drained
+    # to the end so the writer never blocks.
+    import importlib.machinery as _glc_machinery
+    import importlib.util as _glc_util
+    _glc_repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _glc_loader = _glc_machinery.SourceFileLoader(
+        "_fccli_bin", os.path.join(_glc_repo, "bin", "fccli"))
+    _glc_spec = _glc_util.spec_from_loader("_fccli_bin", _glc_loader)
+    _glc_bin = _glc_util.module_from_spec(_glc_spec)
+    _glc_spec.loader.exec_module(_glc_bin)
+    with tempfile.TemporaryDirectory() as _glc_dir:
+        _glc_spam = os.path.join(_glc_dir, "spam.log")
+        _glc_run = _sh.run(
+            [sys.executable, "-c", _glc_bin.LOG_COPIER, _glc_spam, "4096"],
+            input=b"Unsupported format/type: GL_NONE/GL_NONE\n" * 4096,
+            timeout=60)
+        check("  the --log copier stops writing at the cap",
+              os.path.getsize(_glc_spam) < 8192, True)
+        check("    and drains the pipe to the end", _glc_run.returncode, 0)
+        _glc_small = os.path.join(_glc_dir, "small.log")
+        _sh.run([sys.executable, "-c", _glc_bin.LOG_COPIER, _glc_small, "4096"],
+                input=b"hello\n", timeout=60)
+        check("    under the cap, everything is kept",
+              open(_glc_small, "rb").read(), b"hello\n")
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the

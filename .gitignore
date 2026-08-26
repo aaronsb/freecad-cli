@@ -8,3 +8,6 @@ fccli/_build.py
 
 # Documents a GUI test run saves
 tests/*.FCStd*
+
+# The modemap draft sweep report (verify.py --modemap); working state
+modemap_sweep.json
