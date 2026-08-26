@@ -28,6 +28,8 @@ _How a command runs — steps and getters, task panels, picking, modals, transac
 | ADR | Title | Status |
 |-----|-------|--------|
 | [ADR-200](./engine/ADR-200-a-select-verb-sets-the-selection-commands-consume.md) | A select verb sets the selection commands consume | Accepted |
+| [ADR-201](./engine/ADR-201-a-submitted-line-is-one-command.md) | A submitted line is one command | Accepted |
+| [ADR-202](./engine/ADR-202-a-command-answers-for-the-object-it-left-invalid.md) | A command answers for the object it left invalid | Accepted |
 
 ## Surface
 _How it is presented and reached — dock, prompt, colour, completion, message bus, socket, external shell, history_

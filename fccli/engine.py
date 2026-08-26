@@ -56,6 +56,33 @@ def _resolve_names(text):
         return []
 
 
+def _active_document():
+    try:
+        import FreeCAD as App
+        return App.ActiveDocument
+    except Exception:
+        return None
+
+
+def _invalid_names(doc):
+    """Which of a document's objects FreeCAD has computed and rejected.
+
+    `Invalid` is FreeCAD's own word, read off `State` the way `describe`
+    and the socket's object summary read it. A set of names rather than a
+    count, because the only fair reading is the delta: a command answers
+    for what *it* made invalid, not for a document that was already broken
+    when the line ran (ADR-302, and the verify harness makes the same
+    reading from outside).
+    """
+    if doc is None:
+        return frozenset()
+    try:
+        return frozenset(o.Name for o in doc.Objects
+                         if "Invalid" in (getattr(o, "State", []) or []))
+    except Exception:
+        return frozenset()
+
+
 def _open_transaction(verb, label, panel=False):
     """One typed line, one undo step.
 
@@ -325,7 +352,48 @@ class Engine:
             # An inline argument goes to the step whose kind it matches, so
             # "circle 0,0,0 20" and "circle 20 0,0,0" both work and a
             # remembered line replays whatever order it was typed in.
-            self._feed_text(token, step=self._step_for_token(token))
+            wanted = self._step_for_token(token)
+            other = (self._verb_at_step(token, wanted)
+                     if wanted is not None else None)
+            if other is not None:
+                # One submitted line is one command (ADR-201). Escaping to
+                # another verb is a convenience for a person at a prompt,
+                # who sees the switch and can undo it; inside a line there
+                # is nobody to see it, and `loft standard` cancelled loft,
+                # ran standard_views and reported exit 0 (GH #72).
+                #
+                # The line stops here rather than reading on, and the
+                # command it named is left collecting: the tokens after
+                # this one were answers to that command, and a line that
+                # dropped one and ran anyway is how `loft standard` came
+                # back as a loft with no sections in it.
+                #
+                # The step named is the pending one, not `wanted`. They
+                # are usually the same step, and `wanted` is the right
+                # thing to have *judged* the token against -- a token can
+                # be aimed past the head by kind. But the prompt under
+                # this error announces the pending step, so naming
+                # anything else puts two lines in one reply that
+                # contradict each other: `loft standard` said "still
+                # asking for List of sections" over "still wants Maximum
+                # Degree".
+                #
+                # And nothing is adopted on the way out. `_announce`
+                # normally fills a selection step from what is already
+                # selected rather than asking again, which after a
+                # refusal would advance a command the engine has just
+                # said it will not run -- and where that selection is the
+                # only pending step, carry it all the way to `_finish`.
+                # The line refused, and the command ran anyway.
+                pending = self.current_step()
+                self.bus.emit(_bus.ERROR,
+                              f"{token!r} is the command {other!r}, and a "
+                              f"command does not start inside a line -- "
+                              f"{self.verb.name} is still asking for "
+                              f"{pending.prompt}")
+                self._announce(adopt=False)
+                return
+            self._feed_text(token, step=wanted)
         if (self.state == COLLECTING and self.steps is not None
                 and self.values):
             # A line that named its parameters is a whole command, the way
@@ -374,10 +442,18 @@ class Engine:
         # inline or at a prompt. Typing a coordinate while a length is being
         # asked for fills the coordinate: the command line can see which is
         # which, so it should not make the caller keep track.
+        #
+        # This is the prompt door: somebody answered the step in front of
+        # them, and a verb name that will not parse here abandons the open
+        # command and starts that verb. The other door is the rest of a
+        # submitted line, which `_start` walks itself and where the same
+        # token is an error rather than a new command (ADR-201).
         step = step if step is not None else self._step_for_token(text)
         if step is None:
             return
-        if self._is_restart(text, step):
+        other = self._verb_at_step(text, step)
+        if other is not None:
+            self._restart(text)
             return
         for opt in step.options:
             if opt.name.lower().startswith(text.lower()):
@@ -420,30 +496,34 @@ class Engine:
         else:
             self._accept(step, text, text)
 
-    def _is_restart(self, text: str, step: Step) -> bool:
-        """A verb name typed mid-command cancels the current one and starts it.
+    def _verb_at_step(self, text: str, step: Step) -> Optional[str]:
+        """The verb a token names, when it is no answer to the open step.
 
-        Only when the token cannot be read as input for the open step, so
-        "c" stays the Close option inside polyline rather than becoming
-        the circle verb.
+        A pure reading: it says what the token is, and the caller decides
+        what that means. At a prompt it restarts; inside a submitted line
+        it is refused (ADR-201).
+
+        Only tokens that cannot be read as input for the open step get
+        this far, so "c" stays the Close option inside polyline rather
+        than becoming the circle verb.
         """
         if step.raw or step.kind in (TEXT, PATH):
-            return False        # these steps accept arbitrary text by design
+            return None         # these steps accept arbitrary text by design
         token = text.split()[0].lower()
         if any(o.name.lower().startswith(token) for o in step.options):
-            return False
+            return None
         if step.kind in (POINT, QUANTITY):
             probe = (parse_point(text, self.last_point()) if step.kind == POINT
                      else parse_quantity(text))
             if probe.ok:
-                return False
+                return None
         if step.kind == CHOICE and step.choices:
             # A choice the step declares is input, whatever else shares its
             # name. `view sketch` used to cancel view and run the sketch
             # verb; 242 verb-and-choice pairs read that way, including
             # `constrain coincident` and `additive helix`.
             if match_choice(step.choices, token):
-                return False
+                return None
         if step.kind == SELECTION and _resolve_names(text):
             # An object that exists is input, and FreeCAD's default labels
             # are the verb names: Box, Cylinder, Sphere, Cone, Line, Circle,
@@ -451,16 +531,17 @@ class Engine:
             # and started the box verb asking for a Length, which made
             # _resolve_names unreachable for exactly the labels FreeCAD
             # hands out.
-            return False
+            return None
         hits = self.registry.resolve_prefix(token)
-        if len(hits) != 1:
-            return False
+        return hits[0] if len(hits) == 1 else None
+
+    def _restart(self, text: str) -> None:
+        """Abandon the open command and start the one this line names."""
         self.bus.emit(_bus.INFO, f"{self.verb.name} cancelled")
         self._abort_verb()
         self._stop_picking()
         self._reset()
         self._start(text)
-        return True
 
     def _accept(self, step: Step, value, typed: str, picked: bool = False
                 ) -> None:
@@ -560,6 +641,10 @@ class Engine:
                           typed=typed)
             self._announce()
             return
+        # What was already broken before this line ran, so the line is
+        # only answerable for what it added to it (GH #57).
+        before_doc = _active_document()
+        before_invalid = _invalid_names(before_doc)
         doc = _open_transaction(verb, replay, panel=flags.get("panel"))
         try:
             # A counter: a script's emit runs other lines through here,
@@ -595,7 +680,42 @@ class Engine:
         self.bus.emit(_bus.RESULT, replay, verb=verb.name, replay=replay,
                       object=obj, picked=picked, typed=typed,
                       record=verb.record and not self.suppress_record)
+        self._report_rejected(verb, before_doc, before_invalid)
         self._announce()
+
+    def _report_rejected(self, verb, before_doc, before_invalid) -> None:
+        """Say so when the line left an object FreeCAD computed and rejected.
+
+        A command that runs without raising is not a command that worked.
+        Fourteen Part and PartDesign verbs ran to completion, exited 0 and
+        said nothing over a feature FreeCAD had marked `Invalid` -- a Pad
+        that hides the sketch it was made from and builds no solid (GH
+        #57, ADR-202). The socket already shipped the state on the RESULT payload,
+        so the facts were on the wire; nothing read them back to whoever
+        typed the line, and the exit code said the line had verified.
+
+        Why those features compute invalid is a separate question, very
+        possibly FreeCAD's own answer to inadequate references. This is
+        only the reporting: the result stands, and the error beside it
+        says the result is not usable. Both, because the line did run and
+        the object does exist -- undoing it here would take a decision
+        away from whoever is looking at the document.
+
+        Only within one document. A verb that switched or closed the
+        active one leaves nothing to compare against, and blaming it for
+        another document's state would be worse than saying nothing.
+        """
+        after_doc = _active_document()
+        if after_doc is None or after_doc is not before_doc:
+            return
+        fresh = sorted(_invalid_names(after_doc) - before_invalid)
+        if not fresh:
+            return
+        self.bus.emit(_bus.ERROR,
+                      f"{verb.name}: FreeCAD computed "
+                      f"{', '.join(fresh)} and marked "
+                      f"{'them' if len(fresh) > 1 else 'it'} invalid -- the "
+                      f"command ran, the result is not usable")
 
     def _only_optional_left(self) -> bool:
         return all(s.optional or s.default is not None for s in self.pending())
@@ -646,13 +766,21 @@ class Engine:
         self.picked = []
         self.flags = {}
 
-    def _announce(self) -> None:
+    def _announce(self, adopt: bool = True) -> None:
+        """Say what the engine is waiting for.
+
+        `adopt` is what lets a selection step fill itself from what is
+        already selected. It is off for the one caller that has just
+        refused the line it was reading (ADR-201): adopting there would
+        advance a command the engine has said it will not run, and for a
+        verb whose only step is a selection it would run it.
+        """
         step = self.current_step()
         if step is None:
             self.bus.emit(_bus.PROMPT, "", step_kind=None, options=[], idle=True)
             self._stop_picking()
             return
-        if step.kind == SELECTION:
+        if step.kind == SELECTION and adopt:
             # Select the thing, then say what to do to it. Somebody who has
             # already selected should not be asked to select again.
             picked = current_selection()

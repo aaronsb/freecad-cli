@@ -597,10 +597,26 @@ def cmd_start(args):
             print(f"fccli: cannot open --log: {exc}", file=sys.stderr)
             return EX_USAGE
         cap = 64 if args.log_cap is None else args.log_cap
+        # The copier outlives this process -- it is FreeCAD's log, and
+        # FreeCAD is still running when `start` returns. So it must not
+        # inherit this process's stdout and stderr: a caller reading them
+        # (`subprocess.run(..., capture_output=True)`, or a shell pipe)
+        # waits for every writer to close, and the copier does not close
+        # until FreeCAD exits. `make socket` hung there for the whole boot
+        # timeout and then some, and it read as a slow cold start.
+        #
+        # The trade is that the copier can no longer say anything. It has
+        # little left to say -- the log path is opened here first, in this
+        # process, so an unwritable path is reported before FreeCAD
+        # exists -- but a write that fails mid-run now stops the log
+        # silently, where before it would have printed. Silence about one
+        # run's log is the smaller fault: holding the pipe made every
+        # scripted `start --log` unreadable.
         copier = subprocess.Popen(
             [sys.executable, "-c", LOG_COPIER, args.log,
              str(int(cap * 1024 * 1024))],
-            stdin=subprocess.PIPE, start_new_session=True)
+            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL, start_new_session=True)
         log = copier.stdin
     proc = subprocess.Popen(runner + [binary, *args.args],
                             stdout=log, stderr=log, env=env,

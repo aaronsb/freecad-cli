@@ -44,8 +44,17 @@ def fccli(*args, **kw):
     kw.setdefault("timeout", 60)
     if "input" in kw:
         kw.pop("stdin")
-    proc = subprocess.run([sys.executable, CLIENT, *args],
-                          capture_output=True, text=True, **kw)
+    try:
+        proc = subprocess.run([sys.executable, CLIENT, *args],
+                              capture_output=True, text=True, **kw)
+    except subprocess.TimeoutExpired:
+        # A client that returns but leaves a detached child holding this
+        # pipe reads as a hang, because `capture_output` waits for every
+        # writer to close. `start --log` did exactly that. Answered as a
+        # failed command so the check that called it says so by name,
+        # rather than as a traceback out of the middle of the run.
+        return 124, "", (f"fccli {' '.join(args)} did not return within "
+                         f"{kw['timeout']}s")
     return proc.returncode, proc.stdout.strip(), proc.stderr.strip()
 
 
@@ -112,9 +121,16 @@ def main():
         return 2
 
     print("launching FreeCAD through `fccli start`...")
+    # The subprocess cap has to outlast the boot timeout it is passing,
+    # or `start` is killed before it can wait as long as it was asked to.
+    # This was never reached honestly: the suite died on a TimeoutExpired
+    # while the instance came up in five seconds, because `--log` left a
+    # detached copier holding the pipe `capture_output` was reading. That
+    # is fixed in the client; this keeps the two numbers in agreement.
     code, out, err = fccli("start", "--headless",
                            "--timeout", str(BOOT_TIMEOUT),
-                           "--log", "/tmp/fccli-socket-test.log")
+                           "--log", "/tmp/fccli-socket-test.log",
+                           timeout=BOOT_TIMEOUT + 30)
     check("start exits clean", code, 0)
     truthy("it reports the pid it started", "started FreeCAD, pid" in out)
     truthy("  and that no --pid is needed", "no --pid" in out)

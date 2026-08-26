@@ -5,7 +5,7 @@
 The spec's D group asks what happens as a person types, rather than what
 they read first:
 
-  D1  every choice is resolvable -- no value shadowed by a longer one
+  D1  every choice is resolvable -- no value another spelling takes
   D2  options render distinctly from the step's own prompt (GH #56)
   D3  completion offers the right pool at each position
   D4  a verb is reachable by its meaningful word, and hijacks nothing
@@ -44,9 +44,12 @@ today, which is why this lint can be added to `make check` without breaking
 it. The fourth is the choice collision: `save as` runs one of Std_SaveAs
 and IFC_SaveAs and nothing says which, which is silent, so the rule is a
 problem and the four instances the tree carries are grandfathered by name
-in KNOWN_COLLISIONS. The 21 shadowed choices, the 1003 verbs unreachable by
-their meaningful word and the 264 dimensionless steps carrying millimetres
-are reports, and the report is the campaign's worklist.
+in KNOWN_COLLISIONS. The 1003 verbs unreachable by their meaningful word
+and the 264 dimensionless steps carrying millimetres are reports, and the
+report is the campaign's worklist. The shadowed choices were 21 of those
+reports and are now none: the matcher takes an exact value before a prefix
+(GH #55), so a value another value begins is reachable, and what D1 has
+left to find is two spellings of one word in a single door.
 
 The blind spots are named rather than guessed at. `fccli.verbs` and
 `fccli.shell` register hand-written verbs into the global REGISTRY at
@@ -475,24 +478,34 @@ def _shadowing(found, step, subject, key, where, owner):
     drift. It used to be a copy, and a reviewer's mutant proved the copy
     could be made case-sensitive without the suite or the tree's output
     moving a line.
+
+    Calling it is also what re-aimed the rule when the matcher moved. The
+    fault it was written for was a value another value begins -- `iso`
+    beside `isometric` (GH #55) -- and the matcher now settles that one
+    itself by taking an exact value first. What is left is two choices
+    that differ only in case: those are exact together, so each selects
+    two and neither is reachable. A family door merges the `also:`
+    spellings of every command under it, so that is where two spellings of
+    one word meet. Because the rule asks the matcher rather than the old
+    question, it followed the fix without being rewritten, and reverting
+    the matcher brings the shadow class back into this report.
     """
     from fccli.grammar import match_choice
     for value in step.choices:
         hits = match_choice(step.choices, value)
         if len(hits) == 1:
             continue
-        longer = [h for h in hits if h != value]
+        others = [h for h in hits if h != value]
         entry = found.choices.setdefault(key, {"step": step.id,
                                                "choices": len(step.choices),
                                                "unreachable": []})
-        entry["unreachable"].append({"value": value, "swallowed_by": longer,
+        entry["unreachable"].append({"value": value, "swallowed_by": others,
                                      "command": owner(value)})
         found.report(where(value),
-                     f"{subject} lists {value!r}, and "
-                     f"{_and(repr(x) for x in longer)} "
-                     f"begin{'s' if len(longer) == 1 else ''} with it -- the "
-                     f"step takes a choice by prefix and insists on one hit, "
-                     f"so {value!r} is a value no input selects", "D1")
+                     f"{subject} lists {value!r}, and typing it also selects "
+                     f"{_and(repr(x) for x in others)} -- the step insists "
+                     f"on one hit, so {value!r} is a value no input selects",
+                     "D1")
 
 
 def _and(items):

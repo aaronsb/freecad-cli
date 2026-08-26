@@ -523,6 +523,15 @@ def classify(code, engine, panel, invalid):
     example. `ok` requires a clean exit AND nothing left invalid -- a
     command that computes an object FreeCAD rejects has not verified,
     however cleanly it returned.
+
+    Invalidity outranks the exit code, which is the other way round from
+    how this read before GH #57. The engine now reports an object FreeCAD
+    rejected as an error of its own, so a non-zero exit is what an invalid
+    run looks like from out here, and reading the code first would have
+    filed all fourteen named instances as `broken` -- the vaguer of the
+    two answers, and the one that does not name the object. A run that
+    also raised keeps its message: `verify_one` puts anything stderr said
+    beyond the rejection into the detail.
     """
     if code == 75:
         return "busy"
@@ -530,10 +539,10 @@ def classify(code, engine, panel, invalid):
         return "panel"
     if engine != "idle":
         return "incomplete"
-    if code != 0:
-        return "broken"
     if invalid:
         return "invalid"
+    if code != 0:
+        return "broken"
     return "ok"
 
 
@@ -567,6 +576,25 @@ def cancelled_in(out):
     return hit.group(1) if hit else ""
 
 
+# The tail of the engine's own word for an object FreeCAD rejected (GH
+# #57). The engine reports it as an error, so an invalid run exits
+# non-zero as a matter of course and stderr carries this line.
+_REJECTION = "the result is not usable"
+
+
+def rejection_only(err):
+    """Whether the engine's invalidity report is all stderr had to say.
+
+    A run that only left something invalid says so and nothing else, and
+    the object names are the whole diagnosis. A run that *raised* and left
+    something invalid has `<verb> failed: ...` on stderr as well, and that
+    is what the reader needs -- filing it under `invalid` must not swallow
+    it.
+    """
+    lines = [ln for ln in (err or "").splitlines() if ln.startswith("error:")]
+    return bool(lines) and all(_REJECTION in ln for ln in lines)
+
+
 def verify_one(example):
     """Run one example, classify what happened. Leaves the engine idle.
 
@@ -594,7 +622,8 @@ def verify_one(example):
                              f"was another verb this line's own arguments "
                              f"matched (GH #72)")
     if result == "invalid":
-        return result, ", ".join(fresh)
+        extra = "" if rejection_only(err) else err
+        return result, ", ".join(fresh) + (f"; {extra}" if extra else "")
     return result, (err if result in ("incomplete", "broken") else "")
 
 
