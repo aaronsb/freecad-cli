@@ -1895,9 +1895,10 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    # 167 = the 12 hand-authored files + the 155 examples the GH #47
-    # positional sweep verified live and promoted.
-    check("  and register_all counts the authored files", _wc.get("authored"), 167)
+    # 166 = the 17 this counted before the GH #47 promotion, plus 154
+    # promoted examples, minus 5 promoted into files already counted
+    # for another authored field.
+    check("  and register_all counts the authored files", _wc.get("authored"), 166)
     # #19: every descriptor command is some verb's gui_command. Nine were
     # not, because a typed verb added over their launcher; _make_room
     # qualifies the launcher instead.

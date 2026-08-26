@@ -72,6 +72,12 @@ KNOWN_HAZARDS = {
     "Std_ViewIvStereoInterleavedColumns": _STEREO,
     "Std_ViewIvStereoInterleavedRows": _STEREO,
     "Std_ViewIvStereoRedGreen": _STEREO,
+    # Discovered live by the 2026-08-26 draft sweep: each killed the
+    # instance. Recorded here so a fresh checkout does not rediscover
+    # them by killing FreeCAD three more times.
+    "Std_TestProgress2": "killed the FreeCAD instance (draft sweep)",
+    "Std_TestProgress3": "killed the FreeCAD instance (draft sweep)",
+    "Test_TestWork": "killed the FreeCAD instance (draft sweep)",
 }
 
 

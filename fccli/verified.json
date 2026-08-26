@@ -90,12 +90,6 @@
    "freecad": "1.1.3",
    "result": "ok"
   },
-  "BIM_ImagePlane": {
-   "date": "2026-08-26",
-   "example": "image_plane ~/images/floorplan.png 100 75",
-   "freecad": "1.1.3",
-   "result": "ok"
-  },
   "BIM_Nudge_Switch": {
    "date": "2026-08-26",
    "example": "nudge_switch",

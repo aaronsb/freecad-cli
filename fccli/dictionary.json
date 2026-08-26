@@ -449,7 +449,6 @@
   },
   "BIM_ImagePlane": {
    "doc": "Creates a plane from an image.",
-   "example": "image_plane ~/images/floorplan.png 100 75",
    "file": "bim/BIM_ImagePlane.md"
   },
   "BIM_Layers": {
