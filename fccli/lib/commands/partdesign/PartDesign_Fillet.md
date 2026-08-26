@@ -20,7 +20,11 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::Fillet
+  doc: Round the selected edges or faces to a radius.
+  steps: [Radius]
+  hide: [FuzzyTolerance]
 ---
 
 The PartDesign Fillet tool creates fillets (rounds) on the selected edges of an object. It adds a Fillet object to the document with its corresponding representation in the Tree view.

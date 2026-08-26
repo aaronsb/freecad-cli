@@ -401,11 +401,20 @@ def _run():
         cyl = fresh.get("cylinder")
         check("a patch promotes a property to an inline option",
               [o.name for st in cyl.steps for o in st.options], ["Angle"])
-        pad = fresh.get("pad")
+        groove = fresh.get("groove")
         check("an unpatched type is still a usable verb",
-              pad is not None and len(pad.steps) > 3, True)
+              groove is not None and len(groove.steps) > 3, True)
         check("enumerations become choices",
-              any(st.choices for st in pad.steps), True)
+              any(st.choices for st in groove.steps), True)
+        # GH #52: a generated step list is the type's properties in
+        # alphabetical order, so `FuzzyTolerance` sat in front of the
+        # length pad is about and `pad 10` set the tolerance. The command
+        # file names the order instead.
+        pad = fresh.get("pad")
+        check("  a tuned type leads with the argument the command is about",
+              [s.id for s in pad.steps][0], "Length")
+        check("    and the tolerance that used to swallow it is gone",
+              [s.id for s in pad.steps].count("FuzzyTolerance"), 0)
         # A patch must not shadow a hand-written verb.
         check("hand-written verbs survive the factory",
               REGISTRY.get("polyline").emit.__name__, "_emit_polyline")
@@ -2409,9 +2418,11 @@ def _run():
           (["D-one"], ["A-one", "A-two"], ["A-one", "A-two"]))
 
     # --- DIMENSIONLESS, pinned member by member. Three of the six could be
-    # dropped with the suite green, which is 87 of the 264 steps the rule
+    # dropped with the suite green, which is 87 of the 253 steps the rule
     # exists to find. App::PropertyPercent has no instances on this tree, so
     # a census cannot pin it; that is stated rather than left to look pinned.
+    # 253, down from 264: the GH #52 type blocks hide ten FuzzyTolerance
+    # steps and Hole's BaseProfileType, none of which is a length.
     _census = {}
     for _line in _live_d5.reports:
         _m = _re.match(r"units: (\d+) steps over (\S+) echo in mm", _line)
@@ -2419,9 +2430,9 @@ def _run():
             _census[_m.group(2)] = int(_m.group(1))
     check("  every dimensionless property type is counted, by name",
           (_census, sum(_census.values())),
-          ({"App::PropertyFloat": 80, "App::PropertyFloatConstraint": 97,
-            "App::PropertyInteger": 54, "App::PropertyIntegerConstraint": 19,
-            "App::PropertyPrecision": 14}, 264))
+          ({"App::PropertyFloat": 80, "App::PropertyFloatConstraint": 87,
+            "App::PropertyInteger": 53, "App::PropertyIntegerConstraint": 19,
+            "App::PropertyPrecision": 14}, 253))
     check("    and the one with no instances is in the set, uncounted",
           ("App::PropertyPercent" in _ixn.DIMENSIONLESS,
            "App::PropertyPercent" in _census), (True, False))
@@ -2543,10 +2554,10 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    # 166 = the 17 this counted before the GH #47 promotion, plus 154
+    # 175 = the 17 this counted before the GH #47 promotion, plus 154
     # promoted examples, minus 5 promoted into files already counted
-    # for another authored field.
-    check("  and register_all counts the authored files", _wc.get("authored"), 166)
+    # for another authored field, plus the 9 GH #52 type blocks.
+    check("  and register_all counts the authored files", _wc.get("authored"), 175)
     # #19: every descriptor command is some verb's gui_command. Nine were
     # not, because a typed verb added over their launcher; _make_room
     # qualifies the launcher instead.
@@ -3005,17 +3016,40 @@ def _run():
           _sp_events4,
           [("F_F", "no_fixture", "client timed out; instance wedged")])
 
+    # Setup failure and a health probe that will not answer, together. A
+    # probe that times out says nothing about the instance, so the failed
+    # fixture cannot be charged to the vocabulary: it is the hazard PR #63
+    # exists to catch, arriving through the setup door. Every other case
+    # here varies one of the two, which is why this one is written out.
     def _sp_slow_health():
         raise _sh.TimeoutExpired("fccli", 60)
-    _sp_events5 = []
+    _sp_events5, _sp_restarts5 = [], []
     _sp_tally5, _sp_fin5, _sp_n5 = _verify.sweep(
-        {"G_G": "select Box; g"},
+        {"G_G": "select Box; g", "H_H": "select Box; h"},
         lambda cid, ex, res, det: _sp_events5.append((cid, res, det)),
         run_one=lambda e: ("ok", ""),
-        alive=lambda: True, healthy=_sp_slow_health, restart=lambda: True,
+        alive=lambda: True, healthy=_sp_slow_health,
+        restart=lambda: _sp_restarts5.append(1) or True,
         setup=lambda cid: (False, "new verify -- silence"))
-    check("      and one whose health probe also times out is the hazard",
-          (_sp_events5[0][1], _sp_n5), ("hazard", 1))
+    check("      a failed fixture whose health probe times out is the hazard",
+          (_sp_events5, _sp_n5, len(_sp_restarts5), _sp_tally5, _sp_fin5),
+          ([("G_G", "hazard", "fixture: new verify -- silence"),
+            ("H_H", "hazard", "fixture: new verify -- silence")],
+           2, 2, {"hazard": 2}, True))
+    # Both timeouts at once: the build times out and so does the probe
+    # that would say whether anything is still there.
+    _sp_events6, _sp_restarts6 = [], []
+    _sp_tally6, _sp_fin6, _sp_n6 = _verify.sweep(
+        {"I_I": "select Box; i"},
+        lambda cid, ex, res, det: _sp_events6.append((cid, res, det)),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: True, healthy=_sp_slow_health,
+        restart=lambda: _sp_restarts6.append(1) or True,
+        setup=_sp_slow)
+    check("      and a build and a probe that both time out is too",
+          (_sp_events6, len(_sp_restarts6)),
+          ([("I_I", "hazard",
+             "fixture: client timed out; instance wedged")], 1))
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the
@@ -3707,8 +3741,13 @@ def _run():
     _dt = load_dictionary().get("types")
     check("  the dictionary carries type tuning keyed by type",
           sorted(_dt), ["Part::Box", "Part::Cone", "Part::Cylinder",
-                        "Part::Helix", "Part::Sphere", "Part::Torus",
-                        "Part::Wedge"])
+                        "Part::Helix", "Part::RuledSurface", "Part::Sphere",
+                        "Part::Torus", "Part::Wedge",
+                        "PartDesign::AdditiveHelix", "PartDesign::Chamfer",
+                        "PartDesign::Fillet", "PartDesign::Hole",
+                        "PartDesign::Pad", "PartDesign::Pocket",
+                        "PartDesign::SubtractiveHelix",
+                        "PartDesign::Thickness"])
     check("  a type block names its command's type",
           _dt["Part::Cylinder"].get("of") is None
           and _dt["Part::Cylinder"]["steps"], ["Radius", "Height"])

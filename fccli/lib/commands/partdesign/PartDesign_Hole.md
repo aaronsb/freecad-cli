@@ -20,7 +20,15 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::Hole
+  doc: Cut holes at the circles of the selected sketch.
+  steps: [Diameter, Depth]
+  options: [DepthType, DrillPoint, TaperedAngle, ThreadType]
+  hide: [FuzzyTolerance, BaseProfileType, CustomThreadClearance,
+         DrillPointAngle, HoleCutCountersinkAngle, HoleCutDepth,
+         HoleCutDiameter, ThreadDepth, ThreadDepthType, ThreadDiameter,
+         UpToFace2, UpToShape2]
 ---
 
 The Hole feature creates one or more holes from a selected sketch's circles and arcs. If arcs are present they must be part of closed contours. All non arc/circle entities are ignored but they still must form closed contours. Many parameters can be set such as threading and size, fit, hole type (countersink, counterbore, straight) and more.

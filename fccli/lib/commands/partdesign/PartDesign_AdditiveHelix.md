@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::AdditiveHelix
+  doc: Sweep the selected profile along a helix and add it to the body.
+  steps: [Mode, Pitch, Height, Turns]
+  options: [Angle, Growth]
+  hide: [FuzzyTolerance, Axis, Base, Tolerance, UpToFace2, UpToShape2]
 ---
 
 The Additive Helix tool creates a solid by sweeping a selected sketch or 2D object along a helix path.

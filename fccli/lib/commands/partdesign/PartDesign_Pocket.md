@@ -20,7 +20,13 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::Pocket
+  doc: Extrude the selected profile and cut it out of the body.
+  steps: [Length]
+  options: [Type, SideType, Length2, TaperAngle]
+  hide: [FuzzyTolerance, Direction, Offset2, TaperAngle2, Type2,
+         UpToFace2, UpToShape2]
 ---
 
 The Pocket tool cuts solids by extruding a sketch or a face of a solid along a straight path.

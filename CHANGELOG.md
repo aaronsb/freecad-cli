@@ -119,15 +119,35 @@
   Mesh, Arch/BIM, Spreadsheet and the rest each need a subject no command
   line builds today. Those are the panel tier's (GH #53).
 
-  The first live sweep: 86 of 112 run to a valid object, 15 leave an
-  invalid one, 6 are broken, 5 turn out to open a panel. No hazards and no
-  restarts. Over the Part and PartDesign slice the campaign named, 53
-  driven and 34 valid -- every Part boolean, join, slice and loft among
-  them. The 13 invalid results are one shape: a PartDesign feature is
-  created, left `Touched, Invalid`, and applied with no warning, and
-  `fillet 10` leaves Radius at its 1 mm default, so the value in the
-  example never reaches the property it names. That is GH #57 with
-  thirteen instances and a suspected cause.
+  The live sweep: 86 of 112 run to a valid object, 15 leave an invalid
+  one, 6 are broken, 5 turn out to open a panel. No hazards and no
+  restarts. **#52's acceptance is not met and the tier says so.** The
+  acceptance names the batch ADR-200 named -- the parameter-bearing Part
+  and PartDesign commands, 23 of which the mode map now calls selection --
+  and that batch stands at **6 of 23**: 13 invalid, 2 broken, 2 panel. The
+  other 30 Part/PartDesign selection commands take no arguments at all, and
+  28 of them pass; adding the two halves gives 34, which is a real number
+  about an easier set. #52 stays open.
+
+- **Nine commands stop reading their first argument as a tolerance
+  (GH #69, found by #52).** A tier-1 verb's steps are the type's
+  properties in alphabetical order, and `FuzzyTolerance` sorts in front of
+  the length, radius or diameter the command is about. `fillet 10` set
+  `FuzzyTolerance` -- clamped to 1 -- and left `Radius` at its 1 mm
+  default; `pad 10` and `pocket 5` set `Direction` and the tolerance, not
+  `Length`; `hole 6 10` set `BaseProfileType`. `ruled_surface Automatic`
+  is the same shape without a tolerance: two link properties sort first, so
+  it went looking for an object called `Automatic`. Nine command files now
+  carry a `type` block naming the order a person types and hiding the
+  tolerance, which is a tree edit and not a FreeCAD one. `man fillet` is
+  `fillet <Radius>` rather than sixteen properties, and 11 dimensionless
+  steps leave the D5 census.
+
+  Re-running the parameter-bearing slice across the change: both `broken`
+  results cleared, and **no invalid converted**. `fillet 10` now sets
+  `Radius` to 10 mm and the Fillet is still `Touched, Invalid`, so what
+  invalidates those features is independent of argument routing --
+  fourteen named instances are on GH #57, and the cause is open.
 
 - **The grammar spec gets a lint (GH #49, of #47).** `tools/interaction.py`
   checks the D group over the compiled tree and the built registry: D1

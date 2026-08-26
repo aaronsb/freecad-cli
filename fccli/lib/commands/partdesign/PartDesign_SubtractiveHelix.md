@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::SubtractiveHelix
+  doc: Sweep the selected profile along a helix and cut it from the body.
+  steps: [Mode, Pitch, Height, Turns]
+  options: [Angle, Growth]
+  hide: [FuzzyTolerance, Axis, Base, Tolerance, UpToFace2, UpToShape2]
 ---
 
 The SubtractiveHelix tool modifies a solid by sweeping a selected sketch or 2D object along a helix path cutting away the material.

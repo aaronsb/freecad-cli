@@ -20,7 +20,11 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::Thickness
+  doc: Hollow the body, leaving the selected faces open to a wall thickness.
+  steps: [Value, Mode, Join]
+  hide: [FuzzyTolerance]
 ---
 
 The PartDesign Thickness tool transforms a solid body into a hollow object with at least one open face, giving to each of its remaining faces a uniform thickness. It adds a Thickness object to the document with its corresponding representation in the Tree view.
