@@ -76,6 +76,10 @@ dictionary:  ## Compile fccli/lib/commands into fccli/dictionary.json
 descriptions:  ## Report the description spec A2/A3/A5/A6 over the tree (GH #48)
 	@python3 tools/lint_dictionary.py --describe --report descriptions.json
 
+.PHONY: grammar
+grammar:  ## Report the grammar spec D1/D3/D4/D5 over the tree (GH #49)
+	@python3 tools/lint_dictionary.py --grammar --report descriptions.json
+
 .PHONY: reconcile
 reconcile:  ## Harvest FreeCAD afresh and report what it changes (FLAGS=--apply to take it)
 	@mkdir -p $${XDG_CACHE_HOME:-$$HOME/.cache}/fccli

@@ -8,7 +8,7 @@ inside polyline and a plain word everywhere else.
 """
 
 from .qt import QtGui, QtCore
-from .grammar import POINT, QUANTITY, CHOICE, SELECTION
+from .grammar import POINT, QUANTITY, CHOICE, SELECTION, match_choice
 
 PALETTE = {
     "verb":     ("#4ec9b0", True),
@@ -129,7 +129,7 @@ class InputHighlighter(QtGui.QSyntaxHighlighter):
                 self._apply(at, len(token), "option")
                 return
         if step.kind == CHOICE:
-            ok = any(c.lower().startswith(token.lower()) for c in step.choices)
+            ok = bool(match_choice(step.choices, token))
             self._apply(at, len(token), "option" if ok else "unknown")
             return
         if step.kind == SELECTION:
@@ -206,7 +206,7 @@ def command_spans(registry, text, offset=0):
             out.append((offset + start, len(token),
                         "object" if _resolves(token) else "unknown", False))
         elif step.kind == CHOICE:
-            ok = any(c.lower().startswith(token.lower()) for c in step.choices)
+            ok = bool(match_choice(step.choices, token))
             out.append((offset + start, len(token),
                         "option" if ok else "unknown", False))
         else:

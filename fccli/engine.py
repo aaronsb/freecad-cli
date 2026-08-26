@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from . import bus as _bus
 from . import modals
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
-                      Registry, Step, Verb, order_of)
+                      Registry, Step, Verb, match_choice, order_of)
 from .parsing import format_point, format_quantity, parse_point, parse_quantity
 
 IDLE = "idle"
@@ -412,7 +412,7 @@ class Engine:
         elif step.kind in (TEXT, PATH):
             self._accept(step, text, text)
         elif step.kind == CHOICE:
-            hits = [c for c in step.choices if c.lower().startswith(text.lower())]
+            hits = match_choice(step.choices, text)
             if len(hits) != 1:
                 self.bus.emit(_bus.ERROR, f"expected one of {step.choices}")
                 return
@@ -442,7 +442,7 @@ class Engine:
             # name. `view sketch` used to cancel view and run the sketch
             # verb; 242 verb-and-choice pairs read that way, including
             # `constrain coincident` and `additive helix`.
-            if any(c.lower().startswith(token) for c in step.choices):
+            if match_choice(step.choices, token):
                 return False
         if step.kind == SELECTION and _resolve_names(text):
             # An object that exists is input, and FreeCAD's default labels

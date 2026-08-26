@@ -16,14 +16,20 @@ ADR-100's five rules, and the description spec's mechanical half:
   4. verb names asked for are unique across the tree
   5. the compiled dictionary is what the tree compiles to
 
-and, from GH #47's group A, what a person reads before typing a command:
-A2 the synopsis, A3 the argument glosses, A5 the example, A6 the family.
-Those live in descriptions.py, which builds the registry to check the
-verbs themselves rather than a second model of them. A description fault
-that silently changes what a command does is a problem like any other; the
-rest is a report -- `--describe` prints it, `--report FILE` writes it as
-the per-command JSON the verification campaign reads, and
-`--strict-descriptions` makes every line of it fail.
+and, from GH #47, two spec groups over the same tree. Group A is what a
+person reads before typing a command -- A2 the synopsis, A3 the argument
+glosses, A5 the example, A6 the family -- and lives in descriptions.py.
+Group D is what happens as they type -- D1 the choices, D3 the completion
+pools, D4 the naming, D5 the units -- and lives in interaction.py. Both
+build the registry and check the verbs themselves rather than a second
+model of them.
+
+Each group splits the same way: a fault that silently changes what a
+command does is a problem like any other, and the rest is a report.
+`--describe` prints group A's reports and `--grammar` group D's;
+`--report FILE` writes both into the one per-command JSON the verification
+campaign reads; `--strict-descriptions` and `--strict-grammar` make every
+line of one group fail.
 
 Exit 1 on any error. Rule 2 is the one that keeps a generated field safe
 to regenerate.
@@ -42,6 +48,7 @@ sys.path.insert(0, HERE)
 import command_files as cf  # noqa: E402
 import compile_dictionary as cd  # noqa: E402
 import descriptions as dsc  # noqa: E402
+import interaction as ixn  # noqa: E402
 
 DESCRIPTOR = os.path.join(ROOT, "fccli", "descriptor.json")
 
@@ -58,7 +65,8 @@ def _kind(value, *types):
     return value is None or isinstance(value, types)
 
 
-def lint(tree, descriptor_path, compiled_path, described=None):
+def lint(tree, descriptor_path, compiled_path, described=None,
+         grammared=None):
     problems = []
     with open(descriptor_path, encoding="utf-8") as fh:
         descriptor = json.load(fh)
@@ -223,7 +231,42 @@ def lint(tree, descriptor_path, compiled_path, described=None):
     problems.extend(found.problems)
     if described is not None:
         described.append(found)
+    # The grammar spec (D1, D3, D4, D5), over the same compiled tree. A
+    # separate pass rather than a section of the last one: the two groups
+    # answer to different flags, and a group A fault that stops descriptions
+    # short must not take group D's findings with it.
+    try:
+        grammar = ixn.inspect(descriptor, cd.compile_tree(tree), files)
+    except Exception as exc:
+        # A problem, for the reason the description catch is one: five
+        # hard-fail classes live inside inspect() -- a registry that will
+        # not build, a from_source with no pool names left in it, a
+        # hand-authored tier that moved out from under authored_commands
+        # or authored_verbs -- and a pass that declined to run and said so
+        # quietly is the vacuous pass this lint exists to refuse.
+        grammar = ixn.Findings()
+        grammar.problems.append(f"the grammar rules did not run: "
+                                f"{exc.__class__.__name__}: {exc} (D1)")
+    problems.extend(grammar.problems)
+    if grammared is not None:
+        grammared.append(grammar)
     return len(seen), problems
+
+
+def combined_reports(found, grammar, strict_descriptions=False,
+                     strict_grammar=False):
+    """Both groups' report lines, as one list neither group owns.
+
+    A new list, not either group's own: `reports = found.reports` followed
+    by `reports += grammar.reports` bound the A group's list and extended
+    it in place, so all 124 grammar lines landed inside
+    `descriptions.Findings.reports`. `--report` runs after that, and wrote
+    `totals.reports = 559` into the artifact the campaign reads where the
+    A group's own count is 435. A strict group contributes nothing here
+    because its lines have already been promoted to problems.
+    """
+    return ([] if strict_descriptions else list(found.reports)) + \
+           ([] if strict_grammar else list(grammar.reports))
 
 
 def main():
@@ -237,23 +280,37 @@ def main():
     ap.add_argument("--report", metavar="FILE",
                     help="write the per-command description record, which "
                          "is what A1 and A4 are read from")
+    ap.add_argument("--grammar", action="store_true",
+                    help="print the grammar report (D1, D3, D4, D5) "
+                         "rather than only counting it")
     ap.add_argument("--strict-descriptions", action="store_true",
                     help="fail on every description report, not only on "
                          "the faults that change what a command does")
+    ap.add_argument("--strict-grammar", action="store_true",
+                    help="fail on every grammar report, not only on the "
+                         "faults that change what a command does")
     args = ap.parse_args()
-    described = []
+    described, grammared = [], []
     count, problems = lint(args.tree, args.descriptor, args.compiled,
-                           described=described)
+                           described=described, grammared=grammared)
     found = described[0] if described else dsc.Findings()
+    grammar = grammared[0] if grammared else ixn.Findings()
     if args.strict_descriptions:
         problems = problems + found.reports
-    reports = [] if args.strict_descriptions else found.reports
+    if args.strict_grammar:
+        problems = problems + grammar.reports
+    reports = combined_reports(found, grammar, args.strict_descriptions,
+                               args.strict_grammar)
     if args.describe:
-        for r in reports:
+        for r in ([] if args.strict_descriptions else found.reports):
+            print(r)
+    if args.grammar:
+        for r in ([] if args.strict_grammar else grammar.reports):
             print(r)
     if args.report:
         with open(args.descriptor, encoding="utf-8") as fh:
-            dsc.write_report(found, args.report, json.load(fh))
+            dsc.write_report(found, args.report, json.load(fh),
+                             grammar=grammar)
         print(f"{args.report}: {len(found.records)} commands described")
     for p in problems:
         print(p, file=sys.stderr)
@@ -262,8 +319,11 @@ def main():
         return 1
     tail = ""
     if reports:
-        tail = (f", {len(reports)} description reports"
-                + ("" if args.describe else " (--describe to read them)"))
+        shown = args.describe or args.strict_descriptions
+        shown = shown and (args.grammar or args.strict_grammar)
+        tail = (f", {len(reports)} spec reports"
+                + ("" if shown else
+                   " (--describe, --grammar to read them)"))
     print(f"{count} command files, clean{tail}")
     return 0
 

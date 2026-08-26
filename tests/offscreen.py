@@ -2124,6 +2124,411 @@ def _run():
     check("  and the registry they read is really built",
           bool(_live.records["Part_Box"]["synopsis"]), True)
 
+
+    print("\n5dl. every grammar rule fails when its fault is put back")
+    # GH #49, the grammar spec (D1, D3, D4, D5). Same shape as 5al: each
+    # case is one fault, reintroduced, and the rule it must fire. The
+    # problem tier is three classes that are all empty on this tree, so
+    # each of those needs its fault built rather than found -- which is
+    # the point of building it.
+    import interaction as _ixn
+    import copy as _copy_module
+    import re as _re
+    from fccli.grammar import Step as _Step, TEXT as _TEXT, CHOICE as _CHOICE
+
+    _tree = _cd.compile_tree(_cd.DEFAULT_TREE)
+
+    def _grammar(commands=None, registry=None, dictionary=None,
+                 descriptor=None):
+        """The grammar rules over a dictionary, real or built for a case.
+
+        A case that wants one fault names the four commands it needs; a
+        case that wants the tree passes the compiled one. The difference
+        matters more here than it does for the description rules: the
+        family choices come out of the tree's own `choice:` and `also:`
+        lines, and `iso` -- GH #55 -- is one of those.
+        """
+        if dictionary is None:
+            dictionary = {"commands": commands or {}, "types": {},
+                          "families": {}}
+        commands = dictionary["commands"]
+        files = {n: (c["file"], {"generated": {}}, "")
+                 for n, c in commands.items() if c.get("file")}
+        return _ixn.inspect(descriptor or _spec_desc, dictionary, files,
+                            registry=registry)
+
+    # The tree as it stands, so a case can put one fault into a real
+    # registry rather than a hand-built one that agrees with the rule.
+    _real = _dsc.build_registry(_spec_desc, _tree)
+
+    def _copy_registry():
+        from fccli.grammar import Registry as _R
+        import copy as _copy
+        clone = _R()
+        for _n in _real.names():
+            clone.add(_copy.deepcopy(_real.get(_n)))
+        clone.reindex()
+        return clone
+
+    # --- D1: a choice no input selects.
+    _live_d1 = _grammar(dictionary=_tree)
+    check("  the exact choice GH #55 found, shadowed by the longer one",
+          _fired(_live_d1, "the family door `view` lists 'iso', and "
+                           "'isometric' begins with it", "reports"), 1)
+    check("    and its sibling, which is not shadowed and says nothing",
+          _fired(_live_d1, "lists 'isometric'", "reports"), 0)
+    check("  a shadowed value in a harvested enumeration, not a family",
+          _fired(_live_d1, "`draw_view_annotation <TextStyle>` lists 'Bold'",
+                 "reports"), 1)
+    check("  two commands under one choice, which is silent where it happens",
+          _fired(_live_d1, "`save as` is two commands", "reports"), 1)
+    # The problem half of D1: the tree authored the spelling. Three
+    # commands so the family reaches MIN_MEMBERS, two of them asking for
+    # the same choice -- families() writes one over the other and the
+    # loser's file still documents a line that runs somebody else.
+    _clash = {"Part_Box": {"file": "part/Part_Box.md", "doc": "x",
+                           "family": "make", "choice": "thing"},
+              "Part_Cylinder": {"file": "part/Part_Cylinder.md", "doc": "x",
+                                "family": "make", "choice": "thing"},
+              "Part_Cone": {"file": "part/Part_Cone.md", "doc": "x",
+                            "family": "make", "choice": "cone"},
+              "Part_Sphere": {"file": "part/Part_Sphere.md", "doc": "x",
+                              "family": "make", "choice": "ball"}}
+    check("  an authored choice two files ask for, which is a problem",
+          _fired(_grammar(_clash), "the tree authored this spelling",
+                 "problems"), 1)
+    _clean = dict(_clash)
+    _clean["Part_Cylinder"] = dict(_clean["Part_Cylinder"], choice="tube")
+    check("    and the same four files with distinct choices say nothing",
+          _fired(_grammar(_clean), "the tree authored this spelling",
+                 "problems"), 0)
+
+    # --- D3: a step with no pool to offer.
+    _live_d3 = _grammar(dictionary=_tree)
+    check("  a choice step the harvest read no values off",
+          _fired(_live_d3, "`fem_post_pipeline <Frame>` takes one of a "
+                           "closed set and has none to take", "reports"), 1)
+    check("  the inline option that moves what position means",
+          _fired(_live_d3, "verbs take an inline option", "reports"), 1)
+    # The problem half: a pool name from_source does not know. Both tiers
+    # get the fault, because they are read two different ways -- the
+    # hand-written one out of the source text, the generated one off the
+    # built step.
+    _bad_src = _ixn.declared_sources
+    try:
+        _ixn.declared_sources = lambda *a, **k: {"objekts": ["fccli/shell.py"]}
+        _typo = _grammar()
+    finally:
+        _ixn.declared_sources = _bad_src
+    check("  a hand-written step completing from a pool that is not one",
+          _fired(_typo, "completes from 'objekts', which from_source does "
+                        "not know", "problems"), 1)
+    check("    and the sources really declared, which are all known",
+          (sorted(_ixn.declared_sources()) != [],
+           sorted(set(_ixn.declared_sources()) - _ixn.known_sources())),
+          (True, []))
+    _reg_typo = _copy_registry()
+    _reg_typo.get("part_cut").steps.append(
+        _Step("what", _TEXT, "What", completes="objekts"))
+    check("  a built step completing from a pool that is not one",
+          _fired(_grammar(registry=_reg_typo),
+                 "`part_cut <what>` completes from 'objekts'", "problems"), 1)
+    _reg_ok = _copy_registry()
+    _reg_ok.get("part_cut").steps.append(
+        _Step("what", _TEXT, "What", completes="objects"))
+    check("    and the same step spelled right says nothing",
+          _fired(_grammar(registry=_reg_ok), "completes from", "problems"), 0)
+    check("  a from_source with no pool names left in it raises",
+          _raises(lambda: _ixn.known_sources(
+              os.path.join(os.path.dirname(__file__), "offscreen.py"))),
+          True)
+
+    # --- D4: the word a verb answers to.
+    _live_d4 = _grammar(dictionary=_tree)
+    check("  a generic word answering for one workbench of several",
+          _fired(_live_d4, "naming: 'cut' is the meaningful word of",
+                 "reports"), 1)
+    check("  a verb no meaningful word reaches",
+          _fired(_live_d4, "verbs are not reachable by their meaningful "
+                           "word", "reports"), 1)
+    check("  a prefix that names no workbench anyone switches to (GH #21)",
+          _fired(_live_d4, "commands are prefixed Arch_ and ship in "
+                           "BIMWorkbench", "reports"), 1)
+    check("    and a prefix that names its own workbench, which is silent",
+          _fired(_live_d4, "prefixed Part_ and ship in PartWorkbench",
+                 "reports"), 0)
+    # A family door winning a generic word is the design working, and a
+    # hand-written verb winning one is a verb this module is not looking
+    # at. Neither is a hijack, and both are shapes that fired before the
+    # two guards went in.
+    check("  the family door winning its own word, which is not a hijack",
+          _fired(_live_d4, "naming: 'view' is the meaningful word of",
+                 "reports"), 0)
+    check("  a word won by a verb somebody wrote, which nobody here meets",
+          (_fired(_live_d4, "naming: 'box' is the meaningful word of",
+                  "reports"),
+           _live_d4.words["box"].get("blind")), (0, True))
+    check("  a verb reachable through its family door, which is reachable",
+          (_live_d4.records["Std_ViewFront"]["checks"]["D4"],
+           any("`view front` does" in n
+               for n in _live_d4.records["Std_ViewFront"]["notes"])),
+          ("pass", True))
+    # The problem half of D4: the file asks for a name and something else
+    # answers to it. Rule 4 of this lint checks the tree's names against
+    # each other; nothing checked them against the verbs that get built.
+    check("  a file asking for a name a family door already owns",
+          _fired(_grammar({"Part_Box": {"file": "part/Part_Box.md",
+                                        "doc": "x", "aliases": ["view"]}}),
+                 "asks for the name 'view' and it runs `view`", "problems"), 1)
+    check("    and one asking for a name of its own, which it gets",
+          _fired(_grammar({"Part_Box": {"file": "part/Part_Box.md",
+                                        "doc": "x", "aliases": ["boxy"]}}),
+                 "asks for the name", "problems"), 0)
+    _gone = _copy_registry()
+    _gone.remove("box")
+    check("  a file asking for a name no verb answers to",
+          _fired(_grammar({"Part_Box": {"file": "part/Part_Box.md",
+                                        "doc": "x", "verb": "box"}},
+                          registry=_gone),
+                 "asks for the name 'box' and no verb answers", "problems"), 1)
+    _nameless = os.path.join(tempfile.mkdtemp(), "nothing.py")
+    with open(_nameless, "w") as _fh:
+        _fh.write("REGISTRY = []\n")
+    check("  a source with no name= raises rather than claiming no verbs",
+          _raises(lambda: _ixn.authored_verbs((_nameless,))), True)
+    check("    and the real sources, which have thirty-four between them",
+          len(_ixn.authored_verbs()) >= 30, True)
+
+    # --- D5: the unit a quantity echoes in.
+    _live_d5 = _grammar(dictionary=_tree)
+    check("  a dimensionless property carrying the factory's millimetres",
+          _fired(_live_d5, "steps over App::PropertyFloatConstraint echo in "
+                           "mm", "reports"), 1)
+    check("  a Quantity property, whose unit is the runtime tier's to read",
+          _fired(_live_d5, "carries its unit on the instance rather than the "
+                           "type", "reports"), 1)
+    _reg_unit = _copy_registry()
+    for _s in _reg_unit.get("cylinder").steps:
+        if _s.id == "Radius":
+            _s.unit = "furlong"
+    check("  a unit the harvest cannot produce",
+          _fired(_grammar(registry=_reg_unit),
+                 "'furlong', which the harvest cannot produce",
+                 "problems"), 1)
+    _reg_swap = _copy_registry()
+    for _s in _reg_swap.get("cylinder").steps:
+        if _s.id == "Radius":
+            _s.unit = "deg"
+    check("  a unit the factory did not carry through from the descriptor",
+          _fired(_grammar(registry=_reg_swap),
+                 "echoes in 'deg' and the descriptor harvested 'mm'",
+                 "problems"), 1)
+    check("    and the unit the factory did carry through, which is silent",
+          _fired(_live_d5, "did not carry the unit through", "problems"), 0)
+
+    # --- what this lint is not looking at, said out loud.
+    _blind_g = _grammar({"Part_Box": {"file": "part/Part_Box.md", "doc": "x"},
+                         "Part_Cylinder": {"file": "part/Part_Cylinder.md",
+                                           "doc": "x"}})
+    check("  a command a hand-written verb owns has no rule answering for it",
+          ([_blind_g.records["Part_Box"]["checks"][r]
+            for r in ("D1", "D3", "D4", "D5")],
+           _blind_g.records["Part_Box"].get("authored_verb")),
+          (["unread"] * 4, "box"))
+    check("    and a command beside it, which nobody wrote, is answered",
+          ([_blind_g.records["Part_Cylinder"]["checks"][r]
+            for r in ("D1", "D3", "D4", "D5")],
+           _blind_g.records["Part_Cylinder"].get("authored_verb")),
+          (["n/a", "n/a", "pass", "pass"], None))
+    # A report filed against a blind command's file must not be read as
+    # that rule having answered. Without the guard, the D4 line about the
+    # generated `box` turned Part_Box's unread into a report.
+    # Deleting the _note override turns each of these into an answer the
+    # rule never gave: a line filed against a blind command's file is
+    # about the generated verb standing in, and `box` is not that verb.
+    _blind_g.report("part/Part_Box.md", "something about the generated verb",
+                    "D4")
+    _blind_g.problem("part/Part_Box.md", "something worse about it", "D5")
+    check("    and a later line about the stand-in leaves unread alone",
+          ([_blind_g.records["Part_Box"]["checks"][r] for r in ("D4", "D5")],
+           [n.split(":")[0] for n in _blind_g.records["Part_Box"]["notes"][-2:]]),
+          (["unread", "unread"], ["D4", "D5"]))
+    check("      though the problem line still fails the lint",
+          [p for p in _blind_g.problems if "something worse" in p] != [], True)
+    _seen_g = _grammar({"Part_Cylinder": {"file": "part/Part_Cylinder.md",
+                                          "doc": "x"}})
+    _seen_g.report("part/Part_Cylinder.md", "something about its verb", "D4")
+    check("      and a command nobody wrote takes the verdict as normal",
+          _seen_g.records["Part_Cylinder"]["checks"]["D4"], "report")
+    # The two rules that stop at a blind command, each with the fault put
+    # into a verb a hand-written one owns and then into one beside it. Both
+    # guards were silent branches until this pair went in: nothing on this
+    # tree happens to be blind and faulty at once.
+    _two = {"Part_Box": {"file": "part/Part_Box.md", "doc": "x"},
+            "Part_Cylinder": {"file": "part/Part_Cylinder.md", "doc": "x"}}
+    _blind_pool = _copy_registry()
+    _blind_pool.get("box").steps.append(_Step("Mode", _CHOICE, "Mode"))
+    _seen_pool = _copy_registry()
+    _seen_pool.get("cylinder").steps.append(_Step("Mode", _CHOICE, "Mode"))
+    check("  a choice step with no pool, on a command somebody wrote a verb for",
+          (_fired(_grammar(_two, registry=_blind_pool),
+                  "`box <Mode>` takes one of a closed set", "reports"),
+           _fired(_grammar(_two, registry=_seen_pool),
+                  "`cylinder <Mode>` takes one of a closed set", "reports")),
+          (0, 1))
+    _dim = _copy_module.deepcopy(_spec_desc)
+    for _tid in ("Part::Box", "Part::Cylinder"):
+        for _p in _dim["types"][_tid]["params"]:
+            if _p["name"] == "Height":
+                _p.pop("unit", None)
+                _p["property_type"] = "App::PropertyFloat"
+    _dim_found = _grammar(_two, descriptor=_dim)
+    check("  a dimensionless step in mm, on one written for and one not",
+          ([n for n in _dim_found.records["Part_Box"]["notes"]
+            if "App::PropertyFloat" in n],
+           [n for n in _dim_found.records["Part_Cylinder"]["notes"]
+            if "App::PropertyFloat" in n] != []),
+          ([], True))
+    # --- the report lists stay each group's own (found in review of #66).
+    # `reports = found.reports` followed by `reports += grammar.reports`
+    # bound the A group's list and extended it in place, so every grammar
+    # line landed inside descriptions.Findings.reports -- and --report runs
+    # after that, writing totals.reports = 559 into the artifact where the
+    # A group's own count is 435.
+    _fa, _fb = _dsc.Findings(), _ixn.Findings()
+    _fa.reports.extend(["A-one", "A-two"])
+    _fb.reports.append("D-one")
+    _both = _ld.combined_reports(_fa, _fb)
+    check("  combining the two groups' reports leaves each list alone",
+          (_both, _fa.reports, _fb.reports),
+          (["A-one", "A-two", "D-one"], ["A-one", "A-two"], ["D-one"]))
+    check("    and a strict group contributes nothing, having been promoted",
+          (_ld.combined_reports(_fa, _fb, strict_descriptions=True),
+           _ld.combined_reports(_fa, _fb, strict_grammar=True),
+           _fa.reports),
+          (["D-one"], ["A-one", "A-two"], ["A-one", "A-two"]))
+
+    # --- DIMENSIONLESS, pinned member by member. Three of the six could be
+    # dropped with the suite green, which is 87 of the 264 steps the rule
+    # exists to find. App::PropertyPercent has no instances on this tree, so
+    # a census cannot pin it; that is stated rather than left to look pinned.
+    _census = {}
+    for _line in _live_d5.reports:
+        _m = _re.match(r"units: (\d+) steps over (\S+) echo in mm", _line)
+        if _m:
+            _census[_m.group(2)] = int(_m.group(1))
+    check("  every dimensionless property type is counted, by name",
+          (_census, sum(_census.values())),
+          ({"App::PropertyFloat": 80, "App::PropertyFloatConstraint": 97,
+            "App::PropertyInteger": 54, "App::PropertyIntegerConstraint": 19,
+            "App::PropertyPrecision": 14}, 264))
+    check("    and the one with no instances is in the set, uncounted",
+          ("App::PropertyPercent" in _ixn.DIMENSIONLESS,
+           "App::PropertyPercent" in _census), (True, False))
+
+    # --- the blind tier reads aliases as well as names. `register_all`
+    # refuses a generated verb on a taken alias exactly as it does on a
+    # taken name, and reading only `name=` shipped a D4 line about `help`
+    # as though Std_OnlineHelp were reachable by it.
+    _named = _ixn.authored_verbs()
+    check("  an alias of a hand-written verb is a name nobody else gets",
+          {_k: _named.get(_k) for _k in ("exit", "help", "sel")},
+          {"exit": ("quit", "fccli/shell.py"),
+           "help": ("man", "fccli/shell.py"),
+           "sel": ("select", "fccli/shell.py")})
+    check("    and the record says which verb it is an alias of",
+          (_fired(_live_d4, "the name `help` is an alias of the hand-written "
+                            "verb `man`", "reports"),
+           _fired(_live_d4, "the name `box` is the hand-written verb `box`",
+                  "reports")), (1, 1))
+    check("    so the word is no longer spoken of as a way in",
+          _fired(_live_d4, "naming: 'help' is the meaningful word of",
+                 "reports"), 0)
+    _half = os.path.join(tempfile.mkdtemp(), "half.py")
+    with open(_half, "w") as _fh:
+        _fh.write('Verb(name="only", steps=[])\n')
+    check("  a source with names and no aliases raises, not half an answer",
+          _raises(lambda: _ixn.authored_verbs((_half,))), True)
+
+    # --- D1 calls the engine's matcher rather than restating it. A copy of
+    # the comparison could be made case-sensitive with the suite green and
+    # the tree's D1 output byte-identical, because every shadowed pair the
+    # tree carries agrees in case. This is the pair that does not.
+    from fccli.grammar import match_choice as _match
+    check("  the engine's matcher is prefix, and case is not the difference",
+          (_match(["iso", "isometric"], "iso"),
+           _match(["Iso", "isometric"], "Iso"),
+           _match(["front", "top"], "FRONT"),
+           _match(["front", "top"], "zzz")),
+          (["iso", "isometric"], ["Iso", "isometric"], ["front"], []))
+    _mixed = _copy_registry()
+    _mixed.get("view").steps[0].choices = ["Iso", "isometric", "front"]
+    check("    so a shadow in mixed case is one D1 finds",
+          _fired(_grammar(dictionary=_tree, registry=_mixed),
+                 "lists 'Iso', and 'isometric' begins with it", "reports"), 1)
+
+    # --- the choice collision is above the line, with the four the tree
+    # carries grandfathered by name. The criterion is the consequence: a
+    # collision runs the wrong command with no refusal and no message, and
+    # that is true however the spelling arose. Demoting the class would
+    # have left the next one joining a report nobody diffs.
+    check("  a known collision is a report, and says it is grandfathered",
+          (_fired(_live_d1, "`save as` is two commands", "reports"),
+           _fired(_live_d1, "`save as` is two commands", "problems")), (1, 0))
+    _new = _copy_module.deepcopy(_spec_desc)
+    for _cmd, _label in (("Aaa_ZapThing", "Zap Thing"),
+                         ("Bbb_ZapThing", "Zap Thing Too"),
+                         ("Ccc_ZapOther", "Zap Other"),
+                         ("Ddd_ZapMore", "Zap More")):
+        _new["commands"][_cmd] = {"name": _cmd, "label": _label,
+                                  "tooltip": _label, "workbench": None}
+    check("  a collision the list does not name is a problem",
+          _fired(_grammar(dictionary=_tree, descriptor=_new),
+                 "`zap thing` is two commands", "problems"), 1)
+    check("    and the four it does name stay reports beside it",
+          _fired(_grammar(dictionary=_tree, descriptor=_new),
+                 "is two commands", "problems"), 1)
+    _stale = dict(_ixn.KNOWN_COLLISIONS, **{"nosuch.choice": "nothing (GH #0)"})
+    _old_known = _ixn.KNOWN_COLLISIONS
+    try:
+        _ixn.KNOWN_COLLISIONS = _stale
+        _pruned = _grammar(dictionary=_tree)
+    finally:
+        _ixn.KNOWN_COLLISIONS = _old_known
+    check("  an entry the tree no longer collides on asks to be pruned",
+          _fired(_pruned, "`nosuch choice` is grandfathered", "reports"), 1)
+
+    check("  a generated verb standing on a hand-written name is said so",
+          (_fired(_live_d4, "the name `select` is the hand-written verb "
+                            "`select`", "reports"),
+           _fired(_live_d4, "the family door `select` and its 17 choices do "
+                            "not exist live", "reports")), (1, 1))
+    # F5 in this module, both halves: a registry that will not build takes
+    # every rule with it, and the lint's catch must not swallow a raise.
+    _old_build_g = _dsc.build_registry
+    try:
+        _dsc.build_registry = lambda descriptor, dictionary: None
+        _unbuilt_g = _ixn.inspect(_spec_desc, {"commands": {}}, {})
+    finally:
+        _dsc.build_registry = _old_build_g
+    check("  a registry that will not build is a problem, not a quiet report",
+          (len(_unbuilt_g.problems), _unbuilt_g.reports), (1, []))
+    _old_ixn = _ixn.inspect
+    try:
+        def _boom_g(*a, **kw):
+            raise RuntimeError("a shape interaction.py did not expect")
+        _ixn.inspect = _boom_g
+        _n6, _p6 = _ld.lint(_cd.DEFAULT_TREE, _ld.DESCRIPTOR, _cd.DEFAULT_OUT)
+    finally:
+        _ixn.inspect = _old_ixn
+    check("    and a grammar pass that raised is a problem too",
+          [p for p in _p6 if "grammar rules did not run: RuntimeError" in p]
+          != [], True)
+    # And the whole point: the tree as it stands carries no D-group
+    # problem, so this lint joins make check without breaking it.
+    check("  the tree in the repository has no grammar problem in it",
+          _live_d1.problems, [])
+
     print("\n5ad. the command tree is read, and what it says changes the verbs")
     # ADR-100. fccli/dictionary.json is the compiled tree. A file's verb,
     # aliases, rank, family/choice and body reach the registry through

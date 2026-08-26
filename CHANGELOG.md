@@ -95,6 +95,28 @@
 
 ### Added
 
+- **The grammar spec gets a lint (GH #49, of #47).** `tools/interaction.py`
+  checks the D group over the compiled tree and the built registry: D1
+  every listed choice is a value some input selects, D3 every step has a
+  pool to offer, D4 a verb answers to the word it is about, D5 a quantity
+  echoes in the unit it was read in. `make grammar` prints it and writes
+  the per-command verdicts into the same record `make descriptions`
+  writes, so one file carries every rule that has spoken about a command.
+  It finds GH #55 (`view iso`, shadowed by `isometric`) and 20 more of that
+  shape, 4 choices two commands answer to, 264 dimensionless steps echoing
+  in millimetres, and 79 commands whose prefix names a workbench they do
+  not ship in (GH #21). A choice collision is above the line -- it runs the
+  wrong command with no refusal and no message -- with the four the tree
+  carries grandfathered by name in `KNOWN_COLLISIONS`, so the next one
+  fails the lint the day it appears. The other three problem classes are
+  empty today, which is what lets the lint join `make check`.
+- **The choice matcher is one function.** `grammar.match_choice` is what
+  the engine's accept path, its restart guard and both of the
+  highlighter's choice branches now call; there were four copies of the
+  same two-line comparison. No behaviour change -- each copy was
+  character-identical -- but the D1 lint reads the matcher there rather
+  than restating it, so it cannot end up answering a question about a
+  comparison the engine no longer makes.
 - **154 commands gain a verified example.** The GH #47 positional sweep
   drove all 246 mode-map drafts against a live headless instance; 159
   ran to completion with a valid result, of which 4 were already
