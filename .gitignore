@@ -11,3 +11,6 @@ tests/*.FCStd*
 
 # The modemap draft sweep report (verify.py --modemap); working state
 modemap_sweep.json*
+
+# The per-command description record (make descriptions); working state
+descriptions.json

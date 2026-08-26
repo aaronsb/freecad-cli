@@ -1881,6 +1881,127 @@ def _run():
     check("  the tree in the repository is clean", (_n, _problems[:3]),
           (len(_cmds), []))
 
+    print("\n5al. every description rule fails when its fault is put back")
+    # GH #48, the description spec's mechanical half (A2, A3, A5, A6). A
+    # check nobody has seen fail is a check nobody has seen: each case
+    # here is one fault, reintroduced, and the rule it must fire. The
+    # first is the control -- the same command, correct, silent.
+    import descriptions as _dsc
+    _spec_desc = _load_desc()
+    _spec_modes = _dsc.load_modemap()
+
+    def _spec(commands, types=None, body="a body that is nobody's summary"):
+        files = {n: (c["file"], {"generated": {}}, body)
+                 for n, c in commands.items()}
+        return _dsc.inspect(_spec_desc,
+                            {"commands": commands, "types": types or {},
+                             "families": {}}, files, modemap=_spec_modes)
+
+    def _fired(found, needle, channel):
+        lines = found.problems if channel == "problems" else found.reports
+        return sum(1 for line in lines if needle in line)
+
+    def _box(**kw):
+        return {"Part_Box": {"file": "part/Part_Box.md", "doc": "x", **kw}}
+
+    def _tune(**kw):
+        return {"Part::Box": {"file": "part/Part_Box.md", **kw}}
+
+    _good = _tune(steps=["Length", "Width", "Height"], strict=True)
+    _cases = [
+        ("a correct command says nothing",
+         _box(example="box 40 30 20", type={"of": "Part::Box"}), _good,
+         "part/Part_Box.md", "problems", 0),
+        ("type.steps naming no property of the type",
+         _box(type={"of": "Part::Box"}),
+         _tune(steps=["Lenght", "Width"], strict=True),
+         "type.steps names 'Lenght'", "problems", 1),
+        ("the same property spoken for twice",
+         _box(type={"of": "Part::Box"}),
+         _tune(steps=["Length"], hide=["Length"], strict=True),
+         "type.hide names 'Length', which type.steps already", "problems", 1),
+        ("two authored arguments under one gloss",
+         _box(type={"of": "Part::Box"}),
+         _tune(steps=["Length", "Width"], strict=True,
+               prompts={"Length": "a side", "Width": "a side"}),
+         "Length and Width share one gloss", "problems", 1),
+        ("an example naming no verb at all",
+         _box(example="bxo 40 30 20"), _good,
+         "'bxo', which is no verb", "problems", 1),
+        ("an example naming somebody else's verb",
+         _box(example="sphere 15"), _good,
+         "does not reach this command", "problems", 1),
+        ("an example written as a shell line",
+         _box(example="fccli exec 'box 1 2 3'"), _good,
+         "is a shell line", "problems", 1),
+        ("an example on two lines",
+         _box(example="box 1 2 3\nbox 4 5 6"), _good,
+         "spans more than one line", "problems", 1),
+        ("an example passing more than the synopsis takes",
+         _box(example="box 0,0,0 40 30 20"), _good,
+         "passes 4 arguments to a synopsis that takes 3", "reports", 1),
+        ("a tuning line that names nothing and so does nothing",
+         _box(), _tune(steps=["Length"], options=["Nope"], strict=True),
+         "type.options names 'Nope'", "reports", 1),
+        ("two generated arguments under one gloss",
+         {"Part_Cone": {"file": "part/Part_Cone.md", "doc": "x"}}, {},
+         "Radius1 and Radius2 share one gloss", "reports", 1),
+        ("a positional command with no example",
+         {"Arch_Axis": {"file": "arch/Arch_Axis.md", "doc": "x"}}, {},
+         "a positional command with no example", "reports", 1),
+        ("an example on a command the mode map calls panel",
+         {"Draft_Point": {"file": "draft/Draft_Point.md", "doc": "x",
+                          "example": "point 10,10,0"}}, {},
+         "an example on a panel-mode command", "reports", 1),
+        ("the family door with the wrong choice behind it",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "view top"}}, {},
+         "does not reach this command", "problems", 1),
+        ("the family door with the right one",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "view front"}}, {},
+         "std/Std_ViewFront.md", "problems", 0),
+        ("a family where only some members carry an example",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "view front"}}, {},
+         "family view: 1 of 41 members carries an example", "reports", 1),
+        ("a family whose examples are typed two ways",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "view front"},
+          "Std_ViewTop": {"file": "std/Std_ViewTop.md", "doc": "x",
+                          "example": "3_top"}}, {},
+         "the examples are typed two ways", "reports", 1),
+        ("two tuned siblings disagreeing on argument order", {},
+         {"Part::Cylinder": {"file": "a", "steps": ["Radius", "Height"]},
+          "Part::Helix": {"file": "b", "steps": ["Pitch", "Height", "Radius"]}},
+         "disagree about which comes first", "reports", 1),
+    ]
+    for _label, _commands, _types, _needle, _channel, _want in _cases:
+        check("  " + _label,
+              _fired(_spec(_commands, _types), _needle, _channel), _want)
+    # A1 and A4 are a person's reading; these three are the damage a
+    # reader meets before the reading starts.
+    check("  a summary left as a letter by the label strip",
+          _fired(_spec(_box(summary="S the selected profiles.")),
+                 "the label was stripped off", "reports"), 1)
+    check("  and an article, which is a word",
+          _fired(_spec(_box(summary="A link is an object that references "
+                                    "another.")),
+                 "the label was stripped off", "reports"), 0)
+    check("  a body that only says the summary again",
+          _fired(_spec(_box(summary="Compound tools."), body="Compound tools"),
+                 "one line twice", "reports"), 1)
+    check("  a body whose link never closes",
+          _fired(_spec(_box(), body="[Part Boolean\n\nis a generic tool."),
+                 "prints the bracket", "reports"), 1)
+    check("  a body that is not there at all",
+          _fired(_spec(_box(), body=""), "there is no body", "reports"), 1)
+    # The rules run at all: a report the whole tree cannot produce means
+    # something silently declined to build the registry.
+    _live = _spec({"Part_Box": {"file": "part/Part_Box.md", "doc": "x"}})
+    check("  and the registry they read is really built",
+          bool(_live.records["Part_Box"]["synopsis"]), True)
+
     print("\n5ad. the command tree is read, and what it says changes the verbs")
     # ADR-100. fccli/dictionary.json is the compiled tree. A file's verb,
     # aliases, rank, family/choice and body reach the registry through
