@@ -2030,6 +2030,22 @@ def _run():
             _glc_err2 = _glc_exc
         check("    an unopenable file drains rather than dies",
               (_glc_proc2.wait(timeout=30), _glc_err2), (0, None))
+        # A write error mid-run, not just at open: /dev/full opens fine
+        # and fails the first write with ENOSPC.
+        if os.path.exists("/dev/full"):
+            _glc_proc3 = _sh.Popen(
+                [sys.executable, "-c", _glc_bin.LOG_COPIER, "/dev/full", "0"],
+                stdin=_sh.PIPE)
+            _glc_err3 = None
+            try:
+                for _ in range(8):
+                    _glc_proc3.stdin.write(b"w" * 65536)
+                    _glc_proc3.stdin.flush()
+                _glc_proc3.stdin.close()
+            except OSError as _glc_exc:
+                _glc_err3 = _glc_exc
+            check("    a write error mid-run drains rather than dies",
+                  (_glc_proc3.wait(timeout=30), _glc_err3), (0, None))
         _glc_small = os.path.join(_glc_dir, "small.log")
         _sh.run([sys.executable, "-c", _glc_bin.LOG_COPIER, _glc_small, "4096"],
                 input=b"hello\n", timeout=60)
@@ -2070,11 +2086,51 @@ def _run():
         {"D_D": "d", "E_E": "e"},
         lambda cid, ex, res, det: _sw_events3.append((cid, res, det)),
         run_one=lambda e: ("ok", ""),
-        alive=lambda: False, healthy=lambda: True,
+        alive=lambda: False, healthy=lambda: False,
         restart=lambda: False)
     check("    a failed restart stops the sweep, the hazard recorded",
           (_sw_events3, _sw_fin3),
           ([("D_D", "hazard", "killed the FreeCAD instance")], False))
+
+    def _sw_slow(*a):
+        raise _sh.TimeoutExpired("fccli", 60)
+    _sw_events4 = []
+    _sw_tally4, _sw_fin4, _sw_n4 = _verify.sweep(
+        {"F_F": "f"},
+        lambda cid, ex, res, det: _sw_events4.append((cid, res, det)),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: True, healthy=_sw_slow, restart=lambda: True)
+    check("    a health probe that itself times out is the same hazard",
+          (_sw_events4, _sw_fin4),
+          ([("F_F", "hazard", "left the instance unresponsive")], True))
+    # _healthy is the server answering, not the process living -- the
+    # wedged case is exactly a live process whose server is silent.
+    _sw_old_snap, _sw_old_run = _verify._snapshot, _verify.running
+    try:
+        _verify.running = lambda: True
+        _verify._snapshot = lambda: {}
+        _sw_h1 = _verify._healthy()
+        _verify._snapshot = lambda: {"engine": "idle"}
+        _sw_h2 = _verify._healthy()
+    finally:
+        _verify._snapshot, _verify.running = _sw_old_snap, _sw_old_run
+    check("  _healthy is the server answering, not the process living",
+          (_sw_h1, _sw_h2), (False, True))
+    # Ownership follows what the restart actually did: a reused instance
+    # is not ours to quit! -- that discards someone's unsaved documents.
+    _sw_old_restart = _verify._restart
+    try:
+        _verify._restart = lambda: (True, False)     # reused, not started
+        _sw_own = {"it": False}
+        _verify._restart_owned(_sw_own)
+        _sw_reused = _sw_own["it"]
+        _verify._restart = lambda: (True, True)      # started fresh
+        _verify._restart_owned(_sw_own)
+        _sw_started = _sw_own["it"]
+    finally:
+        _verify._restart = _sw_old_restart
+    check("  a reused instance is never claimed; a started one is",
+          (_sw_reused, _sw_started), (False, True))
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the

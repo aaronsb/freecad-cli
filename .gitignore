@@ -10,4 +10,4 @@ fccli/_build.py
 tests/*.FCStd*
 
 # The modemap draft sweep report (verify.py --modemap); working state
-modemap_sweep.json
+modemap_sweep.json*
