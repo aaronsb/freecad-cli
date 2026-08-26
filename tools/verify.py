@@ -27,6 +27,26 @@ The result is what running the example did:
     no_fixture the command never ran: the operands its selection hint
                names could not be built, so there was nothing to select
 
+The panel tier adds five of its own, because a panel command can fail in
+ways a positional one cannot (GH #53):
+
+    no_panel    the verb ran and opened no panel -- the mode map has this
+                command in the wrong tier
+    mouse_panel a panel opened that the command line cannot drive: nothing
+                to type into, or no way to finish. It is a mode; the
+                harness closes it and says so
+    bad_field   the draft named a field the panel does not have. The
+                detail is the engine's complaint, which names the ones it
+                does have
+    stuck_panel a panel neither `done` nor `cancel` would close. The
+                instance is no longer fit to judge anything, so the sweep
+                restarts it -- recorded against the command that left it,
+                and not against the ones it would otherwise have spoiled
+    blocked     a command that ran while one of those was still up, so it
+                was never judged. The sweep restarts, and a later pass
+                runs it again on an instance where the answer means
+                something
+
 A sweep survives its own targets: a command that kills FreeCAD is recorded
 as `hazard`, a fresh headless instance is started, and the sweep continues.
 The ledger is written after every command, so a stopped sweep loses at most
@@ -44,6 +64,13 @@ hands it over with `select` (ADR-200), and then runs the verb -- so the
 example is the two-part one ADR-200 describes, `select <what>; <verb>`, and
 the fixture is built and selected before the verb is judged. Each command
 gets a scratch document of its own, so one fixture cannot feed the next.
+
+`panel` builds the same fixtures and then drives the task panel the verb
+opens: it reads the fields off the engine, sets the `name=value` pairs the
+draft carries, and `done`s. A draft with no pairs still runs -- the verb,
+the fields, and `done` -- so every panel command gets an answer and the
+report says which had parameters to set. The field names the panel
+answered with are kept in the report beside the result.
 
 A run updates only the commands it drove; every other entry is left as it
 was, so a sweep of one workbench does not erase the rest of the ledger.
@@ -88,6 +115,8 @@ KNOWN_HAZARDS = {
     "Std_TestProgress2": "killed the FreeCAD instance (draft sweep)",
     "Std_TestProgress3": "killed the FreeCAD instance (draft sweep)",
     "Test_TestWork": "killed the FreeCAD instance (draft sweep)",
+    # Discovered live by the 2026-08-26 panel sweep, the same way.
+    "BIM_Door": "killed the FreeCAD instance (panel sweep)",
 }
 
 
@@ -172,6 +201,25 @@ FIXTURES = {
                            "upgrade", "select Wire001", "draft_to_sketch",
                            "select Sketch002", "duplicate_object"],
                           "Sketch001, Sketch003"),
+    # Two bodies, the second left active: `new_body` activates what it
+    # makes, so the body selected here is the tool and the one it is
+    # combined into is the active one -- which is the shape a PartDesign
+    # boolean asks for. Authored for the panel tier (GH #53); no
+    # selection hint reads its way here.
+    "two_bodies": (["box 0,0,0 20 20 10", "select Box", "new_body",
+                    "box 10,10,5 20 20 10", "select Box001", "new_body"],
+                   "Body"),
+    # A body with an additive feature inside it. A BaseFeature is neither
+    # additive nor subtractive, and PartDesign's transform features refuse
+    # to pattern one -- "Only additive and subtractive features can be
+    # transformed". A tier-1 verb builds its object at the document root,
+    # so `additive_box` alone leaves the feature outside the body and the
+    # same commands answer "Selection is not in the active body";
+    # `duplicate_object` is what puts a copy inside it. Authored for the
+    # panel tier (GH #53).
+    "body_additive": (["new_body", "additive_box 20 20 10",
+                       "select AdditiveBox", "duplicate_object"],
+                      "AdditiveBox001"),
     "group": (["new_group"], "Group"),
     "link": (["box 0,0,0 20 20 10", "select Box", "make_link"], "Link"),
     "linked_source": (["box 0,0,0 20 20 10", "select Box", "make_link"],
@@ -467,6 +515,367 @@ def verify_one(example):
     return result, (err if result in ("incomplete", "broken") else "")
 
 
+# ----------------------------------------------------------------- panels
+
+# A panel command is not a dead end. It opens a task panel, the engine
+# offers that panel's fields as one repeating `name=value` step, and
+# `done` applies what was set (GH #53). Three of the engine's own answers
+# are all this tier needs to drive one:
+#
+#   the panel's fields   listed when it opens, and again in the complaint
+#                        when a name is not on it
+#   `done` in options    the step that takes assignments is the one that
+#                        offers `done`, so the state says whether a panel
+#                        is being driven or merely showing
+#   the delta-invalidity read (C3), unchanged from the selection tier
+#
+# Nothing here is written per command, for the same reason panels.py has
+# nothing per command: a panel names its own fields.
+
+# A name no .ui file gives a widget. Typed at a panel, it makes the engine
+# answer with the names the panel does have -- a question asked by getting
+# it wrong on purpose, which is the mechanism GH #53 names.
+PROBE_NAME = "__fccli_probe"
+
+# `panels.offered` caps the complaint at six names and glues an ellipsis
+# to the sixth, so the probe alone under-reports a wide panel. The block
+# the engine prints when the panel opens carries all of them. Both are
+# read: the probe because it is the answer to a question, the block
+# because it is complete.
+_ANNOUNCED = re.compile(r"^\s*\d+ to set(?: now)?:\s*$")
+_NOT_ON_PANEL = re.compile(r"is not on this panel -- (.+?)\s*$")
+# Mirrors panels.ASSIGNMENT, and for the same reason: no space before the
+# `=` is what tells `radius=3`, which is an assignment, from the `A = north`
+# inside `label=Wall A = north`, which is prose. A copy rather than an
+# import because nothing in this file may import FreeCAD's Qt.
+_ASSIGNMENT = re.compile(r"(?:^|\s)([A-Za-z_][A-Za-z0-9_]*)=")
+
+
+def split_pairs(example):
+    """A panel draft, split into the verb and the fields it sets.
+
+    `part_fillet filletstartradius=3` is one line a person can type and
+    history can recall, and it is also the two things this tier does in
+    turn: run the verb, then set that field. A value runs to the next
+    `name=` or to the end of the line, because a value can hold spaces --
+    `3/4 in`, `Center of mass / centroid`.
+    """
+    text = example or ""
+    marks = list(_ASSIGNMENT.finditer(text))
+    if not marks:
+        return text.strip(), []
+    pairs = []
+    for i, mark in enumerate(marks):
+        end = marks[i + 1].start() if i + 1 < len(marks) else len(text)
+        pairs.append((mark.group(1), text[mark.end():end].strip()))
+    return text[:marks[0].start()].strip(), pairs
+
+
+def announced_fields(text):
+    """The names from the block the engine prints when a panel opens.
+
+    `3 to set:` and then the names in padded columns, which is the whole
+    list however wide the panel is. The heading is followed by indented
+    rows and then by the unindented hint line, which ends the block.
+    """
+    names, reading = [], False
+    for line in (text or "").splitlines():
+        if _ANNOUNCED.match(line):
+            reading = True
+            continue
+        if not reading:
+            continue
+        if not line.startswith((" ", "\t")) or not line.strip():
+            reading = False
+            continue
+        names.extend(line.split())
+    return names
+
+
+def probed_fields(text):
+    """The names from the complaint, and whether it kept some back.
+
+    A complaint listing more than six ends in an ellipsis glued to the
+    sixth name, so the caller is told the list is short rather than
+    left believing a panel has six fields when it has eight.
+    """
+    hit = _NOT_ON_PANEL.search(text or "")
+    if not hit:
+        return [], False
+    listed = hit.group(1).strip()
+    short = listed.endswith("...")
+    names = [n.strip() for n in listed.rstrip(".").split(",")]
+    return [n for n in names if n], short
+
+
+def _fault(err):
+    """The first thing the engine called an error, without its prefix.
+
+    A run at a panel step answers on stderr with the fault, if there was
+    one, and then `incomplete: still wants name=value` either way -- so
+    the presence of an `error:` line is what tells a written field from a
+    refused one.
+    """
+    for line in (err or "").splitlines():
+        if line.startswith("error: "):
+            return line[len("error: "):].strip()
+    return ""
+
+
+def panel_fields(run, out):
+    """What this panel answers to, asked of the engine two ways.
+
+    ``out`` is what the verb printed, which holds the announced block.
+    The probe is sent regardless: it is the answer to a question rather
+    than a reading of a notice, and on a narrow panel the two agree,
+    which is worth knowing when they stop agreeing.
+    """
+    announced = announced_fields(out)
+    _code, _out, err = run(f"{PROBE_NAME}=1")
+    probed, short = probed_fields(err)
+    if short or len(announced) > len(probed):
+        # The block is the complete list; the complaint is capped at six.
+        return sorted(set(announced) | set(probed))
+    return sorted(set(probed) | set(announced))
+
+
+def _cancel():
+    return fccli("cancel")
+
+
+def cleared(snapshot, cancel, tries=3):
+    """Close whatever panel is up, and confirm it is really gone.
+
+    Asking is not enough. `Mesh_FromPartShape` opens a Tessellation panel
+    that neither `done` nor `cancel` closes, and every command after it
+    was answered "a dialog is already open in the task panel" or reported
+    inactive -- 17 of them, in one live sweep, every one recorded against
+    the wrong command. So the harness confirms, and a panel that will not
+    close becomes a fact about the instance rather than about whatever
+    ran next.
+    """
+    for _ in range(tries):
+        cancel()
+        if not snapshot().get("panel"):
+            return True
+    return False
+
+
+def verify_panel(example, run=None, snapshot=None, cancel=None):
+    """Drive one panel draft: open, set what it names, `done`.
+
+    C1 for panels. The verb runs on its own, the panel's fields are read
+    off the engine, the draft's `name=value` pairs are set one at a time
+    so a refused name is attributed to the pair that was refused, and
+    `done` applies it. What the run left is judged by the same
+    delta-invalidity read as every other tier (C3).
+
+    Returns (result, detail, extra). ``extra`` carries the field names the
+    panel answered with, which is the half of GH #50 the mode map does not
+    have yet, and which is what makes a refused name diagnosable.
+
+    Beyond the shared vocabulary this tier says five more things:
+
+        no_panel     the verb ran and no panel opened -- the mode map
+                     calls this command a panel command and the verb is
+                     not one
+        mouse_panel  a panel opened that the command line cannot drive:
+                     nothing to type into, or no way to finish. The
+                     engine says which; either way it is a mode, and the
+                     harness closes it
+        bad_field    the draft named a field the panel does not have. The
+                     detail is the engine's complaint, which names the
+                     fields it does have
+        stuck_panel  a panel that would not close, whatever was pressed.
+                     Every command after one of those is answered as
+                     though it were the one at fault, so the sweep
+                     restarts on it
+        blocked      one of those was still up when this ran, so nothing
+                     here is about this command. Retried by a later sweep
+
+    No path leaves a panel on screen without saying so (C4). One is
+    closed on the way in, because a panel left by anything else would be
+    adopted by the next verb typed; one is closed again on any ending
+    that is not a clean apply; and a close is confirmed rather than
+    assumed, so a panel that will not close is reported instead of being
+    charged to whatever ran next.
+    """
+    run = run or _exec
+    snapshot = snapshot or _snapshot
+    cancel = cancel or _cancel
+
+    def close_out(result, detail, extra):
+        """Leave nothing open, and say plainly when that failed (C4)."""
+        if cleared(snapshot, cancel):
+            return result, detail, extra
+        said = f"{result}: {detail}" if detail else result
+        return "stuck_panel", f"{said}; and the panel would not close", extra
+
+    if not cleared(snapshot, cancel):
+        # Something before this left a panel nothing can close, and every
+        # command run against it is answered as though it were the one at
+        # fault. This one has not been judged at all, which is a different
+        # thing from having failed: the sweep restarts, and a later pass
+        # runs it on an instance where the answer means something.
+        return ("blocked",
+                "a panel left open before this command would not close", {})
+    before = _invalid(snapshot())
+    verb, pairs = split_pairs(verb_line(example))
+    code, out, err = run(verb)
+    if code == 75:
+        # The floor or a dialog belongs to somebody else. Nothing here
+        # opened it, so nothing here closes it.
+        return "busy", "", {}
+    snap = snapshot()
+    engine = snap.get("engine") or ""
+    options = snap.get("options") or []
+    # The step that takes assignments is the one that offers `done`. A
+    # verb still collecting something else has not opened a panel, and a
+    # panel showing with the engine idle is not being driven by anything.
+    if engine != "collecting" or "done" not in options:
+        return _without_panel(snap, code, err, before, close_out)
+    fields = panel_fields(run, out)
+    extra = {"fields": fields}
+    for name, value in pairs:
+        code, out, err = run(f"{name}={value}")
+        if code == 75:
+            return close_out("busy", "", extra)
+        fault = _fault(err)
+        if fault:
+            # `is not on this panel` is the engine naming the names it
+            # does have; anything else is the value being refused.
+            kind = ("bad_field" if "is not on this panel" in fault
+                    else "broken")
+            return close_out(kind, fault, extra)
+        # A choice can swap the page under whatever comes next, and the
+        # engine re-announces when it does.
+        for name_now in announced_fields(out):
+            if name_now not in fields:
+                fields.append(name_now)
+    code, out, err = run("done")
+    snap = snapshot()
+    fresh = [n for n in _invalid(snap) if n not in before]
+    result = classify(code, snap.get("engine") or "",
+                      snap.get("panel"), fresh)
+    if result in ("incomplete", "panel", "busy"):
+        # `done` did not finish it. Whatever is still up is not the next
+        # command's to inherit.
+        return close_out(result, (_fault(err) or err), extra)
+    if result == "invalid":
+        run("undo")
+        return result, ", ".join(fresh), extra
+    if result == "broken":
+        return result, (_fault(err) or err), extra
+    return result, "", extra
+
+
+def _without_panel(snap, code, err, before, close_out):
+    """What to say when the verb did not end up at a panel step.
+
+    Two answers, and the difference matters to GH #50. A verb that opened
+    no panel is a command the mode map has in the wrong tier -- including
+    one still collecting something that is not a panel field, which is a
+    positional verb the mode map called a panel. A panel that opened with
+    nothing to type into, or with no way to finish, is a mode; the
+    engine's own words for both are in panels.py. The detail carries what
+    the verb did either way: the fault it was refused with, the object it
+    left invalid, or that it simply ran.
+    """
+    engine = snap.get("engine") or ""
+    if snap.get("panel"):
+        return close_out("mouse_panel",
+                         (_fault(err) or
+                          "a panel with no way in from here"), {})
+    if engine == "collecting":
+        return close_out("no_panel",
+                         f"no panel; still wants {snap.get('prompt')}", {})
+    fresh = [n for n in _invalid(snap) if n not in before]
+    inner = classify(code, engine, False, fresh)
+    if inner == "invalid":
+        return "no_panel", f"no panel; left invalid: {', '.join(fresh)}", {}
+    if inner == "broken":
+        return "no_panel", f"no panel; {_fault(err) or err}", {}
+    return "no_panel", "no panel; the verb ran to completion", {}
+
+
+# Panels this tier must not press OK on. Not hazards -- none of them
+# harms the instance -- but each applies outside the document it was run
+# in, and the harness has no business writing those: a style panel writes
+# FreeCAD's own preferences, which are FreeCAD's (docs/conventions.md),
+# and a post-processor writes a file to a path somebody chose. Punted with
+# the reason, so the accounting still answers for them.
+PANEL_OFF_LIMITS = {
+    "Draft_SetStyle": "applies Draft's default style preferences, which "
+                      "are the operator's",
+    "Draft_SelectPlane": "writes the working plane and its grid "
+                         "preferences, which are the operator's",
+    "CAM_Post": "writes a G-code file to a chosen path",
+    "CAM_ExportTemplate": "writes a job template file to a chosen path",
+}
+
+
+def panel_targets(modemap):
+    """What the panel tier drives, and what it cannot.
+
+    Returns (targets, fixtures, punted), the same three the selection
+    tier returns. A panel command that names operands gets the selection
+    tier's fixture for them, because many need one -- a fillet needs a
+    solid with an edge selected before its panel has anything to fillet.
+    One that names none is driven in a scratch document of its own and
+    nothing else.
+
+    A command the mode map drafted no `name=value` pairs for is still
+    driven: the verb, the fields the panel answers with, and `done`. That
+    is C1 without parameters, and it is worth more than a punt -- it says
+    whether the panel opens, what it offers and whether it applies, for
+    every panel command rather than only the drafted ones. Parameters
+    need a draft, so the report says which commands had one.
+
+    An authored draft may name its fixture outright with `panel_fixture`,
+    a key in FIXTURES. A panel takes its operands from the selection like
+    any other command, but the mode map's `needs_selection` was
+    classified from the wiki and is wrong where a panel asks for operands
+    the page does not mention -- Part_Fillet's page describes a dialog and
+    the dialog fillets nothing unless an edge was selected first. Naming
+    the fixture is the authored answer to that, and it leaves the
+    classification it disagrees with legible instead of overwriting it.
+    """
+    targets, fixtures, punted = {}, {}, {}
+    for cid, entry in modemap["commands"].items():
+        if entry.get("mode") != "panel":
+            continue
+        off_limits = PANEL_OFF_LIMITS.get(cid)
+        if off_limits:
+            punted[cid] = off_limits
+            continue
+        draft = (entry.get("example") or "").strip()
+        verb = (entry.get("verb") or "").strip()
+        if not draft and not verb:
+            punted[cid] = "the mode map named no verb to run"
+            continue
+        line = draft or verb
+        authored = entry.get("panel_fixture")
+        if authored:
+            if authored not in FIXTURES:
+                punted[cid] = f"panel_fixture names no fixture: {authored}"
+                continue
+            lines, gives = FIXTURES[authored]
+            lines = list(lines)
+        elif entry.get("needs_selection"):
+            name, lines, gives = fixture_for(cid, entry.get("selection_hint"))
+            if name is None:
+                punted[cid] = gives   # with no fixture, that slot is the reason
+                continue
+        else:
+            targets[cid] = line
+            fixtures[cid] = []       # a scratch document, and nothing in it
+            continue
+        select = f"select {gives}"
+        targets[cid] = f"{select}; {line}"
+        fixtures[cid] = lines + [select]
+    return targets, fixtures, punted
+
+
 def _load(path):
     """The store, or a stop. A store that fails to parse ends the run:
     overwriting it would throw away every result it still holds."""
@@ -485,12 +894,15 @@ def resumable(targets, entries):
     A result already recorded for the same example is an answer and
     stands -- except `busy`, the floor's state rather than the draft's,
     and `no_fixture`, the harness's own gap rather than the command's,
-    both of which are retried; and `hazard`, which stays in the targets
-    so plan() reports the skip.
+    both of which are retried -- as is `blocked`, a command a panel left
+    by something else stood in front of, which is no answer about the
+    command at all; and `hazard`, which stays in the targets so plan()
+    reports the skip.
     """
     return {c: e for c, e in targets.items()
             if entries.get(c, {}).get("example") != e
-            or entries[c].get("result") in ("hazard", "busy", "no_fixture")}
+            or entries[c].get("result") in ("hazard", "busy", "no_fixture",
+                                            "blocked")}
 
 
 def plan(targets, prior, force=False, start_at=None):
@@ -574,32 +986,82 @@ def _restart():
     return True, started_new
 
 
+def _quit():
+    """Shut this instance down, and wait until it is gone."""
+    fccli("cancel")
+    fccli("exec", "quit!")
+    for _ in range(20):
+        if not running():
+            return True
+        time.sleep(0.5)
+    return False
+
+
 def _restart_owned(owned):
     """The sweep's restart hook: ownership is a fact the restart updates.
 
     An instance this sweep started, first or mid-sweep, is quit at the
     end; one it merely reused belongs to whoever started it, and `quit!`
     against a reused instance discards their unsaved documents.
+
+    A panel that will not close is not a wedge, and `_restart` is built
+    for wedges: an instance that still answers is reused, which is right
+    when the old one is unreachable and wrong here, because this one
+    answers every question and refuses every command. Live, that reuse
+    turned 9 commands that each left such a panel into 90 results -- 81
+    of them commands that never ran. So an instance the sweep started is
+    quit and replaced. One it borrowed is not the sweep's to quit, and
+    the sweep stops rather than filling a report with the same fact 80
+    times.
     """
+    if running() and _snapshot().get("panel") and not cleared(_snapshot,
+                                                              _cancel):
+        if not owned.get("it"):
+            print("verify: a panel is open that will not close, and this "
+                  "FreeCAD is not the sweep's to quit", file=sys.stderr)
+            return False
+        _quit()
     ok, started_new = _restart()
     if started_new:
         owned["it"] = True
     return ok
 
 
+# Results after which the instance is no longer fit to judge the next
+# command. A hazard took it down or wedged it; a stuck panel stands
+# between every later command and FreeCAD, and is not the next command's
+# fault however much it looks like it; `blocked` is a command that ran
+# against exactly that and so was never judged.
+RESTART_AFTER = ("hazard", "stuck_panel", "blocked")
+
+
 def sweep(targets, record, run_one=None, alive=None, healthy=None,
-          restart=None, setup=None):
+          restart=None, setup=None, restart_every=None):
     """Run every target, restart a dead or wedged instance, checkpoint
     each result.
 
-    ``record(cid, example, result, detail)`` is called after every
-    command, hazards included -- it owns persistence, so a stopped sweep
-    keeps everything already run. ``setup(cid)`` prepares what the
+    ``record(cid, example, result, detail, extra)`` is called after
+    every command, hazards included -- it owns persistence, so a stopped
+    sweep keeps everything already run. ``run_one`` answers (result,
+    detail) or (result, detail, extra); ``extra`` is what the tier learned
+    that is neither of those, and the panel tier puts the field names the
+    panel answered with there. ``setup(cid)`` prepares what the
     command needs and returns (ok, detail); the selection tier builds its
     fixture there. A setup that fails on a healthy instance is
     `no_fixture` and the sweep moves on; one that fails because the
     instance is gone is a hazard like any other. The hooks default to the
     real client; they exist so this loop is testable without a FreeCAD.
+
+    ``restart_every`` starts a fresh instance after every N commands. A
+    long-lived one degrades, quietly: after enough commands Draft's
+    `upgrade` stops joining four lines into a wire -- exit 0, nothing
+    built -- and a body stops being the active body once a workbench has
+    been borrowed and handed back. Both are the fixture failing rather
+    than the command, and both depend on how far into the sweep the
+    command happens to sit. A bounded lifetime is what makes a reading
+    reproducible; it costs a start per N commands, which is why it is
+    asked for rather than assumed.
+
     Returns (tally, finished, restarts).
     """
     run_one = run_one or verify_one
@@ -609,8 +1071,8 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
     tally, restarts = {}, 0
     total = len(targets)
 
-    def note(cid, example, result, detail):
-        record(cid, example, result, detail)
+    def note(cid, example, result, detail, extra=None):
+        record(cid, example, result, detail, extra)
         tally[result] = tally.get(result, 0) + 1
 
     for i, (cid, example) in enumerate(sorted(targets.items()), 1):
@@ -641,11 +1103,15 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
                 print(f"[{i}/{total}] {'no_fixture':10} {cid}  ({why})",
                       flush=True)
                 continue
+        extra = None
         try:
-            result, detail = run_one(example)
+            # Two values or three: a tier with nothing extra to say keeps
+            # the shorter contract.
+            result, detail, *rest = run_one(example)
+            extra = rest[0] if rest else None
         except subprocess.TimeoutExpired:
             result, detail = "hazard", "client timed out; instance wedged"
-        if result != "hazard":
+        if result not in RESTART_AFTER:
             try:
                 if not healthy():
                     result = "hazard"
@@ -653,9 +1119,9 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
                               else "killed the FreeCAD instance")
             except subprocess.TimeoutExpired:
                 result, detail = "hazard", "left the instance unresponsive"
-        note(cid, example, result, detail)
-        if result == "hazard":
-            print(f"[{i}/{total}] {'hazard':10} {cid} -- restarting FreeCAD",
+        note(cid, example, result, detail, extra)
+        if result in RESTART_AFTER:
+            print(f"[{i}/{total}] {result:10} {cid} -- restarting FreeCAD",
                   flush=True)
             restarts += 1
             if not restart():
@@ -663,6 +1129,11 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
                 return tally, False, restarts
             continue
         print(f"[{i}/{total}] {result:10} {cid}  ({example})", flush=True)
+        if restart_every and i % restart_every == 0 and i < total:
+            restarts += 1
+            if not restart():
+                print("verify: restart failed, stopping", file=sys.stderr)
+                return tally, False, restarts
     return tally, True, restarts
 
 
@@ -674,15 +1145,23 @@ def main(argv=None):
                     help="drive the mode map's drafts instead, recording to "
                          "modemap_sweep.json; the tree and the ledger are "
                          "untouched")
-    ap.add_argument("--tier", choices=("positional", "selection"),
+    ap.add_argument("--tier", choices=("positional", "selection", "panel"),
                     default="positional",
                     help="which mode's drafts --modemap drives: positional "
                          "runs the example alone, selection builds the "
-                         "fixture the hint names and selects it first")
+                         "fixture the hint names and selects it first, "
+                         "panel runs the verb and then drives the task "
+                         "panel it opens with name=value and done")
     ap.add_argument("--start-at", metavar="COMMAND",
                     help="skip every command id before this one")
     ap.add_argument("--force", action="store_true",
                     help="run commands recorded as hazards")
+    ap.add_argument("--restart-every", type=int, metavar="N",
+                    help="start a fresh instance after every N commands. A "
+                         "long-lived one degrades quietly -- Draft's upgrade "
+                         "stops building a wire, an active body stops being "
+                         "active after a workbench borrow -- so a fixture "
+                         "that worked early in a sweep fails later")
     args = ap.parse_args(argv)
 
     version = json.load(open(DICT)).get("freecad")
@@ -691,6 +1170,8 @@ def main(argv=None):
         modemap = json.load(open(MODEMAP))
         if args.tier == "selection":
             targets, fixtures, punted = selection_targets(modemap)
+        elif args.tier == "panel":
+            targets, fixtures, punted = panel_targets(modemap)
         else:
             targets = {cid: e["example"]
                        for cid, e in modemap["commands"].items()
@@ -703,8 +1184,8 @@ def main(argv=None):
             targets = resumable(targets, entries)
     else:
         if args.tier != "positional":
-            sys.exit("verify: --tier selection drives the mode map's drafts; "
-                     "pass --modemap")
+            sys.exit(f"verify: --tier {args.tier} drives the mode map's "
+                     "drafts; pass --modemap")
         data = json.load(open(DICT))
         targets = {cid: e["example"] for cid, e in data["commands"].items()
                    if e.get("example")}
@@ -724,8 +1205,12 @@ def main(argv=None):
 
     today = datetime.date.today().isoformat()
 
-    def record(cid, example, result, detail):
+    def record(cid, example, result, detail, extra=None):
         entry = {"example": example, "result": result}
+        # What the tier learned beyond its verdict. The panel tier's field
+        # names are the half GH #50 does not have, so they are kept even
+        # when the draft that found them failed.
+        entry.update(extra or {})
         if not args.modemap:
             entry["date"] = today
             entry["freecad"] = version
@@ -775,17 +1260,21 @@ def main(argv=None):
         return 3
 
     # The selection tier builds a fixture per command and judges only the
-    # verb after it; the positional tier runs its example whole.
+    # verb after it; the panel tier does the same and then drives the
+    # panel the verb opens; the positional tier runs its example whole.
     hooks = {}
-    if fixtures:
+    if args.modemap and args.tier in ("selection", "panel"):
+        one = verify_panel if args.tier == "panel" else \
+            (lambda example: verify_one(verb_line(example)))
         hooks = {"setup": lambda cid: build_fixture(fixtures[cid]),
-                 "run_one": lambda example: verify_one(verb_line(example))}
+                 "run_one": one}
 
     owned = {"it": started}
     fccli("exec", "new verify")
     try:
         tally, finished, restarts = sweep(
-            run, record, restart=lambda: _restart_owned(owned), **hooks)
+            run, record, restart=lambda: _restart_owned(owned),
+            restart_every=args.restart_every, **hooks)
     finally:
         if owned["it"] and running():
             fccli("cancel")

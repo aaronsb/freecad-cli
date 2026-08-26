@@ -2721,7 +2721,7 @@ def _run():
     _sw_restarts = []
     _sw_tally, _sw_fin, _sw_n = _verify.sweep(
         {"A_A": "a", "B_B": "b"},
-        lambda cid, ex, res, det: _sw_events.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sw_events.append((cid, res, det)),
         run_one=lambda e: ("incomplete", ""),
         alive=lambda: True,
         healthy=lambda: next(_sw_health),
@@ -2737,7 +2737,7 @@ def _run():
     _sw_events2 = []
     _sw_tally2, _sw_fin2, _sw_n2 = _verify.sweep(
         {"C_C": "c"},
-        lambda cid, ex, res, det: _sw_events2.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sw_events2.append((cid, res, det)),
         run_one=_sw_boom, alive=lambda: True, healthy=lambda: True,
         restart=lambda: True)
     check("    a client timeout is recorded, not raised",
@@ -2746,7 +2746,7 @@ def _run():
     _sw_events3 = []
     _sw_tally3, _sw_fin3, _sw_n3 = _verify.sweep(
         {"D_D": "d", "E_E": "e"},
-        lambda cid, ex, res, det: _sw_events3.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sw_events3.append((cid, res, det)),
         run_one=lambda e: ("ok", ""),
         alive=lambda: False, healthy=lambda: False,
         restart=lambda: False)
@@ -2759,7 +2759,7 @@ def _run():
     _sw_events4 = []
     _sw_tally4, _sw_fin4, _sw_n4 = _verify.sweep(
         {"F_F": "f"},
-        lambda cid, ex, res, det: _sw_events4.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sw_events4.append((cid, res, det)),
         run_one=lambda e: ("ok", ""),
         alive=lambda: True, healthy=_sw_slow, restart=lambda: True)
     check("    a health probe that itself times out is the same hazard",
@@ -2793,6 +2793,34 @@ def _run():
         _verify._restart = _sw_old_restart
     check("  a reused instance is never claimed; a started one is",
           (_sw_reused, _sw_started), (False, True))
+    # A panel that will not close is not a wedge, and reuse keeps it. An
+    # instance the sweep started is quit and replaced; one it borrowed is
+    # not the sweep's to quit, so the sweep stops instead of recording the
+    # same fact against every command left.
+    _pz_old = (_verify._restart, _verify.running, _verify._snapshot,
+               _verify._quit, _verify._cancel)
+    try:
+        _verify.running = lambda: True
+        _verify._snapshot = lambda: {"panel": True}
+        _verify._cancel = lambda: None
+        _pz_quits = []
+        _verify._quit = lambda: _pz_quits.append(1) or True
+        _verify._restart = lambda: (True, True)
+        _pz_ours = _verify._restart_owned({"it": True})
+        _pz_quit_ours = len(_pz_quits)
+        _pz_theirs = _verify._restart_owned({"it": False})
+        check("  a poisoned instance the sweep started is quit and replaced",
+              (_pz_ours, _pz_quit_ours), (True, 1))
+        check("    one it borrowed is not, and the sweep stops",
+              (_pz_theirs, len(_pz_quits)), (False, 1))
+        # And an instance with nothing open is left alone either way.
+        _verify._snapshot = lambda: {"panel": False}
+        _pz_clean = _verify._restart_owned({"it": False})
+        check("    an instance with no panel open is restarted, not quit",
+              (_pz_clean, len(_pz_quits)), (True, 1))
+    finally:
+        (_verify._restart, _verify.running, _verify._snapshot,
+         _verify._quit, _verify._cancel) = _pz_old
     # Resume: an answer stands; busy is the floor's state and retried;
     # a hazard stays so plan() reports the skip; a changed example and
     # an unrecorded draft both run.
@@ -2873,10 +2901,18 @@ def _run():
           sorted({n for _s, _p, n in _verify.HINT_RULES
                   if n is not None and n not in _verify.FIXTURES}),
           [])
-    check("    and every fixture is one some rule reaches",
+    # And every recipe is reachable, through one of the two doors there
+    # are: a hint rule, or a `panel_fixture` a panel draft authored
+    # (GH #53). Falsifying this once removed two dead recipes, which is
+    # why it is worth widening rather than dropping.
+    _fx_authored = {e.get("panel_fixture") for e in _spec_modes.values()
+                    if e.get("panel_fixture")}
+    check("    and every fixture is one some rule or draft reaches",
           sorted(set(_verify.FIXTURES)
-                 - {n for _s, _p, n in _verify.HINT_RULES}),
+                 - {n for _s, _p, n in _verify.HINT_RULES} - _fx_authored),
           [])
+    check("      every authored panel_fixture naming a fixture that exists",
+          sorted(n for n in _fx_authored if n not in _verify.FIXTURES), [])
 
     # ADR-200 writes a selection example in two parts; the verb is the
     # half left to judge once the select has been run as setup.
@@ -2965,7 +3001,7 @@ def _run():
     _sp_ran = []
     _sp_tally, _sp_fin, _sp_n = _verify.sweep(
         {"A_A": "select Box; a", "B_B": "select Box; b"},
-        lambda cid, ex, res, det: _sp_events.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sp_events.append((cid, res, det)),
         run_one=lambda e: _sp_ran.append(e) or ("ok", ""),
         alive=lambda: True, healthy=lambda: True, restart=lambda: True,
         setup=lambda cid: (True, "") if cid == "A_A"
@@ -2984,7 +3020,7 @@ def _run():
     _sp_restarts = []
     _sp_tally2, _sp_fin2, _sp_n2 = _verify.sweep(
         {"C_C": "select Box; c"},
-        lambda cid, ex, res, det: _sp_events2.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sp_events2.append((cid, res, det)),
         run_one=lambda e: ("ok", ""),
         alive=lambda: False, healthy=lambda: False,
         restart=lambda: _sp_restarts.append(1) or True,
@@ -2996,7 +3032,7 @@ def _run():
     _sp_events3 = []
     _sp_tally3, _sp_fin3, _sp_n3 = _verify.sweep(
         {"D_D": "select Box; d", "E_E": "select Box; e"},
-        lambda cid, ex, res, det: _sp_events3.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sp_events3.append((cid, res, det)),
         run_one=lambda e: ("ok", ""),
         alive=lambda: False, healthy=lambda: False, restart=lambda: False,
         setup=lambda cid: (False, "new verify -- no instance"))
@@ -3008,7 +3044,7 @@ def _run():
     _sp_events4 = []
     _sp_tally4, _sp_fin4, _sp_n4 = _verify.sweep(
         {"F_F": "select Box; f"},
-        lambda cid, ex, res, det: _sp_events4.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sp_events4.append((cid, res, det)),
         run_one=lambda e: ("ok", ""),
         alive=lambda: True, healthy=lambda: True, restart=lambda: True,
         setup=_sp_slow)
@@ -3026,7 +3062,7 @@ def _run():
     _sp_events5, _sp_restarts5 = [], []
     _sp_tally5, _sp_fin5, _sp_n5 = _verify.sweep(
         {"G_G": "select Box; g", "H_H": "select Box; h"},
-        lambda cid, ex, res, det: _sp_events5.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sp_events5.append((cid, res, det)),
         run_one=lambda e: ("ok", ""),
         alive=lambda: True, healthy=_sp_slow_health,
         restart=lambda: _sp_restarts5.append(1) or True,
@@ -3041,7 +3077,7 @@ def _run():
     _sp_events6, _sp_restarts6 = [], []
     _sp_tally6, _sp_fin6, _sp_n6 = _verify.sweep(
         {"I_I": "select Box; i"},
-        lambda cid, ex, res, det: _sp_events6.append((cid, res, det)),
+        lambda cid, ex, res, det, extra=None: _sp_events6.append((cid, res, det)),
         run_one=lambda e: ("ok", ""),
         alive=lambda: True, healthy=_sp_slow_health,
         restart=lambda: _sp_restarts6.append(1) or True,
@@ -3050,6 +3086,531 @@ def _run():
           (_sp_events6, len(_sp_restarts6)),
           ([("I_I", "hazard",
              "fixture: client timed out; instance wedged")], 1))
+    # ---------------------------------------------------------- panel tier
+    # GH #53. A panel command takes `name=value` and then `done`, and the
+    # engine answers with the panel's own field names on a name it has not
+    # got. Every branch below was reintroduced as a mutant and the named
+    # check confirmed to fail.
+    #
+    # A scripted panel, so each branch can be reached on its own -- a live
+    # one reaches them one at a time and not on request. ``replies``
+    # answers a line the way the client does, (code, out, err); ``snaps``
+    # is the state after each read, the last one repeating. The first read
+    # is the one `cleared` makes on the way in.
+    _S_IDLE = {"engine": "idle", "options": [], "panel": False,
+               "documents": [{"active": True, "invalid": []}]}
+    _S_PANEL = {"engine": "collecting", "options": ["done"], "panel": True,
+                "documents": [{"active": True, "invalid": []}]}
+    _S_OPEN = {"engine": "idle", "options": [], "panel": True,
+               "documents": [{"active": True, "invalid": []}]}
+
+    def _panel(replies, snaps):
+        log = {"lines": [], "cancels": 0, "snaps": list(snaps)}
+
+        def run(line):
+            log["lines"].append(line)
+            return replies.get(line, (0, "", ""))
+
+        def snapshot():
+            queue = log["snaps"]
+            if not queue:
+                return {}
+            return queue.pop(0) if len(queue) > 1 else queue[0]
+
+        def cancel():
+            log["cancels"] += 1
+        return run, snapshot, cancel, log
+
+    # A draft is one line a person can type: the verb, then the fields.
+    check("  a panel draft splits into the verb and its fields",
+          _verify.split_pairs("part_fillet filletstartradius=3"),
+          ("part_fillet", [("filletstartradius", "3")]))
+    check("    a draft with no fields is all verb",
+          _verify.split_pairs("part_fillet"), ("part_fillet", []))
+    check("    several fields, in order",
+          _verify.split_pairs("transform xposition=25 zposition=3")[1],
+          [("xposition", "25"), ("zposition", "3")])
+    check("    a value runs to the next name=, so it may hold spaces",
+          _verify.split_pairs("partdesign_mirror comboplane=Base XZ-plane"),
+          ("partdesign_mirror", [("comboplane", "Base XZ-plane")]))
+    check("      and a unit is part of the value, not a token after it",
+          _verify.split_pairs("transform zposition=3/4 in xposition=2")[1],
+          [("zposition", "3/4 in"), ("xposition", "2")])
+    # panels.py's rule, and for its reason: no space before the `=` is
+    # what tells an assignment from prose that contains one.
+    check("      prose with an = in it is not a second assignment",
+          _verify.split_pairs("label_it label=Wall A = north")[1],
+          [("label", "Wall A = north")])
+    check("    the verb keeps its positional arguments",
+          _verify.split_pairs("place 0,0,0 xposition=2")[0], "place 0,0,0")
+    # The copy of panels.ASSIGNMENT is a copy on purpose -- nothing in
+    # verify.py may import FreeCAD's Qt -- so it is pinned to the original.
+    _pn_src = open(os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "fccli", "panels.py"), encoding="utf-8").read()
+    check("    and its regex is still the one panels.py uses",
+          _verify._ASSIGNMENT.pattern in _pn_src, True)
+
+    _ann = ("3 to set:\n"
+            "  filletstartradius  fillettype         shapeobject\n"
+            "name=value sets one · done applies · cancel abandons\n")
+    check("  the block a panel prints when it opens names every field",
+          _verify.announced_fields(_ann),
+          ["filletstartradius", "fillettype", "shapeobject"])
+    check("    the unindented hint line ends the block",
+          _verify.announced_fields(_ann + "  and this is after it\n"),
+          ["filletstartradius", "fillettype", "shapeobject"])
+    check("    a re-announce after a choice reads the same way",
+          _verify.announced_fields("2 to set now:\n  radius  height\n"),
+          ["radius", "height"])
+    check("    output with no block names nothing",
+          _verify.announced_fields("= part_fillet\n"), [])
+    check("    indented words with no heading over them are not fields",
+          _verify.announced_fields("  radius  height\n"), [])
+    check("    and a heading with nothing indented under it, nothing",
+          _verify.announced_fields("3 to set:\nnot indented\n"), [])
+
+    _short = ("error: '__fccli_probe' is not on this panel -- axis, "
+              "changemode, checkboxmidplane, checkboxreversed, "
+              "checkboxupdateview, revolveangle...")
+    check("  the complaint on a wrong name lists the panel's real ones",
+          _verify.probed_fields("error: 'radius' is not on this panel -- "
+                                "filletstartradius, fillettype, shapeobject"),
+          (["filletstartradius", "fillettype", "shapeobject"], False))
+    check("    over six it is capped, and says so",
+          (_verify.probed_fields(_short)[1],
+           _verify.probed_fields(_short)[0][-1]),
+          (True, "revolveangle"))
+    check("    no complaint names nothing",
+          _verify.probed_fields("incomplete: still wants name=value"),
+          ([], False))
+
+    check("  the engine's fault is the error line, without its prefix",
+          _verify._fault("error: 'radius' is not on this panel -- a, b\n"
+                         "incomplete: still wants name=value [done]"),
+          "'radius' is not on this panel -- a, b")
+    check("    a run with no error line has no fault",
+          _verify._fault("incomplete: still wants name=value [done]"), "")
+
+    # Asked both ways: the probe is an answer to a question, the block is
+    # complete. A capped complaint is completed from the block, which is
+    # the case a panel of eleven fields makes every time.
+    _pf_probe = {f"{_verify.PROBE_NAME}=1": (1, "", _short)}
+    _pf_run, _pf_snap, _pf_cancel, _pf_log = _panel(_pf_probe, [{}])
+    check("  a capped complaint is completed from the announced block",
+          _verify.panel_fields(_pf_run, "8 to set:\n  axis  changemode  "
+                               "checkboxmidplane  checkboxreversed  "
+                               "checkboxupdateview  revolveangle  showfinal  "
+                               "showtransparentpreview\n"),
+          ["axis", "changemode", "checkboxmidplane", "checkboxreversed",
+           "checkboxupdateview", "revolveangle", "showfinal",
+           "showtransparentpreview"])
+    check("    and the probe is what was typed to ask",
+          _pf_log["lines"], [f"{_verify.PROBE_NAME}=1"])
+    _pf_run2, _, _, _ = _panel(
+        {f"{_verify.PROBE_NAME}=1":
+         (1, "", "error: 'x' is not on this panel -- radius, height")}, [{}])
+    check("    with no block, the complaint is the whole answer",
+          _verify.panel_fields(_pf_run2, "= verb\n"), ["height", "radius"])
+
+    # C4, both ends. A panel is closed on the way in, because one left by
+    # anything else is adopted by the next verb typed; and the close is
+    # confirmed, because asking is not the same as it happening.
+    _cl_run, _cl_snap, _cl_cancel, _cl_log = _panel({}, [_S_IDLE])
+    check("  a panel that closes when asked is cleared, once",
+          (_verify.cleared(_cl_snap, _cl_cancel), _cl_log["cancels"]),
+          (True, 1))
+    _cl_run2, _cl_snap2, _cl_cancel2, _cl_log2 = _panel({}, [_S_OPEN])
+    check("    one that will not close is not, and it was asked three times",
+          (_verify.cleared(_cl_snap2, _cl_cancel2), _cl_log2["cancels"]),
+          (False, 3))
+
+    # The whole step, on a scripted panel. The happy path first: the verb
+    # opens it, the fields are read, the draft's pairs are set, done
+    # applies, and nothing was left invalid.
+    _vp_probe = {f"{_verify.PROBE_NAME}=1":
+                 (1, "", "error: 'x' is not on this panel -- "
+                         "filletstartradius, fillettype, shapeobject")}
+    _vp_run, _vp_snap, _vp_cancel, _vp_log = _panel(
+        dict(_vp_probe, **{"part_fillet": (1, _ann, "incomplete: still "
+                                                    "wants name=value")}),
+        [_S_IDLE, _S_IDLE, _S_PANEL, _S_IDLE])
+    check("  a panel driven to completion is ok",
+          _verify.verify_panel("select Box.Edge1; part_fillet "
+                               "filletstartradius=3",
+                               run=_vp_run, snapshot=_vp_snap,
+                               cancel=_vp_cancel),
+          ("ok", "", {"fields": ["filletstartradius", "fillettype",
+                                 "shapeobject"]}))
+    check("    the select half is setup, so the verb alone is what runs",
+          _vp_log["lines"][0], "part_fillet")
+    check("    the draft's field is set, and then done",
+          _vp_log["lines"][2:], ["filletstartradius=3", "done"])
+    check("    and a clean apply closes nothing after itself",
+          _vp_log["cancels"], 1)
+
+    # A draft with no pairs is still a run: open, read, done. That is C1
+    # without parameters, and it is what most of the tier's drafts are.
+    _vp_run2, _vp_snap2, _vp_cancel2, _vp_log2 = _panel(
+        _vp_probe, [_S_IDLE, _S_IDLE, _S_PANEL, _S_IDLE])
+    check("  a draft with no fields still opens, reads and applies",
+          (_verify.verify_panel("part_fillet", run=_vp_run2,
+                                snapshot=_vp_snap2, cancel=_vp_cancel2)[0],
+           _vp_log2["lines"][-1]),
+          ("ok", "done"))
+
+    # A panel left by something before this one, that nothing can close.
+    # Every command run against it is answered as though it were the one
+    # at fault -- 17 were, live -- so nothing is judged until it is gone.
+    _vp_run0, _vp_snap0, _vp_cancel0, _vp_log0 = _panel({}, [_S_OPEN])
+    check("  a command a panel stood in front of is blocked, and never ran",
+          (_verify.verify_panel("part_fillet", run=_vp_run0,
+                                snapshot=_vp_snap0, cancel=_vp_cancel0),
+           _vp_log0["lines"]),
+          (("blocked", "a panel left open before this command would not "
+                       "close", {}), []))
+    check("    which is not an answer about it, so a later sweep retries it",
+          sorted(_verify.resumable(
+              {"A_A": "a", "B_B": "b", "C_C": "c"},
+              {"A_A": {"example": "a", "result": "blocked"},
+               "B_B": {"example": "b", "result": "stuck_panel"},
+               "C_C": {"example": "c", "result": "ok"}})),
+          ["A_A"])
+
+    # The floor belongs to someone else. Nothing was opened, so nothing is
+    # closed, and the sweep retries a busy later.
+    _vp_run3, _vp_snap3, _vp_cancel3, _vp_log3 = _panel(
+        {"part_fillet": (75, "", "")}, [_S_IDLE])
+    check("  a busy floor is busy, and the verb never got as far as a panel",
+          (_verify.verify_panel("part_fillet", run=_vp_run3,
+                                snapshot=_vp_snap3, cancel=_vp_cancel3),
+           _vp_log3["lines"]),
+          (("busy", "", {}), ["part_fillet"]))
+
+    # no_panel: the mode map calls this a panel command and the verb is
+    # not one. Three shapes of it, because the detail is the finding.
+    _vp_run4, _vp_snap4, _vp_cancel4, _vp_log4 = _panel(
+        {}, [_S_IDLE, _S_IDLE, _S_IDLE])
+    check("  a verb that opened no panel is no_panel, not ok",
+          _verify.verify_panel("multi_transform", run=_vp_run4,
+                               snapshot=_vp_snap4, cancel=_vp_cancel4),
+          ("no_panel", "no panel; the verb ran to completion", {}))
+    check("    and nothing was typed at a panel that was not there",
+          _vp_log4["lines"], ["multi_transform"])
+    _vp_run5, _vp_snap5, _vp_cancel5, _ = _panel(
+        {"revolution": (0, "", "")},
+        [_S_IDLE, _S_IDLE,
+         {"engine": "idle", "options": [], "panel": False,
+          "documents": [{"active": True, "invalid": ["Revolution"]}]}])
+    check("    a verb that left an invalid object says which",
+          _verify.verify_panel("revolution", run=_vp_run5,
+                               snapshot=_vp_snap5, cancel=_vp_cancel5),
+          ("no_panel", "no panel; left invalid: Revolution", {}))
+    _vp_run6, _vp_snap6, _vp_cancel6, _ = _panel(
+        {"partdesign_mirror": (1, "", "error: partdesign_mirror: Active "
+                                      "Body Required -- activate a body")},
+        [_S_IDLE, _S_IDLE, _S_IDLE])
+    check("    a refused verb carries FreeCAD's own reason",
+          _verify.verify_panel("partdesign_mirror", run=_vp_run6,
+                               snapshot=_vp_snap6, cancel=_vp_cancel6),
+          ("no_panel", "no panel; partdesign_mirror: Active Body Required "
+                       "-- activate a body", {}))
+    # Collecting, but not at a panel step: a positional verb the mode map
+    # called a panel. It is left holding a prompt, so it is cleared.
+    _vp_run7, _vp_snap7, _vp_cancel7, _vp_log7 = _panel(
+        {}, [_S_IDLE, _S_IDLE,
+             {"engine": "collecting", "options": [], "panel": False,
+              "prompt": "The radius",
+              "documents": [{"active": True, "invalid": []}]},
+             _S_IDLE])
+    check("    a verb still collecting something that is not a field",
+          (_verify.verify_panel("cylinder", run=_vp_run7,
+                                snapshot=_vp_snap7, cancel=_vp_cancel7),
+           _vp_log7["cancels"]),
+          (("no_panel", "no panel; still wants The radius", {}), 2))
+
+    # mouse_panel: something opened that the command line cannot drive.
+    # The engine says so in its own words; either way it is closed (C4).
+    _vp_run8, _vp_snap8, _vp_cancel8, _vp_log8 = _panel(
+        {"check_geometry": (0, "the panel offers nothing this can type "
+                               "into -- it is open for the mouse\n", "")},
+        [_S_IDLE, _S_IDLE, _S_OPEN, _S_IDLE])
+    check("  a panel with no way in from here is a mode, and is closed",
+          (_verify.verify_panel("check_geometry", run=_vp_run8,
+                                snapshot=_vp_snap8, cancel=_vp_cancel8),
+           _vp_log8["cancels"]),
+          (("mouse_panel", "a panel with no way in from here", {}), 2))
+    _vp_run9, _vp_snap9, _vp_cancel9, _vp_log9 = _panel(
+        {}, [_S_IDLE, _S_IDLE,
+             {"engine": "collecting", "options": ["cancel"], "panel": True,
+              "documents": [{"active": True, "invalid": []}]},
+             _S_IDLE])
+    check("    so is a panel step that does not offer done",
+          (_verify.verify_panel("mode_thing", run=_vp_run9,
+                                snapshot=_vp_snap9,
+                                cancel=_vp_cancel9)[0],
+           _vp_log9["cancels"]),
+          ("mouse_panel", 2))
+    # And a mode panel that will not close is the poisoning one, blamed on
+    # the command that left it rather than on the next thing to run.
+    _vp_run9b, _vp_snap9b, _vp_cancel9b, _ = _panel(
+        {}, [_S_IDLE, _S_IDLE, _S_OPEN])
+    check("      one that will not close is stuck_panel, with what it was",
+          _verify.verify_panel("mesh_from_shape", run=_vp_run9b,
+                               snapshot=_vp_snap9b, cancel=_vp_cancel9b)[:2],
+          ("stuck_panel", "mouse_panel: a panel with no way in from here; "
+                          "and the panel would not close"))
+
+    # bad_field: the draft named a field the panel has not got. The detail
+    # is the engine's complaint, which names the ones it has, and the
+    # fields already read are kept -- that is what makes it diagnosable
+    # rather than just failed.
+    _vp_run10, _vp_snap10, _vp_cancel10, _vp_log10 = _panel(
+        dict(_vp_probe, **{
+            "part_fillet": (1, _ann, ""),
+            "radius=3": (1, "", "error: 'radius' is not on this panel -- "
+                                "filletstartradius, fillettype, shapeobject")}),
+        [_S_IDLE, _S_IDLE, _S_PANEL, _S_IDLE])
+    _vp10 = _verify.verify_panel("part_fillet radius=3", run=_vp_run10,
+                                 snapshot=_vp_snap10, cancel=_vp_cancel10)
+    check("  a field the panel has not got is bad_field, with the real names",
+          (_vp10[0], _vp10[1]),
+          ("bad_field", "'radius' is not on this panel -- filletstartradius, "
+                        "fillettype, shapeobject"))
+    check("    the fields read before it are kept",
+          _vp10[2], {"fields": ["filletstartradius", "fillettype",
+                                "shapeobject"]})
+    check("    done is never pressed on a draft that was refused",
+          "done" in _vp_log10["lines"], False)
+    check("      and the panel it was refused at is closed",
+          _vp_log10["cancels"], 2)
+    # A value the panel refuses is not a wrong name. The engine names the
+    # choices, which is the answer somebody typing it would want.
+    _vp_run11, _vp_snap11, _vp_cancel11, _vp_log11 = _panel(
+        dict(_vp_probe, **{
+            "combotype=zzz": (1, "", "error: combotype: 'zzz' is not one "
+                                     "of: Fuse, Cut, Common")}),
+        [_S_IDLE, _S_IDLE, _S_PANEL, _S_IDLE])
+    check("  a value the panel refuses is broken, not bad_field",
+          _verify.verify_panel("boolean_operation combotype=zzz",
+                               run=_vp_run11, snapshot=_vp_snap11,
+                               cancel=_vp_cancel11)[:2],
+          ("broken", "combotype: 'zzz' is not one of: Fuse, Cut, Common"))
+    check("    and that panel is closed too",
+          _vp_log11["cancels"], 2)
+    # The floor taken mid-draft, between two fields.
+    _vp_run12, _vp_snap12, _vp_cancel12, _vp_log12 = _panel(
+        dict(_vp_probe, **{"height=2": (75, "", "")}),
+        [_S_IDLE, _S_IDLE, _S_PANEL, _S_IDLE])
+    check("  a floor taken between two fields is busy, and closes the panel",
+          (_verify.verify_panel("thing height=2", run=_vp_run12,
+                                snapshot=_vp_snap12,
+                                cancel=_vp_cancel12)[0],
+           _vp_log12["cancels"]),
+          ("busy", 2))
+
+    # A choice can swap the page under whatever comes next, and the engine
+    # re-announces when it does. Those names are the panel's too.
+    _vp_run13, _vp_snap13, _vp_cancel13, _ = _panel(
+        dict(_vp_probe, **{
+            "fillettype=variable": (1, "2 to set now:\n  filletendradius  "
+                                       "filletstartradius\n", "")}),
+        [_S_IDLE, _S_IDLE, _S_PANEL, _S_IDLE])
+    check("  fields a choice revealed are recorded with the rest",
+          _verify.verify_panel("part_fillet fillettype=variable",
+                               run=_vp_run13, snapshot=_vp_snap13,
+                               cancel=_vp_cancel13)[2],
+          {"fields": ["filletstartradius", "fillettype", "shapeobject",
+                      "filletendradius"]})
+
+    # What done left. The delta-invalidity read is the shared one (C3):
+    # what this run made invalid, not what it found already broken.
+    _vp_run14, _vp_snap14, _vp_cancel14, _vp_log14 = _panel(
+        _vp_probe,
+        [_S_IDLE,
+         {"engine": "idle", "panel": False,
+          "documents": [{"active": True, "invalid": ["Old"]}]},
+         _S_PANEL,
+         {"engine": "idle", "options": [], "panel": False,
+          "documents": [{"active": True, "invalid": ["Old", "Fillet"]}]}])
+    check("  a panel that applied an invalid object is invalid, and undone",
+          (_verify.verify_panel("part_fillet", run=_vp_run14,
+                                snapshot=_vp_snap14,
+                                cancel=_vp_cancel14)[:2],
+           _vp_log14["lines"][-1]),
+          (("invalid", "Fillet"), "undo"))
+    _vp_run15, _vp_snap15, _vp_cancel15, _vp_log15 = _panel(
+        dict(_vp_probe, **{"done": (0, "", "")}),
+        [_S_IDLE, _S_IDLE, _S_PANEL, _S_OPEN, _S_IDLE])
+    check("  a panel done would not close is panel, and is closed after",
+          (_verify.verify_panel("part_fillet", run=_vp_run15,
+                                snapshot=_vp_snap15,
+                                cancel=_vp_cancel15)[0],
+           _vp_log15["cancels"]),
+          ("panel", 2))
+    _vp_run15b, _vp_snap15b, _vp_cancel15b, _vp_log15b = _panel(
+        dict(_vp_probe, **{"done": (0, "", "")}),
+        [_S_IDLE, _S_IDLE, _S_PANEL, _S_OPEN])
+    check("    and one that will not close even then is stuck_panel",
+          (_verify.verify_panel("mesh_from_shape", run=_vp_run15b,
+                                snapshot=_vp_snap15b,
+                                cancel=_vp_cancel15b)[:2],
+           _vp_log15b["cancels"]),
+          (("stuck_panel", "panel; and the panel would not close"), 4))
+    _vp_run16, _vp_snap16, _vp_cancel16, _vp_log16 = _panel(
+        dict(_vp_probe, **{"done": (1, "", "error: part_fillet: No edge "
+                                          "selected -- check one first")}),
+        [_S_IDLE, _S_IDLE, _S_PANEL, _S_IDLE])
+    check("  a done the command refused is broken, with its reason",
+          _verify.verify_panel("part_fillet", run=_vp_run16,
+                               snapshot=_vp_snap16,
+                               cancel=_vp_cancel16)[:2],
+          ("broken", "part_fillet: No edge selected -- check one first"))
+    _vp_run17, _vp_snap17, _vp_cancel17, _vp_log17 = _panel(
+        _vp_probe,
+        [_S_IDLE, _S_IDLE, _S_PANEL,
+         {"engine": "collecting", "options": [], "panel": False,
+          "documents": [{"active": True, "invalid": []}]},
+         _S_IDLE])
+    check("  a done that closed the panel and kept collecting is incomplete",
+          (_verify.verify_panel("part_fillet", run=_vp_run17,
+                                snapshot=_vp_snap17,
+                                cancel=_vp_cancel17)[0],
+           _vp_log17["cancels"]),
+          ("incomplete", 2))
+
+    # What the tier drives, and what it says about the rest.
+    _pt_map = {"commands": {
+        "Part_Fillet": {"mode": "panel", "verb": "part_fillet",
+                        "example": "part_fillet filletstartradius=3",
+                        "needs_selection": False, "selection_hint": None,
+                        "panel_fixture": "solid_edge"},
+        "Part_Primitives": {"mode": "panel", "verb": "primitives",
+                            "example": None, "needs_selection": False,
+                            "selection_hint": None},
+        "Part_Sweep": {"mode": "panel", "verb": "sweep", "example": None,
+                       "needs_selection": True,
+                       "selection_hint": "a closed wire and a spine"},
+        "Sketcher_Fillet": {"mode": "panel", "verb": "sketcher_fillet",
+                            "example": None, "needs_selection": True,
+                            "selection_hint": "two lines in the sketch"},
+        "Part_Nameless": {"mode": "panel", "verb": None, "example": None,
+                          "needs_selection": False, "selection_hint": None},
+        "Part_Wrong": {"mode": "panel", "verb": "wrong", "example": None,
+                       "needs_selection": False, "selection_hint": None,
+                       "panel_fixture": "no_such_fixture"},
+        "Draft_SetStyle": {"mode": "panel", "verb": "set_style",
+                           "example": None, "needs_selection": False,
+                           "selection_hint": None},
+        "Part_Cut": {"mode": "selection", "verb": "part_cut",
+                     "example": "part_cut", "needs_selection": True,
+                     "selection_hint": "two shapes"},
+    }}
+    _pt_targets, _pt_fixtures, _pt_punted = _verify.panel_targets(_pt_map)
+    check("  a panel command with no operands runs in an empty document",
+          (_pt_targets["Part_Primitives"], _pt_fixtures["Part_Primitives"]),
+          ("primitives", []))
+    check("    one whose hint names operands gets the selection tier's fixture",
+          (_pt_targets["Part_Sweep"], _pt_fixtures["Part_Sweep"][-1]),
+          ("select Wire, Line004; sweep", "select Wire, Line004"))
+    check("    an authored panel_fixture is the fixture, hint or no hint",
+          (_pt_targets["Part_Fillet"], _pt_fixtures["Part_Fillet"]),
+          ("select Box.Edge1; part_fillet filletstartradius=3",
+           ["box 0,0,0 20 20 10", "select Box.Edge1"]))
+    check("    a panel_fixture naming no fixture is a punt, not a guess",
+          _pt_punted["Part_Wrong"],
+          "panel_fixture names no fixture: no_such_fixture")
+    check("    a workbench this tier cannot furnish is punted with its reason",
+          _pt_punted["Sketcher_Fillet"],
+          _verify.PUNT_WORKBENCHES["Sketcher"])
+    check("    a command the mode map named no verb for is punted",
+          _pt_punted["Part_Nameless"], "the mode map named no verb to run")
+    check("    a panel that writes the operator's settings is not pressed",
+          _pt_punted["Draft_SetStyle"],
+          _verify.PANEL_OFF_LIMITS["Draft_SetStyle"])
+    check("    a selection command is not the panel tier's",
+          "Part_Cut" in _pt_targets or "Part_Cut" in _pt_punted, False)
+    check("    and every panel command is in one list or the other",
+          sorted(set(_pt_targets) | set(_pt_punted)),
+          sorted(c for c, e in _pt_map["commands"].items()
+                 if e["mode"] == "panel"))
+    check("  every off-limits panel is a panel command that exists",
+          sorted(c for c in _verify.PANEL_OFF_LIMITS
+                 if (_spec_modes.get(c) or {}).get("mode") != "panel"), [])
+
+    # sweep() carries what a tier learned beyond its verdict, and a tier
+    # with nothing extra to say keeps the shorter contract.
+    _px_events = []
+    _verify.sweep(
+        {"A_A": "a", "B_B": "b"},
+        lambda cid, ex, res, det, extra=None:
+            _px_events.append((cid, res, extra)),
+        run_one=lambda e: ("ok", "", {"fields": ["radius"]}) if e == "a"
+        else ("ok", ""),
+        alive=lambda: True, healthy=lambda: True, restart=lambda: True)
+    check("  what a tier learned reaches the record; two values still work",
+          _px_events,
+          [("A_A", "ok", {"fields": ["radius"]}), ("B_B", "ok", None)])
+    # A bounded instance lifetime. A long-lived one degrades quietly, so
+    # a reading that is meant to be reproducible asks for a fresh one
+    # every N commands -- and never a pointless one after the last.
+    _re_ran, _re_restarts = [], []
+    _verify.sweep(
+        {"A_A": "a", "B_B": "b", "C_C": "c", "D_D": "d"},
+        lambda cid, ex, res, det, extra=None: _re_ran.append(cid),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: True, healthy=lambda: True,
+        restart=lambda: _re_restarts.append(len(_re_ran)) or True,
+        restart_every=2)
+    check("  a bounded lifetime restarts every N commands, not after the last",
+          (_re_ran, _re_restarts), (["A_A", "B_B", "C_C", "D_D"], [2]))
+    check("    and with no bound, never",
+          _verify.sweep({"A_A": "a", "B_B": "b"},
+                        lambda cid, ex, res, det, extra=None: None,
+                        run_one=lambda e: ("ok", ""), alive=lambda: True,
+                        healthy=lambda: True,
+                        restart=lambda: False)[2], 0)
+    check("      a restart that fails between commands stops the sweep",
+          _verify.sweep({"A_A": "a", "B_B": "b"},
+                        lambda cid, ex, res, det, extra=None: None,
+                        run_one=lambda e: ("ok", ""), alive=lambda: True,
+                        healthy=lambda: True, restart=lambda: False,
+                        restart_every=1)[1],
+          False)
+
+    # An instance with a panel stuck across it is no more fit to judge the
+    # next command than a dead one, so the sweep restarts on that too.
+    _px_events2, _px_restarts = [], []
+    _px_tally, _px_fin, _px_n = _verify.sweep(
+        {"C_C": "c", "D_D": "d"},
+        lambda cid, ex, res, det, extra=None:
+            _px_events2.append((cid, res)),
+        run_one=lambda e: ("stuck_panel", "would not close") if e == "c"
+        else ("ok", ""),
+        alive=lambda: True, healthy=lambda: True,
+        restart=lambda: _px_restarts.append(1) or True)
+    check("  a stuck panel restarts the instance and the sweep goes on",
+          (_px_events2, len(_px_restarts), _px_n, _px_fin),
+          ([("C_C", "stuck_panel"), ("D_D", "ok")], 1, 1, True))
+    _px_events3, _px_restarts3 = [], []
+    _verify.sweep(
+        {"F_F": "f", "G_G": "g"},
+        lambda cid, ex, res, det, extra=None: _px_events3.append((cid, res)),
+        run_one=lambda e: ("blocked", "a panel would not close")
+        if e == "f" else ("ok", ""),
+        alive=lambda: True, healthy=lambda: True,
+        restart=lambda: _px_restarts3.append(1) or True)
+    check("    and so does a command one of them blocked",
+          (_px_events3, len(_px_restarts3)),
+          ([("F_F", "blocked"), ("G_G", "ok")], 1))
+    check("    and a restart that fails stops the sweep there",
+          _verify.sweep({"E_E": "e"},
+                        lambda cid, ex, res, det, extra=None: None,
+                        run_one=lambda e: ("stuck_panel", "would not close"),
+                        alive=lambda: True, healthy=lambda: True,
+                        restart=lambda: False)[1],
+          False)
+
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the
