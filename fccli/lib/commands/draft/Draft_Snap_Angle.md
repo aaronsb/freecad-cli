@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "f0cac37d692e"
 # authored from here down; the tool never rewrites these
 verb: null
+example: snap_angle
 aliases: []
 requires: []
 panel: null

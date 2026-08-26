@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "a82e50f0e58e"
 # authored from here down; the tool never rewrites these
 verb: null
+example: stereo_off
 aliases: []
 requires: []
 panel: null

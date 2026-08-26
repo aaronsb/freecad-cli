@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "4d18019f530e"
 # authored from here down; the tool never rewrites these
 verb: null
+example: apply_changes_to_pipeline
 aliases: []
 requires: []
 panel: null

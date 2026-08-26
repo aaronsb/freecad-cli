@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "ca966d97e64d"
 # authored from here down; the tool never rewrites these
 verb: null
+example: dependency_graph
 aliases: []
 requires: []
 panel: null

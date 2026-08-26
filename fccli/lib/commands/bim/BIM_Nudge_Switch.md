@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "52575d58afb7"
 # authored from here down; the tool never rewrites these
 verb: null
+example: nudge_switch
 aliases: []
 requires: []
 panel: null

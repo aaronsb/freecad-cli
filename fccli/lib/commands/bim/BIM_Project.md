@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "0d3f75cc1553"
 # authored from here down; the tool never rewrites these
 verb: null
+example: ifc_project
 aliases: []
 requires: []
 panel: null

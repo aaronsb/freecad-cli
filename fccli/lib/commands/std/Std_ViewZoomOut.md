@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "644613e385d0"
 # authored from here down; the tool never rewrites these
 verb: null
+example: zoom_out
 aliases: []
 requires: []
 panel: null

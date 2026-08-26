@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "68316231ed1f"
 # authored from here down; the tool never rewrites these
 verb: null
+example: solver_calculix_standard
 aliases: []
 requires: []
 panel: null

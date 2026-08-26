@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "efdf0d561f19"
 # authored from here down; the tool never rewrites these
 verb: null
+example: orthographic_view
 aliases: []
 requires: []
 panel: null

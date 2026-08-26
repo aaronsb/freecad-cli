@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "d5c576862611"
 # authored from here down; the tool never rewrites these
 verb: null
+example: mixed_nested_bar
 aliases: []
 requires: []
 panel: null

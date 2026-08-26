@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "2528ec352dc0"
 # authored from here down; the tool never rewrites these
 verb: null
+example: stairs
 aliases: []
 requires: []
 panel: null

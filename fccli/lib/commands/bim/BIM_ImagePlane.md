@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "b051ac2703af"
 # authored from here down; the tool never rewrites these
 verb: null
+example: image_plane ~/images/floorplan.png 100 75
 aliases: []
 requires: []
 panel: null

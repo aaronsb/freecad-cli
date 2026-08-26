@@ -95,6 +95,14 @@
 
 ### Added
 
+- **155 commands gain a verified example.** The GH #47 positional sweep
+  drove all 246 mode-map drafts against a live headless instance; the
+  159 that ran to completion with a valid result were promoted into
+  their command files' `example:` field (4 already had authored ones),
+  stamped into the ledger, and now appear in each `man` page. The
+  remainder: 69 broken (mostly drafts needing a context the bare
+  instance lacks), 6 incomplete, 4 panel-tier, 8 hazards -- triage feeds
+  the selection and panel tiers.
 - **A sweep survives its own targets.** `tools/verify.py` records a
   command that kills or wedges the instance as `hazard`, starts a fresh
   headless one, and continues; recorded hazards are skipped on later

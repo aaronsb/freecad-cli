@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "287ba49a3a3c"
 # authored from here down; the tool never rewrites these
 verb: null
+example: 1_sync_view
 aliases: []
 requires: []
 panel: null

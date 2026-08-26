@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "8313c6bc725f"
 # authored from here down; the tool never rewrites these
 verb: null
+example: vertex_selection
 aliases: []
 requires: []
 panel: null

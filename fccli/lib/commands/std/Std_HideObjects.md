@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "cffba208df12"
 # authored from here down; the tool never rewrites these
 verb: null
+example: hide_all_objects
 aliases: []
 requires: []
 panel: null

@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "d29f45260bbf"
 # authored from here down; the tool never rewrites these
 verb: null
+example: solver_elmer
 aliases: []
 requires: []
 panel: null

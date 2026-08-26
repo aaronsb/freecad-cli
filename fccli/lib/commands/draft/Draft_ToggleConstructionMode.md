@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "b7dc98309855"
 # authored from here down; the tool never rewrites these
 verb: null
+example: toggle_construction_mode
 aliases: []
 requires: []
 panel: null

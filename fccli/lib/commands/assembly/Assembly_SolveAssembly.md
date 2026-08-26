@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "0a8c5ca1673e"
 # authored from here down; the tool never rewrites these
 verb: null
+example: solve_assembly
 aliases: []
 requires: []
 panel: null

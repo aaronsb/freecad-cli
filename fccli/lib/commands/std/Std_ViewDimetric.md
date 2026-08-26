@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "e6f1c993e0cb"
 # authored from here down; the tool never rewrites these
 verb: null
+example: dimetric
 aliases: []
 requires: []
 panel: null

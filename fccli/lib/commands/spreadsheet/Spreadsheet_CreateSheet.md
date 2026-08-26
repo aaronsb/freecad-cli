@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "00de280735c5"
 # authored from here down; the tool never rewrites these
 verb: null
+example: new_spreadsheet
 aliases: []
 requires: []
 panel: null

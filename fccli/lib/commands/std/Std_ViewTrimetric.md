@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "6558d0a3e08a"
 # authored from here down; the tool never rewrites these
 verb: null
+example: trimetric
 aliases: []
 requires: []
 panel: null

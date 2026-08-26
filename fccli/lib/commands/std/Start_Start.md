@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "4450ceefc794"
 # authored from here down; the tool never rewrites these
 verb: null
+example: start_page
 aliases: []
 requires: []
 panel: null

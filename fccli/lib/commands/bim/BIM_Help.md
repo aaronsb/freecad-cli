@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "c7fb3be56e6f"
 # authored from here down; the tool never rewrites these
 verb: null
+example: bim_help
 aliases: []
 requires: []
 panel: null

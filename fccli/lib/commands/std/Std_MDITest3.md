@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "a740069f45ad"
 # authored from here down; the tool never rewrites these
 verb: null
+example: remove_mdi_3
 aliases: []
 requires: []
 panel: null

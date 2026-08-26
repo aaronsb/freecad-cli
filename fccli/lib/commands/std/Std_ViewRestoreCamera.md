@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "35f89068f3ef"
 # authored from here down; the tool never rewrites these
 verb: null
+example: restore_saved_camera
 aliases: []
 requires: []
 panel: null

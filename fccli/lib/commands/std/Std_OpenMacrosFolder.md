@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "1499cde565e7"
 # authored from here down; the tool never rewrites these
 verb: null
+example: open_macro_folder
 aliases: []
 requires: []
 panel: null

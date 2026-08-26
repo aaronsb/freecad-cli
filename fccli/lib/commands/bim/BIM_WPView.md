@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "86e78bf36f54"
 # authored from here down; the tool never rewrites these
 verb: null
+example: working_plane_view
 aliases: []
 requires: []
 panel: null
