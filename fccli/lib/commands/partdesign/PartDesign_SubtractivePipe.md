@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::SubtractivePipe
+  doc: Sweep the selected profile along a spine and cut it from the body.
+  steps: [Profile, Spine]
+  options: [Mode, Transition, Transformation]
+  hide: [FuzzyTolerance, AuxiliarySpine, Binormal, UpToFace2, UpToShape2]
 ---
 
 Subtractive Pipe creates a subtractive solid in the active Body by sweeping one or more sketches (also referred to as cross-sections) along an open or closed path. Its shape is then subtracted from the existing solid. SubtractivePipe is often used in connection with Part Helix and PartDesign ShapeBinder to create a thread; see the Thread for Screw Tutorial for details.

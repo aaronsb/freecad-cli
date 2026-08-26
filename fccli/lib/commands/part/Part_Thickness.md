@@ -20,7 +20,11 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::Thickness
+  doc: Hollow the selected solid, leaving the selected faces open.
+  steps: [Value]
+  options: [Mode, Join]
 ---
 
 The Thickness tool works on a solid shape and transforms it into a hollow object, giving to each of its faces a defined and constant thickness. On some solids it allows you to significantly speed up the work, and avoids making extrusions and pockets.

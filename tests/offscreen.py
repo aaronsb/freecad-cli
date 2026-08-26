@@ -401,11 +401,14 @@ def _run():
         cyl = fresh.get("cylinder")
         check("a patch promotes a property to an inline option",
               [o.name for st in cyl.steps for o in st.options], ["Angle"])
-        groove = fresh.get("groove")
+        # Path::FeatureShape rather than PartDesign::Groove, which the
+        # GH #69 round tuned: the example has to be a type nobody has
+        # written a block for, and a Path feature is outside that class.
+        untuned = fresh.get("feature_shape")
         check("an unpatched type is still a usable verb",
-              groove is not None and len(groove.steps) > 3, True)
+              untuned is not None and len(untuned.steps) > 3, True)
         check("enumerations become choices",
-              any(st.choices for st in groove.steps), True)
+              any(st.choices for st in untuned.steps), True)
         # GH #52: a generated step list is the type's properties in
         # alphabetical order, so `FuzzyTolerance` sat in front of the
         # length pad is about and `pad 10` set the tolerance. The command
@@ -2489,8 +2492,13 @@ def _run():
     # dropped with the suite green, which is 87 of the 253 steps the rule
     # exists to find. App::PropertyPercent has no instances on this tree, so
     # a census cannot pin it; that is stated rather than left to look pinned.
-    # 253, down from 264: the GH #52 type blocks hide ten FuzzyTolerance
-    # steps and Hole's BaseProfileType, none of which is a length.
+    # 212, down from 253: the GH #69 round hides FuzzyTolerance on
+    # thirty-nine more types -- every PartDesign primitive, every base
+    # feature type, and the patterns -- plus PartDesign::Helix's own
+    # Tolerance and LinearPattern's Occurrences2. The forty tolerances
+    # are the FloatConstraint (87 -> 47); Occurrences2 the
+    # IntegerConstraint (19 -> 18). The rule finds fewer steps because
+    # fewer unitless properties are steps, which is the point of it.
     _census = {}
     for _line in _live_d5.reports:
         _m = _re.match(r"units: (\d+) steps over (\S+) echo in mm", _line)
@@ -2498,9 +2506,9 @@ def _run():
             _census[_m.group(2)] = int(_m.group(1))
     check("  every dimensionless property type is counted, by name",
           (_census, sum(_census.values())),
-          ({"App::PropertyFloat": 80, "App::PropertyFloatConstraint": 87,
-            "App::PropertyInteger": 53, "App::PropertyIntegerConstraint": 19,
-            "App::PropertyPrecision": 14}, 253))
+          ({"App::PropertyFloat": 80, "App::PropertyFloatConstraint": 47,
+            "App::PropertyInteger": 53, "App::PropertyIntegerConstraint": 18,
+            "App::PropertyPrecision": 14}, 212))
     check("    and the one with no instances is in the set, uncounted",
           ("App::PropertyPercent" in _ixn.DIMENSIONLESS,
            "App::PropertyPercent" in _census), (True, False))
@@ -2640,11 +2648,10 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    # 278 = the 175 counted before the GH #54 promotion, plus the 105
-    # selection and panel examples promoted with it, less the 2 promoted
-    # into files already counted for another authored field (Part_Fuse
-    # carries a summary, Std_ViewFitSelection a family and a choice).
-    check("  and register_all counts the authored files", _wc.get("authored"), 278)
+    # 289 = the 278 counted after the GH #54 promotion, plus the 11 files
+    # the GH #69 round gave a `type` block to that carried no authored
+    # field before. Three of its fourteen already carried an example.
+    check("  and register_all counts the authored files", _wc.get("authored"), 289)
     # #19: every descriptor command is some verb's gui_command. Nine were
     # not, because a typed verb added over their launcher; _make_room
     # qualifies the launcher instead.
@@ -4981,15 +4988,43 @@ def _run():
           os.path.dirname(__file__), "..", "fccli", "patches", "part.py")), False)
     from fccli.factory import load_dictionary
     _dt = load_dictionary().get("types")
+    # Sixty-one, read member by member: the sixteen ADR-100 and GH #52
+    # left, plus the forty-five the GH #69 round authored -- the sixteen
+    # PartDesign primitives and their eight base types, five base
+    # feature types, the two patterns, Groove and Revolution, Mirrored,
+    # Draft, the two lofts, the two pipes, Part's Ellipsoid and Prism,
+    # Thickness, Offset, Offset2D and Extrusion.
     check("  the dictionary carries type tuning keyed by type",
-          sorted(_dt), ["Part::Box", "Part::Cone", "Part::Cylinder",
-                        "Part::Helix", "Part::RuledSurface", "Part::Sphere",
-                        "Part::Torus", "Part::Wedge",
-                        "PartDesign::AdditiveHelix", "PartDesign::Chamfer",
-                        "PartDesign::Fillet", "PartDesign::Hole",
-                        "PartDesign::Pad", "PartDesign::Pocket",
-                        "PartDesign::SubtractiveHelix",
-                        "PartDesign::Thickness"])
+          sorted(_dt),
+          ["Part::Box", "Part::Cone", "Part::Cylinder",
+           "Part::Ellipsoid", "Part::Extrusion", "Part::Helix",
+           "Part::Offset", "Part::Offset2D", "Part::Prism",
+           "Part::RuledSurface", "Part::Sphere", "Part::Thickness",
+           "Part::Torus", "Part::Wedge",
+           "PartDesign::AdditiveBox", "PartDesign::AdditiveCone",
+           "PartDesign::AdditiveCylinder", "PartDesign::AdditiveEllipsoid",
+           "PartDesign::AdditiveHelix", "PartDesign::AdditiveLoft",
+           "PartDesign::AdditivePipe", "PartDesign::AdditivePrism",
+           "PartDesign::AdditiveSphere", "PartDesign::AdditiveTorus",
+           "PartDesign::AdditiveWedge", "PartDesign::Box",
+           "PartDesign::Chamfer", "PartDesign::Cone",
+           "PartDesign::Cylinder", "PartDesign::Draft",
+           "PartDesign::Ellipsoid", "PartDesign::FeatureExtrude",
+           "PartDesign::Fillet", "PartDesign::Groove",
+           "PartDesign::Helix", "PartDesign::Hole",
+           "PartDesign::LinearPattern", "PartDesign::Loft",
+           "PartDesign::Mirrored", "PartDesign::Pad", "PartDesign::Pipe",
+           "PartDesign::Pocket", "PartDesign::PolarPattern",
+           "PartDesign::Prism", "PartDesign::ProfileBased",
+           "PartDesign::Revolution", "PartDesign::Sphere",
+           "PartDesign::SubtractiveBox", "PartDesign::SubtractiveCone",
+           "PartDesign::SubtractiveCylinder",
+           "PartDesign::SubtractiveEllipsoid",
+           "PartDesign::SubtractiveHelix", "PartDesign::SubtractiveLoft",
+           "PartDesign::SubtractivePipe", "PartDesign::SubtractivePrism",
+           "PartDesign::SubtractiveSphere", "PartDesign::SubtractiveTorus",
+           "PartDesign::SubtractiveWedge", "PartDesign::Thickness",
+           "PartDesign::Torus", "PartDesign::Wedge"])
     check("  a type block names its command's type",
           _dt["Part::Cylinder"].get("of") is None
           and _dt["Part::Cylinder"]["steps"], ["Radius", "Height"])
@@ -5000,6 +5035,26 @@ def _run():
     check("  and without the tree it is alphabetical and optional",
           [st.id for st in _tb_bare.get("cylinder").steps][:1], ["Angle"])
     check("  cyl reaches it", _tb.get("cyl") is _tb.get("cylinder"), True)
+    # GH #69, the rest of the class. Each of these led with a tolerance or
+    # a link before the round, so the leading number set something the
+    # command is not about; each now leads with the property the wiki and
+    # FreeCAD's own dialog name first.
+    check("  a tuned verb leads with the parameter its command is about",
+          [(_tb.get(n).steps[0].id if _tb.get(n) else None) for n in
+           ("additive_box", "subtractive_cylinder", "additive_prism",
+            "additive_wedge", "ellipsoid", "prism", "linear_pattern",
+            "polar_pattern", "groove", "partdesign_revolution",
+            "additive_loft", "additive_pipe", "mirrored", "thickness",
+            "offset", "offset2_d", "extrusion", "partdesign_helix")],
+          ["Length", "Radius", "Polygon", "Xmin", "Radius1", "Polygon",
+           "Length", "Angle", "Angle", "Angle", "Profile", "Profile",
+           "MirrorPlane", "Value", "Value", "Value", "LengthFwd", "Mode"])
+    # And the invariant behind them: a boolean-operation tolerance is
+    # never a step of a type somebody has tuned.
+    check("    and no tuned type still asks for a tolerance",
+          sorted(v.name for v in _tb._verbs.values()
+                 if v.creates in _dt
+                 and any("Tolerance" in st.id for st in v.steps)), [])
     check("  box keeps its bx alias, and helix its doc",
           (_tb.get("bx") is _tb.by_gui_command("Part_Box") or
            _tb.get("bx").creates == "Part::Box",

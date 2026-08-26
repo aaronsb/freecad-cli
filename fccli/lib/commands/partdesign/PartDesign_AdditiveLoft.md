@@ -20,7 +20,10 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::AdditiveLoft
+  doc: Loft the selected profile through its sections and add it to the body.
+  hide: [FuzzyTolerance, UpToFace2, UpToShape2]
 ---
 
 Additive Loft creates a solid in the active Body by making a transition between two or more sketches (also referred to as cross-sections). If the Body already contains features, the additive loft will be merged to them.

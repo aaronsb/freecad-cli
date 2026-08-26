@@ -20,7 +20,10 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::Draft
+  doc: Taper the selected faces away from a neutral plane.
+  hide: [FuzzyTolerance]
 ---
 
 The PartDesign Draft tool creates angular draft on the selected faces of an object. It adds a Draft object to the document with its corresponding representation in the Tree view.

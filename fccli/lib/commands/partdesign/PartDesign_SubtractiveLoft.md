@@ -20,7 +20,10 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::SubtractiveLoft
+  doc: Loft the selected profile through its sections and cut it from the body.
+  hide: [FuzzyTolerance, UpToFace2, UpToShape2]
 ---
 
 Subtractive Loft creates a subtractive solid in the active Body by making a transition between two or more sketches (also referred to as cross-sections). Its shape is then subtracted from the existing solid.

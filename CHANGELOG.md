@@ -4,6 +4,20 @@
 
 ### Fixed
 
+- **Forty-five more generated verbs lead with the argument the command is
+  about (GH #69).** A tier-1 verb's steps are the type's properties in
+  alphabetical order, so `FuzzyTolerance` sorted in front of the length,
+  radius or count the command exists for and `additive_box 40` set a
+  boolean tolerance FreeCAD clamps to 1. PR #68 authored nine `type` blocks
+  for the commands a sweep had driven; this round takes the rest of the
+  class that can be defended from FreeCAD's own dialog and property docs --
+  the sixteen PartDesign primitives and their eight base types, five
+  base feature types, both patterns, Groove and Revolution, Mirrored,
+  Draft, both lofts, both pipes, Part's Ellipsoid and Prism, Thickness,
+  Offset, Offset2D and Extrusion. Sixty-one types are tuned, up from
+  sixteen, and 63 remain untuned and reported on the issue rather than
+  guessed at.
+
 - **A failed start no longer reports itself as an addon too old (GH
   #53).** `verify.py` read `"panel" not in _snapshot()` as "this FreeCAD
   predates ADR-302", and an instance that never came up answers `{}`, for

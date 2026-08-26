@@ -1,7 +1,9 @@
 # Tuning for a Part type with no command of its own, so no command file
 # can carry it (ADR-100 option A). Keyed by type, read at compile like
 # std/_families.yaml. Box, Cylinder, Sphere, Cone and Torus carry theirs
-# on their Part_* command files; these two have no command.
+# on their Part_* command files; the four below reach a person only
+# through the Part_Primitives dialog, which is one command for all of
+# them.
 types:
   Part::Wedge:
     steps: [Xmin, Ymin, Zmin, Xmax, Ymax, Zmax]
@@ -10,4 +12,26 @@ types:
     doc: Create a helix from a pitch, a height and a radius.
     steps: [Pitch, Height, Radius]
     options: [Angle, LocalCoord, Style]
+    strict: true
+  # Two more the Primitives dialog owns. Alphabetical order puts the
+  # three angles in front of the radii, so `ellipsoid 10` set Angle1
+  # (GH #69). The order below is the dialog's, and the one authored for
+  # the PartDesign primitive of the same name.
+  Part::Ellipsoid:
+    doc: Create an ellipsoid from three radii.
+    steps: [Radius1, Radius2, Radius3]
+    prompts:
+      Radius1: radius along the local Z axis
+      Radius2: radius along the local X axis
+      Radius3: radius along the local Y axis
+    options: [Angle1, Angle2, Angle3]
+    strict: true
+  Part::Prism:
+    doc: Create a regular prism from a side count, a radius and a height.
+    steps: [Polygon, Circumradius, Height]
+    prompts:
+      Polygon: number of sides
+      Circumradius: distance from the centre to a vertex
+      Height: height along the Z axis
+    options: [FirstAngle, SecondAngle]
     strict: true

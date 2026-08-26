@@ -20,7 +20,13 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::LinearPattern
+  doc: Repeat the selected features along a direction.
+  steps: [Length, Occurrences]
+  options: [Mode, Offset]
+  hide: [FuzzyTolerance, Direction2, Length2, Mode2, Occurrences2, Offset2,
+         SpacingPattern, SpacingPattern2, Spacings, Spacings2]
 ---
 
 The PartDesign LinearPattern tool creates a linear pattern of one or more features.

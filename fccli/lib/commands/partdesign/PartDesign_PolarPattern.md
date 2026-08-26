@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::PolarPattern
+  doc: Repeat the selected features around an axis.
+  steps: [Angle, Occurrences]
+  options: [Mode, Offset]
+  hide: [FuzzyTolerance, SpacingPattern, Spacings]
 ---
 
 The PartDesign PolarPattern tool creates a polar pattern of one or more features.

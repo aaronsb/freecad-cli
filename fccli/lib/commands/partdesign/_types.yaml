@@ -1,0 +1,220 @@
+# Tuning for the PartDesign primitives, which have no command of their own:
+# FreeCAD reaches all sixteen through two dropdown launchers,
+# PartDesign_CompPrimitiveAdditive and PartDesign_CompPrimitiveSubtractive,
+# so no command file can carry them (ADR-100 option A). Keyed by type and
+# read at compile, like part/_types.yaml.
+#
+# Every one of them sorts `FuzzyTolerance` in front of its dimensions
+# (GH #69), so `additive_box 40` set a boolean tolerance FreeCAD clamps to
+# 1 and left Length at its default. The order below is the one already
+# authored for the Part primitive of the same name -- Part::Box leads with
+# Length, Width, Height; Part::Cylinder with Radius, Height -- which is
+# FreeCAD's own dialog order for both families.
+#
+# The base types (PartDesign::Box and friends) carry the same properties as
+# the Additive and Subtractive pair that derive from them, and their verbs
+# are registered alongside, so each is tuned with its pair.
+types:
+
+  # ---------------------------------------------------------------- box
+  PartDesign::AdditiveBox:
+    doc: Add a box to the body, from three dimensions.
+    steps: [Length, Width, Height]
+    hide: [FuzzyTolerance]
+  PartDesign::SubtractiveBox:
+    doc: Cut a box out of the body, from three dimensions.
+    steps: [Length, Width, Height]
+    hide: [FuzzyTolerance]
+  PartDesign::Box:
+    doc: A PartDesign box primitive, from three dimensions.
+    steps: [Length, Width, Height]
+    hide: [FuzzyTolerance]
+
+  # ----------------------------------------------------------- cylinder
+  PartDesign::AdditiveCylinder:
+    doc: Add a cylinder to the body, from a radius and a height.
+    steps: [Radius, Height]
+    options: [Angle]
+    hide: [FuzzyTolerance, FirstAngle, SecondAngle]
+  PartDesign::SubtractiveCylinder:
+    doc: Cut a cylinder out of the body, from a radius and a height.
+    steps: [Radius, Height]
+    options: [Angle]
+    hide: [FuzzyTolerance, FirstAngle, SecondAngle]
+  PartDesign::Cylinder:
+    doc: A PartDesign cylinder primitive, from a radius and a height.
+    steps: [Radius, Height]
+    options: [Angle]
+    hide: [FuzzyTolerance, FirstAngle, SecondAngle]
+
+  # --------------------------------------------------------------- cone
+  PartDesign::AdditiveCone:
+    doc: Add a truncated cone to the body.
+    steps: [Radius1, Radius2, Height]
+    prompts:
+      Radius1: radius of the bottom face
+      Radius2: radius of the top face
+      Height: height along the Z axis
+    options: [Angle]
+    hide: [FuzzyTolerance]
+  PartDesign::SubtractiveCone:
+    doc: Cut a truncated cone out of the body.
+    steps: [Radius1, Radius2, Height]
+    prompts:
+      Radius1: radius of the bottom face
+      Radius2: radius of the top face
+      Height: height along the Z axis
+    options: [Angle]
+    hide: [FuzzyTolerance]
+  PartDesign::Cone:
+    doc: A PartDesign truncated cone primitive.
+    steps: [Radius1, Radius2, Height]
+    prompts:
+      Radius1: radius of the bottom face
+      Radius2: radius of the top face
+      Height: height along the Z axis
+    options: [Angle]
+    hide: [FuzzyTolerance]
+
+  # ------------------------------------------------------------- sphere
+  PartDesign::AdditiveSphere:
+    doc: Add a sphere to the body, from a radius.
+    steps: [Radius]
+    options: [Angle1, Angle2, Angle3]
+    hide: [FuzzyTolerance]
+  PartDesign::SubtractiveSphere:
+    doc: Cut a sphere out of the body, from a radius.
+    steps: [Radius]
+    options: [Angle1, Angle2, Angle3]
+    hide: [FuzzyTolerance]
+  PartDesign::Sphere:
+    doc: A PartDesign sphere primitive, from a radius.
+    steps: [Radius]
+    options: [Angle1, Angle2, Angle3]
+    hide: [FuzzyTolerance]
+
+  # -------------------------------------------------------------- torus
+  PartDesign::AdditiveTorus:
+    doc: Add a torus to the body, from a path radius and a tube radius.
+    steps: [Radius1, Radius2]
+    prompts:
+      Radius1: radius of the circular path, from the origin to the tube center
+      Radius2: radius of the swept tube
+    options: [Angle1, Angle2, Angle3]
+    hide: [FuzzyTolerance]
+  PartDesign::SubtractiveTorus:
+    doc: Cut a torus out of the body, from a path radius and a tube radius.
+    steps: [Radius1, Radius2]
+    prompts:
+      Radius1: radius of the circular path, from the origin to the tube center
+      Radius2: radius of the swept tube
+    options: [Angle1, Angle2, Angle3]
+    hide: [FuzzyTolerance]
+  PartDesign::Torus:
+    doc: A PartDesign torus primitive, from a path radius and a tube radius.
+    steps: [Radius1, Radius2]
+    prompts:
+      Radius1: radius of the circular path, from the origin to the tube center
+      Radius2: radius of the swept tube
+    options: [Angle1, Angle2, Angle3]
+    hide: [FuzzyTolerance]
+
+  # ---------------------------------------------------------- ellipsoid
+  # Radius1 is the Z semi-axis, Radius2 the X and Radius3 the Y: FreeCAD's
+  # own order, and the dialog's.
+  PartDesign::AdditiveEllipsoid:
+    doc: Add an ellipsoid to the body, from three radii.
+    steps: [Radius1, Radius2, Radius3]
+    prompts:
+      Radius1: radius along the local Z axis
+      Radius2: radius along the local X axis
+      Radius3: radius along the local Y axis
+    options: [Angle1, Angle2, Angle3]
+    hide: [FuzzyTolerance]
+  PartDesign::SubtractiveEllipsoid:
+    doc: Cut an ellipsoid out of the body, from three radii.
+    steps: [Radius1, Radius2, Radius3]
+    prompts:
+      Radius1: radius along the local Z axis
+      Radius2: radius along the local X axis
+      Radius3: radius along the local Y axis
+    options: [Angle1, Angle2, Angle3]
+    hide: [FuzzyTolerance]
+  PartDesign::Ellipsoid:
+    doc: A PartDesign ellipsoid primitive, from three radii.
+    steps: [Radius1, Radius2, Radius3]
+    prompts:
+      Radius1: radius along the local Z axis
+      Radius2: radius along the local X axis
+      Radius3: radius along the local Y axis
+    options: [Angle1, Angle2, Angle3]
+    hide: [FuzzyTolerance]
+
+  # -------------------------------------------------------------- prism
+  PartDesign::AdditivePrism:
+    doc: Add a regular prism to the body, from a side count, a radius and a height.
+    steps: [Polygon, Circumradius, Height]
+    prompts:
+      Polygon: number of sides
+      Circumradius: distance from the centre to a vertex
+      Height: height along the Z axis
+    options: [FirstAngle, SecondAngle]
+    hide: [FuzzyTolerance]
+  PartDesign::SubtractivePrism:
+    doc: Cut a regular prism out of the body, from a side count, a radius and a height.
+    steps: [Polygon, Circumradius, Height]
+    prompts:
+      Polygon: number of sides
+      Circumradius: distance from the centre to a vertex
+      Height: height along the Z axis
+    options: [FirstAngle, SecondAngle]
+    hide: [FuzzyTolerance]
+  PartDesign::Prism:
+    doc: A PartDesign regular prism primitive.
+    steps: [Polygon, Circumradius, Height]
+    prompts:
+      Polygon: number of sides
+      Circumradius: distance from the centre to a vertex
+      Height: height along the Z axis
+    options: [FirstAngle, SecondAngle]
+    hide: [FuzzyTolerance]
+
+  # -------------------------------------------------------------- wedge
+  # The six corners Part::Wedge asks for. X2min/X2max and Z2min/Z2max are
+  # the second face, which the dialog fills from the first.
+  PartDesign::AdditiveWedge:
+    doc: Add a wedge to the body, from two opposite corners.
+    steps: [Xmin, Ymin, Zmin, Xmax, Ymax, Zmax]
+    hide: [FuzzyTolerance, X2min, X2max, Z2min, Z2max]
+  PartDesign::SubtractiveWedge:
+    doc: Cut a wedge out of the body, from two opposite corners.
+    steps: [Xmin, Ymin, Zmin, Xmax, Ymax, Zmax]
+    hide: [FuzzyTolerance, X2min, X2max, Z2min, Z2max]
+  PartDesign::Wedge:
+    doc: A PartDesign wedge primitive, from two opposite corners.
+    steps: [Xmin, Ymin, Zmin, Xmax, Ymax, Zmax]
+    hide: [FuzzyTolerance, X2min, X2max, Z2min, Z2max]
+
+  # ---------------------------------------------- the base feature types
+  # AdditiveLoft, SubtractivePipe and the rest derive from these, and the
+  # factory registers a verb for each base alongside its pair. Same
+  # tolerance in the same place, so the same cure.
+  PartDesign::Loft:
+    doc: A PartDesign loft, through a profile and its sections.
+    hide: [FuzzyTolerance, UpToFace2, UpToShape2]
+  PartDesign::Pipe:
+    doc: A PartDesign sweep, of a profile along a spine.
+    steps: [Profile, Spine]
+    options: [Mode, Transition, Transformation]
+    hide: [FuzzyTolerance, AuxiliarySpine, Binormal, UpToFace2, UpToShape2]
+  PartDesign::Helix:
+    doc: A PartDesign helical sweep of a profile.
+    steps: [Mode, Pitch, Height, Turns]
+    options: [Angle, Growth]
+    hide: [FuzzyTolerance, Axis, Base, Tolerance, UpToFace2, UpToShape2]
+  PartDesign::FeatureExtrude:
+    doc: A PartDesign extrusion of a profile.
+    hide: [FuzzyTolerance, UpToFace2, UpToShape2]
+  PartDesign::ProfileBased:
+    doc: A PartDesign feature built from a profile.
+    hide: [FuzzyTolerance, UpToFace2, UpToShape2]

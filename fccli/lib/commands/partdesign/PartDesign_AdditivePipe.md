@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::AdditivePipe
+  doc: Sweep the selected profile along a spine and add it to the body.
+  steps: [Profile, Spine]
+  options: [Mode, Transition, Transformation]
+  hide: [FuzzyTolerance, AuxiliarySpine, Binormal, UpToFace2, UpToShape2]
 ---
 
 Additive Pipe creates a solid in the active Body by sweeping one or more sketches (also referred to as cross-sections) along an open or closed path. If the Body already contains features, the additive pipe will be merged to them.
