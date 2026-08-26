@@ -401,11 +401,20 @@ def _run():
         cyl = fresh.get("cylinder")
         check("a patch promotes a property to an inline option",
               [o.name for st in cyl.steps for o in st.options], ["Angle"])
-        pad = fresh.get("pad")
+        groove = fresh.get("groove")
         check("an unpatched type is still a usable verb",
-              pad is not None and len(pad.steps) > 3, True)
+              groove is not None and len(groove.steps) > 3, True)
         check("enumerations become choices",
-              any(st.choices for st in pad.steps), True)
+              any(st.choices for st in groove.steps), True)
+        # GH #52: a generated step list is the type's properties in
+        # alphabetical order, so `FuzzyTolerance` sat in front of the
+        # length pad is about and `pad 10` set the tolerance. The command
+        # file names the order instead.
+        pad = fresh.get("pad")
+        check("  a tuned type leads with the argument the command is about",
+              [s.id for s in pad.steps][0], "Length")
+        check("    and the tolerance that used to swallow it is gone",
+              [s.id for s in pad.steps].count("FuzzyTolerance"), 0)
         # A patch must not shadow a hand-written verb.
         check("hand-written verbs survive the factory",
               REGISTRY.get("polyline").emit.__name__, "_emit_polyline")
@@ -2409,9 +2418,11 @@ def _run():
           (["D-one"], ["A-one", "A-two"], ["A-one", "A-two"]))
 
     # --- DIMENSIONLESS, pinned member by member. Three of the six could be
-    # dropped with the suite green, which is 87 of the 264 steps the rule
+    # dropped with the suite green, which is 87 of the 253 steps the rule
     # exists to find. App::PropertyPercent has no instances on this tree, so
     # a census cannot pin it; that is stated rather than left to look pinned.
+    # 253, down from 264: the GH #52 type blocks hide ten FuzzyTolerance
+    # steps and Hole's BaseProfileType, none of which is a length.
     _census = {}
     for _line in _live_d5.reports:
         _m = _re.match(r"units: (\d+) steps over (\S+) echo in mm", _line)
@@ -2419,9 +2430,9 @@ def _run():
             _census[_m.group(2)] = int(_m.group(1))
     check("  every dimensionless property type is counted, by name",
           (_census, sum(_census.values())),
-          ({"App::PropertyFloat": 80, "App::PropertyFloatConstraint": 97,
-            "App::PropertyInteger": 54, "App::PropertyIntegerConstraint": 19,
-            "App::PropertyPrecision": 14}, 264))
+          ({"App::PropertyFloat": 80, "App::PropertyFloatConstraint": 87,
+            "App::PropertyInteger": 53, "App::PropertyIntegerConstraint": 19,
+            "App::PropertyPrecision": 14}, 253))
     check("    and the one with no instances is in the set, uncounted",
           ("App::PropertyPercent" in _ixn.DIMENSIONLESS,
            "App::PropertyPercent" in _census), (True, False))
@@ -2543,10 +2554,10 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    # 166 = the 17 this counted before the GH #47 promotion, plus 154
+    # 175 = the 17 this counted before the GH #47 promotion, plus 154
     # promoted examples, minus 5 promoted into files already counted
-    # for another authored field.
-    check("  and register_all counts the authored files", _wc.get("authored"), 166)
+    # for another authored field, plus the 9 GH #52 type blocks.
+    check("  and register_all counts the authored files", _wc.get("authored"), 175)
     # #19: every descriptor command is some verb's gui_command. Nine were
     # not, because a typed verb added over their launcher; _make_room
     # qualifies the launcher instead.
@@ -2793,6 +2804,252 @@ def _run():
                "C": {"example": "c", "result": "hazard"},
                "D": {"example": "old", "result": "ok"}})),
           ["B", "C", "D", "E"])
+    check("    and retries a no_fixture, the harness's gap not the command's",
+          sorted(_verify.resumable(
+              {"A": "a"}, {"A": {"example": "a", "result": "no_fixture"}})),
+          ["A"])
+
+    # GH #52, the selection tier. A hint is prose, so the read is by
+    # phrase: what fixture it names, or the reason there is none.
+    check("  a hint naming two solids builds two boxes",
+          _verify.fixture_for("Part_Cut",
+                              "two shapes (the second is subtracted "
+                              "from the first)")[::2],
+          ("two_solids", "Box, Box001"))
+    check("    the recipe is the lines that build it",
+          _verify.fixture_for("Part_Cut", "two shapes")[1],
+          ["box 0,0,0 20 20 10", "box 10,10,5 20 20 10"])
+    # A rule scoped to a workbench reads only that workbench's hints: the
+    # same words mean a sketch inside the body, or one at the root.
+    check("    'a sketch' in PartDesign is a sketch inside the body",
+          _verify.fixture_for("PartDesign_Pad", "a sketch, or one or more "
+                              "faces of the active body")[0],
+          "body_sketch")
+    check("    and in Part it is one at the document root",
+          _verify.fixture_for("Part_MakeFace", "one or more objects "
+                              "containing closed coplanar wires (e.g. a "
+                              "sketch)")[0],
+          "closed_wire")
+    # Narrow above broad: a hint that offers a shape instead of a mesh
+    # takes the shape, and one that rules a face out takes the solid.
+    check("    a hint offering a shape instead of a mesh takes the shape",
+          _verify.fixture_for("Part_PointsFromMesh",
+                              "one or more geometric objects (shapes or "
+                              "meshes)")[0],
+          "solid")
+    check("    a hint that rules a face out takes the whole solid",
+          _verify.fixture_for("Part_CheckGeometry",
+                              "a whole part (a solid, not just a face)")[0],
+          "solid")
+    # A punted workbench is punted whatever its hint says.
+    check("  a workbench this tier cannot fixture is punted with a reason",
+          _verify.fixture_for("Sketcher_ConstrainAngle", "two lines"),
+          (None, [], _verify.PUNT_WORKBENCHES["Sketcher"]))
+    check("    even when its hint reads like one the rules would take",
+          _verify.fixture_for("TechDraw_ExtensionCustomizeFormat",
+                              "one or more objects")[0],
+          None)
+    # A hint inside a covered workbench can still name what no command
+    # line builds; the rule that says so maps to no fixture.
+    check("  an unbuildable operand in a covered workbench is punted",
+          _verify.fixture_for("Std_Cut", "one or more spreadsheet cells"),
+          (None, [], "no fixture for a hint naming "
+                     "'one or more spreadsheet cells'"))
+    # The rule that says no must end the read, not defer to the next rule:
+    # a mesh is "one or more objects" too, and the broad rule would hand
+    # it a box.
+    check("    and the rule that says no ends the read",
+          _verify.fixture_for("Part_Zzz", "one or more mesh objects"),
+          (None, [], "no fixture for a hint naming "
+                     "'one or more mesh objects'"))
+    check("  a hint no rule reads is punted, not guessed at",
+          _verify.fixture_for("Part_Zzz", "the smell of rain"),
+          (None, [], "no rule reads the hint 'the smell of rain'"))
+    check("    and so is a command with no hint at all",
+          _verify.fixture_for("Part_Zzz", None),
+          (None, [], "no selection hint to build from"))
+    # Every fixture a rule points at has a recipe.
+    check("  every rule names a fixture that exists",
+          sorted({n for _s, _p, n in _verify.HINT_RULES
+                  if n is not None and n not in _verify.FIXTURES}),
+          [])
+    check("    and every fixture is one some rule reaches",
+          sorted(set(_verify.FIXTURES)
+                 - {n for _s, _p, n in _verify.HINT_RULES}),
+          [])
+
+    # ADR-200 writes a selection example in two parts; the verb is the
+    # half left to judge once the select has been run as setup.
+    check("  the verb half of a two-part example is what runs",
+          _verify.verb_line("select Box, Box001; part_cut"), "part_cut")
+    check("    the first semicolon splits it",
+          _verify.verb_line("select A; chamfer 45 equal_distance 0 2 2"),
+          "chamfer 45 equal_distance 0 2 2")
+    check("    a one-part example is the whole line",
+          _verify.verb_line("part_cut"), "part_cut")
+
+    # The fixture is built by command lines in a scratch document of its
+    # own. The reset is best-effort; every recipe line after it must run.
+    _fx_ran = []
+
+    def _fx_ok(line):
+        _fx_ran.append(line)
+        return 0, "", ""
+    check("  a fixture runs its recipe after a fresh scratch document",
+          (_verify.build_fixture(["box 0,0,0 1 1 1", "select Box"],
+                                 run=_fx_ok), _fx_ran),
+          ((True, ""),
+           ["close!", "new verify", "box 0,0,0 1 1 1", "select Box"]))
+
+    _fx_ran2 = []
+
+    def _fx_no_close(line):
+        _fx_ran2.append(line)
+        return (1, "", "no document") if line == "close!" else (0, "", "")
+    check("    the first command has nothing to close, which is not a failure",
+          (_verify.build_fixture(["box 0,0,0 1 1 1"], run=_fx_no_close)[0],
+           len(_fx_ran2)),
+          (True, 3))
+
+    _fx_ran3 = []
+
+    def _fx_break(line):
+        _fx_ran3.append(line)
+        return (1, "", "no such object: Wire") if line.startswith("select") \
+            else (0, "", "")
+    _fx_bad = _verify.build_fixture(["upgrade", "select Wire", "part_cut"],
+                                    run=_fx_break)
+    check("    a recipe line that faults stops the build and names itself",
+          (_fx_bad[0], _fx_bad[1], _fx_ran3[-1]),
+          (False, "select Wire -- no such object: Wire", "select Wire"))
+    check("      and the lines after it never run",
+          "part_cut" in _fx_ran3, False)
+
+    def _fx_silent(line):
+        return (3, "", "") if line == "upgrade" else (0, "", "")
+    check("      a fault with nothing on stderr still names its exit",
+          _verify.build_fixture(["upgrade"], run=_fx_silent)[1],
+          "upgrade -- exit 3")
+
+    # What the tier drives, and what it says about the rest.
+    _st_map = {"commands": {
+        "Part_Cut": {"mode": "selection", "example": "part_cut",
+                     "selection_hint": "two shapes"},
+        "Part_Box": {"mode": "positional", "example": "box 1 1 1"},
+        "Sketcher_Trim": {"mode": "selection", "example": "trim",
+                          "selection_hint": "one or more sketch elements"},
+        "Part_Mystery": {"mode": "selection", "example": "mystery",
+                         "selection_hint": "the smell of rain"},
+        "Part_Undrafted": {"mode": "selection", "example": "",
+                           "selection_hint": "one or more objects"},
+    }}
+    _st_targets, _st_fixtures, _st_punted = _verify.selection_targets(_st_map)
+    check("  the tier's example is ADR-200's two-part one",
+          _st_targets, {"Part_Cut": "select Box, Box001; part_cut"})
+    check("    and the select that hands the fixture over is its last line",
+          _st_fixtures["Part_Cut"][-1], "select Box, Box001")
+    check("    a positional command is not the selection tier's",
+          "Part_Box" in _st_targets or "Part_Box" in _st_punted, False)
+    check("    a hint with no fixture is punted, with the reason",
+          (sorted(_st_punted),
+           _st_punted["Sketcher_Trim"]),
+          (["Part_Mystery", "Part_Undrafted", "Sketcher_Trim"],
+           _verify.PUNT_WORKBENCHES["Sketcher"]))
+    check("    so is a command the mode map drafted no example for",
+          _st_punted["Part_Undrafted"],
+          "the mode map drafted no example to run")
+
+    # sweep()'s setup hook, on stubs: the fixture is the harness's job, so
+    # a fixture that will not build is the harness's result, not a verb's.
+    _sp_events = []
+    _sp_ran = []
+    _sp_tally, _sp_fin, _sp_n = _verify.sweep(
+        {"A_A": "select Box; a", "B_B": "select Box; b"},
+        lambda cid, ex, res, det: _sp_events.append((cid, res, det)),
+        run_one=lambda e: _sp_ran.append(e) or ("ok", ""),
+        alive=lambda: True, healthy=lambda: True, restart=lambda: True,
+        setup=lambda cid: (True, "") if cid == "A_A"
+        else (False, "select Wire -- no such object: Wire"))
+    check("  a fixture that will not build is no_fixture, and the sweep goes on",
+          (_sp_events, _sp_fin),
+          ([("A_A", "ok", ""),
+            ("B_B", "no_fixture", "select Wire -- no such object: Wire")],
+           True))
+    check("    and the verb of a command with no fixture never runs",
+          _sp_ran, ["select Box; a"])
+
+    # A fixture that fails because the instance died is that hazard, not a
+    # gap in the vocabulary -- the next command would hit it too.
+    _sp_events2 = []
+    _sp_restarts = []
+    _sp_tally2, _sp_fin2, _sp_n2 = _verify.sweep(
+        {"C_C": "select Box; c"},
+        lambda cid, ex, res, det: _sp_events2.append((cid, res, det)),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: False, healthy=lambda: False,
+        restart=lambda: _sp_restarts.append(1) or True,
+        setup=lambda cid: (False, "new verify -- no instance"))
+    check("    a fixture that failed because FreeCAD died is a hazard",
+          (_sp_events2, _sp_n2, _sp_fin2),
+          ([("C_C", "hazard", "fixture: new verify -- no instance")], 1, True))
+
+    _sp_events3 = []
+    _sp_tally3, _sp_fin3, _sp_n3 = _verify.sweep(
+        {"D_D": "select Box; d", "E_E": "select Box; e"},
+        lambda cid, ex, res, det: _sp_events3.append((cid, res, det)),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: False, healthy=lambda: False, restart=lambda: False,
+        setup=lambda cid: (False, "new verify -- no instance"))
+    check("      and a restart that fails stops the sweep there",
+          ([c for c, _r, _d in _sp_events3], _sp_fin3), (["D_D"], False))
+
+    def _sp_slow(cid):
+        raise _sh.TimeoutExpired("fccli", 60)
+    _sp_events4 = []
+    _sp_tally4, _sp_fin4, _sp_n4 = _verify.sweep(
+        {"F_F": "select Box; f"},
+        lambda cid, ex, res, det: _sp_events4.append((cid, res, det)),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: True, healthy=lambda: True, restart=lambda: True,
+        setup=_sp_slow)
+    check("    a fixture build that times out is recorded, not raised",
+          _sp_events4,
+          [("F_F", "no_fixture", "client timed out; instance wedged")])
+
+    # Setup failure and a health probe that will not answer, together. A
+    # probe that times out says nothing about the instance, so the failed
+    # fixture cannot be charged to the vocabulary: it is the hazard PR #63
+    # exists to catch, arriving through the setup door. Every other case
+    # here varies one of the two, which is why this one is written out.
+    def _sp_slow_health():
+        raise _sh.TimeoutExpired("fccli", 60)
+    _sp_events5, _sp_restarts5 = [], []
+    _sp_tally5, _sp_fin5, _sp_n5 = _verify.sweep(
+        {"G_G": "select Box; g", "H_H": "select Box; h"},
+        lambda cid, ex, res, det: _sp_events5.append((cid, res, det)),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: True, healthy=_sp_slow_health,
+        restart=lambda: _sp_restarts5.append(1) or True,
+        setup=lambda cid: (False, "new verify -- silence"))
+    check("      a failed fixture whose health probe times out is the hazard",
+          (_sp_events5, _sp_n5, len(_sp_restarts5), _sp_tally5, _sp_fin5),
+          ([("G_G", "hazard", "fixture: new verify -- silence"),
+            ("H_H", "hazard", "fixture: new verify -- silence")],
+           2, 2, {"hazard": 2}, True))
+    # Both timeouts at once: the build times out and so does the probe
+    # that would say whether anything is still there.
+    _sp_events6, _sp_restarts6 = [], []
+    _sp_tally6, _sp_fin6, _sp_n6 = _verify.sweep(
+        {"I_I": "select Box; i"},
+        lambda cid, ex, res, det: _sp_events6.append((cid, res, det)),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: True, healthy=_sp_slow_health,
+        restart=lambda: _sp_restarts6.append(1) or True,
+        setup=_sp_slow)
+    check("      and a build and a probe that both time out is too",
+          (_sp_events6, len(_sp_restarts6)),
+          ([("I_I", "hazard",
+             "fixture: client timed out; instance wedged")], 1))
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the
@@ -3484,8 +3741,13 @@ def _run():
     _dt = load_dictionary().get("types")
     check("  the dictionary carries type tuning keyed by type",
           sorted(_dt), ["Part::Box", "Part::Cone", "Part::Cylinder",
-                        "Part::Helix", "Part::Sphere", "Part::Torus",
-                        "Part::Wedge"])
+                        "Part::Helix", "Part::RuledSurface", "Part::Sphere",
+                        "Part::Torus", "Part::Wedge",
+                        "PartDesign::AdditiveHelix", "PartDesign::Chamfer",
+                        "PartDesign::Fillet", "PartDesign::Hole",
+                        "PartDesign::Pad", "PartDesign::Pocket",
+                        "PartDesign::SubtractiveHelix",
+                        "PartDesign::Thickness"])
     check("  a type block names its command's type",
           _dt["Part::Cylinder"].get("of") is None
           and _dt["Part::Cylinder"]["steps"], ["Radius", "Height"])

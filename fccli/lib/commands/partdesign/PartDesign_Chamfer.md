@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::Chamfer
+  doc: Bevel the selected edges or faces.
+  steps: [Size]
+  options: [ChamferType, Size2, Angle]
+  hide: [FuzzyTolerance]
 ---
 
 The PartDesign Chamfer tool creates chamfers on the selected edges of an object. It adds a Chamfer object to the document with its corresponding representation in the Tree view.

@@ -20,7 +20,11 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::RuledSurface
+  doc: Build a ruled surface between two selected edges or wires.
+  steps: [Orientation]
+  options: [Curve1, Curve2]
 ---
 
 The Part RuledSurface command creates a ruled surface spanning between two selected edges/wires.

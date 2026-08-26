@@ -95,6 +95,60 @@
 
 ### Added
 
+- **The verify harness gets a selection tier (GH #52, of #47).**
+  `tools/verify.py --modemap --tier selection` builds the fixture a
+  command's `selection_hint` names, hands it over with `select` (ADR-200),
+  and runs the verb -- so a selection command is driven the way a person
+  drives one, and the example recorded is ADR-200's two-part
+  `select <what>; <verb> <params>`. A recipe is command lines only: a box
+  for the solid consumers, two overlapping boxes for the booleans, four
+  Draft lines and `upgrade` for a closed profile (Draft's own closed-wire
+  verbs are all panel-mode), `new_body` over a selected solid for a
+  PartDesign body and its BaseFeature, `draft_to_sketch` plus
+  `duplicate_object` for a sketch inside that body. Each command gets a
+  scratch document of its own, so no fixture feeds the next. A fixture
+  that will not build is `no_fixture` -- the harness's gap, recorded
+  against the harness rather than blamed on the verb -- and one that fails
+  because the instance died is the hazard the old sweep already knew how
+  to survive.
+
+  The vocabulary reaches 112 of the 383 selection commands, over Part,
+  PartDesign, Draft, Std, OpenSCAD and Surface. The other 271 are punted
+  by workbench with a reason each: Sketcher's 42 act inside a sketch in
+  edit mode, TechDraw's 82 want a page with views on it, and FEM, CAM,
+  Mesh, Arch/BIM, Spreadsheet and the rest each need a subject no command
+  line builds today. Those are the panel tier's (GH #53).
+
+  The live sweep: 86 of 112 run to a valid object, 15 leave an invalid
+  one, 6 are broken, 5 turn out to open a panel. No hazards and no
+  restarts. **#52's acceptance is not met and the tier says so.** The
+  acceptance names the batch ADR-200 named -- the parameter-bearing Part
+  and PartDesign commands, 23 of which the mode map now calls selection --
+  and that batch stands at **6 of 23**: 13 invalid, 2 broken, 2 panel. The
+  other 30 Part/PartDesign selection commands take no arguments at all, and
+  28 of them pass; adding the two halves gives 34, which is a real number
+  about an easier set. #52 stays open.
+
+- **Nine commands stop reading their first argument as a tolerance
+  (GH #69, found by #52).** A tier-1 verb's steps are the type's
+  properties in alphabetical order, and `FuzzyTolerance` sorts in front of
+  the length, radius or diameter the command is about. `fillet 10` set
+  `FuzzyTolerance` -- clamped to 1 -- and left `Radius` at its 1 mm
+  default; `pad 10` and `pocket 5` set `Direction` and the tolerance, not
+  `Length`; `hole 6 10` set `BaseProfileType`. `ruled_surface Automatic`
+  is the same shape without a tolerance: two link properties sort first, so
+  it went looking for an object called `Automatic`. Nine command files now
+  carry a `type` block naming the order a person types and hiding the
+  tolerance, which is a tree edit and not a FreeCAD one. `man fillet` is
+  `fillet <Radius>` rather than sixteen properties, and 11 dimensionless
+  steps leave the D5 census.
+
+  Re-running the parameter-bearing slice across the change: both `broken`
+  results cleared, and **no invalid converted**. `fillet 10` now sets
+  `Radius` to 10 mm and the Fillet is still `Touched, Invalid`, so what
+  invalidates those features is independent of argument routing --
+  fourteen named instances are on GH #57, and the cause is open.
+
 - **The grammar spec gets a lint (GH #49, of #47).** `tools/interaction.py`
   checks the D group over the compiled tree and the built registry: D1
   every listed choice is a value some input selects, D3 every step has a

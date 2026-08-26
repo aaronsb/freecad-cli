@@ -1877,7 +1877,29 @@
   },
   "PartDesign_AdditiveHelix": {
    "doc": "The Additive Helix tool creates a solid by sweeping a selected sketch or 2D object along a helix path.\n\n## See also\n\n- PartDesign_SubtractiveHelix",
-   "file": "partdesign/PartDesign_AdditiveHelix.md"
+   "file": "partdesign/PartDesign_AdditiveHelix.md",
+   "type": {
+    "doc": "Sweep the selected profile along a helix and add it to the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "Axis",
+     "Base",
+     "Tolerance",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::AdditiveHelix",
+    "options": [
+     "Angle",
+     "Growth"
+    ],
+    "steps": [
+     "Mode",
+     "Pitch",
+     "Height",
+     "Turns"
+    ]
+   }
   },
   "PartDesign_AdditiveLoft": {
    "doc": "Additive Loft creates a solid in the active Body by making a transition between two or more sketches (also referred to as cross-sections). If the Body already contains features, the additive loft will be merged to them.\n\n## See also\n\n- PartDesign_AdditivePipe\n- PartDesign_SubtractiveLoft",
@@ -1898,7 +1920,22 @@
   },
   "PartDesign_Chamfer": {
    "doc": "The PartDesign Chamfer tool creates chamfers on the selected edges of an object. It adds a Chamfer object to the document with its corresponding representation in the Tree view.\n\n## See also\n\n- PartDesign_Fillet",
-   "file": "partdesign/PartDesign_Chamfer.md"
+   "file": "partdesign/PartDesign_Chamfer.md",
+   "type": {
+    "doc": "Bevel the selected edges or faces.",
+    "hide": [
+     "FuzzyTolerance"
+    ],
+    "of": "PartDesign::Chamfer",
+    "options": [
+     "ChamferType",
+     "Size2",
+     "Angle"
+    ],
+    "steps": [
+     "Size"
+    ]
+   }
   },
   "PartDesign_Clone": {
    "doc": "PartDesign Clone creates a linked copy of a selected object which will follow any future edits to the original object (except placement). For example, one use case is when you want to do PartDesign Boolean on an object created in another workbench. Most types of objects are accepted, as long as they are single solids. If you need to clone multiple objects (i.e., bodies) or a Part Container, you may use Draft Workbench's clone. One caveat is that the Part Design Workbench's clone sets the current placement of the clone as zero (both Cartesian translation and spatial orientations). While the Draft's workbenches clone calculates and sets the numerical values of the current placement and orientation of the cloned objects with respect to the cloned object container.\n\n## See also\n\n- Draft_Clone",
@@ -1934,7 +1971,17 @@
   },
   "PartDesign_Fillet": {
    "doc": "The PartDesign Fillet tool creates fillets (rounds) on the selected edges of an object. It adds a Fillet object to the document with its corresponding representation in the Tree view.\n\n## See also\n\n- PartDesign_Chamfer",
-   "file": "partdesign/PartDesign_Fillet.md"
+   "file": "partdesign/PartDesign_Fillet.md",
+   "type": {
+    "doc": "Round the selected edges or faces to a radius.",
+    "hide": [
+     "FuzzyTolerance"
+    ],
+    "of": "PartDesign::Fillet",
+    "steps": [
+     "Radius"
+    ]
+   }
   },
   "PartDesign_Groove": {
    "doc": "The Groove tool revolves a selected sketch or profile about a given axis, cutting out material from the support .\n\n## See also\n\n- PartDesign_Revolution",
@@ -1942,7 +1989,35 @@
   },
   "PartDesign_Hole": {
    "doc": "The Hole feature creates one or more holes from a selected sketch's circles and arcs. If arcs are present they must be part of closed contours. All non arc/circle entities are ignored but they still must form closed contours. Many parameters can be set such as threading and size, fit, hole type (countersink, counterbore, straight) and more.\n\nThe centers of the circles and arcs are used to position the holes, but please note that their radii are not taken into account. The generated holes will be identical even if the radii vary.\n\n## See also\n\n- PartDesign_Pocket",
-   "file": "partdesign/PartDesign_Hole.md"
+   "file": "partdesign/PartDesign_Hole.md",
+   "type": {
+    "doc": "Cut holes at the circles of the selected sketch.",
+    "hide": [
+     "FuzzyTolerance",
+     "BaseProfileType",
+     "CustomThreadClearance",
+     "DrillPointAngle",
+     "HoleCutCountersinkAngle",
+     "HoleCutDepth",
+     "HoleCutDiameter",
+     "ThreadDepth",
+     "ThreadDepthType",
+     "ThreadDiameter",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::Hole",
+    "options": [
+     "DepthType",
+     "DrillPoint",
+     "TaperedAngle",
+     "ThreadType"
+    ],
+    "steps": [
+     "Diameter",
+     "Depth"
+    ]
+   }
   },
   "PartDesign_InvoluteGear": {
    "doc": "This tool allows you to create a 2D profile of an involute gear or spline. This 2D profile is fully parametric, and can be padded with the PartDesign Pad or PartDesign AdditiveHelix feature.\n\nFor more detailed information see Wikipedia's entries for: Gear and Involute Gear\n\n## See also\n\n- FCGear_Workbench",
@@ -1986,7 +2061,29 @@
   },
   "PartDesign_Pad": {
    "doc": "The Pad tool extrudes a sketch or a face of a solid along a straight path.\n\n## See also\n\n- PartDesign_Pocket",
-   "file": "partdesign/PartDesign_Pad.md"
+   "file": "partdesign/PartDesign_Pad.md",
+   "type": {
+    "doc": "Extrude the selected profile and add it to the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "Direction",
+     "Offset2",
+     "TaperAngle2",
+     "Type2",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::Pad",
+    "options": [
+     "Type",
+     "SideType",
+     "Length2",
+     "TaperAngle"
+    ],
+    "steps": [
+     "Length"
+    ]
+   }
   },
   "PartDesign_Plane": {
    "doc": "Creates a datum plane which can be used as reference for sketches or other datum geometry. Sketches can be attached to datum planes.\n\n## See also\n\n- PartDesign_Point\n- PartDesign_Line",
@@ -1994,7 +2091,29 @@
   },
   "PartDesign_Pocket": {
    "doc": "The Pocket tool cuts solids by extruding a sketch or a face of a solid along a straight path.\n\n## See also\n\n- PartDesign_Pad",
-   "file": "partdesign/PartDesign_Pocket.md"
+   "file": "partdesign/PartDesign_Pocket.md",
+   "type": {
+    "doc": "Extrude the selected profile and cut it out of the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "Direction",
+     "Offset2",
+     "TaperAngle2",
+     "Type2",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::Pocket",
+    "options": [
+     "Type",
+     "SideType",
+     "Length2",
+     "TaperAngle"
+    ],
+    "steps": [
+     "Length"
+    ]
+   }
   },
   "PartDesign_Point": {
    "doc": "Creates a datum point which can be used as reference for sketches or other datum geometry.\n\n*A datum point attached to a sphere with an attachment offset of\n\n## See also\n\n- PartDesign_Line\n- PartDesign_Plane",
@@ -2022,7 +2141,29 @@
   },
   "PartDesign_SubtractiveHelix": {
    "doc": "The SubtractiveHelix tool modifies a solid by sweeping a selected sketch or 2D object along a helix path cutting away the material.\n\n## See also\n\n- PartDesign_AdditiveHelix",
-   "file": "partdesign/PartDesign_SubtractiveHelix.md"
+   "file": "partdesign/PartDesign_SubtractiveHelix.md",
+   "type": {
+    "doc": "Sweep the selected profile along a helix and cut it from the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "Axis",
+     "Base",
+     "Tolerance",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::SubtractiveHelix",
+    "options": [
+     "Angle",
+     "Growth"
+    ],
+    "steps": [
+     "Mode",
+     "Pitch",
+     "Height",
+     "Turns"
+    ]
+   }
   },
   "PartDesign_SubtractiveLoft": {
    "doc": "Subtractive Loft creates a subtractive solid in the active Body by making a transition between two or more sketches (also referred to as cross-sections). Its shape is then subtracted from the existing solid.\n\n## See also\n\n- PartDesign_AdditiveLoft\n- PartDesign_SubtractivePipe",
@@ -2034,7 +2175,19 @@
   },
   "PartDesign_Thickness": {
    "doc": "The PartDesign Thickness tool transforms a solid body into a hollow object with at least one open face, giving to each of its remaining faces a uniform thickness. It adds a Thickness object to the document with its corresponding representation in the Tree view.\n\n## See also\n\n- Part_Thickness",
-   "file": "partdesign/PartDesign_Thickness.md"
+   "file": "partdesign/PartDesign_Thickness.md",
+   "type": {
+    "doc": "Hollow the body, leaving the selected faces open to a wall thickness.",
+    "hide": [
+     "FuzzyTolerance"
+    ],
+    "of": "PartDesign::Thickness",
+    "steps": [
+     "Value",
+     "Mode",
+     "Join"
+    ]
+   }
   },
   "PartDesign_WizardShaft": {
    "doc": "This tool allows you to create a shaft from a table of values, and to analyse forces and moments.",
@@ -2315,7 +2468,18 @@
   },
   "Part_RuledSurface": {
    "doc": "The Part RuledSurface command creates a ruled surface spanning between two selected edges/wires.\n\n## See also\n\n- Part_MakeFace",
-   "file": "part/Part_RuledSurface.md"
+   "file": "part/Part_RuledSurface.md",
+   "type": {
+    "doc": "Build a ruled surface between two selected edges or wires.",
+    "of": "Part::RuledSurface",
+    "options": [
+     "Curve1",
+     "Curve2"
+    ],
+    "steps": [
+     "Orientation"
+    ]
+   }
   },
   "Part_Scale": {
    "doc": "Part Scale scales shapes by a specified factor in all directions or by distinct factors in each cardinal direction. In the case of distinct factors, the shapes may be distorted.\n\n## See also\n\n- Draft_Clone\n- Draft_Scale",
@@ -4820,6 +4984,17 @@
    ],
    "strict": true
   },
+  "Part::RuledSurface": {
+   "doc": "Build a ruled surface between two selected edges or wires.",
+   "file": "part/Part_RuledSurface.md",
+   "options": [
+    "Curve1",
+    "Curve2"
+   ],
+   "steps": [
+    "Orientation"
+   ]
+  },
   "Part::Sphere": {
    "aliases": [
     "sph"
@@ -4865,6 +5040,159 @@
     "Zmax"
    ],
    "strict": true
+  },
+  "PartDesign::AdditiveHelix": {
+   "doc": "Sweep the selected profile along a helix and add it to the body.",
+   "file": "partdesign/PartDesign_AdditiveHelix.md",
+   "hide": [
+    "FuzzyTolerance",
+    "Axis",
+    "Base",
+    "Tolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Angle",
+    "Growth"
+   ],
+   "steps": [
+    "Mode",
+    "Pitch",
+    "Height",
+    "Turns"
+   ]
+  },
+  "PartDesign::Chamfer": {
+   "doc": "Bevel the selected edges or faces.",
+   "file": "partdesign/PartDesign_Chamfer.md",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "ChamferType",
+    "Size2",
+    "Angle"
+   ],
+   "steps": [
+    "Size"
+   ]
+  },
+  "PartDesign::Fillet": {
+   "doc": "Round the selected edges or faces to a radius.",
+   "file": "partdesign/PartDesign_Fillet.md",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "steps": [
+    "Radius"
+   ]
+  },
+  "PartDesign::Hole": {
+   "doc": "Cut holes at the circles of the selected sketch.",
+   "file": "partdesign/PartDesign_Hole.md",
+   "hide": [
+    "FuzzyTolerance",
+    "BaseProfileType",
+    "CustomThreadClearance",
+    "DrillPointAngle",
+    "HoleCutCountersinkAngle",
+    "HoleCutDepth",
+    "HoleCutDiameter",
+    "ThreadDepth",
+    "ThreadDepthType",
+    "ThreadDiameter",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "DepthType",
+    "DrillPoint",
+    "TaperedAngle",
+    "ThreadType"
+   ],
+   "steps": [
+    "Diameter",
+    "Depth"
+   ]
+  },
+  "PartDesign::Pad": {
+   "doc": "Extrude the selected profile and add it to the body.",
+   "file": "partdesign/PartDesign_Pad.md",
+   "hide": [
+    "FuzzyTolerance",
+    "Direction",
+    "Offset2",
+    "TaperAngle2",
+    "Type2",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Type",
+    "SideType",
+    "Length2",
+    "TaperAngle"
+   ],
+   "steps": [
+    "Length"
+   ]
+  },
+  "PartDesign::Pocket": {
+   "doc": "Extrude the selected profile and cut it out of the body.",
+   "file": "partdesign/PartDesign_Pocket.md",
+   "hide": [
+    "FuzzyTolerance",
+    "Direction",
+    "Offset2",
+    "TaperAngle2",
+    "Type2",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Type",
+    "SideType",
+    "Length2",
+    "TaperAngle"
+   ],
+   "steps": [
+    "Length"
+   ]
+  },
+  "PartDesign::SubtractiveHelix": {
+   "doc": "Sweep the selected profile along a helix and cut it from the body.",
+   "file": "partdesign/PartDesign_SubtractiveHelix.md",
+   "hide": [
+    "FuzzyTolerance",
+    "Axis",
+    "Base",
+    "Tolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Angle",
+    "Growth"
+   ],
+   "steps": [
+    "Mode",
+    "Pitch",
+    "Height",
+    "Turns"
+   ]
+  },
+  "PartDesign::Thickness": {
+   "doc": "Hollow the body, leaving the selected faces open to a wall thickness.",
+   "file": "partdesign/PartDesign_Thickness.md",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "steps": [
+    "Value",
+    "Mode",
+    "Join"
+   ]
   }
  },
  "wiki_rev": "0499378"
