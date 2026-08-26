@@ -44,6 +44,7 @@ import argparse
 import datetime
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -166,6 +167,18 @@ def verify_one(example):
     return result, (err if result in ("incomplete", "broken") else "")
 
 
+def _load(path):
+    """The store, or a stop. A store that fails to parse ends the run:
+    overwriting it would throw away every result it still holds."""
+    if not os.path.exists(path):
+        return {}
+    try:
+        return json.load(open(path))
+    except ValueError as exc:
+        sys.exit(f"verify: {path} is unreadable ({exc}) -- "
+                 f"repair or remove it")
+
+
 def plan(targets, prior, force=False, start_at=None):
     """Split targets into what this sweep runs and what it skips.
 
@@ -186,39 +199,87 @@ def plan(targets, prior, force=False, start_at=None):
     return run, skipped
 
 
-def sweep(targets, record):
-    """Run every target, restart a dead instance, checkpoint each result.
+def _healthy():
+    """The instance answers with facts.
+
+    ``fccli ls`` is not enough: it exits 0 for a live *process*, even one
+    whose server no longer answers -- which is exactly the wedged case.
+    """
+    try:
+        return bool(_snapshot())
+    except subprocess.TimeoutExpired:
+        return False
+
+
+def _restart():
+    """A working headless instance, whatever is there now.
+
+    A wedged instance still holds its socket and would block the start,
+    so anything that no longer answers is killed first. An instance that
+    does answer is reused rather than doubled.
+    """
+    try:
+        _, out, _ = fccli("--json", "ls", timeout=90)
+        rows = json.loads(out)
+    except (subprocess.TimeoutExpired, ValueError):
+        rows = []
+    for row in rows if isinstance(rows, list) else []:
+        if not row.get("reachable") and row.get("pid"):
+            try:
+                os.kill(int(row["pid"]), signal.SIGKILL)
+            except OSError:
+                pass
+    time.sleep(0.5)
+    if not running() and not start_headless():
+        return False
+    if not _healthy():
+        return False
+    fccli("exec", "new verify")
+    return True
+
+
+def sweep(targets, record, run_one=None, alive=None, healthy=None,
+          restart=None):
+    """Run every target, restart a dead or wedged instance, checkpoint
+    each result.
 
     ``record(cid, example, result, detail)`` is called after every
-    command -- it owns persistence, so a stopped sweep keeps everything
-    already run. Returns (tally, finished).
+    command, hazards included -- it owns persistence, so a stopped sweep
+    keeps everything already run. The four hooks default to the real
+    client; they exist so this loop is testable without a FreeCAD.
+    Returns (tally, finished, restarts).
     """
-    tally = {}
+    run_one = run_one or verify_one
+    alive = alive or running
+    healthy = healthy or _healthy
+    restart = restart or _restart
+    tally, restarts = {}, 0
     total = len(targets)
     for i, (cid, example) in enumerate(sorted(targets.items()), 1):
         try:
-            result, detail = verify_one(example)
+            result, detail = run_one(example)
         except subprocess.TimeoutExpired:
             result, detail = "hazard", "client timed out; instance wedged"
+        if result != "hazard":
             try:
-                fccli("cancel", timeout=15)
+                if not alive():
+                    result, detail = "hazard", "killed the FreeCAD instance"
+                elif not healthy():
+                    result, detail = "hazard", "left the instance unresponsive"
             except subprocess.TimeoutExpired:
-                pass
-        if not running():
-            result, detail = "hazard", "killed the FreeCAD instance"
-            print(f"[{i}/{total}] {'hazard':10} {cid} -- restarting FreeCAD",
-                  flush=True)
-            record(cid, example, result, detail)
-            tally[result] = tally.get(result, 0) + 1
-            if not start_headless():
-                print("verify: restart failed, stopping", file=sys.stderr)
-                return tally, False
-            fccli("exec", "new verify")
-            continue
+                result, detail = "hazard", "left the instance unresponsive"
         record(cid, example, result, detail)
         tally[result] = tally.get(result, 0) + 1
+        if result == "hazard":
+            print(f"[{i}/{total}] {'hazard':10} {cid} -- restarting FreeCAD",
+                  flush=True)
+            restarts += 1
+            if not restart():
+                print("verify: restart failed, stopping", file=sys.stderr)
+                return tally, False, restarts
+            continue
         print(f"[{i}/{total}] {result:10} {cid}  ({example})", flush=True)
-    return tally, True
+    return tally, True, restarts
 
 
 def main(argv=None):
@@ -242,25 +303,23 @@ def main(argv=None):
                    for cid, e in modemap["commands"].items()
                    if e.get("mode") == "positional" and e.get("example")}
         store_path = SWEEP_REPORT
-        store = {}
-        if os.path.exists(store_path):
-            store = json.load(open(store_path))
+        store = _load(store_path)
         entries = store
-        # Resumable: a draft already recorded is not run again.
+        # Resumable: a draft already recorded is not run again -- except a
+        # hazard, which stays in targets so plan() reports the skip.
         prior = dict(entries)
         if not args.force:
-            targets = {c: e for c, e in targets.items() if c not in entries
-                       or entries[c].get("example") != e}
+            targets = {c: e for c, e in targets.items()
+                       if entries.get(c, {}).get("example") != e
+                       or entries[c].get("result") == "hazard"}
     else:
         data = json.load(open(DICT))
         targets = {cid: e["example"] for cid, e in data["commands"].items()
                    if e.get("example")}
         store_path = LEDGER
-        store = {}
-        if os.path.exists(store_path):
-            store = json.load(open(store_path))
+        store = _load(store_path)
         entries = store.setdefault("commands", {})
-        prior = entries
+        prior = dict(entries)
 
     if args.only:
         targets = {k: v for k, v in targets.items() if k == args.only}
@@ -300,19 +359,32 @@ def main(argv=None):
         if not args.modemap:
             store["date"] = today
             store["freecad"] = version
-        with open(store_path, "w", encoding="utf-8") as fh:
+        # Written beside and swapped in whole: a checkpoint interrupted
+        # mid-dump must not cost the results it was checkpointing.
+        tmp = store_path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
             json.dump(store, fh, indent=1, sort_keys=True)
             fh.write("\n")
+        os.replace(tmp, store_path)
 
     # Skips are recorded too, so the report says why a command was not run.
     for cid, reason in skipped.items():
         record(cid, targets[cid], "hazard", reason)
 
+    # Ownership is a fact the restart updates: an instance this sweep
+    # brought up -- first or mid-sweep -- is quit at the end; an
+    # operator's own instance is left alone.
+    owned = {"it": started}
+
+    def restart_owned():
+        owned["it"] = True
+        return _restart()
+
     fccli("exec", "new verify")
     try:
-        tally, finished = sweep(run, record)
+        tally, finished, _ = sweep(run, record, restart=restart_owned)
     finally:
-        if started and running():
+        if owned["it"] and running():
             fccli("cancel")
             fccli("exec", "quit!")
 

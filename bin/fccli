@@ -53,12 +53,20 @@ HEADLESS_ENV = {"QT_QPA_PLATFORM": "xcb"}
 # hours; one such run wrote 51GB into /tmp before the quota stopped it
 # (GH #62). So FreeCAD never holds the log file itself: it writes a pipe,
 # and this child copies the pipe to the file until the cap, then keeps
-# draining and drops the rest.
+# draining and drops the rest. The child must outlive the pipe whatever
+# happens to the file -- a copier that exits is a SIGPIPE into FreeCAD's
+# next write -- so every file error just stops the writing, never the
+# reading. The cap is the file's, not the run's: an append picks up where
+# the size already is.
 LOG_COPIER = r'''
 import sys
 path, cap = sys.argv[1], int(sys.argv[2])
-out = open(path, "ab")
-written, capped = 0, False
+try:
+    out = open(path, "ab")
+    written = out.tell()
+    capped = 0 < cap <= written
+except OSError:
+    out, capped = None, True
 src = sys.stdin.buffer
 while True:
     chunk = src.read(65536)
@@ -66,15 +74,18 @@ while True:
         break
     if capped:
         continue
-    if cap > 0 and written + len(chunk) >= cap:
-        out.write(chunk[:cap - written])
-        out.write(b"\n[fccli: log cap reached; further output dropped]\n")
+    try:
+        if cap > 0 and written + len(chunk) >= cap:
+            out.write(chunk[:cap - written])
+            out.write(b"\n[fccli: log cap reached; further output dropped]\n")
+            out.flush()
+            capped = True
+            continue
+        out.write(chunk)
         out.flush()
+        written += len(chunk)
+    except OSError:
         capped = True
-        continue
-    out.write(chunk)
-    out.flush()
-    written += len(chunk)
 '''
 
 PROTOCOL = 2
@@ -571,11 +582,24 @@ def cmd_start(args):
         runner = ["xvfb-run", "-a", "-s", "-screen 0 1600x1000x24"]
         env = dict(os.environ, **HEADLESS_ENV)
 
+    if args.log_cap is not None and not args.log:
+        print("fccli: --log-cap does nothing without --log", file=sys.stderr)
+        return EX_USAGE
     log, copier = subprocess.DEVNULL, None
     if args.log:
+        # Fail here, in this process, before FreeCAD exists. The copier
+        # child cannot error usefully: by the time it finds the path
+        # unwritable, FreeCAD is already wired to the pipe, and a dead
+        # reader is a SIGPIPE into FreeCAD's first write.
+        try:
+            open(args.log, "ab").close()
+        except OSError as exc:
+            print(f"fccli: cannot open --log: {exc}", file=sys.stderr)
+            return EX_USAGE
+        cap = 64 if args.log_cap is None else args.log_cap
         copier = subprocess.Popen(
             [sys.executable, "-c", LOG_COPIER, args.log,
-             str(int(args.log_cap * 1024 * 1024))],
+             str(int(cap * 1024 * 1024))],
             stdin=subprocess.PIPE, start_new_session=True)
         log = copier.stdin
     proc = subprocess.Popen(runner + [binary, *args.args],
@@ -813,8 +837,9 @@ def main():
                        help="run under a virtual display (needs xvfb-run)")
     start.add_argument("--timeout", type=float, default=90, metavar="SECONDS")
     start.add_argument("--log", metavar="FILE", help="where FreeCAD's own output goes")
-    start.add_argument("--log-cap", type=float, default=64, metavar="MB",
-                       help="keep at most this much of it (0 = unbounded)")
+    start.add_argument("--log-cap", type=float, default=None, metavar="MB",
+                       help="keep at most this much of it "
+                            "(default 64; 0 = unbounded)")
     start.add_argument("--force", action="store_true",
                        help="start another even if one is running")
     start.add_argument("-i", "--interactive", "--attach", action="store_true",
