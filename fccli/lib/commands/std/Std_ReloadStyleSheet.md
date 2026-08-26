@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "ccc0e45717ba"
 # authored from here down; the tool never rewrites these
 verb: null
+example: reload_stylesheet
 aliases: []
 requires: []
 panel: null

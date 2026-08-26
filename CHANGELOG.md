@@ -95,6 +95,18 @@
 
 ### Added
 
+- **154 commands gain a verified example.** The GH #47 positional sweep
+  drove all 246 mode-map drafts against a live headless instance; 159
+  ran to completion with a valid result, of which 4 were already
+  authored and 1 (BIM_ImagePlane) passed only vacuously -- its argument
+  names a file that need not exist -- leaving 154 promoted into their
+  command files' `example:` field and stamped into the ledger. 153 of
+  them are bare verbs: verified to execute and leave a valid document,
+  which says nothing yet about positional argument handling. The
+  remainder: 69 broken (mostly drafts needing a context the bare
+  instance lacks), 6 incomplete, 4 panel-tier, 8 hazards -- triage
+  feeds the selection and panel tiers. Rendering the example in `man`
+  is GH #44.
 - **A sweep survives its own targets.** `tools/verify.py` records a
   command that kills or wedges the instance as `hazard`, starts a fresh
   headless one, and continues; recorded hazards are skipped on later

@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "5be10d114fb2"
 # authored from here down; the tool never rewrites these
 verb: null
+example: collapse_expand
 aliases: []
 requires: []
 panel: null

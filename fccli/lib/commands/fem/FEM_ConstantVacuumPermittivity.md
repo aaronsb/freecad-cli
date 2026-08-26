@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "8103b6e83378"
 # authored from here down; the tool never rewrites these
 verb: null
+example: constant_vacuum_permittivity
 aliases: []
 requires: []
 panel: null

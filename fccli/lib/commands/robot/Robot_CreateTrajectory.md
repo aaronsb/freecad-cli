@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "ddf570742616"
 # authored from here down; the tool never rewrites these
 verb: null
+example: trajectory
 aliases: []
 requires: []
 panel: null

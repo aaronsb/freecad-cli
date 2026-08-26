@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "f63bcf6ea4f6"
 # authored from here down; the tool never rewrites these
 verb: null
+example: remove_all_clipping_planes
 aliases: []
 requires: []
 panel: null

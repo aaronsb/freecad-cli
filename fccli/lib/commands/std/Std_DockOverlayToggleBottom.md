@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "1091fe6d79c0"
 # authored from here down; the tool never rewrites these
 verb: null
+example: toggle_bottom
 aliases: []
 requires: []
 panel: null

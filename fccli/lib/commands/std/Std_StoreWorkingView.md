@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "182a54c81aec"
 # authored from here down; the tool never rewrites these
 verb: null
+example: store_working_view
 aliases: []
 requires: []
 panel: null

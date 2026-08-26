@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "c0145ec6d0d1"
 # authored from here down; the tool never rewrites these
 verb: null
+example: show_snap_toolbar
 aliases: []
 requires: []
 panel: null

@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "9438748a6ef2"
 # authored from here down; the tool never rewrites these
 verb: null
+example: bounding_box
 aliases: []
 requires: []
 panel: null

@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "99aa30735640"
 # authored from here down; the tool never rewrites these
 verb: null
+example: snap_lock
 aliases: []
 requires: []
 panel: null

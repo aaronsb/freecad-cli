@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "dfe6ed138602"
 # authored from here down; the tool never rewrites these
 verb: null
+example: freecad_website
 aliases: []
 requires: []
 panel: null

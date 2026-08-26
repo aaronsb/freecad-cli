@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "0d89039b2b85"
 # authored from here down; the tool never rewrites these
 verb: null
+example: bypass_mouse_events_in_overlay_panels
 aliases: []
 requires: []
 panel: null

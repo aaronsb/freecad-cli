@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "34175ebb7ebf"
 # authored from here down; the tool never rewrites these
 verb: null
+example: fullscreen
 aliases: []
 requires: []
 panel: null

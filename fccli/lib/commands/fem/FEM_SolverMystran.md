@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "c270ffd16ecc"
 # authored from here down; the tool never rewrites these
 verb: null
+example: solver_mystran
 aliases: []
 requires: []
 panel: null

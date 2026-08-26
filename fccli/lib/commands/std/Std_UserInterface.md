@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "47011836db3d"
 # authored from here down; the tool never rewrites these
 verb: null
+example: dock_views
 aliases: []
 requires: []
 panel: null

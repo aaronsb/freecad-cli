@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "d9d4e1eb5ea3"
 # authored from here down; the tool never rewrites these
 verb: null
+example: reload_translation_files
 aliases: []
 requires: []
 panel: null

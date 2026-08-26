@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "8ca3bfd83210"
 # authored from here down; the tool never rewrites these
 verb: null
+example: gravity_load
 aliases: []
 requires: []
 panel: null

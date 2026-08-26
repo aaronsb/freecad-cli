@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "6205b916c0b5"
 # authored from here down; the tool never rewrites these
 verb: null
+example: issue_camera_position
 aliases: []
 requires: []
 panel: null

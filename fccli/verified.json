@@ -1,48 +1,972 @@
 {
  "commands": {
+  "Arch_Axis": {
+   "date": "2026-08-26",
+   "example": "axis",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Arch_Building": {
+   "date": "2026-08-26",
+   "example": "building",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Arch_Grid": {
+   "date": "2026-08-26",
+   "example": "grid",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Arch_Level": {
+   "date": "2026-08-26",
+   "example": "level",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Arch_Panel_Sheet": {
+   "date": "2026-08-26",
+   "example": "panel_sheet",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Arch_Pipe": {
+   "date": "2026-08-26",
+   "example": "arch_pipe",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Arch_SelectNonSolidMeshes": {
+   "date": "2026-08-26",
+   "example": "select_non_manifold_meshes",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Arch_Site": {
+   "date": "2026-08-26",
+   "example": "site",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Arch_Stairs": {
+   "date": "2026-08-26",
+   "example": "stairs",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Assembly_CreateAssembly": {
+   "date": "2026-08-26",
+   "example": "new_assembly",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Assembly_SolveAssembly": {
+   "date": "2026-08-26",
+   "example": "solve_assembly",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_Background": {
+   "date": "2026-08-26",
+   "example": "toggle_background",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_DrawingView": {
+   "date": "2026-08-26",
+   "example": "2d_drawing",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_EmptyTrash": {
+   "date": "2026-08-26",
+   "example": "empty_trash",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_Help": {
+   "date": "2026-08-26",
+   "example": "bim_help",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_Nudge_Switch": {
+   "date": "2026-08-26",
+   "example": "nudge_switch",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_Project": {
+   "date": "2026-08-26",
+   "example": "ifc_project",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_SetWPFront": {
+   "date": "2026-08-26",
+   "example": "working_plane_front",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_SetWPSide": {
+   "date": "2026-08-26",
+   "example": "working_plane_side",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_SetWPTop": {
+   "date": "2026-08-26",
+   "example": "working_plane_top",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_TogglePanels": {
+   "date": "2026-08-26",
+   "example": "toggle_bottom_panels",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_Views": {
+   "date": "2026-08-26",
+   "example": "views_manager",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "BIM_WPView": {
+   "date": "2026-08-26",
+   "example": "working_plane_view",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "CAM_PropertyBag": {
+   "date": "2026-08-26",
+   "example": "property_bag",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Arc": {
+   "date": "2026-08-26",
+   "example": "arc 0,0,0 15 0 90",
+   "freecad": "1.1.3",
+   "result": "panel"
+  },
+  "Draft_Heal": {
+   "date": "2026-08-26",
+   "example": "heal",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Layer": {
+   "date": "2026-08-26",
+   "example": "new_layer",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
   "Draft_Line": {
-   "date": "2026-08-24",
+   "date": "2026-08-26",
    "example": "line 0,0,0 50,0,0",
    "freecad": "1.1.3",
    "result": "ok"
   },
   "Draft_Point": {
-   "date": "2026-08-24",
+   "date": "2026-08-26",
    "example": "point 10,10,0",
    "freecad": "1.1.3",
    "result": "ok"
   },
+  "Draft_ShowSnapBar": {
+   "date": "2026-08-26",
+   "example": "show_snap_toolbar",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Snap_Angle": {
+   "date": "2026-08-26",
+   "example": "snap_angle",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Snap_Center": {
+   "date": "2026-08-26",
+   "example": "snap_center",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Snap_Dimensions": {
+   "date": "2026-08-26",
+   "example": "snap_dimensions",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Snap_Endpoint": {
+   "date": "2026-08-26",
+   "example": "snap_endpoint",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Snap_Extension": {
+   "date": "2026-08-26",
+   "example": "snap_extension",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Snap_Grid": {
+   "date": "2026-08-26",
+   "example": "snap_grid",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Snap_Intersection": {
+   "date": "2026-08-26",
+   "example": "snap_intersection",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_Snap_Lock": {
+   "date": "2026-08-26",
+   "example": "snap_lock",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_ToggleConstructionMode": {
+   "date": "2026-08-26",
+   "example": "toggle_construction_mode",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_ToggleGrid": {
+   "date": "2026-08-26",
+   "example": "toggle_grid",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Draft_WorkingPlaneProxy": {
+   "date": "2026-08-26",
+   "example": "working_plane_proxy",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_Analysis": {
+   "date": "2026-08-26",
+   "example": "new_analysis",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_ClippingPlaneRemoveAll": {
+   "date": "2026-08-26",
+   "example": "remove_all_clipping_planes",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_ConstantVacuumPermittivity": {
+   "date": "2026-08-26",
+   "example": "constant_vacuum_permittivity",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_ConstraintSelfWeight": {
+   "date": "2026-08-26",
+   "example": "gravity_load",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_PostApplyChanges": {
+   "date": "2026-08-26",
+   "example": "apply_changes_to_pipeline",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_ResultsPurge": {
+   "date": "2026-08-26",
+   "example": "purge_results",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_SolverCalculiX": {
+   "date": "2026-08-26",
+   "example": "solver_calculix",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_SolverCalculiXCcxTools": {
+   "date": "2026-08-26",
+   "example": "solver_calculix_standard",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_SolverElmer": {
+   "date": "2026-08-26",
+   "example": "solver_elmer",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_SolverMystran": {
+   "date": "2026-08-26",
+   "example": "solver_mystran",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "FEM_SolverZ88": {
+   "date": "2026-08-26",
+   "example": "solver_z88",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "IFC_ConvertDocument": {
+   "date": "2026-08-26",
+   "example": "convert_document",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "PartDesign_Body": {
+   "date": "2026-08-26",
+   "example": "new_body",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
   "Part_Box": {
-   "date": "2026-08-24",
+   "date": "2026-08-26",
    "example": "box 0,0,0 40 30 20",
    "freecad": "1.1.3",
    "result": "ok"
   },
   "Part_Cone": {
-   "date": "2026-08-24",
+   "date": "2026-08-26",
    "example": "cone 20 10 40",
    "freecad": "1.1.3",
    "result": "ok"
   },
   "Part_Cylinder": {
-   "date": "2026-08-24",
+   "date": "2026-08-26",
    "example": "cylinder 12 40",
    "freecad": "1.1.3",
    "result": "ok"
   },
+  "Part_EdgeSelection": {
+   "date": "2026-08-26",
+   "example": "edge_selection",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Part_FaceSelection": {
+   "date": "2026-08-26",
+   "example": "face_selection",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Part_RemoveSelectionGate": {
+   "date": "2026-08-26",
+   "example": "no_selection_filters",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
   "Part_Sphere": {
-   "date": "2026-08-24",
+   "date": "2026-08-26",
    "example": "sphere 15",
    "freecad": "1.1.3",
    "result": "ok"
   },
   "Part_Torus": {
-   "date": "2026-08-24",
+   "date": "2026-08-26",
    "example": "torus 30 8",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Part_VertexSelection": {
+   "date": "2026-08-26",
+   "example": "vertex_selection",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Robot_CreateTrajectory": {
+   "date": "2026-08-26",
+   "example": "trajectory",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Spreadsheet_CreateSheet": {
+   "date": "2026-08-26",
+   "example": "new_spreadsheet",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Start_Start": {
+   "date": "2026-08-26",
+   "example": "start_page",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ActivateNextWindow": {
+   "date": "2026-08-26",
+   "example": "next",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ActivatePrevWindow": {
+   "date": "2026-08-26",
+   "example": "previous",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_CascadeWindows": {
+   "date": "2026-08-26",
+   "example": "cascade",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DependencyGraph": {
+   "date": "2026-08-26",
+   "example": "dependency_graph",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DevHandbook": {
+   "date": "2026-08-26",
+   "example": "developers_handbook",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DockOverlay": {
+   "date": "2026-08-26",
+   "example": "overlay_docked_panel",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DockOverlayAll": {
+   "date": "2026-08-26",
+   "example": "toggle_overlay_for_all_panels",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DockOverlayMouseTransparent": {
+   "date": "2026-08-26",
+   "example": "bypass_mouse_events_in_overlay_panels",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DockOverlayToggleBottom": {
+   "date": "2026-08-26",
+   "example": "toggle_bottom",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DockOverlayToggleLeft": {
+   "date": "2026-08-26",
+   "example": "toggle_left",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DockOverlayToggleRight": {
+   "date": "2026-08-26",
+   "example": "toggle_right",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DockOverlayToggleTop": {
+   "date": "2026-08-26",
+   "example": "toggle_top",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DockOverlayToggleTransparent": {
+   "date": "2026-08-26",
+   "example": "toggle_transparent_mode",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_DockOverlayTransparentAll": {
+   "date": "2026-08-26",
+   "example": "toggle_transparent_panels",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_FreeCADDonation": {
+   "date": "2026-08-26",
+   "example": "donate_to_freecad",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_FreeCADForum": {
+   "date": "2026-08-26",
+   "example": "freecad_forum",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_FreeCADUserHub": {
+   "date": "2026-08-26",
+   "example": "user_documentation",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_FreeCADWebsite": {
+   "date": "2026-08-26",
+   "example": "freecad_website",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_Group": {
+   "date": "2026-08-26",
+   "example": "new_group",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_HideObjects": {
+   "date": "2026-08-26",
+   "example": "hide_all_objects",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_MDITest3": {
+   "date": "2026-08-26",
+   "example": "remove_mdi_3",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_MainFullscreen": {
+   "date": "2026-08-26",
+   "example": "fullscreen",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_New": {
+   "date": "2026-08-26",
+   "example": "new_document",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_OnlineHelp": {
+   "date": "2026-08-26",
+   "example": "help",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_OnlineHelpWebsite": {
+   "date": "2026-08-26",
+   "example": "help_website",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_OpenMacrosFolder": {
+   "date": "2026-08-26",
+   "example": "open_macro_folder",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_OrthographicCamera": {
+   "date": "2026-08-26",
+   "example": "orthographic_view",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_Part": {
+   "date": "2026-08-26",
+   "example": "new_part",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_PerspectiveCamera": {
+   "date": "2026-08-26",
+   "example": "perspective_view",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_PythonHelp": {
+   "date": "2026-08-26",
+   "example": "python_modules_documentation",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_Redo": {
+   "date": "2026-08-26",
+   "example": "redo",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ReloadStyleSheet": {
+   "date": "2026-08-26",
+   "example": "reload_stylesheet",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ReportBug": {
+   "date": "2026-08-26",
+   "example": "report_an_issue",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_SelBoundingBox": {
+   "date": "2026-08-26",
+   "example": "bounding_box",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_SelectAll": {
+   "date": "2026-08-26",
+   "example": "select_all",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_SelectVisibleObjects": {
+   "date": "2026-08-26",
+   "example": "select_visible_objects",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ShowObjects": {
+   "date": "2026-08-26",
+   "example": "show_all_objects",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_StoreWorkingView": {
+   "date": "2026-08-26",
+   "example": "store_working_view",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_Test2": {
+   "date": "2026-08-26",
+   "example": "test2",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_Test3": {
+   "date": "2026-08-26",
+   "example": "test3",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_Test4": {
+   "date": "2026-08-26",
+   "example": "test4",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_Test5": {
+   "date": "2026-08-26",
+   "example": "test5",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_Test6": {
+   "date": "2026-08-26",
+   "example": "test6",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TestCmdFuncs": {
+   "date": "2026-08-26",
+   "example": "test_functions",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TestConsoleOutput": {
+   "date": "2026-08-26",
+   "example": "test_console_output",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TestProgress4": {
+   "date": "2026-08-26",
+   "example": "mixed_nested_bar",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TestProgress5": {
+   "date": "2026-08-26",
+   "example": "from_thread",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TestReloadQM": {
+   "date": "2026-08-26",
+   "example": "reload_translation_files",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TextDocument": {
+   "date": "2026-08-26",
+   "example": "text_document",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TileWindows": {
+   "date": "2026-08-26",
+   "example": "tile",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ToggleObjects": {
+   "date": "2026-08-26",
+   "example": "toggle_all_objects",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ToggleSkipRecompute": {
+   "date": "2026-08-26",
+   "example": "skip_recomputes",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TreeCollapseDocument": {
+   "date": "2026-08-26",
+   "example": "collapse_expand",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TreeMultiDocument": {
+   "date": "2026-08-26",
+   "example": "multi_document",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TreePreSelection": {
+   "date": "2026-08-26",
+   "example": "4_preselection",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TreeRecordSelection": {
+   "date": "2026-08-26",
+   "example": "5_record_selection",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TreeSingleDocument": {
+   "date": "2026-08-26",
+   "example": "single_document",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TreeSyncPlacement": {
+   "date": "2026-08-26",
+   "example": "3_sync_placement",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TreeSyncSelection": {
+   "date": "2026-08-26",
+   "example": "2_sync_selection",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_TreeSyncView": {
+   "date": "2026-08-26",
+   "example": "1_sync_view",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_Undo": {
+   "date": "2026-08-26",
+   "example": "undo",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_UserInterface": {
+   "date": "2026-08-26",
+   "example": "dock_views",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewCreate": {
+   "date": "2026-08-26",
+   "example": "new_3d_view",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewDimetric": {
+   "date": "2026-08-26",
+   "example": "dimetric",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewDock": {
+   "date": "2026-08-26",
+   "example": "docked",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewDockUndockFullscreen": {
+   "date": "2026-08-26",
+   "example": "document_window",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewFitAll": {
+   "date": "2026-08-26",
+   "example": "fit_all",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewFront": {
+   "date": "2026-08-26",
+   "example": "1_front",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewFullscreen": {
+   "date": "2026-08-26",
+   "example": "std_fullscreen",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewHome": {
+   "date": "2026-08-26",
+   "example": "home",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewIsometric": {
+   "date": "2026-08-26",
+   "example": "isometric",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewIvIssueCamPos": {
+   "date": "2026-08-26",
+   "example": "issue_camera_position",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewIvStereoOff": {
+   "date": "2026-08-26",
+   "example": "stereo_off",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewLeft": {
+   "date": "2026-08-26",
+   "example": "6_left",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewRear": {
+   "date": "2026-08-26",
+   "example": "4_rear",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewRestoreCamera": {
+   "date": "2026-08-26",
+   "example": "restore_saved_camera",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewRight": {
+   "date": "2026-08-26",
+   "example": "3_right",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewRotateLeft": {
+   "date": "2026-08-26",
+   "example": "rotate_left",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewRotateRight": {
+   "date": "2026-08-26",
+   "example": "rotates_right",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewSaveCamera": {
+   "date": "2026-08-26",
+   "example": "save_current_camera",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewStatusBar": {
+   "date": "2026-08-26",
+   "example": "status_bar",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewTop": {
+   "date": "2026-08-26",
+   "example": "2_top",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewTrimetric": {
+   "date": "2026-08-26",
+   "example": "trimetric",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewUndock": {
+   "date": "2026-08-26",
+   "example": "undocked",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewZoomIn": {
+   "date": "2026-08-26",
+   "example": "zoom_in",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Std_ViewZoomOut": {
+   "date": "2026-08-26",
+   "example": "zoom_out",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "TechDraw_PageDefault": {
+   "date": "2026-08-26",
+   "example": "techdraw_new_page",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Test_InsertFeature": {
+   "date": "2026-08-26",
+   "example": "insert_a_testfeature",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Test_TestAll": {
+   "date": "2026-08-26",
+   "example": "test_all",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Test_TestBase": {
+   "date": "2026-08-26",
+   "example": "test_base",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Test_TestBaseText": {
+   "date": "2026-08-26",
+   "example": "test_test_base",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Test_TestCreateMenu": {
+   "date": "2026-08-26",
+   "example": "add_menu",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Test_TestDeleteMenu": {
+   "date": "2026-08-26",
+   "example": "remove_menu",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Test_TestDoc": {
+   "date": "2026-08-26",
+   "example": "test_document",
+   "freecad": "1.1.3",
+   "result": "ok"
+  },
+  "Test_TestDocText": {
+   "date": "2026-08-26",
+   "example": "test_test_document",
    "freecad": "1.1.3",
    "result": "ok"
   }
  },
- "date": "2026-08-24",
+ "date": "2026-08-26",
  "freecad": "1.1.3"
 }

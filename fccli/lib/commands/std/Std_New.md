@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "94b1b2325ebd"
 # authored from here down; the tool never rewrites these
 verb: null
+example: new_document
 aliases: []
 requires: []
 panel: null

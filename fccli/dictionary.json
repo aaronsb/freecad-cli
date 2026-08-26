@@ -6,6 +6,7 @@
   },
   "Arch_Axis": {
    "doc": "The Arch Axis tool allows you to place a series of axes in the current document. The distance and the angle between axes is customizable, as well as the numbering style. The axes serve mainly as references to snap objects onto, but can also be used together with Arch AxisSystems. They can also be referenced by other Arch objects to create parametric arrays, for example of beams or columns. Arch Grids can also be used in places of axes.\n\n## See also\n\n- Arch_AxisSystem\n- Arch_Grid",
+   "example": "axis",
    "file": "bim/Arch_Axis.md"
   },
   "Arch_AxisSystem": {
@@ -18,6 +19,7 @@
   },
   "Arch_Building": {
    "doc": "The Arch Building is a special type of FreeCAD group object particularly suited for representing a whole building unit. They are mostly used to organize your model, by containing floor objects.",
+   "example": "building",
    "file": "bim/Arch_Building.md"
   },
   "Arch_Check": {
@@ -58,6 +60,7 @@
   },
   "Arch_Grid": {
    "doc": "The Arch Grid tool allows you to place a grid-like object in the document. This object is meant to serve as a base to build Arch objects that need a regular but complex frame, such as windows, curtain walls, column grids, railings, etc. The Grid object is editable like a spreadsheet, where you can add or remove columns and rows, define their size, and merge cells.\n\nThe Grid is a 2D object, and can therefore be used anywhere a 2D shape such as a Draft or Sketch is needed, but it can also behave as a Arch AxisSystem, and be used to propagate the placement of other Arch objects.\n\n## See also\n\n- Arch_Axis\n- Arch_AxisSystem",
+   "example": "grid",
    "file": "bim/Arch_Grid.md"
   },
   "Arch_IfcSpreadsheet": {
@@ -66,6 +69,7 @@
   },
   "Arch_Level": {
    "doc": "Creates a building part object that represents a level.",
+   "example": "level",
    "file": "bim/Arch_Level.md"
   },
   "Arch_Material": {
@@ -106,10 +110,12 @@
   },
   "Arch_Panel_Sheet": {
    "doc": "This tool allows to build a 2D sheet, including any number of Arch Panel Cut objects, or any other 2D object such as those made by the Draft Workbench and Sketcher Workbench. The Panel Sheet is typically made to layout cuts to be made by a CNC machine. These sheets can then be exported to a DXF file.\n\n## See also\n\n- Arch_Panel\n- Arch_Panel_Cut\n- Arch_Nest",
+   "example": "panel_sheet",
    "file": "bim/Arch_Panel_Sheet.md"
   },
   "Arch_Pipe": {
    "doc": "The Arch Pipe tool allows to create pipes from scratch, or from selected objects. The selected objects must be Part-based (Draft, Sketch, etc..) and contain one and only one open Wire.",
+   "example": "arch_pipe",
    "file": "bim/Arch_Pipe.md"
   },
   "Arch_PipeConnector": {
@@ -154,10 +160,12 @@
   },
   "Arch_SelectNonSolidMeshes": {
    "doc": "The Arch SelectNonSolidMeshes tool identifies and selects the non-solid (non-manifold) meshes in a selected group of selected Mesh objects.\n\n## See also\n\n- Arch_SplitMesh\n- Arch_MeshToShape",
+   "example": "select_non_manifold_meshes",
    "file": "bim/Arch_SelectNonSolidMeshes.md"
   },
   "Arch_Site": {
    "doc": "The Arch Site is a special object that combines properties of a standard FreeCAD group object and Arch objects. It is particularly suited for representing a whole project site, or terrain. In IFC-based architectural work, it is mostly used to organize your model, by containing building objects. The site is also used to manage and display a physical terrain, and can compute volumes of earth to be added or removed.",
+   "example": "site",
    "file": "bim/Arch_Site.md"
   },
   "Arch_Space": {
@@ -170,6 +178,7 @@
   },
   "Arch_Stairs": {
    "doc": "The Arch Stairs tool allows you to build several types of stairs automatically. Straight stairs (with or without a central landing) can be created from scratch. More complex stairs require base objects.\n\nSee the Stairs entry in wikipedia for a definition of the different terms used to describe parts of stairs.",
+   "example": "stairs",
    "file": "bim/Arch_Stairs.md"
   },
   "Arch_StructuralSystem": {
@@ -218,6 +227,7 @@
   },
   "Assembly_CreateAssembly": {
    "doc": "The Assembly CreateAssembly tool creates a root assembly (Assembly object) in the current document, or a sub-assembly in a pre-existing active assembly. A document can only hold one root assembly.\n\nEach Assembly object is created with an Origin object and an empty Joints container by default.",
+   "example": "new_assembly",
    "file": "assembly/Assembly_CreateAssembly.md"
   },
   "Assembly_CreateBom": {
@@ -306,6 +316,7 @@
   },
   "Assembly_SolveAssembly": {
    "doc": "The Assembly SolveAssembly tool solves the currently active Assembly.",
+   "example": "solve_assembly",
    "file": "assembly/Assembly_SolveAssembly.md"
   },
   "Assembly_ToggleGrounded": {
@@ -314,6 +325,7 @@
   },
   "BIM_Background": {
    "doc": "Toggles the background of the 3D view between simple and gradient.",
+   "example": "toggle_background",
    "file": "bim/BIM_Background.md"
   },
   "BIM_Beam": {
@@ -386,10 +398,12 @@
   },
   "BIM_DrawingView": {
    "doc": "Creates a drawing container to contain elements of a 2D view.",
+   "example": "2d_drawing",
    "file": "bim/BIM_DrawingView.md"
   },
   "BIM_EmptyTrash": {
    "doc": "Deletes all objects from the trash bin that are not used by any other.",
+   "example": "empty_trash",
    "file": "bim/BIM_EmptyTrash.md"
   },
   "BIM_Examples": {
@@ -414,6 +428,7 @@
   },
   "BIM_Help": {
    "doc": "Opens the BIM help page on the FreeCAD documentation website.",
+   "example": "bim_help",
    "file": "bim/BIM_Help.md"
   },
   "BIM_IfcElements": {
@@ -486,6 +501,7 @@
   },
   "BIM_Nudge_Switch": {
    "doc": "Nudge Switch (Ctrl+/).",
+   "example": "nudge_switch",
    "file": "bim/BIM_Nudge_Switch.md"
   },
   "BIM_Nudge_Up": {
@@ -502,6 +518,7 @@
   },
   "BIM_Project": {
    "doc": "The BIM Project tool creates a native IFC project in the current document. In IFC, a project (IfcProject) is the root object of all the contents of the model. It is mandatory to have one in each IFC file.\n\nIt is not necessary to create a project to export a FreeCAD model to IFC, as a default one will be added each time you export an IFC file. However, when working with NativeIFC, an IFC file is attached to the model, and all the geometry and properties of that model and its components come from the attached IFC file. The project is where the IFC file is attached to the document.\n\nTypically, you create a BIM project to attach an IFC file. When creating the project, the attached IFC file is blank, and not saved. The next time you will save the FreeCAD file, you will also be asked to save the IFC file.\n\nIf you distribute the FreeCAD file, all attached IFC files must be distributed together, otherwise FreeCAD won't be able to extract the geometry. However, if the shape mode property of all objects contained in a project is set to Shape, then the FreeCAD file can be distributed without the accompanying IFC file, and will still open correctly on other computers. The IFC objects, however, won't be editable anymore.\n\nWhen inserting an IFC file, a project object is created, that contains all the contents of the file. Like all NativeIFC objects, the project can be expanded by double-clicking it in the tree.",
+   "example": "ifc_project",
    "file": "bim/BIM_Project.md"
   },
   "BIM_ProjectManager": {
@@ -526,14 +543,17 @@
   },
   "BIM_SetWPFront": {
    "doc": "The BIM SetWPFront tool places the working plane on the global XZ plane (front).\n\n## See also\n\n- BIM_SetWPTop\n- BIM_SetWPSide\n- Draft_SelectPlane",
+   "example": "working_plane_front",
    "file": "bim/BIM_SetWPFront.md"
   },
   "BIM_SetWPSide": {
    "doc": "The BIM SetWPSide tool places the working plane on the global YZ plane (side).\n\n## See also\n\n- BIM_SetWPTop\n- BIM_SetWPFront\n- Draft_SelectPlane",
+   "example": "working_plane_side",
    "file": "bim/BIM_SetWPSide.md"
   },
   "BIM_SetWPTop": {
    "doc": "The BIM SetWPTop tool places the working plane on the global XY plane (ground).\n\n## See also\n\n- BIM_SetWPFront\n- BIM_SetWPSide\n- Draft_SelectPlane",
+   "example": "working_plane_top",
    "file": "bim/BIM_SetWPTop.md"
   },
   "BIM_Setup": {
@@ -574,6 +594,7 @@
   },
   "BIM_TogglePanels": {
    "doc": "The BIM TogglePanels tool toggles the display of bottom panels (Report view and Python console) on or off.",
+   "example": "toggle_bottom_panels",
    "file": "bim/BIM_TogglePanels.md"
   },
   "BIM_Trash": {
@@ -594,10 +615,12 @@
   },
   "BIM_Views": {
    "doc": "The BIM views and levels manager is a dockable window that opens below the normal tree view, that contains all the Building Parts and Working Plane Proxies of your model.\n\nThe aim of this window is to allow to quickly access your levels and working plane configurations, without the need to navigate through the tree to find them.",
+   "example": "views_manager",
    "file": "bim/BIM_Views.md"
   },
   "BIM_WPView": {
    "doc": "The BIM WPView tool centers the view on the current working plane.",
+   "example": "working_plane_view",
    "file": "bim/BIM_WPView.md"
   },
   "BIM_Welcome": {
@@ -750,6 +773,7 @@
   },
   "CAM_PropertyBag": {
    "doc": "Creates an object which can be used to store reference properties.",
+   "example": "property_bag",
    "file": "cam/CAM_PropertyBag.md"
   },
   "CAM_Sanity": {
@@ -858,6 +882,7 @@
   },
   "Draft_Arc": {
    "doc": "The Draft Arc command creates a circular arc on the current working plane from a center, a radius, a start angle and an aperture angle. The radius and the angles can be defined by picking points.\n\nA Draft Arc is in fact a Draft Circle with a First Angle that is not the same as its Last Angle.\n\n## See also\n\n- Draft_Arc_3Points\n- Draft_Circle",
+   "example": "arc 0,0,0 15 0 90",
    "file": "draft/Draft_Arc.md"
   },
   "Draft_ArcTools": {
@@ -942,6 +967,7 @@
   },
   "Draft_Heal": {
    "doc": "The Draft Heal command heals problematic Draft objects found in very old files. It tries to recreate the old objects from scratch and transfer their properties to the new objects.\n\n## See also\n\n- Draft_Upgrade\n- Draft_Downgrade",
+   "example": "heal",
    "file": "draft/Draft_Heal.md"
   },
   "Draft_Join": {
@@ -954,6 +980,7 @@
   },
   "Draft_Layer": {
    "doc": "The Draft Layer command creates a Draft Layer. A layer is a special kind of group with a number of visual properties. These properties, and any changes to them, are propagated to the objects placed inside the layer. The layers themselves are put in another special group: the Draft LayerContainer.\n\n## See also\n\n- Draft_AutoGroup\n- Draft_LayerManager",
+   "example": "new_layer",
    "file": "draft/Draft_Layer.md"
   },
   "Draft_LayerManager": {
@@ -1052,6 +1079,7 @@
   },
   "Draft_ShowSnapBar": {
    "doc": "The Draft ShowSnapBar command shows the Draft Snap toolbar. Some users only want to see this toolbar when a command is active and have changed their preferences accordingly. For them this command is a way to show the toolbar to inspect, and optionally change, the snap options.\n\n## See also\n\n- Draft_Snap",
+   "example": "show_snap_toolbar",
    "file": "draft/Draft_ShowSnapBar.md"
   },
   "Draft_Slope": {
@@ -1060,34 +1088,42 @@
   },
   "Draft_Snap_Angle": {
    "doc": "The Draft Snap Angle option snaps to the special cardinal points on circular edges, at multiples of 30° and 45°. The edges can belong to Draft or BIM objects but also to objects created with other workbenches.\n\n## See also\n\n- Draft_Snap\n- Draft_Snap_Lock",
+   "example": "snap_angle",
    "file": "draft/Draft_Snap_Angle.md"
   },
   "Draft_Snap_Center": {
    "doc": "The Draft Snap Center option snaps to the center point of faces and circular edges, and to the Placement point of Draft WorkingPlaneProxies and Arch BuildingParts. The faces and edges can belong to Draft or BIM objects but also to objects created with other workbenches.\n\n## See also\n\n- Draft_Snap\n- Draft_Snap_Lock",
+   "example": "snap_center",
    "file": "draft/Draft_Snap_Center.md"
   },
   "Draft_Snap_Dimensions": {
    "doc": "The Draft Snap Dimensions option shows temporary X and Y dimensions. They display the X and Y distance between the cursor and the previous point in the working plane coordinate system. The dimensions are created on the working plane.\n\n## See also\n\n- Draft_Snap\n- Draft_Snap_Lock\n- Draft_SelectPlane",
+   "example": "snap_dimensions",
    "file": "draft/Draft_Snap_Dimensions.md"
   },
   "Draft_Snap_Endpoint": {
    "doc": "The Draft Snap Endpoint option snaps to the endpoints of edges. The edges can belong to Draft or BIM objects but also to objects created with other workbenches.\n\n## See also\n\n- Draft_Snap\n- Draft_Snap_Lock",
+   "example": "snap_endpoint",
    "file": "draft/Draft_Snap_Endpoint.md"
   },
   "Draft_Snap_Extension": {
    "doc": "The Draft Snap Extension option snaps to an imaginary line that extends beyond the endpoints of straight edges. The edges can belong to Draft or BIM objects but also to objects created with other workbenches.\n\nUp to 8 edges can be referenced by this snap option and Draft Snap Parallel, making it possible to snap to virtual intersections. Both snap options can also be combined with other snap options.\n\n## See also\n\n- Draft_Snap\n- Draft_Snap_Lock",
+   "example": "snap_extension",
    "file": "draft/Draft_Snap_Extension.md"
   },
   "Draft_Snap_Grid": {
    "doc": "The Draft Snap Grid option snaps to the intersections of grid lines.\n\n## See also\n\n- Draft_Snap\n- Draft_Snap_Lock\n- Draft_ToggleGrid\n- Draft_SelectPlane",
+   "example": "snap_grid",
    "file": "draft/Draft_Snap_Grid.md"
   },
   "Draft_Snap_Intersection": {
    "doc": "The Draft Snap Intersection option snaps to the intersection of two edges. The edges can belong to Draft or BIM objects but also to objects created with other workbenches.\n\nThis snap option will also find apparent intersections of (extended) straight edges if Draft Snap WorkingPlane is active as well.\n\n## See also\n\n- Draft_Snap\n- Draft_Snap_Lock",
+   "example": "snap_intersection",
    "file": "draft/Draft_Snap_Intersection.md"
   },
   "Draft_Snap_Lock": {
    "doc": "The Draft Snap Lock command enables or disables snapping globally.\n\n## See also\n\n- Draft_Snap",
+   "example": "snap_lock",
    "file": "draft/Draft_Snap_Lock.md"
   },
   "Draft_Snap_Midpoint": {
@@ -1137,6 +1173,7 @@
   },
   "Draft_ToggleConstructionMode": {
    "doc": "The Draft ToggleConstructionMode command switches Draft construction mode on or off. If construction mode is on new Draft objects are placed in a dedicated group and given a predefined color. This feature is intended for, often temporary, construction geometry used to provide new snap points for creating other objects. When the construction geometry is no longer needed the construction group can easily be hidden or deleted.\n\n## See also\n\n- Draft_AddConstruction\n- Draft_AutoGroup",
+   "example": "toggle_construction_mode",
    "file": "draft/Draft_ToggleConstructionMode.md"
   },
   "Draft_ToggleDisplayMode": {
@@ -1145,6 +1182,7 @@
   },
   "Draft_ToggleGrid": {
    "doc": "The Draft ToggleGrid command changes the visibility of the grid. Each 3D view has its own grid that can either always be visible, only be visible during commands, or invisible. The initial visibility of the grid in new views depends on the preferences.\n\n## See also\n\n- Draft_Snap_Grid\n- Draft_SelectPlane",
+   "example": "toggle_grid",
    "file": "draft/Draft_ToggleGrid.md"
   },
   "Draft_Trimex": {
@@ -1165,10 +1203,12 @@
   },
   "Draft_WorkingPlaneProxy": {
    "doc": "The Draft WorkingPlaneProxy command creates a working plane proxy to save the current Draft working plane. A working plane proxy can be used to quickly restore a working plane. The camera position and visibility of the objects in the 3D view are also saved in the working plane proxy and can, optionally, be restored as well.\n\n## See also\n\n- Draft_SelectPlane",
+   "example": "working_plane_proxy",
    "file": "draft/Draft_WorkingPlaneProxy.md"
   },
   "FEM_Analysis": {
    "doc": "The FEM Analysis could be seen as a container that holds all objects of a Finite Element Analysis. It is mandatory to have an analysis container that holds all the needed objects. At least one of the following objects (apart from the mesh) is necessary for a mechanical analysis:\n\n- solid material,\n- fixed boundary condition or displacement boundary condition or rigid body constraint.\n\n## See also\n\n- FEM_tutorial",
+   "example": "new_analysis",
    "file": "fem/FEM_Analysis.md"
   },
   "FEM_ClippingPlaneAdd": {
@@ -1177,6 +1217,7 @@
   },
   "FEM_ClippingPlaneRemoveAll": {
    "doc": "Removes all existing clipping planes.\n\n## See also\n\n- FEM_tutorial",
+   "example": "remove_all_clipping_planes",
    "file": "fem/FEM_ClippingPlaneRemoveAll.md"
   },
   "FEM_CompEmConstraints": {
@@ -1193,6 +1234,7 @@
   },
   "FEM_ConstantVacuumPermittivity": {
    "doc": "Overwrites vacuum permitivity in Elmer electrostatic and magnetodynamic analyses with a custom value.",
+   "example": "constant_vacuum_permittivity",
    "file": "fem/FEM_ConstantVacuumPermittivity.md"
   },
   "FEM_ConstraintBearing": {
@@ -1289,6 +1331,7 @@
   },
   "FEM_ConstraintSelfWeight": {
    "doc": "Defines a gravity acceleration acting on the whole model in the prescribed direction. The acceleration has a fixed value of 9.81 m/s^2.\n\n## See also\n\n- FEM_tutorial",
+   "example": "gravity_load",
    "file": "fem/FEM_ConstraintSelfWeight.md"
   },
   "FEM_ConstraintSpring": {
@@ -1437,6 +1480,7 @@
   },
   "FEM_PostApplyChanges": {
    "doc": "Toggles if changes to pipelines and filters are applied immediately or not.\n\nIf the feature is active, changes to filter functions and filters have an immediate effect. However, for large result meshes this can slow down the PC significantly.\n\nIf the feature is not active, a change of the size and position of functions first have an effect after recomputing the function object (see Std Refresh). For changes to filters, the change will first have an effect when pressing in the filter dialog the button Apply or by recomputing the filter object.\n\n## See also\n\n- Std_Refresh\n- FEM_PostCreateFunctions",
+   "example": "apply_changes_to_pipeline",
    "file": "fem/FEM_PostApplyChanges.md"
   },
   "FEM_PostBranchFilter": {
@@ -1513,14 +1557,17 @@
   },
   "FEM_ResultsPurge": {
    "doc": "FEM ResultsPurge deletes all result objects and all result meshes from the active analysis container in the Tree view. Deletes all output objects from all solvers (CalculiX results objects, pipelines, filters and text reports).\n\nIf you only want to delete a result object and keep the result mesh, create a copy of the result mesh, then select the Result object in the tree view and delete it by pressing Del. This way the created copy of the mesh will remain. (Using FEM ResultsPurge would also delete the copy.)\n\n## See also\n\n- FEM_tutorial",
+   "example": "purge_results",
    "file": "fem/FEM_ResultsPurge.md"
   },
   "FEM_SolverCalculiX": {
    "doc": "The Solver CalculiX (new framework) command creates a SolverCalculix object, which uses the same framework as Elmer and Z88 solvers (the code is not visible for the user). It is preferred to use the original framework Solver CalculiX Standard because it contains extra checks, e.g. showing the elements with nonpositive Jacobian which might cause solution difficulties.",
+   "example": "solver_calculix",
    "file": "fem/FEM_SolverCalculiX.md"
   },
   "FEM_SolverCalculiXCcxTools": {
    "doc": "Creates a standard FEM solver CalculiX with ccx tools.",
+   "example": "solver_calculix_standard",
    "file": "fem/FEM_SolverCalculiXCcxTools.md"
   },
   "FEM_SolverControl": {
@@ -1529,10 +1576,12 @@
   },
   "FEM_SolverElmer": {
    "doc": "Elmer is an open source multiphysical simulation software mainly developed by CSC - IT Center for Science (CSC). Elmer development was started 1995 in collaboration with Finnish Universities, research institutes and industry. After it's open source publication in 2005, the use and development of Elmer has become international.\n\nElmer includes physical models of fluid dynamics, structural mechanics, electromagnetics, heat transfer and acoustics, for example. These are described by partial differential equations which Elmer solves by the Finite Element Method (FEM).\n\nCreating the SolverElmer object in the Analysis container in FreeCAD, gives access to the Elmer Equations for simple or multiphysical analysis.\n\nSince FreeCAD already has an extensive integration of Calculix and Z88 as solvers for mechanical and thermo-mechanical analysis, Elmer will be preferred for computational fluid dynamics (CFD), heat, electrostatics and electrodynamics. It can also be used for mechanical FEA through the Elasticity equation or any combination of the aforementioned equations. This combination makes Elmer the preferred choice for multi-physics analyses.\n\n## See also\n\n- FEM_SolverElmer_SolverSettings\n- FEM_SolverCalculixCxxtools\n- FEM_SolverZ88\n- FEM_tutorial",
+   "example": "solver_elmer",
    "file": "fem/FEM_SolverElmer.md"
   },
   "FEM_SolverMystran": {
    "doc": "The SolverMystran command enables usage of the MYSTRAN solver. It may be used for:\n\n1. Setting analysis parameters.\n2. Selecting working directory.\n3. Running the MYSTRAN solver.\n\n## See also\n\n- FEM_tutorial",
+   "example": "solver_mystran",
    "file": "fem/FEM_SolverMystran.md"
   },
   "FEM_SolverRun": {
@@ -1541,10 +1590,12 @@
   },
   "FEM_SolverZ88": {
    "doc": "The SolverZ88 command enables usage of the Z88 solver. It may be used for:\n\n1. Setting analysis parameters\n2. Selecting working directory\n3. Running the Z88 solver\n\n## See also\n\n- FEM_tutorial",
+   "example": "solver_z88",
    "file": "fem/FEM_SolverZ88.md"
   },
   "IFC_ConvertDocument": {
    "doc": "Converts the active document to an IFC document.",
+   "example": "convert_document",
    "file": "bim/IFC_ConvertDocument.md"
   },
   "IFC_Diff": {
@@ -1838,6 +1889,7 @@
   },
   "PartDesign_Body": {
    "doc": "A PartDesign Body is the base element to create solids shapes with the PartDesign Workbench. It can contain sketches, datum objects, and PartDesign Features that help in building a single contiguous solid.\n\nThe Body provides an Origin object which includes local X, Y, and Z axes, and standard planes. These elements can be used as references to attach sketches and primitive objects.\n\nDo not confuse the PartDesign Body with the Std Part. The first one is a specific object used in the PartDesign Workbench, intended to model a single contiguous solid by means of PartDesign Features. The Std Part is a grouping object intended to create assemblies; it is not used for modelling, just to arrange different objects in space. Multiple bodies, and other Std Parts, can be placed inside a single Std Part to create a complex assembly.\n\n## See also\n\n- Std_Part\n- Feature_editing",
+   "example": "new_body",
    "file": "partdesign/PartDesign_Body.md"
   },
   "PartDesign_Boolean": {
@@ -2147,6 +2199,7 @@
   },
   "Part_EdgeSelection": {
    "doc": "Only allows the selection of edges.",
+   "example": "edge_selection",
    "file": "part/Part_EdgeSelection.md"
   },
   "Part_EditAttachment": {
@@ -2171,6 +2224,7 @@
   },
   "Part_FaceSelection": {
    "doc": "Only allows the selection of faces.",
+   "example": "face_selection",
    "file": "part/Part_FaceSelection.md"
   },
   "Part_Fillet": {
@@ -2248,6 +2302,7 @@
   },
   "Part_RemoveSelectionGate": {
    "doc": "Clears all selection filters.",
+   "example": "no_selection_filters",
    "file": "part/Part_RemoveSelectionGate.md"
   },
   "Part_ReverseShape": {
@@ -2368,6 +2423,7 @@
   },
   "Part_VertexSelection": {
    "doc": "Only allows the selection of vertices.",
+   "example": "vertex_selection",
    "file": "part/Part_VertexSelection.md"
   },
   "Part_XOR": {
@@ -2456,6 +2512,7 @@
   },
   "Robot_CreateTrajectory": {
    "doc": "Inserts a new empty trajectory-object into the scene.",
+   "example": "trajectory",
    "file": "robot/Robot_CreateTrajectory.md"
   },
   "Robot_Edge2Trac": {
@@ -3072,6 +3129,7 @@
   },
   "Spreadsheet_CreateSheet": {
    "doc": "The Spreadsheet CreateSheet tool adds a new spreadsheet to the active document.",
+   "example": "new_spreadsheet",
    "file": "spreadsheet/Spreadsheet_CreateSheet.md"
   },
   "Spreadsheet_Export": {
@@ -3108,6 +3166,7 @@
   },
   "Start_Start": {
    "doc": "Displays the start page.",
+   "example": "start_page",
    "file": "std/Start_Start.md"
   },
   "Std_About": {
@@ -3120,10 +3179,12 @@
   },
   "Std_ActivateNextWindow": {
    "doc": "The Std ActivateNextWindow command activates the next window in the Main view area. The next window is determined by the tabs order in Main view area.\n\n## See also\n\n- Std_ActivatePrevWindow\n- Std_Windows",
+   "example": "next",
    "file": "std/Std_ActivateNextWindow.md"
   },
   "Std_ActivatePrevWindow": {
    "doc": "The Std ActivatePrevWindow command activates the previous window in the Main view area. The previous window is determined by the tabs order in Main view area.\n\n## See also\n\n- Std_ActivateNextWindow\n- Std_Windows",
+   "example": "previous",
    "file": "std/Std_ActivatePrevWindow.md"
   },
   "Std_AddonMgr": {
@@ -3152,6 +3213,7 @@
   },
   "Std_CascadeWindows": {
    "doc": "The Std CascadeWindows command rearranges the windows in the Main view area so that they are all visible but do overlap. The result is determined by the order in which the windows were last activated.\n\n## See also\n\n- Std_TileWindows",
+   "example": "cascade",
    "file": "std/Std_CascadeWindows.md"
   },
   "Std_ClarifySelection": {
@@ -3188,10 +3250,12 @@
   },
   "Std_DependencyGraph": {
    "doc": "The Std DependencyGraph command displays the dependencies between objects in the active document in a graph. As opposed to the Tree view, objects are listed in reverse chronological order, with the first created object at the bottom.\n\nIt can be useful in analyzing a FreeCAD document and locating forks in a tree. The dependency graph layout will depend on which workbench was used to create the objects in the document. For example a model made exclusively in the PartDesign workbench can display a linear dependency graph with a single vertical branch. A model made with Part operations will have many branches, but for a single part they will join up at the top after Boolean operations. If they don't, it means that they are separate objects.\n\nThe dependency graph is purely a visualization tool, therefore it cannot be edited. It automatically updates if changes are made to the model.\n\n## See also\n\n- Std_ExportDependencyGraph",
+   "example": "dependency_graph",
    "file": "std/Std_DependencyGraph.md"
   },
   "Std_DevHandbook": {
    "doc": "Handbook about FreeCAD development.",
+   "example": "developers_handbook",
    "file": "std/Std_DevHandbook.md"
   },
   "Std_DlgCustomize": {
@@ -3220,14 +3284,17 @@
   },
   "Std_DockOverlay": {
    "doc": "Sets the docked panel in overlay mode.",
+   "example": "overlay_docked_panel",
    "file": "std/Std_DockOverlay.md"
   },
   "Std_DockOverlayAll": {
    "doc": "Toggled overlay mode for all docked panels.",
+   "example": "toggle_overlay_for_all_panels",
    "file": "std/Std_DockOverlayAll.md"
   },
   "Std_DockOverlayMouseTransparent": {
    "doc": "Bypasses all mouse events in docked overlay panels.",
+   "example": "bypass_mouse_events_in_overlay_panels",
    "file": "std/Std_DockOverlayMouseTransparent.md"
   },
   "Std_DockOverlayToggle": {
@@ -3236,26 +3303,32 @@
   },
   "Std_DockOverlayToggleBottom": {
    "doc": "Toggles the visibility of the bottom overlay panel.",
+   "example": "toggle_bottom",
    "file": "std/Std_DockOverlayToggleBottom.md"
   },
   "Std_DockOverlayToggleLeft": {
    "doc": "Toggles the visibility of the left overlay panel.",
+   "example": "toggle_left",
    "file": "std/Std_DockOverlayToggleLeft.md"
   },
   "Std_DockOverlayToggleRight": {
    "doc": "Toggles the visibility of the right overlay panel.",
+   "example": "toggle_right",
    "file": "std/Std_DockOverlayToggleRight.md"
   },
   "Std_DockOverlayToggleTop": {
    "doc": "Toggles the visibility of the top overlay panel.",
+   "example": "toggle_top",
    "file": "std/Std_DockOverlayToggleTop.md"
   },
   "Std_DockOverlayToggleTransparent": {
    "doc": "Toggles transparent mode for the docked panel under cursor. This makes the docked panel stay transparent at all times.",
+   "example": "toggle_transparent_mode",
    "file": "std/Std_DockOverlayToggleTransparent.md"
   },
   "Std_DockOverlayTransparentAll": {
    "doc": "Toggles transparent mode for all docked overlay panels. This makes the docked panels stay transparent at all times.",
+   "example": "toggle_transparent_panels",
    "file": "std/Std_DockOverlayTransparentAll.md"
   },
   "Std_DockViewMenu": {
@@ -3288,18 +3361,22 @@
   },
   "Std_FreeCADDonation": {
    "doc": "The Std FreeCADDonation command opens the FreeCAD Donate wiki page in the system's default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .",
+   "example": "donate_to_freecad",
    "file": "std/Std_FreeCADDonation.md"
   },
   "Std_FreeCADForum": {
    "doc": "The Std FreeCADForum command opens the FreeCAD forum website in the system's default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .\n\n## See also\n\n- Std_FreeCADWebsite\n- Std_FreeCADUserHub\n- Std_FreeCADPowerUserHub\n- Std_FreeCADFAQ",
+   "example": "freecad_forum",
    "file": "std/Std_FreeCADForum.md"
   },
   "Std_FreeCADUserHub": {
    "doc": "The Std FreeCADUserHub command opens the FreeCAD Users documentation page in the system's default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .\n\n## See also\n\n- Std_FreeCADWebsite\n- Std_FreeCADPowerUserHub\n- Std_FreeCADForum\n- Std_FreeCADFAQ",
+   "example": "user_documentation",
    "file": "std/Std_FreeCADUserHub.md"
   },
   "Std_FreeCADWebsite": {
    "doc": "The Std FreeCADWebsite command opens the main website of the FreeCAD project in the system's default Internet browser. The command requires a working Internet connection.\n\nCurrently the command points to .\n\n## See also\n\n- Std_FreeCADUserHub\n- Std_FreeCADPowerUserHub\n- Std_FreeCADForum\n- Std_FreeCADFAQ",
+   "example": "freecad_website",
    "file": "std/Std_FreeCADWebsite.md"
   },
   "Std_FreezeViews": {
@@ -3308,10 +3385,12 @@
   },
   "Std_Group": {
    "doc": "Std Group (internally called App DocumentObjectGroup) is a general purpose container that allows you to group different types of objects in the Tree view, regardless of their data type. It is used as a simple folder to categorize and organize the objects in your model, in order to keep a logical structure. Std Groups may be nested inside other Std Groups.\n\nThe Std Group tool is not defined by a particular workbench, but by the base system, thus it is found in the structure toolbar that is available in all workbenches.\n\nTo group 3D objects as a single unit, with the intention of creating assemblies, use Std Part instead.\n\n## See also\n\n- Std_Part\n- Draft_SelectGroup\n- Draft_AddToGroup",
+   "example": "new_group",
    "file": "std/Std_Group.md"
   },
   "Std_HideObjects": {
    "doc": "The Std HideObjects command hides all objects belonging to the active document in 3D views.\n\n## See also\n\n- Std_ToggleVisibility\n- Std_ShowSelection\n- Std_HideSelection\n- Std_ToggleObjects\n- Std_ShowObjects",
+   "example": "hide_all_objects",
    "file": "std/Std_HideObjects.md"
   },
   "Std_HideSelection": {
@@ -3380,6 +3459,7 @@
   },
   "Std_MDITest3": {
    "doc": "Unset parent and remove from main window.",
+   "example": "remove_mdi_3",
    "file": "std/Std_MDITest3.md"
   },
   "Std_MacroAttachDebugger": {
@@ -3404,6 +3484,7 @@
   },
   "Std_MainFullscreen": {
    "doc": "The Std MainFullscreen command toggles FreeCAD's main window fullscreen mode.\n\n## See also\n\n- Std_ViewFullscreen",
+   "example": "fullscreen",
    "file": "std/Std_MainFullscreen.md"
   },
   "Std_Measure": {
@@ -3416,14 +3497,17 @@
   },
   "Std_New": {
    "doc": "The Std New command creates a new empty document and makes it the active document.\n\n## See also\n\n- Std_Open\n- Std_Import",
+   "example": "new_document",
    "file": "std/Std_New.md"
   },
   "Std_OnlineHelp": {
    "doc": "The Std OnlineHelp command opens the help documentation. To open the documentation for a specific command, use the Std WhatsThis command.\n\nSince FreeCAD version 0.20 this command and the Help system are managed by a separate Help Module. For versions 0.20 and 0.21 this module is an addon that must be installed separately. In later versions the Help Module is integrated in FreeCAD.\n\n## See also\n\n- Std_WhatsThis",
+   "example": "help",
    "file": "std/Std_OnlineHelp.md"
   },
   "Std_OnlineHelpWebsite": {
    "doc": "Opens the help documentation.",
+   "example": "help_website",
    "file": "std/Std_OnlineHelpWebsite.md"
   },
   "Std_Open": {
@@ -3432,14 +3516,17 @@
   },
   "Std_OpenMacrosFolder": {
    "doc": "Opens the macros folder in the system file manager.",
+   "example": "open_macro_folder",
    "file": "std/Std_OpenMacrosFolder.md"
   },
   "Std_OrthographicCamera": {
    "doc": "The Std OrthographicCamera command switches the camera in the active 3D view to orthographic view mode. In this mode, objects that are further from the camera do not appear smaller than those that are closer.\n\n## See also\n\n- Std_PerspectiveCamera",
+   "example": "orthographic_view",
    "file": "std/Std_OrthographicCamera.md"
   },
   "Std_Part": {
    "doc": "[Std Part\n\n(internally called App Part) is a general purpose container that keeps together a group of objects so that they can be moved together as a unit in the 3D view.\n\nThe Std Part element was developed to be the basic building block to create mechanical assemblies. In particular, it is meant to arrange objects that have a Part TopoShape, like Part Primitives, PartDesign Bodies, and other Part Features. The Std Part provides an Origin object with local X, Y, and Z axes, and standard planes, that can be used as reference to position the contained objects. In addition, Std Parts may be nested inside other Std Parts to create a big assembly from smaller sub-assemblies.\n\nAlthough it is primarily intended for solid bodies, the Std Part can be used to manage any object that has a Placement property, so it can also contain Mesh Features, sketches, and other objects derived from the App GeoFeature class.\n\nDo not confuse the [PartDesign Body with the [Std Part. The first one is a specific object used in the PartDesign Workbench, intended to model a single contiguous solid by means of PartDesign Features. On the other hand, the Std Part is not used for modelling, just to arrange different objects in space, with the intention to create assemblies.\n\nThe [Std Part tool is not defined by a particular workbench, but by the base system, thus it is found in the structure toolbar that is available in all workbenches. To group objects arbitrarily without considering their position, use [Std Group; this object does not affect the placements of the elements that it contains, it is essentially just a folder that is used to keep the Tree view organized.\n\n## See also\n\n- Std_Group\n- PartDesign_Body",
+   "example": "new_part",
    "file": "std/Std_Part.md"
   },
   "Std_Paste": {
@@ -3448,6 +3535,7 @@
   },
   "Std_PerspectiveCamera": {
    "doc": "The Std PerspectiveCamera command switches the camera in the active 3D view to perspective view mode. In this mode, objects that are further from the camera appear smaller than those that are closer.\n\n## See also\n\n- Std_OrthographicCamera",
+   "example": "perspective_view",
    "file": "std/Std_PerspectiveCamera.md"
   },
   "Std_Placement": {
@@ -3480,6 +3568,7 @@
   },
   "Std_PythonHelp": {
    "doc": "The Std PythonHelp command starts a web server that communicates with the system's default Internet browser over a local socket. The web server displays information about the available Python modules, classes and functions of FreeCAD. The required pages are generated automatically.\n\nThe web server is based on Python's pydoc module, and thus extracts the docstrings of Python files (*.py), and textual documentation defined in the Python wrappers (*.xml) which expose the underlying C++ code.\n\n## See also\n\n- Std_FreeCADPowerUserHub",
+   "example": "python_modules_documentation",
    "file": "std/Std_PythonHelp.md"
   },
   "Std_Quit": {
@@ -3508,6 +3597,7 @@
   },
   "Std_Redo": {
    "doc": "The Std Redo command reverses the action of the Std Undo command.\n\n## See also\n\n- Std_Undo",
+   "example": "redo",
    "file": "std/Std_Redo.md"
   },
   "Std_Refresh": {
@@ -3516,10 +3606,12 @@
   },
   "Std_ReloadStyleSheet": {
    "doc": "Reloads the current stylesheet.",
+   "example": "reload_stylesheet",
    "file": "std/Std_ReloadStyleSheet.md"
   },
   "Std_ReportBug": {
    "doc": "The Std ReportBug command opens the FreeCAD GitHub issues page in the system's default Internet browser. This page should be used to report bug and submit feature requests. The command requires a working Internet connection.\n\nCurrently the command points to .",
+   "example": "report_an_issue",
    "file": "std/Std_ReportBug.md"
   },
   "Std_RestartInSafeMode": {
@@ -3556,6 +3648,7 @@
   },
   "Std_SelBoundingBox": {
    "doc": "The Std SelBoundingBox command toggles the global bounding box highlighting mode. If this mode is switched on, selected objects are marked in a 3D view with a highlighted bounding box even if their Selection Style is set to 'Shape'.\n\n## See also\n\n- Std_DrawStyle",
+   "example": "bounding_box",
    "file": "std/Std_SelBoundingBox.md"
   },
   "Std_SelForward": {
@@ -3564,10 +3657,12 @@
   },
   "Std_SelectAll": {
    "doc": "The Std SelectAll command selects all objects in the Tree view.\n\n## See also\n\n- Std_BoxSelection\n- Std_BoxElementSelection",
+   "example": "select_all",
    "file": "std/Std_SelectAll.md"
   },
   "Std_SelectVisibleObjects": {
    "doc": "The Std SelectVisibleObjects command selects all visible objects. Note that for each PartDesign body typically two objects will be selected: the body itself and its Tip object.",
+   "example": "select_visible_objects",
    "file": "std/Std_SelectVisibleObjects.md"
   },
   "Std_SendToPythonConsole": {
@@ -3584,6 +3679,7 @@
   },
   "Std_ShowObjects": {
    "doc": "The Std ShowObjects command shows all objects belonging to the active document in 3D views. Be careful when you use this command as it will also show sub-elements of PartDesign bodies and objects used for Part Booleans. In most cases these should stay invisible.\n\n## See also\n\n- Std_ToggleVisibility\n- Std_ShowSelection\n- Std_HideSelection\n- Std_ToggleObjects\n- Std_HideObjects",
+   "example": "show_all_objects",
    "file": "std/Std_ShowObjects.md"
   },
   "Std_ShowSelection": {
@@ -3592,6 +3688,7 @@
   },
   "Std_StoreWorkingView": {
    "doc": "The Std StoreWorkingView command stores the camera settings of the active 3D view in its temporary working view. This view can be recalled with the Std RecallWorkingView command.\n\nEach 3D view has its own working view. Storing a new working view will overwrite the existing working view of the active 3D view. When a 3D view is closed its working view is lost.\n\n## See also\n\n- Std_RecallWorkingView\n- Std_FreezeViews",
+   "example": "store_working_view",
    "file": "std/Std_StoreWorkingView.md"
   },
   "Std_Test1": {
@@ -3600,30 +3697,37 @@
   },
   "Std_Test2": {
    "doc": "Test function 2.",
+   "example": "test2",
    "file": "std/Std_Test2.md"
   },
   "Std_Test3": {
    "doc": "Test function 3.",
+   "example": "test3",
    "file": "std/Std_Test3.md"
   },
   "Std_Test4": {
    "doc": "Test function 4.",
+   "example": "test4",
    "file": "std/Std_Test4.md"
   },
   "Std_Test5": {
    "doc": "Test function 5.",
+   "example": "test5",
    "file": "std/Std_Test5.md"
   },
   "Std_Test6": {
    "doc": "Test function 6.",
+   "example": "test6",
    "file": "std/Std_Test6.md"
   },
   "Std_TestCmdFuncs": {
    "doc": "Test functions.",
+   "example": "test_functions",
    "file": "std/Std_TestCmdFuncs.md"
   },
   "Std_TestConsoleOutput": {
    "doc": "Run test cases to verify console messages.",
+   "example": "test_console_output",
    "file": "std/Std_TestConsoleOutput.md"
   },
   "Std_TestProgress1": {
@@ -3640,10 +3744,12 @@
   },
   "Std_TestProgress4": {
    "doc": "Test a mixed up nested progress bar.",
+   "example": "mixed_nested_bar",
    "file": "std/Std_TestProgress4.md"
   },
   "Std_TestProgress5": {
    "doc": "Test a progress bar from a thread.",
+   "example": "from_thread",
    "file": "std/Std_TestProgress5.md"
   },
   "Std_TestQM": {
@@ -3652,10 +3758,12 @@
   },
   "Std_TestReloadQM": {
    "doc": "Reloads the translation files.",
+   "example": "reload_translation_files",
    "file": "std/Std_TestReloadQM.md"
   },
   "Std_TextDocument": {
    "doc": "The Std TextDocument command creates an object capable of holding arbitrary text. This element can be used to write general information or documentation about the model.",
+   "example": "text_document",
    "file": "std/Std_TextDocument.md"
   },
   "Std_TextureMapping": {
@@ -3664,6 +3772,7 @@
   },
   "Std_TileWindows": {
    "doc": "The Std TileWindows command rearranges the windows in the Main view area so that they are all visible and do not overlap. The result is determined by the order in which the windows were last activated.\n\n## See also\n\n- Std_CascadeWindows",
+   "example": "tile",
    "file": "std/Std_TileWindows.md"
   },
   "Std_ToggleBreakpoint": {
@@ -3684,6 +3793,7 @@
   },
   "Std_ToggleObjects": {
    "doc": "The Std ToggleObjects command toggles the visibility of all objects belonging to the active document in 3D views. Be careful when you use this command as it will also toggle the visibility of sub-elements of PartDesign bodies and objects used for Part Booleans. In most cases these should stay invisible.\n\n## See also\n\n- Std_ToggleVisibility\n- Std_ShowSelection\n- Std_HideSelection\n- Std_ShowObjects\n- Std_HideObjects",
+   "example": "toggle_all_objects",
    "file": "std/Std_ToggleObjects.md"
   },
   "Std_ToggleSelectability": {
@@ -3692,6 +3802,7 @@
   },
   "Std_ToggleSkipRecompute": {
    "doc": "Enables or disables the recomputations of the document.",
+   "example": "skip_recomputes",
    "file": "std/Std_ToggleSkipRecompute.md"
   },
   "Std_ToggleToolBarLock": {
@@ -3724,6 +3835,7 @@
   },
   "Std_TreeCollapseDocument": {
    "doc": "The Std TreeCollapseDocument command switches the Tree view DocumentMode to CollapseDocument. In this mode activating a document's 3D view will automatically expand that document in the Tree view and collapse all other documents. The other modes are SingleDocument and MultiDocument.\n\n## See also\n\n- Std_TreeSingleDocument\n- Std_TreeMultiDocument",
+   "example": "collapse_expand",
    "file": "std/Std_TreeCollapseDocument.md"
   },
   "Std_TreeDrag": {
@@ -3736,14 +3848,17 @@
   },
   "Std_TreeMultiDocument": {
    "doc": "The Std TreeMultiDocument command switches the Tree view DocumentMode to MultiDocument. In this mode all documents are visible in the Tree view and multiple documents can be expanded. The other modes are SingleDocument and CollapseDocument.\n\n## See also\n\n- Std_TreeSingleDocument\n- Std_TreeCollapseDocument",
+   "example": "multi_document",
    "file": "std/Std_TreeMultiDocument.md"
   },
   "Std_TreePreSelection": {
    "doc": "The Std TreePreSelection command toggles the Tree view PreSelection mode. If this mode is on, an object that the mouse is over in the Tree view will be pre-selectected (temporarily highlighted) in all 3D views belonging to that object's document.",
+   "example": "4_preselection",
    "file": "std/Std_TreePreSelection.md"
   },
   "Std_TreeRecordSelection": {
    "doc": "The Std TreeRecordSelection command toggles the Tree view RecordSelection mode. If this mode is on, each Tree view selection is stored for future use. With the and buttons you can go backwards and forwards through these selections and restore them.",
+   "example": "5_record_selection",
    "file": "std/Std_TreeRecordSelection.md"
   },
   "Std_TreeSelectAllInstances": {
@@ -3756,18 +3871,22 @@
   },
   "Std_TreeSingleDocument": {
    "doc": "The Std TreeSingleDocument command switches the Tree view DocumentMode to SingleDocument. In this mode only a single document is visible in the Tree view. The other modes are MultiDocument and CollapseDocument.\n\nIn SingleDocument mode you can switch to a different document by activating a 3D view belonging to that document. You can do this in the Main view area or via the Windows menu.\n\n## See also\n\n- Std_TreeMultiDocument\n- Std_TreeCollapseDocument",
+   "example": "single_document",
    "file": "std/Std_TreeSingleDocument.md"
   },
   "Std_TreeSyncPlacement": {
    "doc": "The Std TreeSyncPlacement command toggles the Tree view SyncPlacement mode. If this mode is on, the Placement of objects is automatically adjusted when they are dragged and dropped from one container into another container with a different coordinate system, preserving their placement relative to the global coordinate system.",
+   "example": "3_sync_placement",
    "file": "std/Std_TreeSyncPlacement.md"
   },
   "Std_TreeSyncSelection": {
    "doc": "The Std TreeSyncSelection command toggles the Tree view SyncSelection mode. If this mode is on, selecting an object in a 3D view will automatically expand the Tree view to show that object.",
+   "example": "2_sync_selection",
    "file": "std/Std_TreeSyncSelection.md"
   },
   "Std_TreeSyncView": {
    "doc": "The Std TreeSyncView command toggles the Tree view SyncView mode. If this mode is on, selecting an object from a different document in the Tree view automatically activates that document's last used docked 3D view.",
+   "example": "1_sync_view",
    "file": "std/Std_TreeSyncView.md"
   },
   "Std_TreeViewActions": {
@@ -3776,6 +3895,7 @@
   },
   "Std_Undo": {
    "doc": "The Std Undo command undoes the last action.\n\n## See also\n\n- Std_Redo",
+   "example": "undo",
    "file": "std/Std_Undo.md"
   },
   "Std_UnitsCalculator": {
@@ -3788,6 +3908,7 @@
   },
   "Std_UserInterface": {
    "doc": "Docks all top-level views.",
+   "example": "dock_views",
    "file": "std/Std_UserInterface.md"
   },
   "Std_VarSet": {
@@ -3806,18 +3927,22 @@
   },
   "Std_ViewCreate": {
    "doc": "The Std ViewCreate command creates a new 3D view for the active document. Additional 3D views can be useful if you want to inspect the model from multiple directions or at different zoom levels.\n\n## See also\n\n- Std_ViewDockUndockFullscreen\n- Std_ViewFullscreen",
+   "example": "new_3d_view",
    "file": "std/Std_ViewCreate.md"
   },
   "Std_ViewDimetric": {
    "doc": "The Std ViewDimetric command realigns the camera in the active 3D view to obtain a dimetric view. For a truly dimetric view the 3D view must be in orthographic mode, but the command also works if the view is in perspective mode.\n\n## See also\n\n- Std_ViewIsometric\n- Std_ViewTrimetric",
+   "example": "dimetric",
    "file": "std/Std_ViewDimetric.md"
   },
   "Std_ViewDock": {
    "doc": "Displays the active view either in fullscreen, undocked, or docked mode.",
+   "example": "docked",
    "file": "std/Std_ViewDock.md"
   },
   "Std_ViewDockUndockFullscreen": {
    "doc": "3D views can be undocked from the main FreeCAD interface and moved to a different display for example.\n\n## See also\n\n- Std_ViewFullscreen\n- Std_MainFullscreen",
+   "example": "document_window",
    "file": "std/Std_ViewDockUndockFullscreen.md"
   },
   "Std_ViewExample1": {
@@ -3838,6 +3963,7 @@
    ],
    "choice": "all",
    "doc": "The Std ViewFitAll command zooms and pans the camera so that all visible objects fit inside the active 3D view.\n\n## See also\n\n- Std_ViewFitSelection",
+   "example": "fit_all",
    "family": "zoom",
    "file": "std/Std_ViewFitAll.md"
   },
@@ -3849,10 +3975,12 @@
   },
   "Std_ViewFront": {
    "doc": "The Std ViewFront command points the camera in the active 3D view in the direction of the positive Y axis.\n\n## See also\n\n- Std_ViewTop\n- Std_ViewRight",
+   "example": "1_front",
    "file": "std/Std_ViewFront.md"
   },
   "Std_ViewFullscreen": {
    "doc": "The Std ViewFullscreen command switches 3D views to and from fullscreen mode. 3D views are automatically undocked for fullscreen mode.\n\n## See also\n\n- Std_ViewDockUndockFullscreen\n- Std_MainFullscreen",
+   "example": "std_fullscreen",
    "file": "std/Std_ViewFullscreen.md"
   },
   "Std_ViewGroup": {
@@ -3861,6 +3989,7 @@
   },
   "Std_ViewHome": {
    "doc": "The Std ViewHome command changes the camera in the active 3D view to the default camera orientation. And zooms and pans the camera so that all visible objects fit inside the view.\n\n## See also\n\n- Std_ViewFitAll",
+   "example": "home",
    "file": "std/Std_ViewHome.md"
   },
   "Std_ViewIsometric": {
@@ -3870,11 +3999,13 @@
    ],
    "choice": "isometric",
    "doc": "The Std ViewIsometric command realigns the camera in the active 3D view to obtain an isometric view. For a truly isometric view the 3D view must be in orthographic mode, but the command also works if the view is in perspective mode.\n\n## See also\n\n- Std_ViewDimetric\n- Std_ViewTrimetric",
+   "example": "isometric",
    "family": "view",
    "file": "std/Std_ViewIsometric.md"
   },
   "Std_ViewIvIssueCamPos": {
    "doc": "The Std ViewIvIssueCamPos command prints the camera settings of the active 3D view in the Report view and the Python console.\n\n```python OrthographicCamera { viewportMapping ADJUST_CAMERA position 57.73505 -57.73502 57.735027 orientation 0.74290609 0.30772209 0.59447283 1.2171158 nearDistance 81.588844 farDistance 109.60551 aspectRatio 1 focalDistance 100 height 100 } ``` *Example output: camera settings after changing to isometric view in a new document*\n\n## See also\n\n- Std_FreezeViews",
+   "example": "issue_camera_position",
    "file": "std/Std_ViewIvIssueCamPos.md"
   },
   "Std_ViewIvStereoInterleavedColumns": {
@@ -3887,6 +4018,7 @@
   },
   "Std_ViewIvStereoOff": {
    "doc": "The Std ViewIvStereoOff command switches off stereo mode in the active 3D view.\n\n## See also\n\n- Std_ViewIvStereoRedGreen\n- Std_ViewIvStereoQuadBuff\n- Std_ViewIvStereoInterleavedRows\n- Std_ViewIvStereoInterleavedColumns",
+   "example": "stereo_off",
    "file": "std/Std_ViewIvStereoOff.md"
   },
   "Std_ViewIvStereoQuadBuff": {
@@ -3899,6 +4031,7 @@
   },
   "Std_ViewLeft": {
    "doc": "The Std ViewLeft command points the camera in the active 3D view in the direction of the positive X axis.\n\n## See also\n\n- Std_ViewRear\n- Std_ViewBottom",
+   "example": "6_left",
    "file": "std/Std_ViewLeft.md"
   },
   "Std_ViewLoadImage": {
@@ -3911,27 +4044,33 @@
    ],
    "choice": "back",
    "doc": "The Std ViewRear command points the camera in the active 3D view in the direction of the negative Y axis.\n\n## See also\n\n- Std_ViewBottom\n- Std_ViewLeft",
+   "example": "4_rear",
    "family": "view",
    "file": "std/Std_ViewRear.md"
   },
   "Std_ViewRestoreCamera": {
    "doc": "Restores the saved camera settings.",
+   "example": "restore_saved_camera",
    "file": "std/Std_ViewRestoreCamera.md"
   },
   "Std_ViewRight": {
    "doc": "The Std ViewRight command points the camera in the active 3D view in the direction of the negative X axis.\n\n## See also\n\n- Std_ViewFront\n- Std_ViewTop",
+   "example": "3_right",
    "file": "std/Std_ViewRight.md"
   },
   "Std_ViewRotateLeft": {
    "doc": "The Std ViewRotateLeft command rotates the camera in the active 3D view around the view direction in 90-degree increments towards the left (counterclockwise).\n\n## See also\n\n- Std_ViewRotateRight",
+   "example": "rotate_left",
    "file": "std/Std_ViewRotateLeft.md"
   },
   "Std_ViewRotateRight": {
    "doc": "The Std ViewRotateRight command rotates the camera in the active 3D view around the view direction in 90-degree increments towards the right (clockwise).\n\n## See also\n\n- Std_ViewRotateLeft",
+   "example": "rotates_right",
    "file": "std/Std_ViewRotateRight.md"
   },
   "Std_ViewSaveCamera": {
    "doc": "Saves the current camera settings.",
+   "example": "save_current_camera",
    "file": "std/Std_ViewSaveCamera.md"
   },
   "Std_ViewScreenShot": {
@@ -3940,18 +4079,22 @@
   },
   "Std_ViewStatusBar": {
    "doc": "The Std ViewStatusBar command toggles the display of the Status bar.",
+   "example": "status_bar",
    "file": "std/Std_ViewStatusBar.md"
   },
   "Std_ViewTop": {
    "doc": "The Std ViewTop command points the camera in the active 3D view in the direction of the negative Z axis.\n\n## See also\n\n- Std_ViewFront\n- Std_ViewRight",
+   "example": "2_top",
    "file": "std/Std_ViewTop.md"
   },
   "Std_ViewTrimetric": {
    "doc": "The Std ViewTrimetric command realigns the camera in the active 3D view to obtain a trimetric view. For a truly trimetric view the 3D view must be in orthographic mode, but the command also works if the view is in perspective mode.\n\n## See also\n\n- Std_ViewIsometric\n- Std_ViewDimetric",
+   "example": "trimetric",
    "file": "std/Std_ViewTrimetric.md"
   },
   "Std_ViewUndock": {
    "doc": "Displays the active view either in fullscreen, undocked, or docked mode.",
+   "example": "undocked",
    "file": "std/Std_ViewUndock.md"
   },
   "Std_ViewVR": {
@@ -3961,12 +4104,14 @@
   "Std_ViewZoomIn": {
    "choice": "in",
    "doc": "The Std ViewZoomIn command zooms in in the active 3D view.\n\n## See also\n\n- Std_ViewZoomOut\n- Std_ViewBoxZoom",
+   "example": "zoom_in",
    "family": "zoom",
    "file": "std/Std_ViewZoomIn.md"
   },
   "Std_ViewZoomOut": {
    "choice": "out",
    "doc": "The Std ViewZoomOut command zooms out in the active 3D view.\n\n## See also\n\n- Std_ViewZoomIn\n- Std_ViewBoxZoom",
+   "example": "zoom_out",
    "family": "zoom",
    "file": "std/Std_ViewZoomOut.md"
   },
@@ -4416,6 +4561,7 @@
   },
   "TechDraw_PageDefault": {
    "doc": "The TechDraw PageDefault tool creates a new Page object using the the template file specified in the TechDraw Preferences.\n\n## See also\n\n- TechDraw_PageTemplate\n- TechDraw_Templates",
+   "example": "techdraw_new_page",
    "file": "techdraw/TechDraw_PageDefault.md"
   },
   "TechDraw_PageTemplate": {
@@ -4520,6 +4666,7 @@
   },
   "Test_InsertFeature": {
    "doc": "Insert a TestFeature in the active Document.",
+   "example": "insert_a_testfeature",
    "file": "test/Test_InsertFeature.md"
   },
   "Test_Test": {
@@ -4528,6 +4675,7 @@
   },
   "Test_TestAll": {
    "doc": "Runs all tests at once (can take very long!).",
+   "example": "test_all",
    "file": "test/Test_TestAll.md"
   },
   "Test_TestAllText": {
@@ -4536,26 +4684,32 @@
   },
   "Test_TestBase": {
    "doc": "Test the basic functions of FreeCAD.",
+   "example": "test_base",
    "file": "test/Test_TestBase.md"
   },
   "Test_TestBaseText": {
    "doc": "Test the basic functions of FreeCAD.",
+   "example": "test_test_base",
    "file": "test/Test_TestBaseText.md"
   },
   "Test_TestCreateMenu": {
    "doc": "Test the menu stuff of FreeCAD.",
+   "example": "add_menu",
    "file": "test/Test_TestCreateMenu.md"
   },
   "Test_TestDeleteMenu": {
    "doc": "Test the menu stuff of FreeCAD.",
+   "example": "remove_menu",
    "file": "test/Test_TestDeleteMenu.md"
   },
   "Test_TestDoc": {
    "doc": "Test the document (creation, save, load and destruction).",
+   "example": "test_document",
    "file": "test/Test_TestDoc.md"
   },
   "Test_TestDocText": {
    "doc": "Test the document (creation, save, load and destruction).",
+   "example": "test_test_document",
    "file": "test/Test_TestDocText.md"
   },
   "Test_TestWork": {

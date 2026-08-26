@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "156af8fa41f5"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select_visible_objects
 aliases: []
 requires: []
 panel: null

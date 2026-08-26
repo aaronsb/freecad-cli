@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "7dfbe1e993e1"
 # authored from here down; the tool never rewrites these
 verb: null
+example: python_modules_documentation
 aliases: []
 requires: []
 panel: null
