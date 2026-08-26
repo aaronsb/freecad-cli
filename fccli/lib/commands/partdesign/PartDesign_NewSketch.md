@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "f85dbc3d8e3a"
 # authored from here down; the tool never rewrites these
 verb: null
+example: partdesign_new_sketch
 aliases: []
 requires: []
 panel: null

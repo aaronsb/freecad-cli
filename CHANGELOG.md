@@ -119,6 +119,108 @@
 
 ### Added
 
+- **The ledger is mode-aware, and 105 selection and panel commands earn
+  their example (GH #54, of #47).** `make verify` drove every example bare,
+  which is right for a positional one and wrong for the other two: a
+  selection example would have run its own `select` line and judged that,
+  and a panel example would have been recorded `panel` for opening the
+  panel it exists to open. So the ledger could hold only positional
+  results, and it held 161 entries, 160 of them positional.
+
+  It now asks `fccli/modemap.json` how each command is driven and drives it
+  that way -- positional bare, selection behind the fixture its
+  `selection_hint` names with only the verb half judged (ADR-200), panel
+  through the panel step that reads the fields, sets the pairs and presses
+  `done` (GH #53). A `manual` command is nobody's to drive: ADR-501 has a
+  person confirm those, and the entry says `manual` rather than a result
+  the harness did not earn. Every entry carries the `mode` ADR-501's
+  schema already showed, and the summary counts the ledger by mode and
+  result rather than by result alone -- a selection `ok` and a positional
+  `ok` are different facts, and the campaign is spent moving commands
+  between them.
+
+  Resume reads the stamp back. An entry stands only if it is about the same
+  example, in the same mode, against the same FreeCAD; a version older than
+  the current harvest is stale (ADR-501) and a mode the command is no
+  longer in asserts a driving that no longer happens. With the checkpoint
+  after every command that PR #63 added, `make verify` is stoppable and
+  resumable: interrupt it and start it again and it runs what the record
+  does not answer.
+
+  105 drafts are promoted from `modemap_sweep.json` to `example:` fields:
+  82 selection and 23 panel, every one of them `ok` in the live tier sweeps
+  and byte-identical to the draft that earned it. Four passing drafts are
+  **not** promoted, and each is why the audit was worth doing -- they
+  verified `ok` while their arguments went somewhere the example does not
+  read as. `linear_pattern 100 4` set `FuzzyTolerance` (clamped to 1) and
+  left `Occurrences` at 2; `polar_pattern 360 8` landed the angle and sent
+  the 8 to the tolerance; `sweep Transformed` read `Transformed` as the
+  *name of an object* for the `Sections` link and left the Sweep invalid.
+  Those three are GH #69, commented with the readings. The fourth,
+  `subtractive_pipe standard constant transformed`, never ran the command
+  at all: `standard` matched `standard_views`, and that is GH #72.
+
+  The ledger after a live headless sweep of all 266 authored examples:
+  **246 ok**, 17 broken, 1 panel, 1 mouse_panel, 1 no_panel -- 142/17/1
+  positional, **82 of 82 selection**, 22 of 24 panel. Seven of the 17 are a
+  correction rather than a regression: `purge_results` and the five FEM
+  `solver_*` and `gravity_load` need an analysis in the document, they fail
+  on a fresh instance, and their `ok` on main came from PR #64's positional
+  sweep sharing one accumulating document across 246 commands in which an
+  earlier command had made one. Every command now gets a scratch document
+  of its own, so an example is judged on its own -- which is what ADR-501
+  asks of one. The other eleven are order-dependent and all eleven verify on
+  a fresh instance: GH #74, with the `after` chain recorded against each.
+
+- **A selection filter is a mode, and the harness lifts it before every
+  command (GH #73).** Part's `vertex_selection` and its two siblings turn on
+  a global selection gate that outlives the document that was open when they
+  ran. With one on, `select Box` answers `= select Box` and selects nothing,
+  and every command that needs a selection says "is not available here". The
+  first mode-routed ledger sweep ran `Part_VertexSelection` at command 141 of
+  266 and charged the twenty commands after it with its consequences, each
+  recorded against itself. `build_fixture` now closes the last scratch
+  document, opens a new one, and lifts the gate -- in that order, because
+  `no_selection_filters` needs an active document and answers "is not
+  available here" without one, which is how the first attempt at this left
+  the gate standing. Lifting the gate took the sweep from 215 `ok` of 266 to
+  243, and the selection tier from 61 of 82 to all 82.
+
+  It is very likely the cause PR #70's review named as missing. That review
+  recorded `upgrade` returning exit 0 with nothing built and a body ceasing
+  to be the active body, could not reproduce either by volume, and concluded
+  that the shape was residue from one particular command nobody could name. A
+  gate produces exactly that: the `closed_wire` recipe is four `line`s, a
+  `select`, and an `upgrade`, and with a gate on the `select` selects nothing
+  and `upgrade` has nothing to join.
+
+- **A line the engine abandoned mid-way is no longer a pass (GH #72).** A
+  token at a step that will not parse as that step's value, but does match
+  a verb name, cancels the command and runs that verb instead. When the
+  verb it escapes to takes no steps, the line exits 0 with the engine idle
+  and nothing invalid -- every reading `classify` makes says the command
+  verified, and what ran was another command. The harness discarded the one
+  thing that says otherwise: the engine's own `<verb> cancelled` on stdout.
+  It reads it now, and a line that abandoned its command is `cancelled`
+  rather than `ok`. The panel tier already caught this shape as `no_panel`,
+  a cancelled verb opening no panel, so it was the positional and
+  selection paths that were exposed.
+
+- **A5 reads ADR-200's two-part example (GH #54).** A selection command's
+  example is `select <what>; <verb> <params>` -- one written line, two
+  typed ones -- and the lint called every one of them a shell line, because
+  the semicolon was in its shell-punctuation pattern. The rule now splits
+  the halves: the command half is what the verb rules judge, and the setup
+  half is held to being a `select`, since nothing else may stand there. In
+  exchange it checks the shape against the mode, which is what "shaped for
+  the command's mode" always said and the rule could not do: a positional
+  command whose example selects operands first, and a selection command
+  whose example names none and so runs against whatever was selected last,
+  are both reported. The blanket report on any non-positional mode carrying
+  an example is gone -- with the ledger driving all three modes it fired on
+  every correct case, and the mode-versus-example disagreement it stood in
+  for is now answered at runtime by the panel tier's `no_panel`.
+
 - **The verify harness gets a panel tier (GH #53, of #47).**
   `tools/verify.py --modemap --tier panel` runs the verb, asks the panel
   it opens what it answers to, sets the `name=value` pairs the draft

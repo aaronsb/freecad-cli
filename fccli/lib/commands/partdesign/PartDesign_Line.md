@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "50e52b70071a"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select BaseFeature.Edge1; datum_line attachmentoffsetz=5
 aliases: []
 requires: []
 panel: null

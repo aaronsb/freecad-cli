@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "2b1e7d276658"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box.Face6; make_sub_link
 aliases: []
 requires: []
 panel: null

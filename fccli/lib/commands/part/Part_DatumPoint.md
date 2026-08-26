@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "42472ce306cb"
 # authored from here down; the tool never rewrites these
 verb: null
+example: part_datum_point
 aliases: []
 requires: []
 panel: null

@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "4d48250128ec"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; remove_objects_and_children
 aliases: []
 requires: []
 panel: null

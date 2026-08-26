@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "3af4eb05fac3"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box.Edge1; part_chamfer
 aliases: []
 requires: []
 panel: null

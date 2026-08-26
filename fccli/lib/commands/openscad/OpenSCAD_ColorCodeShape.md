@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "402fcfe40073"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; color_shapes
 aliases: []
 requires: []
 panel: null

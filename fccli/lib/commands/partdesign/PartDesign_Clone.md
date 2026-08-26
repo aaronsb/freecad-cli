@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "a1f88bf929eb"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; partdesign_clone
 aliases: []
 requires: []
 panel: null

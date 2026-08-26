@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "033ebfdbf730"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; draft_clone
 aliases: []
 requires: []
 panel: null

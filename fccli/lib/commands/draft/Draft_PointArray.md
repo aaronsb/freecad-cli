@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "a40d3f960355"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; point_array
 aliases: []
 requires: []
 panel: null

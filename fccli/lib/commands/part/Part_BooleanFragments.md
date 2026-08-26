@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "95d5e24b87f8"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; boolean_fragments
 aliases: []
 requires: []
 panel: null

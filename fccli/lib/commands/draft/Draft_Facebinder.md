@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "f6f41aabdfd4"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box.Face6; facebinder
 aliases: []
 requires: []
 panel: null

@@ -1986,10 +1986,61 @@ def _run():
         ("a positional command with no example",
          {"Arch_Axis": {"file": "arch/Arch_Axis.md", "doc": "x"}}, {},
          "a positional command with no example", "reports", 1),
-        ("an example on a command the mode map calls panel",
-         {"Draft_Point": {"file": "draft/Draft_Point.md", "doc": "x",
-                          "example": "point 10,10,0"}}, {},
-         "an example on a panel-mode command", "reports", 1),
+        # ADR-200's two-part example, and A5's reading of it (GH #54). The
+        # command half is what the verb rules judge; the setup half is
+        # held to being a `select`, and to matching what the mode wants.
+        ("a two-part example on a selection command says nothing",
+         {"Part_Cut": {"file": "part/Part_Cut.md", "doc": "x",
+                       "example": "select Box, Box001; part_cut"}}, {},
+         "part/Part_Cut.md", "problems", 0),
+        ("  and nothing on the reports either",
+         {"Part_Cut": {"file": "part/Part_Cut.md", "doc": "x",
+                       "example": "select Box, Box001; part_cut"}}, {},
+         "(A5)", "reports", 0),
+        ("a selection command whose example names no operands",
+         {"Part_Cut": {"file": "part/Part_Cut.md", "doc": "x",
+                       "example": "part_cut"}}, {},
+         "names no operands", "reports", 1),
+        ("a positional command whose example selects operands first",
+         {"Arch_Axis": {"file": "bim/Arch_Axis.md", "doc": "x",
+                        "example": "select Box; axis"}}, {},
+         "selects operands first", "reports", 1),
+        ("  but a panel command may want either, so neither is remarked on",
+         {"Part_Fillet": {"file": "part/Part_Fillet.md", "doc": "x",
+                          "example": "part_fillet"}}, {},
+         "(A5)", "reports", 0),
+        ("a setup half that is not a select",
+         {"Part_Cut": {"file": "part/Part_Cut.md", "doc": "x",
+                       "example": "pick Box, Box001; part_cut"}}, {},
+         "only a select may stand before the semicolon", "problems", 1),
+        ("a setup half with no command after it",
+         {"Part_Cut": {"file": "part/Part_Cut.md", "doc": "x",
+                       "example": "select Box, Box001;"}}, {},
+         "has a setup half and no command after it", "problems", 1),
+        ("a command half naming somebody else's verb",
+         {"Part_Cut": {"file": "part/Part_Cut.md", "doc": "x",
+                       "example": "select Box, Box001; sphere 15"}}, {},
+         "does not reach this command", "problems", 1),
+        ("a two-part example reaching its command through a family door",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "select Box; view front"}}, {},
+         "std/Std_ViewFront.md", "problems", 0),
+        ("  and one naming the wrong choice behind that door",
+         {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
+                            "example": "select Box; view top"}}, {},
+         "does not reach this command", "problems", 1),
+        ("a shell line hiding in the command half",
+         {"Part_Cut": {"file": "part/Part_Cut.md", "doc": "x",
+                       "example": "select Box; part_cut | tee out"}}, {},
+         "is a shell line", "problems", 1),
+        ("a third half, which ADR-200 does not write",
+         {"Part_Cut": {"file": "part/Part_Cut.md", "doc": "x",
+                       "example": "select Box; part_cut; sphere 15"}}, {},
+         "is a shell line", "problems", 1),
+        ("an example on a command only a person can drive",
+         {"Arch_AxisTools": {"file": "bim/Arch_AxisTools.md", "doc": "x",
+                             "example": "axis_tools"}}, {},
+         "an example on a manual-mode command", "reports", 1),
         ("the family door with the wrong choice behind it",
          {"Std_ViewFront": {"file": "std/Std_ViewFront.md", "doc": "x",
                             "example": "view top"}}, {},
@@ -2554,10 +2605,11 @@ def _run():
     register_all(_bare, tier0=True, patches=PatchSet(), dictionary={})
     _with = _Registry()
     _wc = register_all(_with, tier0=True, patches=PatchSet())
-    # 175 = the 17 this counted before the GH #47 promotion, plus 154
-    # promoted examples, minus 5 promoted into files already counted
-    # for another authored field, plus the 9 GH #52 type blocks.
-    check("  and register_all counts the authored files", _wc.get("authored"), 175)
+    # 278 = the 175 counted before the GH #54 promotion, plus the 105
+    # selection and panel examples promoted with it, less the 2 promoted
+    # into files already counted for another authored field (Part_Fuse
+    # carries a summary, Std_ViewFitSelection a family and a choice).
+    check("  and register_all counts the authored files", _wc.get("authored"), 278)
     # #19: every descriptor command is some verb's gui_command. Nine were
     # not, because a typed verb added over their launcher; _make_room
     # qualifies the launcher instead.
@@ -2722,7 +2774,7 @@ def _run():
     _sw_tally, _sw_fin, _sw_n = _verify.sweep(
         {"A_A": "a", "B_B": "b"},
         lambda cid, ex, res, det, extra=None: _sw_events.append((cid, res, det)),
-        run_one=lambda e: ("incomplete", ""),
+        run_one=lambda cid, e: ("incomplete", ""),
         alive=lambda: True,
         healthy=lambda: next(_sw_health),
         restart=lambda: _sw_restarts.append(1) or True)
@@ -2732,7 +2784,7 @@ def _run():
     check("    with the wedge named",
           _sw_events[0][2], "left the instance unresponsive")
 
-    def _sw_boom(example):
+    def _sw_boom(cid, example):
         raise _sh.TimeoutExpired("fccli", 60)
     _sw_events2 = []
     _sw_tally2, _sw_fin2, _sw_n2 = _verify.sweep(
@@ -2747,7 +2799,7 @@ def _run():
     _sw_tally3, _sw_fin3, _sw_n3 = _verify.sweep(
         {"D_D": "d", "E_E": "e"},
         lambda cid, ex, res, det, extra=None: _sw_events3.append((cid, res, det)),
-        run_one=lambda e: ("ok", ""),
+        run_one=lambda cid, e: ("ok", ""),
         alive=lambda: False, healthy=lambda: False,
         restart=lambda: False)
     check("    a failed restart stops the sweep, the hazard recorded",
@@ -2760,7 +2812,7 @@ def _run():
     _sw_tally4, _sw_fin4, _sw_n4 = _verify.sweep(
         {"F_F": "f"},
         lambda cid, ex, res, det, extra=None: _sw_events4.append((cid, res, det)),
-        run_one=lambda e: ("ok", ""),
+        run_one=lambda cid, e: ("ok", ""),
         alive=lambda: True, healthy=_sw_slow, restart=lambda: True)
     check("    a health probe that itself times out is the same hazard",
           (_sw_events4, _sw_fin4),
@@ -2935,7 +2987,32 @@ def _run():
           (_verify.build_fixture(["box 0,0,0 1 1 1", "select Box"],
                                  run=_fx_ok), _fx_ran),
           ((True, ""),
-           ["close!", "new verify", "box 0,0,0 1 1 1", "select Box"]))
+           ["close!", "new verify", "no_selection_filters",
+            "box 0,0,0 1 1 1", "select Box"]))
+    # GH #73. Part's selection filters are a mode, not a document: closing
+    # the document does not clear one, and with one on `select` reports
+    # success and selects nothing. So the preparation lifts the gate too,
+    # before every command rather than after the one that set it -- and
+    # after the document is open, because the lift needs one.
+    check("    the preparation lifts a selection gate, once a document is open",
+          _verify.PREPARE, ["close!", "new verify", "no_selection_filters"])
+    _fx_gate = []
+
+    def _fx_no_gate(line):
+        _fx_gate.append(line)
+        return (1, "", "no_selection_filters: is not available here") \
+            if line == "no_selection_filters" else (0, "", "")
+    check("      and nothing to lift is not a failure either",
+          (_verify.build_fixture(["box 0,0,0 1 1 1"], run=_fx_no_gate)[0],
+           len(_fx_gate)),
+          (True, 4))
+
+    def _fx_no_doc(line):
+        return (1, "", "cannot open a document") if line == "new verify" \
+            else (0, "", "")
+    check("      but a document that will not open is a fixture undelivered",
+          _verify.build_fixture(["box 0,0,0 1 1 1"], run=_fx_no_doc),
+          (False, "new verify -- cannot open a document"))
 
     _fx_ran2 = []
 
@@ -2945,7 +3022,7 @@ def _run():
     check("    the first command has nothing to close, which is not a failure",
           (_verify.build_fixture(["box 0,0,0 1 1 1"], run=_fx_no_close)[0],
            len(_fx_ran2)),
-          (True, 3))
+          (True, 4))
 
     _fx_ran3 = []
 
@@ -3002,7 +3079,7 @@ def _run():
     _sp_tally, _sp_fin, _sp_n = _verify.sweep(
         {"A_A": "select Box; a", "B_B": "select Box; b"},
         lambda cid, ex, res, det, extra=None: _sp_events.append((cid, res, det)),
-        run_one=lambda e: _sp_ran.append(e) or ("ok", ""),
+        run_one=lambda cid, e: _sp_ran.append(e) or ("ok", ""),
         alive=lambda: True, healthy=lambda: True, restart=lambda: True,
         setup=lambda cid: (True, "") if cid == "A_A"
         else (False, "select Wire -- no such object: Wire"))
@@ -3021,7 +3098,7 @@ def _run():
     _sp_tally2, _sp_fin2, _sp_n2 = _verify.sweep(
         {"C_C": "select Box; c"},
         lambda cid, ex, res, det, extra=None: _sp_events2.append((cid, res, det)),
-        run_one=lambda e: ("ok", ""),
+        run_one=lambda cid, e: ("ok", ""),
         alive=lambda: False, healthy=lambda: False,
         restart=lambda: _sp_restarts.append(1) or True,
         setup=lambda cid: (False, "new verify -- no instance"))
@@ -3033,7 +3110,7 @@ def _run():
     _sp_tally3, _sp_fin3, _sp_n3 = _verify.sweep(
         {"D_D": "select Box; d", "E_E": "select Box; e"},
         lambda cid, ex, res, det, extra=None: _sp_events3.append((cid, res, det)),
-        run_one=lambda e: ("ok", ""),
+        run_one=lambda cid, e: ("ok", ""),
         alive=lambda: False, healthy=lambda: False, restart=lambda: False,
         setup=lambda cid: (False, "new verify -- no instance"))
     check("      and a restart that fails stops the sweep there",
@@ -3045,7 +3122,7 @@ def _run():
     _sp_tally4, _sp_fin4, _sp_n4 = _verify.sweep(
         {"F_F": "select Box; f"},
         lambda cid, ex, res, det, extra=None: _sp_events4.append((cid, res, det)),
-        run_one=lambda e: ("ok", ""),
+        run_one=lambda cid, e: ("ok", ""),
         alive=lambda: True, healthy=lambda: True, restart=lambda: True,
         setup=_sp_slow)
     check("    a fixture build that times out is recorded, not raised",
@@ -3063,7 +3140,7 @@ def _run():
     _sp_tally5, _sp_fin5, _sp_n5 = _verify.sweep(
         {"G_G": "select Box; g", "H_H": "select Box; h"},
         lambda cid, ex, res, det, extra=None: _sp_events5.append((cid, res, det)),
-        run_one=lambda e: ("ok", ""),
+        run_one=lambda cid, e: ("ok", ""),
         alive=lambda: True, healthy=_sp_slow_health,
         restart=lambda: _sp_restarts5.append(1) or True,
         setup=lambda cid: (False, "new verify -- silence"))
@@ -3078,7 +3155,7 @@ def _run():
     _sp_tally6, _sp_fin6, _sp_n6 = _verify.sweep(
         {"I_I": "select Box; i"},
         lambda cid, ex, res, det, extra=None: _sp_events6.append((cid, res, det)),
-        run_one=lambda e: ("ok", ""),
+        run_one=lambda cid, e: ("ok", ""),
         alive=lambda: True, healthy=_sp_slow_health,
         restart=lambda: _sp_restarts6.append(1) or True,
         setup=_sp_slow)
@@ -3511,22 +3588,22 @@ def _run():
           (_pt_targets["Part_Primitives"], _pt_fixtures["Part_Primitives"]),
           ("primitives", []))
     check("    one whose hint names operands gets the selection tier's fixture",
-          (_pt_targets["Part_Sweep"], _pt_fixtures["Part_Sweep"][-1]),
-          ("select Wire, Line004; sweep", "select Wire, Line004"))
+          (_pt_targets["Part_Sweep"], _pt_fixtures["Part_Sweep"][-1:]),
+          ("select Wire, Line004; sweep", ["select Wire, Line004"]))
     check("    an authored panel_fixture is the fixture, hint or no hint",
           (_pt_targets["Part_Fillet"], _pt_fixtures["Part_Fillet"]),
           ("select Box.Edge1; part_fillet filletstartradius=3",
            ["box 0,0,0 20 20 10", "select Box.Edge1"]))
     check("    a panel_fixture naming no fixture is a punt, not a guess",
-          _pt_punted["Part_Wrong"],
+          _pt_punted.get("Part_Wrong"),
           "panel_fixture names no fixture: no_such_fixture")
     check("    a workbench this tier cannot furnish is punted with its reason",
-          _pt_punted["Sketcher_Fillet"],
+          _pt_punted.get("Sketcher_Fillet"),
           _verify.PUNT_WORKBENCHES["Sketcher"])
     check("    a command the mode map named no verb for is punted",
-          _pt_punted["Part_Nameless"], "the mode map named no verb to run")
+          _pt_punted.get("Part_Nameless"), "the mode map named no verb to run")
     check("    a panel that writes the operator's settings is not pressed",
-          _pt_punted["Draft_SetStyle"],
+          _pt_punted.get("Draft_SetStyle"),
           _verify.PANEL_OFF_LIMITS["Draft_SetStyle"])
     check("    a selection command is not the panel tier's",
           "Part_Cut" in _pt_targets or "Part_Cut" in _pt_punted, False)
@@ -3537,6 +3614,422 @@ def _run():
     check("  every off-limits panel is a panel command that exists",
           sorted(c for c in _verify.PANEL_OFF_LIMITS
                  if (_spec_modes.get(c) or {}).get("mode") != "panel"), [])
+    # The two tiers and the ledger ask the same question of the same mode
+    # map entry, and `panel_operands` is the one answer -- so a panel
+    # driven by `make verify` gets the fixture the tier would have given
+    # it. Each branch below was reintroduced as a mutant and the named
+    # check confirmed to fail.
+    check("  a panel that asks for no operands gets an empty document",
+          _verify.panel_operands("Part_Primitives",
+                                 {"needs_selection": False}),
+          ([], None, ""))
+    check("    an authored panel_fixture is the fixture, hint or no hint",
+          _verify.panel_operands("Part_Fillet",
+                                 {"panel_fixture": "solid_edge",
+                                  "needs_selection": False}),
+          (["box 0,0,0 20 20 10"], "Box.Edge1", ""))
+    check("    one naming no fixture is a punt, not a guess",
+          _verify.panel_operands("Part_Wrong", {"panel_fixture": "nope"}),
+          (None, None, "panel_fixture names no fixture: nope"))
+    check("    a hint whose operands this tier cannot build is a punt",
+          _verify.panel_operands("Sketcher_Fillet",
+                                 {"needs_selection": True,
+                                  "selection_hint": "two lines"}),
+          (None, None, _verify.PUNT_WORKBENCHES["Sketcher"]))
+    check("    and a panel that writes the operator's settings is not pressed",
+          _verify.panel_operands("Draft_SetStyle", {"needs_selection": False}),
+          (None, None, _verify.PANEL_OFF_LIMITS["Draft_SetStyle"]))
+
+    # -------------------------------------------------- the mode-routed ledger
+    # GH #54. `make verify` drives every authored example, and the mode map
+    # says how each one is driven. Before this, every example ran bare: a
+    # selection example judged its own `select` line and a panel example
+    # was recorded `panel` for opening the panel it exists to open.
+    check("  the setup half of a two-part example is the select",
+          _verify.select_half("select Box, Box001; part_cut"),
+          "select Box, Box001")
+    check("    a one-part example has no setup half",
+          _verify.select_half("box 1 1 1"), "")
+    check("    and it is the other side of verb_line",
+          (_verify.select_half("select A; chamfer 45 equal_distance 0 2 2"),
+           _verify.verb_line("select A; chamfer 45 equal_distance 0 2 2")),
+          ("select A", "chamfer 45 equal_distance 0 2 2"))
+
+    # Mode routing: the whole difference the ledger gained. A positional
+    # example is the line; a selection example's select was setup, so only
+    # the verb is judged; a panel example goes through the panel step.
+    _dr = []
+
+    def _dr_pos(example):
+        _dr.append(("positional", example))
+        return "ok", ""
+
+    def _dr_panel(example):
+        _dr.append(("panel", example))
+        return "ok", "", {"fields": []}
+    for _dr_mode, _dr_example in (("positional", "box 0,0,0 40 30 20"),
+                                  ("selection", "select Box, Box001; part_cut"),
+                                  ("panel", "select Box.Edge1; part_fillet "
+                                            "filletstartradius=3")):
+        _verify.drive(_dr_mode, _dr_example, positional=_dr_pos,
+                      panel=_dr_panel)
+    check("  a positional example is driven bare, as the whole line",
+          _dr[0], ("positional", "box 0,0,0 40 30 20"))
+    check("    a selection example is driven by its verb half alone",
+          _dr[1], ("positional", "part_cut"))
+    check("    and a panel example goes through the panel step, whole",
+          _dr[2], ("panel", "select Box.Edge1; part_fillet "
+                            "filletstartradius=3"))
+    check("    a mode nothing routes falls back to bare, as before #54",
+          _verify.drive("manual", "whatever", positional=lambda e: ("ok", e),
+                        panel=lambda e: ("panel", e)),
+          ("ok", "whatever"))
+
+    # What the ledger drives, per command, and what it says about the rest.
+    _lg_dict = {
+        "Part_Box": {"example": "box 0,0,0 40 30 20"},
+        "Part_Cut": {"example": "select Box, Box001; part_cut"},
+        "Part_Fillet": {"example": "select Box.Edge1; part_fillet "
+                                   "filletstartradius=3"},
+        "Part_Primitives": {"example": "primitive"},
+        "Sketcher_Trim": {"example": "select Line; trim"},
+        "Std_Whatsthis": {"example": "whats_this"},
+        "Part_Unstamped": {"example": None},
+        "Part_Unknown": {"example": "unknown 1"},
+    }
+    _lg_map = {
+        "Part_Box": {"mode": "positional"},
+        "Part_Cut": {"mode": "selection", "selection_hint": "two shapes"},
+        "Part_Fillet": {"mode": "panel", "panel_fixture": "solid_edge",
+                        "needs_selection": False},
+        "Part_Primitives": {"mode": "panel", "needs_selection": False},
+        "Sketcher_Trim": {"mode": "selection",
+                          "selection_hint": "one or more sketch elements"},
+        "Std_Whatsthis": {"mode": "manual"},
+        "Part_Unstamped": {"mode": "positional"},
+    }
+    _lg_t, _lg_f, _lg_m, _lg_p = _verify.ledger_targets(_lg_dict, _lg_map)
+    check("  a positional example is a target with no setup at all",
+          (_lg_t["Part_Box"], _lg_f["Part_Box"], _lg_m["Part_Box"]),
+          ("box 0,0,0 40 30 20", [], "positional"))
+    check("    a selection example is driven behind the fixture its hint names",
+          (_lg_t["Part_Cut"], _lg_f["Part_Cut"]),
+          ("select Box, Box001; part_cut",
+           ["box 0,0,0 20 20 10", "box 10,10,5 20 20 10",
+            "select Box, Box001"]))
+    check("      and the setup ends with the example's own select, not a "
+          "canonical one",
+          _verify.ledger_targets(
+              {"Part_Cut": {"example": "select Box001; part_cut"}},
+              {"Part_Cut": {"mode": "selection",
+                            "selection_hint": "two shapes"}})[1]["Part_Cut"],
+          ["box 0,0,0 20 20 10", "box 10,10,5 20 20 10", "select Box001"])
+    check("    a panel example gets the panel tier's fixture and its mode",
+          (_lg_f["Part_Fillet"], _lg_m["Part_Fillet"]),
+          (["box 0,0,0 20 20 10", "select Box.Edge1"], "panel"))
+    check("      one whose panel asks for no operands gets no setup",
+          (_lg_t["Part_Primitives"], _lg_f["Part_Primitives"]),
+          ("primitive", []))
+    check("    an example the harness cannot fixture is punted, not driven",
+          (_lg_p.get("Sketcher_Trim"), "Sketcher_Trim" in _lg_t),
+          (_verify.PUNT_WORKBENCHES["Sketcher"], False))
+    check("    a manual command is a person's, so the harness drives nothing",
+          (_lg_p.get("Std_Whatsthis"), "Std_Whatsthis" in _lg_t,
+           _lg_m.get("Std_Whatsthis")),
+          ("mode manual: a person confirms this one and the harness records "
+           "it (ADR-501)", False, "manual"))
+    check("    a command with no example is not the ledger's business",
+          ("Part_Unstamped" in _lg_t or "Part_Unstamped" in _lg_p), False)
+    check("    and one the mode map never classified is driven bare",
+          (_lg_t["Part_Unknown"], _lg_m["Part_Unknown"],
+           _lg_f["Part_Unknown"]),
+          ("unknown 1", "positional", []))
+    check("    every example is a target or a punt, never neither",
+          sorted(set(_lg_t) | set(_lg_p)),
+          sorted(c for c, e in _lg_dict.items() if e["example"]))
+    check("  --tier drives one mode and leaves the others alone",
+          (sorted(_verify.ledger_targets(_lg_dict, _lg_map,
+                                         tier="selection")[0]),
+           sorted(_verify.ledger_targets(_lg_dict, _lg_map,
+                                         tier="panel")[0])),
+          (["Part_Cut"], ["Part_Fillet", "Part_Primitives"]))
+    # Every mode the ledger routes has a driver; a mode with no driver
+    # would be run bare and recorded as though it had been verified.
+    check("    and every driven mode is one the mode map uses",
+          sorted(set(_verify.DRIVEN_MODES)
+                 - {e.get("mode") for e in _spec_modes.values()}), [])
+
+    # Resume, the ledger's half. An answer stands only if it was about the
+    # same example, in the same mode, against the same FreeCAD -- the
+    # version because ADR-501's staleness rule is the version stamp, and
+    # the mode because an entry written by a mode-blind sweep asserts a
+    # driving that no longer happens.
+    _rs_entries = {
+        "Same": {"example": "a", "result": "ok", "freecad": "1.1.3",
+                 "mode": "positional"},
+        "OldVersion": {"example": "b", "result": "ok", "freecad": "1.1.2",
+                       "mode": "positional"},
+        "OtherMode": {"example": "c", "result": "ok", "freecad": "1.1.3",
+                      "mode": "positional"},
+        "NoMode": {"example": "d", "result": "ok", "freecad": "1.1.3"},
+    }
+    _rs_modes = {"Same": "positional", "OldVersion": "positional",
+                 "OtherMode": "selection", "NoMode": "positional"}
+    check("  a resumed ledger sweep runs what the record does not answer",
+          sorted(_verify.resumable(
+              {"Same": "a", "OldVersion": "b", "OtherMode": "c",
+               "NoMode": "d"},
+              _rs_entries, version="1.1.3", modes=_rs_modes)),
+          ["NoMode", "OldVersion", "OtherMode"])
+    check("    and with neither asked for, the draft rule is unchanged",
+          sorted(_verify.resumable({"Same": "a", "OldVersion": "b"},
+                                   _rs_entries)),
+          [])
+
+    # The hooks, and what a command the harness did not drive is called.
+    _lh_built, _lh_routed = [], []
+    _lh = _verify.ledger_hooks(
+        {"Part_Cut": ["box 0,0,0 20 20 10", "select Box"]},
+        {"Part_Cut": "selection"},
+        build=lambda lines: _lh_built.append(lines) or (True, ""),
+        route=lambda mode, example: _lh_routed.append((mode, example))
+        or ("ok", ""))
+    _lh["setup"]("Part_Cut")
+    _lh["run_one"]("Part_Cut", "select Box; part_cut")
+    check("  the ledger's setup builds the command's own fixture",
+          _lh_built, [["box 0,0,0 20 20 10", "select Box"]])
+    check("    and its run routes on the command's own mode",
+          _lh_routed, [("selection", "select Box; part_cut")])
+    check("  a hint with no fixture is the harness's gap; a manual mode is not",
+          (_verify.punt_result("selection"), _verify.punt_result("panel"),
+           _verify.punt_result("manual")),
+          ("no_fixture", "no_fixture", "manual"))
+
+    # The whole of `make verify`, on a scripted client: the mode reaches
+    # the entry, and each mode was driven its own way. Without this, the
+    # routing is checkable and the wiring that reaches it is not.
+    import json as _json
+    _mv_state = {"panel": False, "lines": []}
+
+    def _mv_fccli(*args, **kw):
+        if args[0] == "ls":
+            return 0, "[]", ""
+        if args[0] == "--json":
+            snap = {"engine": "idle", "options": [], "panel": False,
+                    "documents": [{"active": True, "invalid": []}]}
+            if _mv_state["panel"]:
+                snap = {"engine": "collecting", "options": ["done"],
+                        "panel": True,
+                        "documents": [{"active": True, "invalid": []}]}
+            return 0, _json.dumps(snap), ""
+        if args[0] == "cancel":
+            _mv_state["panel"] = False
+            return 0, "", ""
+        if args[0] != "exec":
+            return 0, "", ""
+        line = args[1]
+        _mv_state["lines"].append(line)
+        if line == "part_fillet":
+            _mv_state["panel"] = True
+            return 1, "2 to set:\n  filletstartradius  fillettype\n", ""
+        if line == "done":
+            _mv_state["panel"] = False
+            return 0, "", ""
+        if line == f"{_verify.PROBE_NAME}=1":
+            return 1, "", ("error: 'x' is not on this panel -- "
+                           "filletstartradius, fillettype")
+        return 0, "", ""
+
+    _mv_dict = {
+        "freecad": "9.9.9",
+        "commands": {
+            "Part_Box": {"example": "box 0,0,0 40 30 20"},
+            "Part_Cut": {"example": "select Box, Box001; part_cut"},
+            "Part_Fillet": {"example": "select Box.Edge1; part_fillet "
+                                       "filletstartradius=3"},
+            "Std_Whatsthis": {"example": "whats_this"},
+        }}
+    _mv_map = {"commands": {
+        "Part_Box": {"mode": "positional"},
+        "Part_Cut": {"mode": "selection", "selection_hint": "two shapes"},
+        "Part_Fillet": {"mode": "panel", "panel_fixture": "solid_edge",
+                        "needs_selection": False},
+        "Std_Whatsthis": {"mode": "manual"},
+    }}
+    _mv_old = (_verify.DICT, _verify.MODEMAP, _verify.LEDGER, _verify.fccli)
+    with tempfile.TemporaryDirectory() as _mv_dir:
+        try:
+            _verify.DICT = os.path.join(_mv_dir, "dictionary.json")
+            _verify.MODEMAP = os.path.join(_mv_dir, "modemap.json")
+            _verify.LEDGER = os.path.join(_mv_dir, "verified.json")
+            _json.dump(_mv_dict, open(_verify.DICT, "w"))
+            _json.dump(_mv_map, open(_verify.MODEMAP, "w"))
+            _verify.fccli = _mv_fccli
+            _mv_code = _verify.main([])
+            # Read defensively: a checkpoint that never landed is a result
+            # this check should report, not a crash that hides it.
+            _mv_ledger = (_json.load(open(_verify.LEDGER))
+                          if os.path.exists(_verify.LEDGER)
+                          else {"commands": {}})
+            _mv_before = len(_mv_state["lines"])
+            _mv_again = _verify.main([])   # the resume, on a full ledger
+            _mv_after = len(_mv_state["lines"])
+        finally:
+            (_verify.DICT, _verify.MODEMAP, _verify.LEDGER,
+             _verify.fccli) = _mv_old
+    _mv_got = {c: (e.get("mode"), e.get("result"))
+               for c, e in _mv_ledger["commands"].items()}
+    check("  make verify stamps every mode, and each was driven its own way",
+          (_mv_code, _mv_got),
+          (0, {"Part_Box": ("positional", "ok"),
+               "Part_Cut": ("selection", "ok"),
+               "Part_Fillet": ("panel", "ok"),
+               "Std_Whatsthis": ("manual", "manual")}))
+    check("    the selection example ran its verb, never its whole line",
+          ("part_cut" in _mv_state["lines"],
+           "select Box, Box001; part_cut" in _mv_state["lines"]),
+          (True, False))
+    _mv_at = _mv_state["lines"].index("part_cut")
+    check("    behind the fixture its hint names, selected first",
+          _mv_state["lines"][_mv_at - 6:_mv_at + 1],
+          ["close!", "new verify", "no_selection_filters",
+           "box 0,0,0 20 20 10", "box 10,10,5 20 20 10",
+           "select Box, Box001", "part_cut"])
+    # A positional example is driven bare -- no fixture, no select -- but
+    # in a scratch document of its own, so which fixture the command
+    # before it built cannot change the answer.
+    _mv_box = _mv_state["lines"].index("box 0,0,0 40 30 20")
+    check("    a positional example is driven bare, in a fresh document",
+          _mv_state["lines"][_mv_box - 3:_mv_box + 1],
+          ["close!", "new verify", "no_selection_filters",
+           "box 0,0,0 40 30 20"])
+    check("    the panel example set its field and pressed done",
+          [ln for ln in _mv_state["lines"]
+           if ln in ("part_fillet", "filletstartradius=3", "done")],
+          ["part_fillet", "filletstartradius=3", "done"])
+    check("    a manual command was recorded and never run",
+          "whats_this" in _mv_state["lines"], False)
+    check("    the ledger carries the version it was verified against",
+          {e["freecad"] for e in _mv_ledger["commands"].values()}, {"9.9.9"})
+    check("  and a second run has nothing left to do",
+          (_mv_again, _mv_after - _mv_before), (0, 0))
+
+    # The checkpoint, from outside: a sweep stopped mid-way keeps every
+    # result it had recorded, and the run after it picks up exactly what is
+    # missing. #54's "resumable" as a check rather than a claim.
+    _in_lines = []
+
+    def _in_fccli(stop):
+        def call(*args, **kw):
+            if args[0] == "ls":
+                return 0, "[]", ""
+            if args[0] == "--json":
+                return 0, _json.dumps(
+                    {"engine": "idle", "options": [], "panel": False,
+                     "documents": [{"active": True, "invalid": []}]}), ""
+            if args[0] != "exec":
+                return 0, "", ""
+            if args[1] == stop:
+                raise KeyboardInterrupt
+            _in_lines.append(args[1])
+            return 0, "", ""
+        return call
+    _in_dict = {"freecad": "9.9.9", "commands": {
+        "Part_Box": {"example": "box 1 1 1"},
+        "Part_Cut": {"example": "select Box, Box001; part_cut"},
+        "Std_Whatsthis": {"example": "whats_this"},
+        "Zed_Last": {"example": "zed"},
+    }}
+    _in_map = {"commands": {
+        "Part_Box": {"mode": "positional"},
+        "Part_Cut": {"mode": "selection", "selection_hint": "two shapes"},
+        "Std_Whatsthis": {"mode": "manual"},
+        "Zed_Last": {"mode": "positional"},
+    }}
+    _in_old = (_verify.DICT, _verify.MODEMAP, _verify.LEDGER, _verify.fccli)
+    with tempfile.TemporaryDirectory() as _in_dir:
+        try:
+            _verify.DICT = os.path.join(_in_dir, "dictionary.json")
+            _verify.MODEMAP = os.path.join(_in_dir, "modemap.json")
+            _verify.LEDGER = os.path.join(_in_dir, "verified.json")
+            _json.dump(_in_dict, open(_verify.DICT, "w"))
+            _json.dump(_in_map, open(_verify.MODEMAP, "w"))
+            _verify.fccli = _in_fccli("zed")     # stop on the last command
+            try:
+                _in_code = _verify.main([])
+            except KeyboardInterrupt:
+                _in_code = "raised out of main"
+
+            def _in_read():
+                if not os.path.exists(_verify.LEDGER):
+                    return []            # nothing checkpointed at all
+                return sorted(_json.load(open(_verify.LEDGER))["commands"])
+            _in_part = _in_read()
+            _verify.fccli = _in_fccli("never")   # and resume
+            _in_lines.clear()
+            _in_code2 = _verify.main([])
+            _in_whole = _in_read()
+            _in_after = list(_in_lines)
+        finally:
+            (_verify.DICT, _verify.MODEMAP, _verify.LEDGER,
+             _verify.fccli) = _in_old
+    check("  a sweep stopped mid-way keeps every result it had",
+          (_in_code, _in_part),
+          (130, ["Part_Box", "Part_Cut", "Std_Whatsthis"]))
+    check("    and the run after it finishes the one that was missing",
+          (_in_code2, _in_whole),
+          (0, ["Part_Box", "Part_Cut", "Std_Whatsthis", "Zed_Last"]))
+    check("      running only that one, not the three already answered",
+          [ln for ln in _in_after if ln not in _verify.PREPARE],
+          ["zed"])
+
+    # GH #72. A token that will not parse at a step but does match a verb
+    # cancels the command and runs that verb instead. When the verb it
+    # escapes to takes no steps, the line exits 0 with the engine idle and
+    # nothing invalid, and every reading `classify` makes says the command
+    # verified. The engine's own word for what it dropped is the only thing
+    # that says otherwise.
+    check("  the engine's word for a command it abandoned mid-line",
+          (_verify.cancelled_in("loft cancelled\n= standard_views"),
+           _verify.cancelled_in("= loft 5.00mm Wire,Wire001"),
+           _verify.cancelled_in("cancelled")),
+          ("loft", "", ""))
+    _vc_snap = {"engine": "idle", "options": [], "panel": False,
+                "documents": [{"active": True, "invalid": []}]}
+
+    def _vc_fccli(*args, **kw):
+        if args[0] == "--json":
+            return 0, _json.dumps(_vc_snap), ""
+        if args[0] == "exec" and args[1] == "loft standard":
+            return 0, "loft cancelled\n= standard_views", ""
+        return 0, "", ""
+    _vc_old = _verify.fccli
+    try:
+        _verify.fccli = _vc_fccli
+        _vc_ok = _verify.verify_one("loft 5")
+        _vc_gone = _verify.verify_one("loft standard")
+    finally:
+        _verify.fccli = _vc_old
+    check("    a line that abandoned its command is not a pass",
+          (_vc_ok[0], _vc_gone[0]), ("ok", "cancelled"))
+    check("      and the detail names what was abandoned",
+          "cancelled loft" in _vc_gone[1], True)
+
+    # The tally the campaign is measured by. One number says how much is
+    # verified; the two-way one says what kind of verification it is.
+    check("  the ledger counts by mode and result, in ADR-501's mode order",
+          _verify.by_mode({
+              "A": {"mode": "panel", "result": "ok"},
+              "B": {"mode": "positional", "result": "ok"},
+              "C": {"mode": "positional", "result": "ok"},
+              "D": {"mode": "selection", "result": "invalid"},
+              "E": {"mode": "manual", "result": "manual"},
+              "F": {"result": "ok"}}),
+          [f"{'positional':11} {'ok':11} 2",
+           f"{'selection':11} {'invalid':11} 1",
+           f"{'panel':11} {'ok':11} 1",
+           f"{'-':11} {'ok':11} 1",
+           f"{'manual':11} {'manual':11} 1"])
 
     # sweep() carries what a tier learned beyond its verdict, and a tier
     # with nothing extra to say keeps the shorter contract.
@@ -3545,7 +4038,7 @@ def _run():
         {"A_A": "a", "B_B": "b"},
         lambda cid, ex, res, det, extra=None:
             _px_events.append((cid, res, extra)),
-        run_one=lambda e: ("ok", "", {"fields": ["radius"]}) if e == "a"
+        run_one=lambda cid, e: ("ok", "", {"fields": ["radius"]}) if e == "a"
         else ("ok", ""),
         alive=lambda: True, healthy=lambda: True, restart=lambda: True)
     check("  what a tier learned reaches the record; two values still work",
@@ -3558,7 +4051,7 @@ def _run():
     _verify.sweep(
         {"A_A": "a", "B_B": "b", "C_C": "c", "D_D": "d"},
         lambda cid, ex, res, det, extra=None: _re_ran.append(cid),
-        run_one=lambda e: ("ok", ""),
+        run_one=lambda cid, e: ("ok", ""),
         alive=lambda: True, healthy=lambda: True,
         restart=lambda: _re_restarts.append(len(_re_ran)) or True,
         restart_every=2)
@@ -3567,13 +4060,13 @@ def _run():
     check("    and with no bound, never",
           _verify.sweep({"A_A": "a", "B_B": "b"},
                         lambda cid, ex, res, det, extra=None: None,
-                        run_one=lambda e: ("ok", ""), alive=lambda: True,
+                        run_one=lambda cid, e: ("ok", ""), alive=lambda: True,
                         healthy=lambda: True,
                         restart=lambda: False)[2], 0)
     check("      a restart that fails between commands stops the sweep",
           _verify.sweep({"A_A": "a", "B_B": "b"},
                         lambda cid, ex, res, det, extra=None: None,
-                        run_one=lambda e: ("ok", ""), alive=lambda: True,
+                        run_one=lambda cid, e: ("ok", ""), alive=lambda: True,
                         healthy=lambda: True, restart=lambda: False,
                         restart_every=1)[1],
           False)
@@ -3587,7 +4080,7 @@ def _run():
         {"A_A": "a", "B_B": "b", "C_C": "c"},
         lambda cid, ex, res, det, extra=None:
             _af_seen.append((cid, res, (extra or {}).get("after", "-"))),
-        run_one=lambda e: ("broken", "no") if e == "b" else ("ok", ""),
+        run_one=lambda cid, e: ("broken", "no") if e == "b" else ("ok", ""),
         alive=lambda: True, healthy=lambda: True, restart=lambda: True)
     check("  a failure records the command this instance ran before it",
           _af_seen,
@@ -3601,7 +4094,7 @@ def _run():
         {"A_A": "a", "B_B": "b", "C_C": "c"},
         lambda cid, ex, res, det, extra=None:
             _af_seen2.append((cid, res, (extra or {}).get("after", "-"))),
-        run_one=lambda e: ("ok", "") if e == "a"
+        run_one=lambda cid, e: ("ok", "") if e == "a"
         else ("hazard", "died") if e == "b" else ("broken", "no"),
         alive=lambda: True, healthy=lambda: True, restart=lambda: True)
     check("    a restart clears it: nothing precedes the command after one",
@@ -3616,7 +4109,7 @@ def _run():
         {"A_A": "a", "B_B": "b", "C_C": "c"},
         lambda cid, ex, res, det, extra=None:
             _af_seen2b.append((cid, res, (extra or {}).get("after", "-"))),
-        run_one=lambda e: ("ok", "") if e == "a" else ("broken", "no"),
+        run_one=lambda cid, e: ("ok", "") if e == "a" else ("broken", "no"),
         alive=lambda: True, healthy=lambda: next(_af_health),
         restart=lambda: True,
         setup=lambda cid: (False, "no instance") if cid == "B_B"
@@ -3632,7 +4125,7 @@ def _run():
         {"A_A": "a", "B_B": "b"},
         lambda cid, ex, res, det, extra=None:
             _af_seen3.append((cid, res, (extra or {}).get("after", "-"))),
-        run_one=lambda e: ("broken", "no"),
+        run_one=lambda cid, e: ("broken", "no"),
         alive=lambda: True, healthy=lambda: True, restart=lambda: True,
         setup=lambda cid: (False, "no Wire") if cid == "A_A" else (True, ""))
     check("      a recipe that failed still counts as having run",
@@ -3643,7 +4136,7 @@ def _run():
         {"A_A": "a", "B_B": "b"},
         lambda cid, ex, res, det, extra=None:
             _af_seen4.append((cid, res, (extra or {}).get("after", "-"))),
-        run_one=lambda e: ("broken", "no"),
+        run_one=lambda cid, e: ("broken", "no"),
         alive=lambda: True, healthy=lambda: True, restart=lambda: True,
         restart_every=1)
     check("      and a scheduled restart clears it too",
@@ -3669,7 +4162,7 @@ def _run():
         {"C_C": "c", "D_D": "d"},
         lambda cid, ex, res, det, extra=None:
             _px_events2.append((cid, res)),
-        run_one=lambda e: ("stuck_panel", "would not close") if e == "c"
+        run_one=lambda cid, e: ("stuck_panel", "would not close") if e == "c"
         else ("ok", ""),
         alive=lambda: True, healthy=lambda: True,
         restart=lambda: _px_restarts.append(1) or True)
@@ -3680,7 +4173,7 @@ def _run():
     _verify.sweep(
         {"F_F": "f", "G_G": "g"},
         lambda cid, ex, res, det, extra=None: _px_events3.append((cid, res)),
-        run_one=lambda e: ("blocked", "a panel would not close")
+        run_one=lambda cid, e: ("blocked", "a panel would not close")
         if e == "f" else ("ok", ""),
         alive=lambda: True, healthy=lambda: True,
         restart=lambda: _px_restarts3.append(1) or True)
@@ -3690,7 +4183,7 @@ def _run():
     check("    and a restart that fails stops the sweep there",
           _verify.sweep({"E_E": "e"},
                         lambda cid, ex, res, det, extra=None: None,
-                        run_one=lambda e: ("stuck_panel", "would not close"),
+                        run_one=lambda cid, e: ("stuck_panel", "would not close"),
                         alive=lambda: True, healthy=lambda: True,
                         restart=lambda: False)[1],
           False)

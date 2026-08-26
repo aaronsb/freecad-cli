@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "8b52ff7708f4"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Link; make_link
 aliases: []
 requires: []
 panel: null

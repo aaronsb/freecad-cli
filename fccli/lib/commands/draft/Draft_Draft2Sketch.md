@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "933d77e2b18e"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Wire; draft_to_sketch
 aliases: []
 requires: []
 panel: null

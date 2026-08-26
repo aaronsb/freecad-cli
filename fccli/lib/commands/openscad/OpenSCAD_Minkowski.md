@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "851f8787eb66"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box, Box001; minkowski_sum
 aliases: []
 requires: []
 panel: null

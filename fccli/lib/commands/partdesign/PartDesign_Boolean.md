@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "10942730e190"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Body; boolean_operation combotype=Cut
 aliases: []
 requires: []
 panel: null

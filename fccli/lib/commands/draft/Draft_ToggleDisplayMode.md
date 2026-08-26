@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "f3b30f0f5d31"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; toggle_wireframe
 aliases: []
 requires: []
 panel: null

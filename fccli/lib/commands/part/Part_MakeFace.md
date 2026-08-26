@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "048cc08f9164"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Wire; face_from_wires
 aliases: []
 requires: []
 panel: null

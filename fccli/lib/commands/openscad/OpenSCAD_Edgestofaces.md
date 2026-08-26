@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "e59e27fb1894"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box.Edge1; convert_edges_to_faces
 aliases: []
 requires: []
 panel: null

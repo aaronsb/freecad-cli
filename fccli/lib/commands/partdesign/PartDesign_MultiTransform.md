@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "769608653df5"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select AdditiveBox001; partdesign_multi_transform
 aliases: []
 requires: []
 panel: null

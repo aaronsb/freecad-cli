@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "a11edae3de77"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Box; select_all_instances
 aliases: []
 requires: []
 panel: null

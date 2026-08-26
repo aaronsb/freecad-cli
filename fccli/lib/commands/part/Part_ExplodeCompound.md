@@ -13,6 +13,7 @@ generated:                     # owned by the tool; rewritten on reconcile
   seed: "4d9980b9b7d0"
 # authored from here down; the tool never rewrites these
 verb: null
+example: select Compound; explode_compound
 aliases: []
 requires: []
 panel: null
