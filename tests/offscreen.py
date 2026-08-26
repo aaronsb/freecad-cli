@@ -2025,10 +2025,13 @@ def _run():
     # decline for the commands those files claim rather than answer from
     # the wrong verb. Deleting the skip puts the false positive back.
     _claimed = _dsc.authored_commands()
-    check("  the hand-authored tier is found by name",
-          (len(_claimed), "Part_Box" in _claimed, "Std_Save" in _claimed,
+    # 14 is a tripwire, not a constant: writing a hand-authored verb for
+    # a fifteenth command fails this until somebody moves the number and
+    # reads what the rules stopped seeing.
+    check("  the hand-authored tier is found by name, and its verb with it",
+          (len(_claimed), _claimed.get("Part_Box"), _claimed.get("Std_Save"),
            "Draft_Arc" in _claimed),
-          (14, True, True, False))
+          (14, ("box", "fccli/verbs.py"), ("save", "fccli/shell.py"), False))
     check("  a source with no gui_command= raises rather than claiming none",
           _raises(lambda: _dsc.authored_commands(
               (os.path.join(os.path.dirname(__file__), "offscreen.py"),))),
@@ -2041,9 +2044,43 @@ def _run():
            _blind.records["Part_Box"]["checks"]["A2"],
            _blind.records["Part_Box"]["checks"]["A3"]),
           (0, "unread", "unread"))
-    check("    and the record says why",
-          any("its steps need FreeCAD to read" in n
-              for n in _blind.records["Part_Box"]["notes"]), True)
+    check("    and the record says why, naming the verb that owns it",
+          ([n for n in _blind.records["Part_Box"]["notes"]
+            if "`box` in fccli/verbs.py" in n] != [],
+           _blind.records["Part_Box"].get("authored_verb")),
+          (True, "box"))
+    # One note per command, not one note mentioning one command: `notes`
+    # is machine-read, and a record that talks about somebody else is a
+    # record the campaign has to disbelieve.
+    _other = _spec({"Draft_Circle": {"file": "draft/Draft_Circle.md",
+                                     "doc": "x"}})
+    check("    and it is that command's verb, not another's",
+          ([n for n in _other.records["Draft_Circle"]["notes"]
+            if "`circle`" in n and "box" not in n] != [],
+           _other.records["Draft_Circle"].get("authored_verb")),
+          (True, "circle"))
+    # F5's half in this module: a registry that will not build takes the
+    # whole hard-fail tier with it, so it cannot be a report.
+    _old_build = _dsc.build_registry
+    try:
+        _dsc.build_registry = lambda descriptor, dictionary: None
+        _unbuilt = _dsc.inspect(_spec_desc, {"commands": {}}, {})
+    finally:
+        _dsc.build_registry = _old_build
+    check("  a registry that will not build is a problem, not a quiet report",
+          (len(_unbuilt.problems), _unbuilt.reports), (1, []))
+    # And F5's other half, in the lint: the catch around inspect() keeps a
+    # traceback off the operator, and must not keep the failure off too.
+    _old_inspect = _dsc.inspect
+    try:
+        def _boom(*a, **kw):
+            raise RuntimeError("a shape descriptions.py did not expect")
+        _dsc.inspect = _boom
+        _n5, _p5 = _ld.lint(_cd.DEFAULT_TREE, _ld.DESCRIPTOR, _cd.DEFAULT_OUT)
+    finally:
+        _dsc.inspect = _old_inspect
+    check("    and so is a description pass that raised",
+          [p for p in _p5 if "did not run: RuntimeError" in p] != [], True)
     # A tuning fault is registry-independent, so it is still a problem
     # for a command whose verb this module cannot see -- and it has to
     # reach the record, which is where the campaign reads verdicts.
@@ -2054,10 +2091,15 @@ def _run():
            any("not a property" in n
                for n in _tuned_bad.records["Part_Box"]["notes"])),
           ("fail", True))
+    _typed = _spec({}, {"Part::Helix": {"file": "part/_types.yaml",
+                                        "options": ["Style"]}})
     check("    and a type with no command file is filed under its type",
-          (_spec({}, {"Part::Helix": {"file": "part/_types.yaml",
-                                      "options": ["Style"]}})
-           .types["Part::Helix"]["verdict"]), "report")
+          _typed.types.get("Part::Helix", {}).get("verdict"), "report")
+    _typed_bad = _spec({}, {"Part::Helix": {"file": "part/_types.yaml",
+                                            "steps": ["Lenght"]}})
+    check("      with a problem filed as one, not softened to a report",
+          (_typed_bad.types.get("Part::Helix", {}).get("verdict"),
+           len(_typed_bad.problems)), ("fail", 1))
 
     # A1 and A4 are a person's reading; these three are the damage a
     # reader meets before the reading starts.

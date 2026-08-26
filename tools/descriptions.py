@@ -60,9 +60,16 @@ MODEMAP = os.path.join(ROOT, "fccli", "modemap.json")
 # importing them needs FreeCAD, and writing down their steps here would be
 # the second model of verb shape this module exists to avoid. A name is
 # the least that can be borrowed, and it is enough to know where to stop.
+#
+# Rooted at this checkout, not at `--tree`: the verbs are the code's, not
+# the tree's, so a tree linted from somewhere else is still measured
+# against the verbs that would run beside it.
 AUTHORED_SOURCES = (os.path.join(ROOT, "fccli", "verbs.py"),
                     os.path.join(ROOT, "fccli", "shell.py"))
-CLAIMS = re.compile(r"""gui_command\s*=\s*["']([A-Za-z_0-9]+)["']""")
+# Both halves of a Verb(...) call, in source order: the verb's own name
+# and the command it claims. A claim belongs to the name most recently
+# seen before it, which is how every one of these is written.
+CLAIMS = re.compile(r"""(?:(name)|(gui_command))\s*=\s*["']([A-Za-z_0-9]+)["']""")
 
 # Modes the classification workflow assigns (GH #50). Only `positional`
 # takes arguments on the line; the rest are driven by a selection, a task
@@ -79,16 +86,26 @@ def load_modemap(path=MODEMAP):
 
 
 def authored_commands(sources=AUTHORED_SOURCES):
-    """Commands a hand-written verb owns, by name.
+    """Commands a hand-written verb owns: command -> (verb, source file).
+
+    The verb's name comes along because a record that says "a hand-written
+    verb owns this" and cannot say which one is a note the reader has to
+    go and answer themselves.
 
     Empty is not a safe answer -- it would put every one of them back
-    under a rule that cannot see them -- so a source that will not read is
-    raised rather than shrugged off.
+    under a rule that cannot see them -- so a source that reads as having
+    none is raised rather than shrugged off.
     """
-    found = set()
+    found = {}
     for path in sources:
+        where = os.path.relpath(path, ROOT).replace(os.sep, "/")
         with open(path, encoding="utf-8") as fh:
-            found.update(CLAIMS.findall(fh.read()))
+            verb = None
+            for is_name, _is_claim, value in CLAIMS.findall(fh.read()):
+                if is_name:
+                    verb = value
+                else:
+                    found[value] = (verb, where)
     if not found:
         raise ValueError(f"no gui_command= in any of {sources}: the "
                          f"hand-authored tier moved and the rules that "
@@ -284,16 +301,14 @@ def inspect(descriptor, dictionary, files, modemap=None):
             # The verb a person wrote owns this command, and its steps are
             # behind an import that needs FreeCAD. Say so in the record
             # rather than answer from the generated verb standing in.
-            record["authored_verb"] = True
+            claiming, where = authored[name]
+            record["authored_verb"] = claiming
             record["notes"].append(
-                "A2/A3: a hand-written verb in fccli/verbs.py or "
-                "fccli/shell.py owns this command; its steps need FreeCAD "
-                "to read, so the synopsis and summary here are the "
-                "generated verb's, not the ones a reader meets, and the "
-                "two shape rules did not run. A1 and A4 want the live "
-                "verb -- Part_Box reads 'Create a box from a corner and "
-                "three dimensions.' there and 'from three dimensions' "
-                "here")
+                f"A2/A3: the hand-written verb `{claiming}` in {where} owns "
+                f"this command, and reading its steps needs FreeCAD. The "
+                f"synopsis and summary here are the generated verb's, not "
+                f"the ones a reader meets, so the two shape rules did not "
+                f"run and A1 and A4 want `{claiming}` itself")
             record["checks"]["A2"] = "unread"
             record["checks"]["A3"] = "unread"
         else:
