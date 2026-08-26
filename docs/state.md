@@ -137,7 +137,10 @@ has a value and is not `repeat`. A repeating step is filled only by `done`.
 `_announce` emits `PROMPT` for the current step. Two special cases:
 
 - A `SELECTION` step with a non-empty current selection is accepted
-  without prompting.
+  without prompting — unless the caller passed `adopt=False`, which the
+  refusal in step 4 of `_start` does. Adopting there would advance a
+  command the engine has just refused, and for a verb whose only step is
+  a selection it would run it (ADR-201).
 - A `POINT` step starts the picker with `last_point()`; any other step
   stops it. No current step emits `PROMPT` with `idle=True` and stops the
   picker.

@@ -604,6 +604,14 @@ def cmd_start(args):
         # waits for every writer to close, and the copier does not close
         # until FreeCAD exits. `make socket` hung there for the whole boot
         # timeout and then some, and it read as a slow cold start.
+        #
+        # The trade is that the copier can no longer say anything. It has
+        # little left to say -- the log path is opened here first, in this
+        # process, so an unwritable path is reported before FreeCAD
+        # exists -- but a write that fails mid-run now stops the log
+        # silently, where before it would have printed. Silence about one
+        # run's log is the smaller fault: holding the pipe made every
+        # scripted `start --log` unreadable.
         copier = subprocess.Popen(
             [sys.executable, "-c", LOG_COPIER, args.log,
              str(int(cap * 1024 * 1024))],

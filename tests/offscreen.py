@@ -2698,17 +2698,48 @@ def _run():
     # fourteen named instances as `broken`, which does not name the object.
     check("    an invalid object outranks the exit code it caused",
           _verify.classify(1, "idle", False, ["Fillet"]), "invalid")
+    _rejected_line = ("error: pad: FreeCAD computed Pad and marked it "
+                      "invalid -- the command ran, the result is not usable")
     check("    and a run that only raised keeps its own message",
-          (_verify.rejection_only("error: pad: FreeCAD computed Pad and "
-                                  "marked it invalid -- the command ran, "
-                                  "the result is not usable"),
+          (_verify.rejection_only(_rejected_line),
            _verify.rejection_only("error: pad failed: boom"),
            _verify.rejection_only("error: pad failed: boom\n"
-                                  "error: pad: FreeCAD computed Pad and "
-                                  "marked it invalid -- the command ran, "
-                                  "the result is not usable"),
+                                  + _rejected_line),
            _verify.rejection_only("")),
           (True, False, False, False))
+    # And `verify_one` has to ask it. The function above is right on its
+    # own, and forcing the call site to `extra = err` left the whole suite
+    # green -- so nothing said whether a run that raised as well as
+    # leaving something invalid kept what it said, or whether a clean
+    # rejection had its own message read back to it in the ledger.
+    _vsnaps = []
+    _vreplies = {}
+
+    def _vsnapshot():
+        return _vsnaps.pop(0)
+
+    def _vfccli(*args, **kw):
+        return _vreplies.get(args[:2], (0, "", ""))
+
+    def _vrun(err):
+        _vsnaps[:] = [{"documents": [{"active": True, "invalid": []}]},
+                      {"documents": [{"active": True, "invalid": ["Pad"]}],
+                       "engine": "idle"}]
+        _vreplies.clear()
+        _vreplies[("exec", "pad 10")] = (1, "", err)
+        return _verify.verify_one("pad 10")
+
+    _vold_f, _vold_s = _verify.fccli, _verify._snapshot
+    try:
+        _verify.fccli, _verify._snapshot = _vfccli, _vsnapshot
+        check("  an invalid run reports the object it left, by name",
+              _vrun(_rejected_line), ("invalid", "Pad"))
+        check("    and one that raised as well carries what it said",
+              _vrun("error: pad failed: boom\n" + _rejected_line),
+              ("invalid", "Pad; error: pad failed: boom\n"
+               + _rejected_line))
+    finally:
+        _verify.fccli, _verify._snapshot = _vold_f, _vold_s
     check("    a held-elsewhere floor code is busy",
           _verify.classify(75, "idle", False, []), "busy")
     check("    busy outranks a panel someone else left open",
@@ -5131,7 +5162,9 @@ def _run():
     # the line reported the escape target's success as its own. Two verbs
     # of the shape that did it: `loft standard` ran `standard_views`.
     from fccli.grammar import (Registry as _R72, Step as _S72, Verb as _V72,
-                               CHOICE as _CH72)
+                               CHOICE as _CH72, SELECTION as _SEL72,
+                               QUANTITY as _Q72, POINT as _P72)
+    from fccli.bus import PROMPT as _PROMPT72
     _ran72 = []
     _reg72 = _R72()
     _reg72.add(_V72(name="loftish", transactional=False,
@@ -5200,6 +5233,92 @@ def _run():
            len([t for k, t in _msg72 if k == ERROR])),
           ([], "collecting", {}, 1))
     _eng72.cancel()
+    # The error and the prompt under it are one reply, so they have to
+    # agree, and reading only the errors is how a disagreement hid. The
+    # message named the step the token was *aimed at* while `_announce`
+    # reported the pending one, and a selection step fills itself from
+    # what is already selected -- so live, `loft standard` answered "still
+    # asking for List of sections" over "still wants Maximum Degree".
+    # Worse, that adoption runs a verb whose only step is the selection:
+    # the line is refused and the command happens anyway.
+    _seldoc72 = App.newDocument("refused72")
+    _selobj72 = _seldoc72.addObject("Part::Box", "Widget")
+    _seldoc72.recompute()
+
+    class _Sel72:
+        def getSelection(self):
+            return [_selobj72]
+
+    class _Gui72:
+        Selection = _Sel72()
+
+    _reg72.add(_V72(name="tally", transactional=False,
+                    steps=[_S72(id="objects", kind=_SEL72,
+                                prompt="What to count"),
+                           _S72(id="times", kind=_Q72, prompt="How many")],
+                    emit=lambda v: _ran72b.append("tally")))
+    _reg72.add(_V72(name="zap", transactional=False,
+                    steps=[_S72(id="objects", kind=_SEL72,
+                                prompt="What to zap")],
+                    emit=lambda v: _ran72b.append("zap")))
+    _reply72 = []
+    _stop72 = _bus72.subscribe(
+        lambda m: _reply72.append(m.text)
+        if m.kind in (ERROR, _PROMPT72) else None)
+    _real_gui72 = sys.modules.get("FreeCADGui")
+    sys.modules["FreeCADGui"] = _Gui72()
+    try:
+        _ran72b.clear(); _reply72.clear()
+        _eng72.submit("tally standard")
+        check("  the refusal and the prompt under it name the same step",
+              _reply72,
+              ["'standard' is the command 'standard_views', and a command "
+               "does not start inside a line -- tally is still asking for "
+               "What to count",
+               "What to count"])
+        check("    and what was selected was not adopted on the way out",
+              (_eng72.state, _eng72.values, _ran72b),
+              ("collecting", {}, []))
+        _eng72.cancel()
+        _ran72b.clear(); _reply72.clear()
+        _eng72.submit("zap standard")
+        check("  a refused line does not run the verb on what was selected",
+              (_ran72b, _eng72.state), ([], "collecting"))
+        _eng72.cancel()
+        _ran72b.clear()
+        _eng72.submit("zap")
+        check("    while a line nobody refused still fills it from the "
+              "selection", (_ran72b, _eng72.state), (["zap"], "idle"))
+        # The other way the two lines can disagree, with no selection in
+        # it: a token is aimed at the step whose *kind* it matches, so
+        # `r1` reads as a relative point and is judged against the point
+        # step, while the choice step is what the command is still asking
+        # for. The step judged and the step announced are two questions.
+        _reg72.add(_V72(name="r1x", steps=[], transactional=False,
+                        emit=lambda v: _ran72b.append("r1x")))
+        _reg72.add(_V72(name="aimed", transactional=False,
+                        steps=[_S72(id="mode", kind=_CH72,
+                                    prompt="Which mode",
+                                    choices=["fast", "slow"]),
+                               _S72(id="where", kind=_P72, prompt="Where")],
+                        emit=lambda v: _ran72b.append("aimed")))
+        _ran72b.clear(); _reply72.clear()
+        _eng72.submit("aimed r1")
+        check("  a token aimed past the head names the step being asked for",
+              _reply72,
+              ["'r1' is the command 'r1x', and a command does not start "
+               "inside a line -- aimed is still asking for Which mode",
+               "Which mode"])
+        check("    and nothing ran", (_ran72b, _eng72.state),
+              ([], "collecting"))
+        _eng72.cancel()
+    finally:
+        _stop72()
+        if _real_gui72 is None:
+            sys.modules.pop("FreeCADGui", None)
+        else:
+            sys.modules["FreeCADGui"] = _real_gui72
+    App.closeDocument(_seldoc72.Name)
 
     # --- GH #57: a command that ran to completion over an object FreeCAD
     # computed and rejected reported success and said nothing. A Part::Cut

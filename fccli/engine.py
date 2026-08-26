@@ -367,12 +367,31 @@ class Engine:
                 # this one were answers to that command, and a line that
                 # dropped one and ran anyway is how `loft standard` came
                 # back as a loft with no sections in it.
+                #
+                # The step named is the pending one, not `wanted`. They
+                # are usually the same step, and `wanted` is the right
+                # thing to have *judged* the token against -- a token can
+                # be aimed past the head by kind. But the prompt under
+                # this error announces the pending step, so naming
+                # anything else puts two lines in one reply that
+                # contradict each other: `loft standard` said "still
+                # asking for List of sections" over "still wants Maximum
+                # Degree".
+                #
+                # And nothing is adopted on the way out. `_announce`
+                # normally fills a selection step from what is already
+                # selected rather than asking again, which after a
+                # refusal would advance a command the engine has just
+                # said it will not run -- and where that selection is the
+                # only pending step, carry it all the way to `_finish`.
+                # The line refused, and the command ran anyway.
+                pending = self.current_step()
                 self.bus.emit(_bus.ERROR,
                               f"{token!r} is the command {other!r}, and a "
                               f"command does not start inside a line -- "
                               f"{self.verb.name} is still asking for "
-                              f"{wanted.prompt}")
-                self._announce()
+                              f"{pending.prompt}")
+                self._announce(adopt=False)
                 return
             self._feed_text(token, step=wanted)
         if (self.state == COLLECTING and self.steps is not None
@@ -747,13 +766,21 @@ class Engine:
         self.picked = []
         self.flags = {}
 
-    def _announce(self) -> None:
+    def _announce(self, adopt: bool = True) -> None:
+        """Say what the engine is waiting for.
+
+        `adopt` is what lets a selection step fill itself from what is
+        already selected. It is off for the one caller that has just
+        refused the line it was reading (ADR-201): adopting there would
+        advance a command the engine has said it will not run, and for a
+        verb whose only step is a selection it would run it.
+        """
         step = self.current_step()
         if step is None:
             self.bus.emit(_bus.PROMPT, "", step_kind=None, options=[], idle=True)
             self._stop_picking()
             return
-        if step.kind == SELECTION:
+        if step.kind == SELECTION and adopt:
             # Select the thing, then say what to do to it. Somebody who has
             # already selected should not be asked to select again.
             picked = current_selection()

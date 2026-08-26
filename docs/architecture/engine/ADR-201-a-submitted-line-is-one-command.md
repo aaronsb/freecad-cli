@@ -78,6 +78,19 @@ than one function with a flag.
   not start inside a line -- loft is still asking for List of sections
   ```
 
+  The step it names is the **pending** one — what the following prompt
+  announces — not the step the token was judged against. Those are two
+  questions: a token is aimed at the step whose kind it matches, so `r1`
+  reads as a relative point and is judged at the point step while a
+  choice step is what the command is still asking for. Naming the wrong
+  one puts two lines in one reply that contradict each other.
+- Nothing is adopted on the way out. `_announce` normally fills a
+  selection step from what is already selected rather than asking again;
+  after a refusal that would advance a command the engine has just said
+  it will not run, and where that selection is the only pending step it
+  would carry the line all the way to `_finish` — refused, and run
+  anyway.
+
 - **The line stops at the refusal.** The tokens after the bad one were
   answers to the command it refused, and reading on would half-answer it:
   `_start` finishes a verb that learned its steps by starting as soon as
@@ -119,6 +132,13 @@ unchanged.
 - The refusal is an error, not a cancellation, so `<verb> cancelled` now
   only ever means a person asked for it or the escape happened at a
   prompt.
+- This covers a token that reached a step. A token that reaches **no**
+  step — every step filled, or the verb has none — is still dropped
+  without a word: `zoom all extra` runs `zoom all` and exits 0, and
+  `delete standard` deletes the selection. Same principle and same
+  consequence, but the fix is not the same size: every line carrying a
+  trailing token runs today, so it wants a sweep of what the tree and the
+  ledger actually send. Filed as GH #77.
 
 ## Alternatives Considered
 
