@@ -288,8 +288,12 @@ def inspect(descriptor, dictionary, files, modemap=None):
             record["notes"].append(
                 "A2/A3: a hand-written verb in fccli/verbs.py or "
                 "fccli/shell.py owns this command; its steps need FreeCAD "
-                "to read, so the synopsis here is the generated one and "
-                "the two shape rules did not run")
+                "to read, so the synopsis and summary here are the "
+                "generated verb's, not the ones a reader meets, and the "
+                "two shape rules did not run. A1 and A4 want the live "
+                "verb -- Part_Box reads 'Create a box from a corner and "
+                "three dimensions.' there and 'from three dimensions' "
+                "here")
             record["checks"]["A2"] = "unread"
             record["checks"]["A3"] = "unread"
         else:
