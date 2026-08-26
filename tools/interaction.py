@@ -36,12 +36,15 @@ person's judgment, or that the tree carries by the dozen today, is a report
 line. `--strict-grammar` promotes every report to a problem.
 
 Where the two tiers fall is a judgment call per rule, and each is argued at
-the rule. The short version: the D group's live faults are almost all loud
--- the engine prints `expected one of [...]` and refuses -- so what earns
-the problem tier is the tree asking for something and getting something
-else without a word. Three classes qualify and all three are empty today,
-which is why this lint can be added to `make check` without breaking it.
-The 21 shadowed choices, the 4 collided ones, the 1003 verbs unreachable by
+the rule. The criterion is the consequence: what earns the problem tier is
+a fault the person never hears about. Most of the D group's live faults are
+loud -- the engine prints `expected one of [...]` and refuses -- and those
+are reports. Four classes are above the line, and three of them are empty
+today, which is why this lint can be added to `make check` without breaking
+it. The fourth is the choice collision: `save as` runs one of Std_SaveAs
+and IFC_SaveAs and nothing says which, which is silent, so the rule is a
+problem and the four instances the tree carries are grandfathered by name
+in KNOWN_COLLISIONS. The 21 shadowed choices, the 1003 verbs unreachable by
 their meaningful word and the 264 dimensionless steps carrying millimetres
 are reports, and the report is the campaign's worklist.
 
@@ -50,10 +53,13 @@ The blind spots are named rather than guessed at. `fccli.verbs` and
 import, and both import FreeCAD at their first line, so that tier does not
 exist in a FreeCAD-free build. Fourteen commands are claimed by name
 (descriptions.py's `authored_commands`), and every rule whose answer
-depends on step shape records `unread` for them. Thirty-four verb names are
-claimed the same way, and a generated verb or family door standing on one
-of those names is a verb this lint can see and an operator cannot -- said
-in the record, not silently judged.
+depends on step shape records `unread` for them. Sixty-seven verb names and
+aliases are claimed the same way -- an alias counts, because `register_all`
+refuses a generated verb on a taken alias exactly as it does on a taken
+name -- and a generated verb or family door standing on one of them is a
+verb this lint can see and an operator cannot. Eighteen do, including the
+family doors `select` and `sel`, whose choices are fiction. Said in the
+record, not silently judged.
 """
 
 import ast
@@ -70,11 +76,23 @@ import descriptions as dsc  # noqa: E402
 
 COMPLETION = os.path.join(ROOT, "fccli", "completion.py")
 
-# A hand-written verb's own name, in the two files that register them.
-# Read as text for the same reason descriptions.py reads `gui_command=`
-# there: importing needs FreeCAD, and writing the names down here would be
-# the second model this module exists to avoid.
-VERB_NAMES = re.compile(r"""\bname\s*=\s*["']([a-z_][a-z_0-9]*)["']""")
+# The names a hand-written verb answers to, in the two files that register
+# them. Read as text for the same reason descriptions.py reads
+# `gui_command=` there: importing needs FreeCAD, and writing the names down
+# here would be the second model this module exists to avoid.
+#
+# Both halves, because `register_all` refuses a generated verb on a taken
+# alias exactly as it does on a taken name. Reading only `name=` left
+# `exit`, `help` and `sel` -- aliases of the hand-written `quit`, `man` and
+# `select` -- out of the blind tier, and the lint shipped a D4 line about
+# `help` as though it were a word a person could reach Std_OnlineHelp by.
+#
+# In source order, so an alias is attributed to the name most recently seen
+# before it -- which is how every one of these is written, and is what lets
+# the record say `exit` is `quit` rather than leaving a reader to find out.
+CLAIMS = re.compile(r"""\bname\s*=\s*["'](?P<name>[a-z_][a-z_0-9]*)["']"""
+                    r"""|\baliases\s*=\s*\[(?P<aliases>[^\]]*)\]""")
+ALIAS_ITEM = re.compile(r"""["']([a-z_][a-z_0-9]*)["']""")
 # What a hand-written step says its candidates come from.
 DECLARED_SOURCE = re.compile(r"""\bcompletes\s*=\s*["']([a-z_]+)["']""")
 
@@ -95,6 +113,26 @@ DIMENSIONLESS = {
     "App::PropertyPrecision", "App::PropertyPercent",
     "App::PropertyInteger", "App::PropertyIntegerConstraint",
 }
+# Derived choice collisions this tree is known to carry: family.choice ->
+# the two commands, and the issue that owns the fix. A collision is a
+# problem whichever way the spelling arose -- `save as` runs one of two
+# commands and nothing anywhere says which -- so these four are
+# grandfathered rather than the class being demoted, which is what makes
+# the *next* one fail the lint the day it appears. The idiom is
+# verify.py's KNOWN_HAZARDS: a short list, an issue beside each entry,
+# and the rule above the line.
+#
+# An entry the tree no longer collides on is reported so the list gets
+# pruned. A grandfather list nobody prunes is how a rule quietly stops
+# being one.
+KNOWN_COLLISIONS = {
+    "save.as": "Std_SaveAs and IFC_SaveAs (GH #33)",
+    "move.view": "TechDraw_MoveView and BIM_MoveView (GH #33)",
+    "poly.cut": "Points_PolyCut and Mesh_PolyCut (GH #33)",
+    "section.by_plane":
+        "Mesh_SectionByPlane and MeshPart_SectionByPlane (GH #33)",
+}
+
 # A Quantity property carries its unit on the instance, not on the type,
 # so the harvest cannot know it and neither can this module. The runtime
 # tier reads it off the object.
@@ -136,25 +174,40 @@ def known_sources(path=COMPLETION):
 
 
 def authored_verbs(sources=dsc.AUTHORED_SOURCES):
-    """Verb names a person wrote, in the two files that register them.
+    """Every name a hand-written verb answers to: name -> source file.
 
-    A generated verb or a family door standing on one of these names is
-    one this lint sees and an operator does not: live, `register_all`
-    refuses the generated name and the hand-written verb keeps it.
+    A generated verb or a family door standing on one of these is one this
+    lint sees and an operator does not: live, `register_all` refuses the
+    generated name and the hand-written verb keeps it. An alias counts --
+    live, `help` is `man` and `sel` is `select`, and a generated verb of
+    either name never registers.
 
     Empty is not a safe answer, for the same reason it is not in
     `authored_commands`: it would quietly declare the blind spot absent.
+    Each half is required, so losing one of the two patterns is not a
+    quieter lint but a failing one.
     """
     found = {}
     for path in sources:
         where = os.path.relpath(path, ROOT).replace(os.sep, "/")
         with open(path, encoding="utf-8") as fh:
-            for name in VERB_NAMES.findall(fh.read()):
-                found.setdefault(name, where)
-    if not found:
-        raise ValueError(f"no name= in any of {sources}: the hand-authored "
-                         f"tier moved, and the names this lint reports on "
-                         f"would be names nobody meets")
+            text = fh.read()
+        owner, names, aliases = None, 0, 0
+        for match in CLAIMS.finditer(text):
+            if match.group("name"):
+                owner = match.group("name")
+                names += 1
+                found.setdefault(owner, (owner, where))
+                continue
+            for alias in ALIAS_ITEM.findall(match.group("aliases")):
+                aliases += 1
+                found.setdefault(alias, (owner, where))
+        if not names or not aliases:
+            raise ValueError(
+                f"{os.path.relpath(path, ROOT)}: read {names} name= and "
+                f"{aliases} aliases= -- the hand-authored tier moved, and "
+                f"the names this lint reports on would be names nobody "
+                f"meets")
     return found
 
 
@@ -318,11 +371,16 @@ def _blind_tier(found, claimed, written, registry, fams):
     for name in taken:
         verb = registry.get(name)
         door = getattr(verb, "family", None)
-        found.blind.append({"verb": name, "written_in": written[name],
-                            "family_door": door})
-        found.report(f"fccli/{os.path.basename(written[name])}",
-                     f"the verb `{name}` is written by hand and the "
-                     f"generated tier builds one of the same name"
+        owner, source = written[name]
+        found.blind.append({"verb": name, "written_in": source,
+                            "authored_verb": owner, "family_door": door})
+        found.report(source,
+                     f"the name `{name}` is "
+                     + (f"the hand-written verb `{owner}`"
+                        if owner == name else
+                        f"an alias of the hand-written verb `{owner}`")
+                     + ", and the generated tier builds a verb of the "
+                       "same name"
                      + (f" -- the family door `{door}` and its "
                         f"{len(fams.get(door) or {})} choices do not exist "
                         f"live, so what D1 says about them is about a door "
@@ -352,17 +410,22 @@ def _d1(found, registry, fams, descriptor, dictionary, commands, CHOICE):
     Std_SaveAs and IFC_SaveAs, and the other is gone from the family with
     nothing said anywhere.
 
-    The severity split follows the two. Shadowing is loud -- a refusal a
-    person reads -- and the tree carries them by the score, so it is a
-    report naming the value and what swallowed it -- twenty-one of them.
-    A collision is silent,
-    and that is the whole of the difference: the command runs, it is just
-    the wrong one. It is still a report where both spellings fell out of
-    FreeCAD's CamelCase, because four of those are live today and the cure
-    is a `family:`/`choice:` override somebody has to choose; it is a
-    problem where the tree *authored* the spelling, because then a file
-    asked for a word and a different command answers to it. Empty today,
-    which is what makes it a problem rather than a fifth report.
+    The severity split follows the consequence, not the provenance.
+    Shadowing is loud -- the person reads a refusal and can try the longer
+    word -- and the tree carries twenty-one, so it is a report naming the
+    value and what swallowed it. A collision is silent in the full sense:
+    no refusal, no message, the wrong command simply runs, and one of the
+    two files ships describing something nobody can reach. That is a
+    problem however the spelling arose. The harm is identical either way,
+    so provenance would be a line about whom to blame drawn where the
+    criterion asks what happens.
+
+    The four the tree carries are grandfathered by name in
+    KNOWN_COLLISIONS rather than the class being demoted, so a new one --
+    the next addon, the next FreeCAD release -- fails the lint the day it
+    appears instead of joining a report nobody diffs. D1 exists because
+    #55 sat unnoticed; a report is where it sat. An authored spelling gets
+    no grandfathering at all.
     """
     seen_doors = set()
     for fname, members in sorted(fams.items()):
@@ -404,9 +467,18 @@ def _where(commands, command, creates, fallback):
 
 
 def _shadowing(found, step, subject, key, where, owner):
-    """Values in one choice set that no input selects."""
+    """Values in one choice set that no input selects.
+
+    `grammar.match_choice` is the engine's own matcher, called rather than
+    restated: this rule is about what the accept path does with a typed
+    value, and a copy of a two-line comparison is the easiest kind to let
+    drift. It used to be a copy, and a reviewer's mutant proved the copy
+    could be made case-sensitive without the suite or the tree's output
+    moving a line.
+    """
+    from fccli.grammar import match_choice
     for value in step.choices:
-        hits = [c for c in step.choices if c.lower().startswith(value.lower())]
+        hits = match_choice(step.choices, value)
         if len(hits) == 1:
             continue
         longer = [h for h in hits if h != value]
@@ -450,23 +522,42 @@ def _collisions(found, fams, descriptor, dictionary, commands):
             continue
         for spelling in [choice] + list(entry.get("also") or []):
             authored.add((slug([fam]), slug([spelling])))
+    seen = set()
     for fname, members in sorted(fams.items()):
         for choice, member in sorted(members.items()):
             other = ((backwards.get(fname) or {}).get(choice) or {}).get("command")
             if not other or other == member["command"]:
                 continue
+            key = f"{fname}.{choice}"
+            seen.add(key)
             wrote = (fname, choice) in authored
+            known = KNOWN_COLLISIONS.get(key)
             rel = _where(commands, member["command"], None, fname)
             text = (f"`{fname} {choice}` is two commands, {member['command']} "
                     f"and {other} -- one is written over the other where the "
                     f"family is built, so the choice runs a command the "
                     f"other's file still describes")
-            say = found.problem if wrote else found.report
-            say(rel, text + ("; the tree authored this spelling"
-                             if wrote else
-                             "; both spellings fell out of the command names, "
-                             "and a family:/choice: override in one file is "
-                             "the cure"), "D1")
+            if wrote:
+                # No grandfathering for a spelling the tree wrote: a file
+                # asked for the word and a different command answers to it.
+                found.problem(rel, text + "; the tree authored this spelling",
+                              "D1")
+            elif known:
+                found.report(rel, text + f"; known and grandfathered as "
+                                         f"{known}, so a family:/choice: "
+                                         f"override in one of the two files "
+                                         f"is what closes it", "D1")
+            else:
+                found.problem(rel, text + "; a family:/choice: override in "
+                                          "one of the two files is the cure",
+                              "D1")
+    for key, why in sorted(KNOWN_COLLISIONS.items()):
+        if key not in seen:
+            found.reports.append(
+                f"choices: `{key.replace('.', ' ')}` is grandfathered as {why} "
+                f"and no longer collides -- prune it from KNOWN_COLLISIONS, "
+                f"or the day those two names come back the rule will let "
+                f"them (D1)")
             entry = found.choices.setdefault(fname, {
                 "step": "target", "choices": len(members), "unreachable": []})
             entry.setdefault("collisions", []).append(
@@ -834,8 +925,10 @@ def _d5(found, registry, descriptor, QUANTITY):
             f"...). FreeCAD gives the property no dimension, the harvest "
             f"writes no unit, and _step_from_param reads the absence as its "
             f"default -- so a bare number takes the schema's preferred "
-            f"length, and under ImperialBuilding a typed 3 is read as 3in "
-            f"and stored as 76.2 (D5)")
+            f"length. A typed 3 is 3 under Standard, 3in under Building US "
+            f"and stored as 76.2, and 3thou under US customary and stored "
+            f"as 0.0762: wrong by 25.4 one way and 1/39.4 the other, "
+            f"depending on a preference (D5)")
     runtime = sum(1 for rows in found.quantities.values() for row in rows
                   if row["property"] in RUNTIME_UNIT)
     if runtime:

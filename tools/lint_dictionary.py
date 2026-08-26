@@ -253,6 +253,22 @@ def lint(tree, descriptor_path, compiled_path, described=None,
     return len(seen), problems
 
 
+def combined_reports(found, grammar, strict_descriptions=False,
+                     strict_grammar=False):
+    """Both groups' report lines, as one list neither group owns.
+
+    A new list, not either group's own: `reports = found.reports` followed
+    by `reports += grammar.reports` bound the A group's list and extended
+    it in place, so all 124 grammar lines landed inside
+    `descriptions.Findings.reports`. `--report` runs after that, and wrote
+    `totals.reports = 559` into the artifact the campaign reads where the
+    A group's own count is 435. A strict group contributes nothing here
+    because its lines have already been promoted to problems.
+    """
+    return ([] if strict_descriptions else list(found.reports)) + \
+           ([] if strict_grammar else list(grammar.reports))
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--tree", default=cd.DEFAULT_TREE)
@@ -283,8 +299,8 @@ def main():
         problems = problems + found.reports
     if args.strict_grammar:
         problems = problems + grammar.reports
-    reports = [] if args.strict_descriptions else found.reports
-    reports += [] if args.strict_grammar else grammar.reports
+    reports = combined_reports(found, grammar, args.strict_descriptions,
+                               args.strict_grammar)
     if args.describe:
         for r in ([] if args.strict_descriptions else found.reports):
             print(r)

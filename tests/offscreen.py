@@ -2133,6 +2133,7 @@ def _run():
     # the point of building it.
     import interaction as _ixn
     import copy as _copy_module
+    import re as _re
     from fccli.grammar import Step as _Step, TEXT as _TEXT, CHOICE as _CHOICE
 
     _tree = _cd.compile_tree(_cd.DEFAULT_TREE)
@@ -2388,8 +2389,118 @@ def _run():
            [n for n in _dim_found.records["Part_Cylinder"]["notes"]
             if "App::PropertyFloat" in n] != []),
           ([], True))
+    # --- the report lists stay each group's own (found in review of #66).
+    # `reports = found.reports` followed by `reports += grammar.reports`
+    # bound the A group's list and extended it in place, so every grammar
+    # line landed inside descriptions.Findings.reports -- and --report runs
+    # after that, writing totals.reports = 559 into the artifact where the
+    # A group's own count is 435.
+    _fa, _fb = _dsc.Findings(), _ixn.Findings()
+    _fa.reports.extend(["A-one", "A-two"])
+    _fb.reports.append("D-one")
+    _both = _ld.combined_reports(_fa, _fb)
+    check("  combining the two groups' reports leaves each list alone",
+          (_both, _fa.reports, _fb.reports),
+          (["A-one", "A-two", "D-one"], ["A-one", "A-two"], ["D-one"]))
+    check("    and a strict group contributes nothing, having been promoted",
+          (_ld.combined_reports(_fa, _fb, strict_descriptions=True),
+           _ld.combined_reports(_fa, _fb, strict_grammar=True),
+           _fa.reports),
+          (["D-one"], ["A-one", "A-two"], ["A-one", "A-two"]))
+
+    # --- DIMENSIONLESS, pinned member by member. Three of the six could be
+    # dropped with the suite green, which is 87 of the 264 steps the rule
+    # exists to find. App::PropertyPercent has no instances on this tree, so
+    # a census cannot pin it; that is stated rather than left to look pinned.
+    _census = {}
+    for _line in _live_d5.reports:
+        _m = _re.match(r"units: (\d+) steps over (\S+) echo in mm", _line)
+        if _m:
+            _census[_m.group(2)] = int(_m.group(1))
+    check("  every dimensionless property type is counted, by name",
+          (_census, sum(_census.values())),
+          ({"App::PropertyFloat": 80, "App::PropertyFloatConstraint": 97,
+            "App::PropertyInteger": 54, "App::PropertyIntegerConstraint": 19,
+            "App::PropertyPrecision": 14}, 264))
+    check("    and the one with no instances is in the set, uncounted",
+          ("App::PropertyPercent" in _ixn.DIMENSIONLESS,
+           "App::PropertyPercent" in _census), (True, False))
+
+    # --- the blind tier reads aliases as well as names. `register_all`
+    # refuses a generated verb on a taken alias exactly as it does on a
+    # taken name, and reading only `name=` shipped a D4 line about `help`
+    # as though Std_OnlineHelp were reachable by it.
+    _named = _ixn.authored_verbs()
+    check("  an alias of a hand-written verb is a name nobody else gets",
+          {_k: _named.get(_k) for _k in ("exit", "help", "sel")},
+          {"exit": ("quit", "fccli/shell.py"),
+           "help": ("man", "fccli/shell.py"),
+           "sel": ("select", "fccli/shell.py")})
+    check("    and the record says which verb it is an alias of",
+          (_fired(_live_d4, "the name `help` is an alias of the hand-written "
+                            "verb `man`", "reports"),
+           _fired(_live_d4, "the name `box` is the hand-written verb `box`",
+                  "reports")), (1, 1))
+    check("    so the word is no longer spoken of as a way in",
+          _fired(_live_d4, "naming: 'help' is the meaningful word of",
+                 "reports"), 0)
+    _half = os.path.join(tempfile.mkdtemp(), "half.py")
+    with open(_half, "w") as _fh:
+        _fh.write('Verb(name="only", steps=[])\n')
+    check("  a source with names and no aliases raises, not half an answer",
+          _raises(lambda: _ixn.authored_verbs((_half,))), True)
+
+    # --- D1 calls the engine's matcher rather than restating it. A copy of
+    # the comparison could be made case-sensitive with the suite green and
+    # the tree's D1 output byte-identical, because every shadowed pair the
+    # tree carries agrees in case. This is the pair that does not.
+    from fccli.grammar import match_choice as _match
+    check("  the engine's matcher is prefix, and case is not the difference",
+          (_match(["iso", "isometric"], "iso"),
+           _match(["Iso", "isometric"], "Iso"),
+           _match(["front", "top"], "FRONT"),
+           _match(["front", "top"], "zzz")),
+          (["iso", "isometric"], ["Iso", "isometric"], ["front"], []))
+    _mixed = _copy_registry()
+    _mixed.get("view").steps[0].choices = ["Iso", "isometric", "front"]
+    check("    so a shadow in mixed case is one D1 finds",
+          _fired(_grammar(dictionary=_tree, registry=_mixed),
+                 "lists 'Iso', and 'isometric' begins with it", "reports"), 1)
+
+    # --- the choice collision is above the line, with the four the tree
+    # carries grandfathered by name. The criterion is the consequence: a
+    # collision runs the wrong command with no refusal and no message, and
+    # that is true however the spelling arose. Demoting the class would
+    # have left the next one joining a report nobody diffs.
+    check("  a known collision is a report, and says it is grandfathered",
+          (_fired(_live_d1, "`save as` is two commands", "reports"),
+           _fired(_live_d1, "`save as` is two commands", "problems")), (1, 0))
+    _new = _copy_module.deepcopy(_spec_desc)
+    for _cmd, _label in (("Aaa_ZapThing", "Zap Thing"),
+                         ("Bbb_ZapThing", "Zap Thing Too"),
+                         ("Ccc_ZapOther", "Zap Other"),
+                         ("Ddd_ZapMore", "Zap More")):
+        _new["commands"][_cmd] = {"name": _cmd, "label": _label,
+                                  "tooltip": _label, "workbench": None}
+    check("  a collision the list does not name is a problem",
+          _fired(_grammar(dictionary=_tree, descriptor=_new),
+                 "`zap thing` is two commands", "problems"), 1)
+    check("    and the four it does name stay reports beside it",
+          _fired(_grammar(dictionary=_tree, descriptor=_new),
+                 "is two commands", "problems"), 1)
+    _stale = dict(_ixn.KNOWN_COLLISIONS, **{"nosuch.choice": "nothing (GH #0)"})
+    _old_known = _ixn.KNOWN_COLLISIONS
+    try:
+        _ixn.KNOWN_COLLISIONS = _stale
+        _pruned = _grammar(dictionary=_tree)
+    finally:
+        _ixn.KNOWN_COLLISIONS = _old_known
+    check("  an entry the tree no longer collides on asks to be pruned",
+          _fired(_pruned, "`nosuch choice` is grandfathered", "reports"), 1)
+
     check("  a generated verb standing on a hand-written name is said so",
-          (_fired(_live_d4, "the verb `select` is written by hand", "reports"),
+          (_fired(_live_d4, "the name `select` is the hand-written verb "
+                            "`select`", "reports"),
            _fired(_live_d4, "the family door `select` and its 17 choices do "
                             "not exist live", "reports")), (1, 1))
     # F5 in this module, both halves: a registry that will not build takes

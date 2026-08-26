@@ -71,6 +71,24 @@ class Step:
         return [o.name for o in self.options]
 
 
+def match_choice(choices, text) -> List[str]:
+    """Which of a choice step's values a typed token selects.
+
+    Prefix, case-insensitive. The accept path insists on exactly one: a
+    token that matches two is ambiguous and one that matches none is not
+    a choice at all. So an exact value that begins a longer one selects
+    nothing -- `iso` where `isometric` is also listed, which is GH #55.
+
+    One function because there were four copies of the comparison: the
+    accept path, the restart guard, and two in the highlighter. The lint
+    that checks every choice is resolvable (GH #49) reads it here rather
+    than restating it, so it cannot end up answering a question about a
+    matcher the engine no longer uses.
+    """
+    lowered = text.lower()
+    return [c for c in choices if c.lower().startswith(lowered)]
+
+
 # What a step gets when it does not say. Selections come first -- pick the
 # thing, then say what to do to it -- and points come last, so everything
 # typeable is out of the way before the viewport is asked for anything.
