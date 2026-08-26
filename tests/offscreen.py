@@ -3680,10 +3680,20 @@ def _run():
     check("    and a panel example goes through the panel step, whole",
           _dr[2], ("panel", "select Box.Edge1; part_fillet "
                             "filletstartradius=3"))
-    check("    a mode nothing routes falls back to bare, as before #54",
-          _verify.drive("manual", "whatever", positional=lambda e: ("ok", e),
-                        panel=lambda e: ("panel", e)),
-          ("ok", "whatever"))
+    # A mode with no route is refused, not driven bare. `ledger_targets`
+    # punts every such mode before a target is made, so nothing reaches
+    # this today -- but a fifth mode added to the map later would be driven
+    # bare and stamped verified, which is the bug the extraction exists to
+    # make visible (PR #75 review, 1).
+    _dr_before = len(_dr)
+    _dr_said = ""
+    try:
+        _verify.drive("brand_new_mode", "whatever", positional=_dr_pos,
+                      panel=_dr_panel)
+    except ValueError as _dr_exc:
+        _dr_said = str(_dr_exc)
+    check("    a mode nothing routes is refused, and named",
+          ("brand_new_mode" in _dr_said, len(_dr) - _dr_before), (True, 0))
 
     # What the ledger drives, per command, and what it says about the rest.
     _lg_dict = {
@@ -3889,7 +3899,13 @@ def _run():
           ("part_cut" in _mv_state["lines"],
            "select Box, Box001; part_cut" in _mv_state["lines"]),
           (True, False))
-    _mv_at = _mv_state["lines"].index("part_cut")
+    def _mv_where(line):
+        """Where a line was typed, or -1. A mutant that stops a line being
+        typed at all must fail the check about it, not stop the run on an
+        index that is not there (PR #75 review, 6)."""
+        lines = _mv_state["lines"]
+        return lines.index(line) if line in lines else -1
+    _mv_at = _mv_where("part_cut")
     check("    behind the fixture its hint names, selected first",
           _mv_state["lines"][_mv_at - 6:_mv_at + 1],
           ["close!", "new verify", "no_selection_filters",
@@ -3898,7 +3914,7 @@ def _run():
     # A positional example is driven bare -- no fixture, no select -- but
     # in a scratch document of its own, so which fixture the command
     # before it built cannot change the answer.
-    _mv_box = _mv_state["lines"].index("box 0,0,0 40 30 20")
+    _mv_box = _mv_where("box 0,0,0 40 30 20")
     check("    a positional example is driven bare, in a fresh document",
           _mv_state["lines"][_mv_box - 3:_mv_box + 1],
           ["close!", "new verify", "no_selection_filters",
@@ -4002,18 +4018,25 @@ def _run():
             return 0, _json.dumps(_vc_snap), ""
         if args[0] == "exec" and args[1] == "loft standard":
             return 0, "loft cancelled\n= standard_views", ""
+        if args[0] == "exec" and args[1] == "loft busy":
+            return 75, "loft cancelled\n= standard_views", ""
         return 0, "", ""
     _vc_old = _verify.fccli
     try:
         _verify.fccli = _vc_fccli
         _vc_ok = _verify.verify_one("loft 5")
         _vc_gone = _verify.verify_one("loft standard")
+        _vc_busy = _verify.verify_one("loft busy")
     finally:
         _verify.fccli = _vc_old
     check("    a line that abandoned its command is not a pass",
           (_vc_ok[0], _vc_gone[0]), ("ok", "cancelled"))
     check("      and the detail names what was abandoned",
           "cancelled loft" in _vc_gone[1], True)
+    # `busy` outranks it: a floor held elsewhere means nothing of the line
+    # ran, so there is nothing to say it abandoned (PR #75 review, 6).
+    check("      but a held floor stays busy, cancelled line or not",
+          _vc_busy[0], "busy")
 
     # The tally the campaign is measured by. One number says how much is
     # verified; the two-way one says what kind of verification it is.

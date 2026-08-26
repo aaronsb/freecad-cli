@@ -1003,6 +1003,12 @@ def drive(mode, example, positional=None, panel=None):
     example ran bare, so a selection example judged its own `select` line
     and a panel example was recorded `panel` for opening the panel it is
     supposed to open.
+
+    A mode with no route here is refused rather than driven bare. Nothing
+    reaches it today -- `ledger_targets` punts `manual` and every mode it
+    does not know before a target is made -- but driving an unrouted mode
+    bare is the exact bug this function was extracted to make visible, and
+    a fifth mode added to the map later would inherit it in silence.
     """
     positional = positional or verify_one
     panel = panel or verify_panel
@@ -1010,7 +1016,12 @@ def drive(mode, example, positional=None, panel=None):
         return panel(example)
     if mode == "selection":
         return positional(verb_line(example))
-    return positional(example)
+    if mode == "positional":
+        return positional(example)
+    raise ValueError(
+        f"no way to drive a {mode!r} command: the ledger drives "
+        f"{', '.join(DRIVEN_MODES)} and punts everything else, so a mode "
+        f"arriving here is one nothing routes")
 
 
 def ledger_targets(commands, modemap, tier=None):
