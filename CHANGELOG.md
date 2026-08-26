@@ -4,6 +4,30 @@
 
 ### Fixed
 
+- **A failed start no longer reports itself as an addon too old (GH
+  #53).** `verify.py` read `"panel" not in _snapshot()` as "this FreeCAD
+  predates ADR-302", and an instance that never came up answers `{}`, for
+  which that is true -- so a start that failed sent the reader to the
+  addon. `precondition()` tells no answer at all from an answer without
+  panel facts, and says which.
+
+- **A task panel that will not close no longer costs a sweep 80 results
+  (GH #53).** The panel tier closes a panel on the way in and on any
+  ending that is not a clean apply, and the close is confirmed rather
+  than asked for: `Mesh_FromPartShape` opens a Tessellation panel that
+  neither `done` nor `cancel` closes, and every command after it was
+  answered "a dialog is already open in the task panel" or reported
+  inactive. One sweep recorded 90 stuck panels where 9 commands had left
+  one; the other 81 never ran. The command that leaves one is now
+  `stuck_panel`, and a command that ran against one is `blocked` -- no
+  answer about that command at all, so a later sweep runs it again. Both
+  restart the instance, and the restart is a real one: `_restart` reuses
+  an instance that still answers, which is right for a wedge and wrong
+  for a poisoned one, so an instance the sweep started is quit and
+  replaced. One it borrowed is not the sweep's to quit, and the sweep
+  stops rather than writing the same fact against every command left.
+
+
 - **`fccli start --log` is bounded.** FreeCAD held the log file directly,
   and a headless instance whose viewer had been switched into a stereo GL
   mode printed an error per repaint -- 51GB into /tmp in 26 minutes,
@@ -94,6 +118,66 @@
   widget property and taken back once.
 
 ### Added
+
+- **The verify harness gets a panel tier (GH #53, of #47).**
+  `tools/verify.py --modemap --tier panel` runs the verb, asks the panel
+  it opens what it answers to, sets the `name=value` pairs the draft
+  carries one at a time, and presses `done` -- the protocol #53 found by
+  hand, driven for all 272 commands the mode map calls panel. The fields
+  come from the engine two ways: the block it prints when a panel opens,
+  which is complete, and the complaint on a name the panel has not got,
+  which is capped at six names and is the question #53 named. Both are
+  read, because `datum_line` offers eleven fields and the complaint would
+  have reported six of them. A draft that carries no pairs still runs --
+  open, read, `done` -- so a command with nothing authored still says
+  whether its panel opens, what it offers and whether it applies.
+
+  Nothing is written per command, for the same reason `panels.py` has
+  nothing per command: a panel names its own fields. What is authored is
+  the draft. Eight of them, in `fccli/modemap.json`, for the
+  parameter-bearing Part and PartDesign batch ADR-200 named: `part_fillet
+  filletstartradius=3`, `revolve revolveangle=270`, `partdesign_mirror
+  comboplane=Base XZ-plane`, `boolean_operation combotype=Cut` and four
+  more. A draft may name its own fixture with `panel_fixture`, because
+  `needs_selection` was classified from the wiki: Part_Fillet's page
+  describes a dialog, and the dialog fillets nothing unless an edge was
+  selected first. Naming the fixture leaves the classification it
+  disagrees with legible instead of overwriting it. Two recipes are new --
+  two bodies with the second left active, for a PartDesign boolean, and a
+  body holding an additive feature, which is what a transform feature
+  will pattern.
+
+  The tier drives 136 of the 272 and punts 136 with a reason each, so the
+  report answers "why was this command not driven" for all of them. The
+  acceptance batch is **8 of 8**: each draft runs to a valid object, and
+  the value reaches it -- a 3 mm `filletstartradius` takes a 20x20x10 box
+  from 4.00 ml to 3.98 ml, the 19 mm³ the geometry predicts for a 10 mm
+  edge; `revolveangle=270` reads back as `Angle 270.00°` and gives three
+  times the volume of the 90° one; `attachmentoffsetz=5` puts a datum
+  plane at z=15 on the face at z=10. Over the whole tier: 23 ok, 76
+  no_panel, 31 mouse_panel, 1 broken, 1 panel, 1 hazard. **76 of the 136
+  open no panel** -- the mode map has them in the wrong tier, 40 because
+  FreeCAD says the command is not available here and 20 because the verb
+  simply ran -- and 31 open one only a mouse can drive. The field names of
+  the 25 panels that did open are recorded beside their results, 87
+  distinct names, which is the half of GH #50 the mode map does not have.
+
+- **`verify.py --restart-every N` bounds an instance's lifetime, and
+  every failure records what ran before it (GH #53).** Something in a long
+  sweep breaks a fixture that works on a fresh instance, and what it is
+  is not known. Observed once, in a 136-command panel sweep: `upgrade`
+  stopped joining four lines into a wire -- exit 0, nothing built -- and a
+  body stopped being the active body, so the eight panel drafts read 7 of
+  8 there and 8 of 8 one command into a fresh instance. Command volume is
+  not the cause: 40 builds of that recipe, five workbench borrows and 330
+  commands on one instance reproduced none of it (PR #70 review), so the
+  likelier shape is residue from one particular command rather than
+  accumulation. A result that is not `ok` now records `after`, the command
+  the same instance ran before it, which is what turns "it failed late in
+  the sweep" into a name to try; and `--restart-every N` bounds the
+  lifetime while the cause is open. It is off unless asked for, because a
+  sweep that restarts constantly cannot see the effect at all.
+
 
 - **The verify harness gets a selection tier (GH #52, of #47).**
   `tools/verify.py --modemap --tier selection` builds the fixture a

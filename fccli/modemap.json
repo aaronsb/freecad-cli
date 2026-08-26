@@ -4593,9 +4593,10 @@
   "PartDesign_Boolean": {
    "command": "PartDesign_Boolean",
    "confidence": "high",
-   "example": null,
+   "example": "boolean_operation combotype=Cut",
    "mode": "panel",
    "needs_selection": true,
+   "panel_fixture": "two_bodies",
    "reason": "The wiki describes a Boolean Parameters task panel where tool bodies are added by 3D-view picks and the operation is chosen from a drop-down, with no typed positional form (the packet lists no steps).",
    "selection_hint": "one or more tool bodies (Bodies, ShapeBinders, or solids) to combine with the active body",
    "verb": "boolean_operation"
@@ -4733,9 +4734,10 @@
   "PartDesign_Line": {
    "command": "PartDesign_Line",
    "confidence": "high",
-   "example": null,
+   "example": "datum_line attachmentoffsetz=5",
    "mode": "panel",
    "needs_selection": false,
+   "panel_fixture": "body_edge",
    "reason": "Creating a datum line opens the attachment task panel and its references are picked in the 3D view; there are no typed steps and selection can happen inside the panel.",
    "selection_hint": null,
    "verb": "datum_line"
@@ -4763,9 +4765,10 @@
   "PartDesign_Mirrored": {
    "command": "PartDesign_Mirrored",
    "confidence": "high",
-   "example": null,
+   "example": "partdesign_mirror comboplane=Base XZ-plane",
    "mode": "panel",
    "needs_selection": true,
+   "panel_fixture": "body_additive",
    "reason": "The wiki shows it always opens the Mirrored parameters task panel where the mirror plane and mode are chosen, and the packet exposes no typed steps.",
    "selection_hint": "one or more features in the active body (a Select feature panel opens if none are selected)",
    "verb": "partdesign_mirror"
@@ -4803,9 +4806,10 @@
   "PartDesign_MultiTransform": {
    "command": "PartDesign_MultiTransform",
    "confidence": "high",
-   "example": null,
+   "example": "partdesign_multi_transform",
    "mode": "panel",
    "needs_selection": true,
+   "panel_fixture": "body_additive",
    "reason": "The command opens the MultiTransform parameters task panel where nested transformations (mirrored, linear, polar, scaled) are composed interactively; its lone FuzzyTolerance step is no positional form.",
    "selection_hint": "one or more features of the active body to pattern (a Select feature panel opens if none are selected)",
    "verb": "multi_transform"
@@ -4833,9 +4837,10 @@
   "PartDesign_Plane": {
    "command": "PartDesign_Plane",
    "confidence": "high",
-   "example": null,
+   "example": "datum_plane attachmentoffsetz=5",
    "mode": "panel",
    "needs_selection": false,
+   "panel_fixture": "body_face",
    "reason": "Creating a datum plane opens an attachment parameters panel driven by viewport picks of references and an attachment-mode list, with no typed positional form.",
    "selection_hint": "optionally reference geometry picked in the 3D view to attach the plane to",
    "verb": "datum_plane"
@@ -4873,7 +4878,7 @@
   "PartDesign_Revolution": {
    "command": "PartDesign_Revolution",
    "confidence": "high",
-   "example": null,
+   "example": "revolve revolveangle=270",
    "mode": "panel",
    "needs_selection": true,
    "reason": "It revolves the selected sketch via the Revolution parameters task panel, and the packet harvested no typed steps, so there is no positional form.",
@@ -5293,9 +5298,10 @@
   "Part_Fillet": {
    "command": "Part_Fillet",
    "confidence": "high",
-   "example": null,
+   "example": "part_fillet filletstartradius=3",
    "mode": "panel",
    "needs_selection": false,
+   "panel_fixture": "solid_edge",
    "reason": "Opens a task dialog for choosing the shape, the edges and the radius, with pre-selection optional, so there is no typed positional form.",
    "selection_hint": null,
    "verb": "part_fillet"
@@ -5413,7 +5419,7 @@
   "Part_Offset2D": {
    "command": "Part_Offset2D",
    "confidence": "high",
-   "example": null,
+   "example": "part_2d_offset offset=2",
    "mode": "panel",
    "needs_selection": true,
    "reason": "The wiki's usage sets up the 2D offset in a task panel after selecting the object, and the command declares no typed steps.",
