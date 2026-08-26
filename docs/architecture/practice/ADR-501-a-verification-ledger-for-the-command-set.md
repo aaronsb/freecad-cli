@@ -71,6 +71,16 @@ ADR-100 has them. A verification sweep changes one file, not 1111. The
 ledger is a derived artifact beside `dictionary.json` and `descriptor.json`,
 built by a tool, read by `man` and the reports.
 
+**A hazard is a result, and a policy.** A command that kills or wedges the
+instance is recorded as `hazard`, and the sweep restarts a fresh headless
+instance and continues -- one hazard must not cost the rest of a sweep.
+Recorded hazards are skipped by later sweeps unless `--force`, and a short
+list in the harness (`KNOWN_HAZARDS`) seeds the skips with commands proven
+dangerous live (GH #60, #61, #62). Draft sweeps over the mode map record
+to a second artifact, `modemap_sweep.json` at the repo root, untracked --
+a draft earns its `example:` field only after passing there, so the ledger
+stays a record of authored examples.
+
 **Staleness falls out of the version stamp.** A ledger entry whose `freecad`
 is older than the current harvest is stale. `make reconcile` reads that
 version already; it reports the never-verified count and the count gone

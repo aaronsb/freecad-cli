@@ -1949,6 +1949,199 @@ def _run():
           _verify.classify(75, "idle", False, []), "busy")
     check("    busy outranks a panel someone else left open",
           _verify.classify(75, "idle", True, []), "busy")
+    # A sweep survives its own targets: known and recorded hazards are
+    # planned out, --force plans them back in, --start-at resumes.
+    check("  a known hazard is planned out of a sweep",
+          _verify.plan({"Std_ToggleToolBarLock": "lock_toolbars",
+                        "Part_Box": "box 1 1 1"}, {}),
+          ({"Part_Box": "box 1 1 1"},
+           {"Std_ToggleToolBarLock":
+            _verify.KNOWN_HAZARDS["Std_ToggleToolBarLock"]}))
+    check("    so is one an earlier sweep recorded",
+          _verify.plan({"Mod_X": "x"},
+                       {"Mod_X": {"result": "hazard",
+                                  "detail": "killed the FreeCAD instance"}}),
+          ({}, {"Mod_X": "killed the FreeCAD instance"}))
+    check("    --force plans it back in",
+          _verify.plan({"Mod_X": "x"},
+                       {"Mod_X": {"result": "hazard"}}, force=True),
+          ({"Mod_X": "x"}, {}))
+    check("    --start-at drops everything before it",
+          _verify.plan({"A_One": "a", "B_Two": "b"}, {}, start_at="B")[0],
+          {"B_Two": "b"})
+    # GH #62: FreeCAD never holds a --log file; a bounded copier does. The
+    # cap holds however much the instance spams, and the pipe is drained
+    # to the end so the writer never blocks.
+    import importlib.machinery as _glc_machinery
+    import importlib.util as _glc_util
+    _glc_repo = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _glc_loader = _glc_machinery.SourceFileLoader(
+        "_fccli_bin", os.path.join(_glc_repo, "bin", "fccli"))
+    _glc_spec = _glc_util.spec_from_loader("_fccli_bin", _glc_loader)
+    _glc_bin = _glc_util.module_from_spec(_glc_spec)
+    _glc_spec.loader.exec_module(_glc_bin)
+    with tempfile.TemporaryDirectory() as _glc_dir:
+        _glc_spam = os.path.join(_glc_dir, "spam.log")
+        # Cap above the 64K read chunk, so the accumulation across chunks
+        # is load-bearing -- a copier that never adds up passes a
+        # single-chunk cap and is GH #62 restored (PR #63 review, 5).
+        _sh.run([sys.executable, "-c", _glc_bin.LOG_COPIER, _glc_spam,
+                 str(256 * 1024)],
+                input=b"x" * (4 * 1024 * 1024), timeout=60)
+        check("  the --log copier stops writing at the cap",
+              os.path.getsize(_glc_spam) < 300 * 1024, True)
+        # The cap is the file's, not the run's: a second start appends
+        # nothing to a file already at it.
+        _sh.run([sys.executable, "-c", _glc_bin.LOG_COPIER, _glc_spam,
+                 str(256 * 1024)],
+                input=b"x" * 65536, timeout=60)
+        check("    and holds across starts on the same file",
+              os.path.getsize(_glc_spam) < 300 * 1024, True)
+        # The writer must never see EPIPE. subprocess.run(input=...)
+        # swallows BrokenPipeError, so drive the writer by hand: a copier
+        # that stops reading at the cap breaks this pipe -- for FreeCAD
+        # that is a SIGPIPE.
+        _glc_drain = os.path.join(_glc_dir, "drain.log")
+        _glc_proc = _sh.Popen(
+            [sys.executable, "-c", _glc_bin.LOG_COPIER, _glc_drain, "4096"],
+            stdin=_sh.PIPE)
+        _glc_err = None
+        try:
+            for _ in range(64):
+                _glc_proc.stdin.write(b"y" * 65536)
+                _glc_proc.stdin.flush()
+            _glc_proc.stdin.close()     # the flush that can also EPIPE
+        except OSError as _glc_exc:
+            _glc_err = _glc_exc
+        _glc_proc.wait(timeout=30)
+        check("    and never breaks the pipe under FreeCAD", _glc_err, None)
+        # A file error stops the writing, never the reading.
+        _glc_bad = os.path.join(_glc_dir, "nodir", "x.log")
+        _glc_proc2 = _sh.Popen(
+            [sys.executable, "-c", _glc_bin.LOG_COPIER, _glc_bad, "4096"],
+            stdin=_sh.PIPE)
+        _glc_err2 = None
+        try:
+            for _ in range(8):
+                _glc_proc2.stdin.write(b"z" * 65536)
+                _glc_proc2.stdin.flush()
+            _glc_proc2.stdin.close()
+        except OSError as _glc_exc:
+            _glc_err2 = _glc_exc
+        check("    an unopenable file drains rather than dies",
+              (_glc_proc2.wait(timeout=30), _glc_err2), (0, None))
+        # A write error mid-run, not just at open: /dev/full opens fine
+        # and fails the first write with ENOSPC.
+        if os.path.exists("/dev/full"):
+            _glc_proc3 = _sh.Popen(
+                [sys.executable, "-c", _glc_bin.LOG_COPIER, "/dev/full", "0"],
+                stdin=_sh.PIPE)
+            _glc_err3 = None
+            try:
+                for _ in range(8):
+                    _glc_proc3.stdin.write(b"w" * 65536)
+                    _glc_proc3.stdin.flush()
+                _glc_proc3.stdin.close()
+            except OSError as _glc_exc:
+                _glc_err3 = _glc_exc
+            check("    a write error mid-run drains rather than dies",
+                  (_glc_proc3.wait(timeout=30), _glc_err3), (0, None))
+        _glc_small = os.path.join(_glc_dir, "small.log")
+        _sh.run([sys.executable, "-c", _glc_bin.LOG_COPIER, _glc_small, "4096"],
+                input=b"hello\n", timeout=60)
+        check("    under the cap, everything is kept",
+              open(_glc_small, "rb").read(), b"hello\n")
+    # sweep() itself, on stubs (PR #63 review, findings 1/6/7/9): a
+    # command that wedges the instance -- process alive, server silent --
+    # is a recorded hazard, the sweep restarts and continues.
+    _sw_events = []
+    _sw_health = iter([False, True])
+    _sw_restarts = []
+    _sw_tally, _sw_fin, _sw_n = _verify.sweep(
+        {"A_A": "a", "B_B": "b"},
+        lambda cid, ex, res, det: _sw_events.append((cid, res, det)),
+        run_one=lambda e: ("incomplete", ""),
+        alive=lambda: True,
+        healthy=lambda: next(_sw_health),
+        restart=lambda: _sw_restarts.append(1) or True)
+    check("  a wedge is a recorded hazard; the sweep restarts and continues",
+          ([(c, r) for c, r, _ in _sw_events], _sw_n, _sw_fin),
+          ([("A_A", "hazard"), ("B_B", "incomplete")], 1, True))
+    check("    with the wedge named",
+          _sw_events[0][2], "left the instance unresponsive")
+
+    def _sw_boom(example):
+        raise _sh.TimeoutExpired("fccli", 60)
+    _sw_events2 = []
+    _sw_tally2, _sw_fin2, _sw_n2 = _verify.sweep(
+        {"C_C": "c"},
+        lambda cid, ex, res, det: _sw_events2.append((cid, res, det)),
+        run_one=_sw_boom, alive=lambda: True, healthy=lambda: True,
+        restart=lambda: True)
+    check("    a client timeout is recorded, not raised",
+          (_sw_events2, _sw_fin2),
+          ([("C_C", "hazard", "client timed out; instance wedged")], True))
+    _sw_events3 = []
+    _sw_tally3, _sw_fin3, _sw_n3 = _verify.sweep(
+        {"D_D": "d", "E_E": "e"},
+        lambda cid, ex, res, det: _sw_events3.append((cid, res, det)),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: False, healthy=lambda: False,
+        restart=lambda: False)
+    check("    a failed restart stops the sweep, the hazard recorded",
+          (_sw_events3, _sw_fin3),
+          ([("D_D", "hazard", "killed the FreeCAD instance")], False))
+
+    def _sw_slow(*a):
+        raise _sh.TimeoutExpired("fccli", 60)
+    _sw_events4 = []
+    _sw_tally4, _sw_fin4, _sw_n4 = _verify.sweep(
+        {"F_F": "f"},
+        lambda cid, ex, res, det: _sw_events4.append((cid, res, det)),
+        run_one=lambda e: ("ok", ""),
+        alive=lambda: True, healthy=_sw_slow, restart=lambda: True)
+    check("    a health probe that itself times out is the same hazard",
+          (_sw_events4, _sw_fin4),
+          ([("F_F", "hazard", "left the instance unresponsive")], True))
+    # _healthy is the server answering, not the process living -- the
+    # wedged case is exactly a live process whose server is silent.
+    _sw_old_snap, _sw_old_run = _verify._snapshot, _verify.running
+    try:
+        _verify.running = lambda: True
+        _verify._snapshot = lambda: {}
+        _sw_h1 = _verify._healthy()
+        _verify._snapshot = lambda: {"engine": "idle"}
+        _sw_h2 = _verify._healthy()
+    finally:
+        _verify._snapshot, _verify.running = _sw_old_snap, _sw_old_run
+    check("  _healthy is the server answering, not the process living",
+          (_sw_h1, _sw_h2), (False, True))
+    # Ownership follows what the restart actually did: a reused instance
+    # is not ours to quit! -- that discards someone's unsaved documents.
+    _sw_old_restart = _verify._restart
+    try:
+        _verify._restart = lambda: (True, False)     # reused, not started
+        _sw_own = {"it": False}
+        _verify._restart_owned(_sw_own)
+        _sw_reused = _sw_own["it"]
+        _verify._restart = lambda: (True, True)      # started fresh
+        _verify._restart_owned(_sw_own)
+        _sw_started = _sw_own["it"]
+    finally:
+        _verify._restart = _sw_old_restart
+    check("  a reused instance is never claimed; a started one is",
+          (_sw_reused, _sw_started), (False, True))
+    # Resume: an answer stands; busy is the floor's state and retried;
+    # a hazard stays so plan() reports the skip; a changed example and
+    # an unrecorded draft both run.
+    check("  resume keeps answers, retries busy, holds hazards",
+          sorted(_verify.resumable(
+              {"A": "a", "B": "b", "C": "c", "D": "d", "E": "e"},
+              {"A": {"example": "a", "result": "ok"},
+               "B": {"example": "b", "result": "busy"},
+               "C": {"example": "c", "result": "hazard"},
+               "D": {"example": "old", "result": "ok"}})),
+          ["B", "C", "D", "E"])
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the

@@ -4,6 +4,14 @@
 
 ### Fixed
 
+- **`fccli start --log` is bounded.** FreeCAD held the log file directly,
+  and a headless instance whose viewer had been switched into a stereo GL
+  mode printed an error per repaint -- 51GB into /tmp in 26 minutes,
+  stopped only by the quota (GH #62). FreeCAD now writes a pipe; a small
+  child copies the pipe to the file up to `--log-cap` (64 MB unless
+  raised), then keeps draining and drops the rest, so the writer never
+  blocks and the disk never fills.
+
 - **A value under a step in inches replayed as inches of millimetres.**
   `parse_quantity` hands back FreeCAD's internal value -- millimetres for
   any length -- and `format_quantity` built a Quantity in the step's unit
@@ -87,6 +95,16 @@
 
 ### Added
 
+- **A sweep survives its own targets.** `tools/verify.py` records a
+  command that kills or wedges the instance as `hazard`, starts a fresh
+  headless one, and continues; recorded hazards are skipped on later
+  sweeps unless `--force`. The ledger is written after every command, so
+  a stopped sweep loses at most the command it was on. `--modemap` drives
+  the mode map's positional drafts instead of the dictionary's authored
+  examples, recording to `modemap_sweep.json` and skipping drafts already
+  recorded; `--start-at` resumes mid-alphabet. A KNOWN_HAZARDS list seeds
+  the skips: Std_ToggleToolBarLock (GH #61), Std_TestProgress (GH #60),
+  and the stereo view modes that poison a headless GL context (GH #62).
 - **A mode map for every command.** `fccli/modemap.json` classifies all
   1111 commands by interaction mode -- 383 selection, 272 panel, 246
   positional, 210 manual -- with a drafted example, what must be selected
