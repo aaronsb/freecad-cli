@@ -2131,6 +2131,17 @@ def _run():
         _verify._restart = _sw_old_restart
     check("  a reused instance is never claimed; a started one is",
           (_sw_reused, _sw_started), (False, True))
+    # Resume: an answer stands; busy is the floor's state and retried;
+    # a hazard stays so plan() reports the skip; a changed example and
+    # an unrecorded draft both run.
+    check("  resume keeps answers, retries busy, holds hazards",
+          sorted(_verify.resumable(
+              {"A": "a", "B": "b", "C": "c", "D": "d", "E": "e"},
+              {"A": {"example": "a", "result": "ok"},
+               "B": {"example": "b", "result": "busy"},
+               "C": {"example": "c", "result": "hazard"},
+               "D": {"example": "old", "result": "ok"}})),
+          ["B", "C", "D", "E"])
     check("  a verb with no tree has no manual",
           _bare.by_gui_command("Sketcher_CreateCircle").manual, "")
     # NOT_ACTIONS moved to std/_families.yaml; the fallback in code is the

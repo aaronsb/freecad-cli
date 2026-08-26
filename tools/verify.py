@@ -179,6 +179,19 @@ def _load(path):
                  f"repair or remove it")
 
 
+def resumable(targets, entries):
+    """Which targets a resumed sweep still runs.
+
+    A result already recorded for the same example is an answer and
+    stands -- except `busy`, the floor's state rather than the draft's,
+    which is retried; and `hazard`, which stays in the targets so plan()
+    reports the skip.
+    """
+    return {c: e for c, e in targets.items()
+            if entries.get(c, {}).get("example") != e
+            or entries[c].get("result") in ("hazard", "busy")}
+
+
 def plan(targets, prior, force=False, start_at=None):
     """Split targets into what this sweep runs and what it skips.
 
@@ -340,15 +353,9 @@ def main(argv=None):
         store_path = SWEEP_REPORT
         store = _load(store_path)
         entries = store
-        # Resumable: a draft already recorded is not run again -- except a
-        # hazard, which stays in targets so plan() reports the skip, and a
-        # busy, which was the floor's state rather than the draft's and is
-        # simply retried.
         prior = dict(entries)
         if not args.force:
-            targets = {c: e for c, e in targets.items()
-                       if entries.get(c, {}).get("example") != e
-                       or entries[c].get("result") in ("hazard", "busy")}
+            targets = resumable(targets, entries)
     else:
         data = json.load(open(DICT))
         targets = {cid: e["example"] for cid, e in data["commands"].items()
@@ -419,7 +426,8 @@ def main(argv=None):
             fccli("exec", "quit!")
 
     summary = ", ".join(f"{n} {k}" for k, n in sorted(tally.items()))
-    note = f", {restarts} restarts" if restarts else ""
+    note = (f", {restarts} restart" + ("s" if restarts > 1 else "")
+            if restarts else "")
     print(f"\n{len(run)} run, {len(skipped)} skipped ({summary}{note}). "
           f"{os.path.relpath(store_path, ROOT)}")
     return 0 if finished else 3
