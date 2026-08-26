@@ -95,6 +95,40 @@
 
 ### Added
 
+- **The verify harness gets a selection tier (GH #52, of #47).**
+  `tools/verify.py --modemap --tier selection` builds the fixture a
+  command's `selection_hint` names, hands it over with `select` (ADR-200),
+  and runs the verb -- so a selection command is driven the way a person
+  drives one, and the example recorded is ADR-200's two-part
+  `select <what>; <verb> <params>`. A recipe is command lines only: a box
+  for the solid consumers, two overlapping boxes for the booleans, four
+  Draft lines and `upgrade` for a closed profile (Draft's own closed-wire
+  verbs are all panel-mode), `new_body` over a selected solid for a
+  PartDesign body and its BaseFeature, `draft_to_sketch` plus
+  `duplicate_object` for a sketch inside that body. Each command gets a
+  scratch document of its own, so no fixture feeds the next. A fixture
+  that will not build is `no_fixture` -- the harness's gap, recorded
+  against the harness rather than blamed on the verb -- and one that fails
+  because the instance died is the hazard the old sweep already knew how
+  to survive.
+
+  The vocabulary reaches 112 of the 383 selection commands, over Part,
+  PartDesign, Draft, Std, OpenSCAD and Surface. The other 271 are punted
+  by workbench with a reason each: Sketcher's 42 act inside a sketch in
+  edit mode, TechDraw's 82 want a page with views on it, and FEM, CAM,
+  Mesh, Arch/BIM, Spreadsheet and the rest each need a subject no command
+  line builds today. Those are the panel tier's (GH #53).
+
+  The first live sweep: 86 of 112 run to a valid object, 15 leave an
+  invalid one, 6 are broken, 5 turn out to open a panel. No hazards and no
+  restarts. Over the Part and PartDesign slice the campaign named, 53
+  driven and 34 valid -- every Part boolean, join, slice and loft among
+  them. The 13 invalid results are one shape: a PartDesign feature is
+  created, left `Touched, Invalid`, and applied with no warning, and
+  `fillet 10` leaves Radius at its 1 mm default, so the value in the
+  example never reaches the property it names. That is GH #57 with
+  thirteen instances and a suspected cause.
+
 - **The grammar spec gets a lint (GH #49, of #47).** `tools/interaction.py`
   checks the D group over the compiled tree and the built registry: D1
   every listed choice is a value some input selects, D3 every step has a
