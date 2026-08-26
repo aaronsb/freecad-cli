@@ -925,6 +925,24 @@ def plan(targets, prior, force=False, start_at=None):
     return run, skipped
 
 
+def precondition(snap):
+    """Why this instance cannot be swept, if it cannot.
+
+    Two different failures used to share one message. An instance that
+    never came up answers nothing at all, and `"panel" not in {}` is true,
+    so a start that failed was reported as a FreeCAD too old to report
+    panel facts -- which sent the reader to the addon rather than to the
+    start. One check tells them apart.
+    """
+    if not snap:
+        return ("no answer from the instance -- it may not have come up; "
+                "`fccli ls` says what is running")
+    if "panel" not in snap:
+        return ("this FreeCAD predates ADR-302 and cannot report panel or "
+                "validity facts -- restart it with the current addon")
+    return None
+
+
 def _healthy():
     """The instance answers with facts.
 
@@ -1052,15 +1070,23 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
     instance is gone is a hazard like any other. The hooks default to the
     real client; they exist so this loop is testable without a FreeCAD.
 
-    ``restart_every`` starts a fresh instance after every N commands. A
-    long-lived one degrades, quietly: after enough commands Draft's
-    `upgrade` stops joining four lines into a wire -- exit 0, nothing
-    built -- and a body stops being the active body once a workbench has
-    been borrowed and handed back. Both are the fixture failing rather
-    than the command, and both depend on how far into the sweep the
-    command happens to sit. A bounded lifetime is what makes a reading
-    reproducible; it costs a start per N commands, which is why it is
-    asked for rather than assumed.
+    A result that is not `ok` records `after`: the command this instance
+    ran before it, or None when the instance was fresh. That is what turns
+    "it failed late in the sweep" into a name to try, and it is the only
+    way the report can tell an order-dependent failure from a property of
+    the command.
+
+    ``restart_every`` starts a fresh instance after every N commands.
+    Something in a long sweep breaks a fixture: in one 136-command panel
+    sweep, `upgrade` stopped joining four lines into a wire (exit 0,
+    nothing built) and a body stopped being the active body, and both
+    worked again on a fresh instance. The cause is not known. Command
+    volume is not it -- 40 builds of that recipe and five workbench
+    borrows on one instance, 330 commands deep, reproduced none of it
+    (PR #70 review) -- so the likelier shape is residue from one
+    particular command. A bounded lifetime is what makes a reading
+    reproducible while that is open; it is off unless asked for, because
+    a sweep that restarts constantly cannot see the effect at all.
 
     Returns (tally, finished, restarts).
     """
@@ -1070,8 +1096,17 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
     restart = restart or _restart
     tally, restarts = {}, 0
     total = len(targets)
+    # The last command this instance ran. A result that is not `ok` and
+    # that a rerun on a fresh instance passes was broken by something, and
+    # the thing that ran before it is the first place to look. The sweep
+    # has the ordering, so it can name that command instead of leaving
+    # "the instance was old" standing as an explanation. None means
+    # nothing preceded it -- the instance was fresh.
+    previous = None
 
     def note(cid, example, result, detail, extra=None):
+        if result != "ok":
+            extra = dict(extra or {}, after=previous)
         record(cid, example, result, detail, extra)
         tally[result] = tally.get(result, 0) + 1
 
@@ -1098,10 +1133,12 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
                         print("verify: restart failed, stopping",
                               file=sys.stderr)
                         return tally, False, restarts
+                    previous = None          # a fresh instance, nothing before
                     continue
                 note(cid, example, "no_fixture", why)
                 print(f"[{i}/{total}] {'no_fixture':10} {cid}  ({why})",
                       flush=True)
+                previous = cid               # the recipe ran, so it counts
                 continue
         extra = None
         try:
@@ -1127,13 +1164,16 @@ def sweep(targets, record, run_one=None, alive=None, healthy=None,
             if not restart():
                 print("verify: restart failed, stopping", file=sys.stderr)
                 return tally, False, restarts
+            previous = None
             continue
         print(f"[{i}/{total}] {result:10} {cid}  ({example})", flush=True)
+        previous = cid
         if restart_every and i % restart_every == 0 and i < total:
             restarts += 1
             if not restart():
                 print("verify: restart failed, stopping", file=sys.stderr)
                 return tally, False, restarts
+            previous = None
     return tally, True, restarts
 
 
@@ -1157,11 +1197,10 @@ def main(argv=None):
     ap.add_argument("--force", action="store_true",
                     help="run commands recorded as hazards")
     ap.add_argument("--restart-every", type=int, metavar="N",
-                    help="start a fresh instance after every N commands. A "
-                         "long-lived one degrades quietly -- Draft's upgrade "
-                         "stops building a wire, an active body stops being "
-                         "active after a workbench borrow -- so a fixture "
-                         "that worked early in a sweep fails later")
+                    help="start a fresh instance after every N commands. "
+                         "Something in a long sweep breaks a fixture that "
+                         "works on a fresh instance -- cause open, see the "
+                         "`after` field each failure records")
     args = ap.parse_args(argv)
 
     version = json.load(open(DICT)).get("freecad")
@@ -1253,10 +1292,9 @@ def main(argv=None):
             return 3
         started = True
 
-    if "panel" not in _snapshot():
-        print("this FreeCAD predates ADR-302 and cannot report panel or "
-              "validity facts -- restart it with the current addon",
-              file=sys.stderr)
+    stopped = precondition(_snapshot())
+    if stopped:
+        print(f"verify: {stopped}", file=sys.stderr)
         return 3
 
     # The selection tier builds a fixture per command and judges only the

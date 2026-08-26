@@ -3578,6 +3578,90 @@ def _run():
                         restart_every=1)[1],
           False)
 
+    # Which command this instance ran before a failure. A result a rerun
+    # on a fresh instance passes was broken by something, and the sweep
+    # has the ordering, so it can name the suspect rather than leaving
+    # "the instance was old" standing (PR #70 review).
+    _af_seen = []
+    _verify.sweep(
+        {"A_A": "a", "B_B": "b", "C_C": "c"},
+        lambda cid, ex, res, det, extra=None:
+            _af_seen.append((cid, res, (extra or {}).get("after", "-"))),
+        run_one=lambda e: ("broken", "no") if e == "b" else ("ok", ""),
+        alive=lambda: True, healthy=lambda: True, restart=lambda: True)
+    check("  a failure records the command this instance ran before it",
+          _af_seen,
+          [("A_A", "ok", "-"), ("B_B", "broken", "A_A"), ("C_C", "ok", "-")])
+    # A restart makes a fresh instance, so nothing precedes the command
+    # after one. Something has to precede the hazard for that to be
+    # visible at all -- with the hazard first, `previous` is None either
+    # way and dropping the reset costs nothing.
+    _af_seen2 = []
+    _verify.sweep(
+        {"A_A": "a", "B_B": "b", "C_C": "c"},
+        lambda cid, ex, res, det, extra=None:
+            _af_seen2.append((cid, res, (extra or {}).get("after", "-"))),
+        run_one=lambda e: ("ok", "") if e == "a"
+        else ("hazard", "died") if e == "b" else ("broken", "no"),
+        alive=lambda: True, healthy=lambda: True, restart=lambda: True)
+    check("    a restart clears it: nothing precedes the command after one",
+          _af_seen2,
+          [("A_A", "ok", "-"), ("B_B", "hazard", "A_A"),
+           ("C_C", "broken", None)])
+    # And the same for the other door a restart comes through: a fixture
+    # that failed because the instance had died.
+    _af_health = iter([True, False, True])
+    _af_seen2b = []
+    _verify.sweep(
+        {"A_A": "a", "B_B": "b", "C_C": "c"},
+        lambda cid, ex, res, det, extra=None:
+            _af_seen2b.append((cid, res, (extra or {}).get("after", "-"))),
+        run_one=lambda e: ("ok", "") if e == "a" else ("broken", "no"),
+        alive=lambda: True, healthy=lambda: next(_af_health),
+        restart=lambda: True,
+        setup=lambda cid: (False, "no instance") if cid == "B_B"
+        else (True, ""))
+    check("      including a restart a dead instance's fixture triggered",
+          _af_seen2b,
+          [("A_A", "ok", "-"), ("B_B", "hazard", "A_A"),
+           ("C_C", "broken", None)])
+    # A fixture that would not build still ran its recipe against the
+    # instance, so it is what preceded whatever comes next.
+    _af_seen3 = []
+    _verify.sweep(
+        {"A_A": "a", "B_B": "b"},
+        lambda cid, ex, res, det, extra=None:
+            _af_seen3.append((cid, res, (extra or {}).get("after", "-"))),
+        run_one=lambda e: ("broken", "no"),
+        alive=lambda: True, healthy=lambda: True, restart=lambda: True,
+        setup=lambda cid: (False, "no Wire") if cid == "A_A" else (True, ""))
+    check("      a recipe that failed still counts as having run",
+          _af_seen3,
+          [("A_A", "no_fixture", None), ("B_B", "broken", "A_A")])
+    _af_seen4 = []
+    _verify.sweep(
+        {"A_A": "a", "B_B": "b"},
+        lambda cid, ex, res, det, extra=None:
+            _af_seen4.append((cid, res, (extra or {}).get("after", "-"))),
+        run_one=lambda e: ("broken", "no"),
+        alive=lambda: True, healthy=lambda: True, restart=lambda: True,
+        restart_every=1)
+    check("      and a scheduled restart clears it too",
+          _af_seen4, [("A_A", "broken", None), ("B_B", "broken", None)])
+
+    # An instance that never came up and one too old to answer are two
+    # different things, and used to share one message.
+    check("  no answer from the instance says so, and points at the start",
+          _verify.precondition({}),
+          "no answer from the instance -- it may not have come up; "
+          "`fccli ls` says what is running")
+    check("    an answer without panel facts is the old addon",
+          _verify.precondition({"engine": "idle"}),
+          "this FreeCAD predates ADR-302 and cannot report panel or "
+          "validity facts -- restart it with the current addon")
+    check("    and an answer with them is no obstacle",
+          _verify.precondition({"engine": "idle", "panel": False}), None)
+
     # An instance with a panel stuck across it is no more fit to judge the
     # next command than a dead one, so the sweep restarts on that too.
     _px_events2, _px_restarts = [], []

@@ -4,6 +4,13 @@
 
 ### Fixed
 
+- **A failed start no longer reports itself as an addon too old (GH
+  #53).** `verify.py` read `"panel" not in _snapshot()` as "this FreeCAD
+  predates ADR-302", and an instance that never came up answers `{}`, for
+  which that is true -- so a start that failed sent the reader to the
+  addon. `precondition()` tells no answer at all from an answer without
+  panel facts, and says which.
+
 - **A task panel that will not close no longer costs a sweep 80 results
   (GH #53).** The panel tier closes a panel on the way in and on any
   ending that is not a clean apply, and the close is confirmed rather
@@ -155,18 +162,21 @@
   the 25 panels that did open are recorded beside their results, 87
   distinct names, which is the half of GH #50 the mode map does not have.
 
-- **`verify.py --restart-every N` bounds an instance's lifetime (GH
-  #53).** A long-lived FreeCAD degrades quietly. After enough commands
-  Draft's `upgrade` stops joining four lines into a wire -- exit 0,
-  nothing built, and every fixture that needs a closed profile fails from
-  then on; and a body stops being the active body once a workbench has
-  been borrowed and handed back, so a PartDesign panel command that
-  follows Draft-built geometry is refused for want of one. Both are the
-  fixture failing rather than the command, and both depend on how far
-  into a sweep the command sits: the same eight drafts read 7 of 8 late in
-  a 136-command sweep and 8 of 8 one command into a fresh instance. A
-  bounded lifetime is what makes a reading reproducible. It costs a start
-  per N commands, which is why it is asked for rather than assumed.
+- **`verify.py --restart-every N` bounds an instance's lifetime, and
+  every failure records what ran before it (GH #53).** Something in a long
+  sweep breaks a fixture that works on a fresh instance, and what it is
+  is not known. Observed once, in a 136-command panel sweep: `upgrade`
+  stopped joining four lines into a wire -- exit 0, nothing built -- and a
+  body stopped being the active body, so the eight panel drafts read 7 of
+  8 there and 8 of 8 one command into a fresh instance. Command volume is
+  not the cause: 40 builds of that recipe, five workbench borrows and 330
+  commands on one instance reproduced none of it (PR #70 review), so the
+  likelier shape is residue from one particular command rather than
+  accumulation. A result that is not `ok` now records `after`, the command
+  the same instance ran before it, which is what turns "it failed late in
+  the sweep" into a name to try; and `--restart-every N` bounds the
+  lifetime while the cause is open. It is off unless asked for, because a
+  sweep that restarts constantly cannot see the effect at all.
 
 
 - **The verify harness gets a selection tier (GH #52, of #47).**
