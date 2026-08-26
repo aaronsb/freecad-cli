@@ -16,13 +16,22 @@ what this module owes them is a record per command with the text in it:
 `--report` writes that, and an agent grades it.
 
 Nothing here models what a verb looks like. `fccli.factory` imports without
-FreeCAD, so the registry is *built* -- the same verbs, steps, prompts and
-aliases the command line offers -- and the rules read that. A second model
+FreeCAD, so the registry is *built* and the rules read that. A second model
 of step ordering would be a second thing to keep true.
 
-The registry is built with no patches discovered (`PatchSet([])`), so what
-is measured is the tree's own contribution and not whichever addons this
-machine happens to have installed.
+What is built is the generated tier: tier 0, tier 1 and the families, with
+no patches discovered (`PatchSet([])`), so the measurement is the tree's own
+contribution rather than whichever addons this machine has installed.
+
+The hand-authored typed verbs are not in it, and cannot be. `fccli.verbs`
+and `fccli.shell` register into the module-global REGISTRY at import, and
+both import FreeCAD at their first line, so there is no FreeCAD-free path
+to that tier -- `box` is `corner length width height` there and
+`Length Width Height` here. Rather than let a rule answer confidently about
+a verb it is not looking at, the fourteen commands those two files claim
+are read out of the source by name, and every rule whose answer depends on
+step shape records `unread` for them and says so. A shape read live is #47's
+runtime tier; this is the static one saying where its sight ends.
 
 Two severities. A fault that silently changes what a command does is a
 problem and fails the lint; a fault that wants a person's judgment, or that
@@ -46,6 +55,15 @@ import command_files as cf  # noqa: E402
 
 MODEMAP = os.path.join(ROOT, "fccli", "modemap.json")
 
+# The two modules that register hand-authored verbs into the global
+# REGISTRY at import time. Read as text, for their `gui_command="..."`:
+# importing them needs FreeCAD, and writing down their steps here would be
+# the second model of verb shape this module exists to avoid. A name is
+# the least that can be borrowed, and it is enough to know where to stop.
+AUTHORED_SOURCES = (os.path.join(ROOT, "fccli", "verbs.py"),
+                    os.path.join(ROOT, "fccli", "shell.py"))
+CLAIMS = re.compile(r"""gui_command\s*=\s*["']([A-Za-z_0-9]+)["']""")
+
 # Modes the classification workflow assigns (GH #50). Only `positional`
 # takes arguments on the line; the rest are driven by a selection, a task
 # panel, or the mouse.
@@ -58,6 +76,24 @@ def load_modemap(path=MODEMAP):
             return json.load(fh).get("commands") or {}
     except (OSError, ValueError):
         return None
+
+
+def authored_commands(sources=AUTHORED_SOURCES):
+    """Commands a hand-written verb owns, by name.
+
+    Empty is not a safe answer -- it would put every one of them back
+    under a rule that cannot see them -- so a source that will not read is
+    raised rather than shrugged off.
+    """
+    found = set()
+    for path in sources:
+        with open(path, encoding="utf-8") as fh:
+            found.update(CLAIMS.findall(fh.read()))
+    if not found:
+        raise ValueError(f"no gui_command= in any of {sources}: the "
+                         f"hand-authored tier moved and the rules that "
+                         f"stop at it would run over it instead")
+    return found
 
 
 def build_registry(descriptor, dictionary):
@@ -104,8 +140,10 @@ def arity(verb):
     tokens against two steps, and that is the grammar working.
     """
     required = sum(1 for s in verb.steps if not s.optional)
-    if any(s.repeat for s in verb.steps):
-        return required, None            # unbounded; nothing to check
+    if any(s.repeat or getattr(s, "raw", False) for s in verb.steps):
+        # A repeating step takes as many as it is given and a raw one
+        # takes the rest of the line: no upper bound to measure against.
+        return required, None
     return required, len(verb.steps) + sum(len(s.options) for s in verb.steps)
 
 
@@ -123,6 +161,7 @@ class Findings:
         self.reports = []
         self.records = {}
         self.families = {}
+        self.types = {}
         self.by_file = {}
 
     def problem(self, where, text, rule):
@@ -142,6 +181,16 @@ class Findings:
             record["notes"].append(f"{rule}: {text}")
             if record["checks"].get(rule) != "fail":
                 record["checks"][rule] = "report"
+
+    def typed(self, tid, rule, verdict, text):
+        """A finding about a type, for the types with no command file to
+        land in -- Part::Wedge and Part::Helix are tuned in a
+        _types.yaml, and a problem invisible in the record is a problem
+        the campaign reads the file and misses."""
+        entry = self.types.setdefault(tid, {"notes": [], "verdict": "pass"})
+        entry["notes"].append(f"{rule}: {text}")
+        if entry["verdict"] != "fail":
+            entry["verdict"] = verdict
 
     def _note(self, where, rule, verdict, text):
         record = self.by_file.get(where)
@@ -164,8 +213,10 @@ def inspect(descriptor, dictionary, files, modemap=None):
     modemap = load_modemap() if modemap is None else modemap
     registry = build_registry(descriptor, dictionary)
     if registry is None:
-        found.reports.append("fccli would not import, so the description "
-                             "rules (A2, A3, A5, A6) did not run (A2)")
+        # Not a report. A rule that declined to run and said so quietly is
+        # the vacuous pass this module refuses everywhere else.
+        found.problems.append("fccli would not import, so the description "
+                              "rules (A2, A3, A5, A6) did not run (A2)")
         return found
     if modemap is None:
         found.reports.append("fccli/modemap.json is missing, so the "
@@ -192,10 +243,7 @@ def inspect(descriptor, dictionary, files, modemap=None):
         for choice, member in members.items():
             through[member["command"]].append((door, choice))
 
-    # Type tuning, from wherever it was written: a command's own file, or
-    # a workbench's _types.yaml for a type no command carries.
-    for tid, spec in sorted(tuned.items()):
-        _a2_tuning(found, spec.get("file") or tid, tid, spec, descriptor)
+    authored = authored_commands()
 
     for name, entry in sorted(commands.items()):
         rel, front, body = files.get(name, (entry.get("file"), {}, ""))
@@ -231,10 +279,30 @@ def inspect(descriptor, dictionary, files, modemap=None):
         found.records[name] = record
         found.by_file[rel] = record
         _a1_a4(found, rel, record)
-        _a2(found, rel, entry, direct.get(name, []), through.get(name, []))
-        _a3(found, rel, name, entry, tuned, best)
+        blind = name in authored
+        if blind:
+            # The verb a person wrote owns this command, and its steps are
+            # behind an import that needs FreeCAD. Say so in the record
+            # rather than answer from the generated verb standing in.
+            record["authored_verb"] = True
+            record["notes"].append(
+                "A2/A3: a hand-written verb in fccli/verbs.py or "
+                "fccli/shell.py owns this command; its steps need FreeCAD "
+                "to read, so the synopsis here is the generated one and "
+                "the two shape rules did not run")
+            record["checks"]["A2"] = "unread"
+            record["checks"]["A3"] = "unread"
+        else:
+            _a2(found, rel, entry, direct.get(name, []), through.get(name, []))
+            _a3(found, rel, name, entry, tuned, best)
         _a5(found, rel, name, entry, mode, best, direct, through,
-            registry)
+            registry, blind)
+
+    # Type tuning, from wherever it was written: a command's own file, or
+    # a workbench's _types.yaml for a type no command carries. After the
+    # records, so a finding lands in the one it belongs to.
+    for tid, spec in sorted(tuned.items()):
+        _a2_tuning(found, spec.get("file") or tid, tid, spec, descriptor)
 
     _a6(found, fams, commands, modemap, tuned)
     return found
@@ -385,43 +453,63 @@ def _range(fewest, most):
 
 
 def _a2_tuning(found, rel, tid, block, descriptor):
+    """A2: a `type` block speaks about properties the type has.
+
+    `patches.apply` looks each name up and moves on when it finds
+    nothing, so a typo in `steps` costs an argument the caller is never
+    asked for -- a problem -- and a typo in `hide`, `options` or
+    `prompts` costs a line that does nothing -- a report.
+
+    Every finding is filed twice: against the file that carries the
+    tuning, which is a command's own file for five of the seven and a
+    workbench's _types.yaml for the other two, and against the type, so
+    the two with no command file are still visible in the record.
+    """
     entry = (descriptor.get("types") or {}).get(tid) or {}
     params = {p["name"] for p in entry.get("params") or []}
     if not params:
-        return                           # a type the harvest read no
-                                         # properties from: nothing to check
+        # A type the harvest read no properties from: nothing to check.
+        return
+
+    def problem(text):
+        found.problem(rel, text, "A2")
+        found.typed(tid, "A2", "fail", text)
+
+    def report(text):
+        found.report(rel, text, "A2")
+        found.typed(tid, "A2", "report", text)
+
     seen = {}
+
     def once(field, value):
         if value in seen:
-            found.problem(rel, f"type.{field} names {value!r}, which "
-                               f"type.{seen[value]} already spoke for -- the "
-                               f"second mention does nothing", "A2")
+            problem(f"type.{field} names {value!r}, which type.{seen[value]} "
+                    f"already spoke for -- the second mention does nothing")
         seen[value] = field
+
     for step in block.get("steps") or []:
         once("steps", step)
         if step not in params:
-            found.problem(rel, f"type.steps names {step!r}, which is not a "
-                               f"property of {tid} -- the argument is "
-                               f"dropped, not asked for", "A2")
+            problem(f"type.steps names {step!r}, which is not a property of "
+                    f"{tid} -- the argument is dropped, not asked for")
     for target, sources in (block.get("point") or {}).items():
         for src in sources or []:
             once("point", src)
             if src not in params:
-                found.problem(rel, f"type.point[{target}] collapses "
-                                   f"{src!r}, which is not a property of "
-                                   f"{tid}", "A2")
+                problem(f"type.point[{target}] collapses {src!r}, which is "
+                        f"not a property of {tid} -- the point is built from "
+                        f"a property that is not there")
     for field in ("hide", "options"):
         for value in block.get(field) or []:
             once(field, value)
             if value not in params:
-                found.report(rel, f"type.{field} names {value!r}, which is "
-                                  f"not a property of {tid} -- the line does "
-                                  f"nothing", "A2")
+                report(f"type.{field} names {value!r}, which is not a "
+                       f"property of {tid} -- the line does nothing")
     for value in (block.get("prompts") or {}):
         if value not in params and value not in (block.get("point") or {}):
-            found.report(rel, f"type.prompts names {value!r}, which is not a "
-                              f"property of {tid} and no collapsed point -- "
-                              f"the prompt is never shown", "A2")
+            report(f"type.prompts names {value!r}, which is not a property "
+                   f"of {tid} and no collapsed point -- the prompt is never "
+                   f"shown")
 
 
 # ---------------------------------------------------------------- A3
@@ -478,16 +566,26 @@ def _tuned_elsewhere(tuned, verb):
 
 # ---------------------------------------------------------------- A5
 
-_SHELLISH = re.compile(r"[|&;<>$`\\]")
+# What makes a line a shell line rather than one typed at the command
+# line. Not the backslash: `image_plane C:\images\plan.png 100 75` is a
+# path, and refusing it would be a hard failure over somebody's operating
+# system.
+_SHELLISH = re.compile(r"[|&;<>$`]")
 
 
-def _a5(found, rel, name, entry, mode, verb, direct, through, registry):
+def _a5(found, rel, name, entry, mode, verb, direct, through, registry,
+        blind=False):
     """A5: an example, present and shaped for the mode.
 
     The example is not decoration: verify.py types it at a live FreeCAD
     and stamps the result in the ledger (ADR-501). So an example that
     names a verb this command cannot be reached by is a fault -- it
     verifies something else, or nothing.
+
+    Except where a hand-written verb owns the command (``blind``): the
+    door it opens may be named something the generated tier never
+    produced, and a name this module cannot see is not a fault it gets to
+    declare. It reports there instead.
     """
     example = entry.get("example")
     if not example:
@@ -509,16 +607,20 @@ def _a5(found, rel, name, entry, mode, verb, direct, through, registry):
                           f"driving something the mode says it cannot", "A5")
     reached = _reaches(registry, head, example, direct.get(name, []),
                        through.get(name, []))
+    say = found.report if blind else found.problem
     if reached is None:
-        found.problem(rel, f"the example starts {head!r}, which is no verb "
-                           f"this tree registers", "A5")
+        say(rel, f"the example starts {head!r}, which is no verb this tree "
+                 f"registers" + (" -- though a hand-written verb owns this "
+                                 "command, so the name may be one only "
+                                 "FreeCAD can see" if blind else ""), "A5")
     elif reached is False:
         doors = ", ".join(sorted(
             [v.name for v in direct.get(name, [])] +
             [f"{d.name} {c}" for d, c in through.get(name, [])])) or "nothing"
-        found.problem(rel, f"the example starts {head!r}, which does not "
-                           f"reach this command; it is typed as {doors}",
-                      "A5")
+        say(rel, f"the example starts {head!r}, which does not reach this "
+                 f"command; it is typed as {doors}"
+                 + (" -- or as whatever the hand-written verb that owns it "
+                    "is called" if blind else ""), "A5")
 
 
 def _reaches(registry, head, example, verbs, doors):
@@ -635,14 +737,23 @@ def write_report(found, path, descriptor):
     A1 (voice) and A4 (faithfulness) are not decidable here; what they
     need is every command's summary, body, and where the body came from,
     beside the mechanical verdicts. That is this file.
+
+    Three sections. `commands` is the record per command; `families` is
+    what a family looks like across its members; `types` carries the
+    tuning findings for the two types tuned in a _types.yaml, which have
+    no command record to land in.
     """
     data = {
         "generated_by": "tools/descriptions.py",
         "date": datetime.date.today().isoformat(),
         "freecad": descriptor.get("freecad"),
-        "spec": "GH #47 group A; A2/A3/A5/A6 checked, A1/A4 left to read",
+        "spec": "GH #47 group A; A2/A3/A5/A6 checked, A1/A4 left to read. "
+                "A command with authored_verb is one a hand-written verb "
+                "owns: its synopsis here is the generated verb standing in, "
+                "and A2/A3 are unread rather than judged.",
         "totals": totals(found),
         "families": found.families,
+        "types": found.types,
         "commands": found.records,
     }
     with open(path, "w", encoding="utf-8") as fh:

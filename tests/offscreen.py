@@ -1897,6 +1897,13 @@ def _run():
                             {"commands": commands, "types": types or {},
                              "families": {}}, files, modemap=_spec_modes)
 
+    def _raises(fn):
+        try:
+            fn()
+        except Exception:
+            return True
+        return False
+
     def _fired(found, needle, channel):
         lines = found.problems if channel == "problems" else found.reports
         return sum(1 for line in lines if needle in line)
@@ -1907,7 +1914,18 @@ def _run():
     def _tune(**kw):
         return {"Part::Box": {"file": "part/Part_Box.md", **kw}}
 
+    # Part_Box is claimed by fccli/verbs.py, so the two shape rules
+    # decline for it on purpose. Part_Cylinder is the same shape of
+    # command with nobody's hand on it, and is what those cases use.
+    def _cyl(**kw):
+        return {"Part_Cylinder": {"file": "part/Part_Cylinder.md",
+                                  "doc": "x", **kw}}
+
+    def _tune_cyl(**kw):
+        return {"Part::Cylinder": {"file": "part/Part_Cylinder.md", **kw}}
+
     _good = _tune(steps=["Length", "Width", "Height"], strict=True)
+    _good_cyl = _tune_cyl(steps=["Radius", "Height"], strict=True)
     _cases = [
         ("a correct command says nothing",
          _box(example="box 40 30 20", type={"of": "Part::Box"}), _good,
@@ -1921,25 +1939,35 @@ def _run():
          _tune(steps=["Length"], hide=["Length"], strict=True),
          "type.hide names 'Length', which type.steps already", "problems", 1),
         ("two authored arguments under one gloss",
-         _box(type={"of": "Part::Box"}),
-         _tune(steps=["Length", "Width"], strict=True,
-               prompts={"Length": "a side", "Width": "a side"}),
-         "Length and Width share one gloss", "problems", 1),
+         _cyl(type={"of": "Part::Cylinder"}),
+         _tune_cyl(steps=["Radius", "Height"], strict=True,
+                   prompts={"Radius": "a length", "Height": "a length"}),
+         "Radius and Height share one gloss", "problems", 1),
         ("an example naming no verb at all",
-         _box(example="bxo 40 30 20"), _good,
-         "'bxo', which is no verb", "problems", 1),
+         _cyl(example="cylnider 12 40"), _good_cyl,
+         "'cylnider', which is no verb", "problems", 1),
         ("an example naming somebody else's verb",
-         _box(example="sphere 15"), _good,
+         _cyl(example="sphere 15"), _good_cyl,
          "does not reach this command", "problems", 1),
+        ("  and the same on a command a hand-written verb owns, which "
+         "this module cannot name",
+         _box(example="sphere 15"), _good,
+         "does not reach this command", "problems", 0),
+        ("  which is a report there instead",
+         _box(example="sphere 15"), _good,
+         "does not reach this command", "reports", 1),
         ("an example written as a shell line",
          _box(example="fccli exec 'box 1 2 3'"), _good,
          "is a shell line", "problems", 1),
+        ("  but not a path with a backslash in it, which is not a shell",
+         _cyl(example="image_plane C:\\images\\plan.png 100 75"), _good_cyl,
+         "is a shell line", "problems", 0),
         ("an example on two lines",
          _box(example="box 1 2 3\nbox 4 5 6"), _good,
          "spans more than one line", "problems", 1),
         ("an example passing more than the synopsis takes",
-         _box(example="box 0,0,0 40 30 20"), _good,
-         "passes 4 arguments to a synopsis that takes 3", "reports", 1),
+         _cyl(example="cylinder 12 40 5 5"), _good_cyl,
+         "passes 4 arguments to a synopsis that takes 2", "reports", 1),
         ("a tuning line that names nothing and so does nothing",
          _box(), _tune(steps=["Length"], options=["Nope"], strict=True),
          "type.options names 'Nope'", "reports", 1),
@@ -1971,6 +1999,18 @@ def _run():
           "Std_ViewTop": {"file": "std/Std_ViewTop.md", "doc": "x",
                           "example": "3_top"}}, {},
          "the examples are typed two ways", "reports", 1),
+        ("a collapsed point built from a property that is not there",
+         _box(type={"of": "Part::Box"}),
+         _tune(steps=["Length"], point={"base": ["Nope"]}, strict=True),
+         "type.point[base] collapses 'Nope'", "problems", 1),
+        ("an example passing arguments to a verb with no synopsis",
+         {"Draft_Arc": {"file": "draft/Draft_Arc.md", "doc": "x",
+                        "example": "arc 0,0,0 15 0 90"}}, {},
+         "has no synopsis of its own", "reports", 1),
+        ("and one passing none, which is how a launcher is called",
+         {"Arch_Axis": {"file": "arch/Arch_Axis.md", "doc": "x",
+                        "example": "axis"}}, {},
+         "has no synopsis of its own", "reports", 0),
         ("two tuned siblings disagreeing on argument order", {},
          {"Part::Cylinder": {"file": "a", "steps": ["Radius", "Height"]},
           "Part::Helix": {"file": "b", "steps": ["Pitch", "Height", "Radius"]}},
@@ -1979,6 +2019,46 @@ def _run():
     for _label, _commands, _types, _needle, _channel, _want in _cases:
         check("  " + _label,
               _fired(_spec(_commands, _types), _needle, _channel), _want)
+    # The hand-authored tier. `box` is `corner length width height` in
+    # fccli/verbs.py and `Length Width Height` in the generated one, and
+    # fccli.verbs needs FreeCAD to import -- so the two shape rules must
+    # decline for the commands those files claim rather than answer from
+    # the wrong verb. Deleting the skip puts the false positive back.
+    _claimed = _dsc.authored_commands()
+    check("  the hand-authored tier is found by name",
+          (len(_claimed), "Part_Box" in _claimed, "Std_Save" in _claimed,
+           "Draft_Arc" in _claimed),
+          (14, True, True, False))
+    check("  a source with no gui_command= raises rather than claiming none",
+          _raises(lambda: _dsc.authored_commands(
+              (os.path.join(os.path.dirname(__file__), "offscreen.py"),))),
+          True)
+    _blind = _spec(_box(example="box 0,0,0 40 30 20",
+                        type={"of": "Part::Box"}), _good)
+    check("  a command a hand-written verb owns is not measured against "
+          "the generated one",
+          (_fired(_blind, "passes 4 arguments", "reports"),
+           _blind.records["Part_Box"]["checks"]["A2"],
+           _blind.records["Part_Box"]["checks"]["A3"]),
+          (0, "unread", "unread"))
+    check("    and the record says why",
+          any("its steps need FreeCAD to read" in n
+              for n in _blind.records["Part_Box"]["notes"]), True)
+    # A tuning fault is registry-independent, so it is still a problem
+    # for a command whose verb this module cannot see -- and it has to
+    # reach the record, which is where the campaign reads verdicts.
+    _tuned_bad = _spec(_box(type={"of": "Part::Box"}),
+                       _tune(steps=["Lenght"], strict=True))
+    check("  a tuning fault reaches the record of the file that carries it",
+          (_tuned_bad.records["Part_Box"]["checks"]["A2"],
+           any("not a property" in n
+               for n in _tuned_bad.records["Part_Box"]["notes"])),
+          ("fail", True))
+    check("    and a type with no command file is filed under its type",
+          (_spec({}, {"Part::Helix": {"file": "part/_types.yaml",
+                                      "options": ["Style"]}})
+           .types["Part::Helix"]["verdict"]), "report")
+
     # A1 and A4 are a person's reading; these three are the damage a
     # reader meets before the reading starts.
     check("  a summary left as a letter by the label strip",

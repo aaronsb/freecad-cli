@@ -210,9 +210,16 @@ def lint(tree, descriptor_path, compiled_path, described=None):
     # checked as itself and rule 5 stays the one that compares the two.
     try:
         found = dsc.inspect(descriptor, cd.compile_tree(tree), files)
-    except Exception as exc:                 # a broken tree is rule 5's
+    except Exception as exc:
+        # A problem, not a report. The catch is here so a tree that will
+        # not compile is rule 5's message rather than a traceback -- but
+        # five hard-fail classes live inside inspect(), and a pass that
+        # declined to run and said so quietly is the vacuous pass this
+        # lint exists to refuse. Nothing else notices: rule 5 compares the
+        # compiled dictionary to the tree and knows nothing about these.
         found = dsc.Findings()
-        found.reports.append(f"the description rules did not run: {exc} (A2)")
+        found.problems.append(f"the description rules did not run: "
+                              f"{exc.__class__.__name__}: {exc} (A2)")
     problems.extend(found.problems)
     if described is not None:
         described.append(found)
