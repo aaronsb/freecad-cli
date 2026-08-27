@@ -492,6 +492,7 @@ class CliDock(QtWidgets.QDockWidget):
     def activate(self):
         self.keyfilter.install()
         self.bridge.install()
+        self._read_hazards()
         self._watch_workbenches()
         self._watch_context()
         self._lay_out_root()
@@ -503,6 +504,23 @@ class CliDock(QtWidgets.QDockWidget):
             app.focusChanged.connect(self._focus_hook)
         self.console.setFocus(Qt.OtherFocusReason)
         self._paint_focus_state()
+
+    def _read_hazards(self):
+        """Ask, once and early, which commands would end the session.
+
+        `panels.actionless_toggles` reads which checkable commands FreeCAD
+        has built no button for, and the reading is what changes the
+        answer: the menu it asks for builds the button, so asked a second
+        time the same question says no. Read here, at startup, while the
+        session is still the one a command would crash in -- anything that
+        materialises a toolbar menu first hides the hazard behind the
+        action it just made (GH #61).
+        """
+        try:
+            from . import panels
+            panels.actionless_toggles()
+        except Exception:
+            pass                # never keep the dock from coming up
 
     def _lay_out_root(self):
         """The directory the terminal navigates, made on first run."""

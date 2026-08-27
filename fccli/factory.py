@@ -515,13 +515,13 @@ def _emit_family(members, default=None):
     prompt, so the default is applied here rather than by the engine.
     """
     def emit(values):
-        import FreeCADGui as Gui
+        from .panels import run_command
         target = values.get("target") or default
         entry = members.get(target)
         if entry is None:
             raise RuntimeError(
                 f"{target!r} is not one of: {', '.join(sorted(set(members)))}")
-        Gui.runCommand(entry["command"])
+        run_command(entry["command"])
         return None
     return emit
 

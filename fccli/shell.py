@@ -44,10 +44,10 @@ def _expand(path):
 
 def _run(command):
     """Fall back to FreeCAD's own command, dialog and all."""
-    gui = _gui()
-    if gui is None:
+    if _gui() is None:
         raise RuntimeError(f"{command} needs the GUI")
-    gui.runCommand(command)
+    from .panels import run_command
+    run_command(command)
 
 
 def _say(values, text):

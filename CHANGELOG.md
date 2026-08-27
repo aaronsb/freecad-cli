@@ -21,6 +21,20 @@
   session died in round one with that trace; guarded, six rounds and 360
   vanishing clients later it was still answering.
 
+- **A toggle with no button is refused, not run (GH #61).**
+  `Gui::Command::_invoke` sets a checkable command's button state without
+  checking there is a button, so `lock_toolbars` in a session that has
+  built no toolbar menu landed in `Gui::Action::setChecked` on nothing and
+  segfaulted FreeCAD. `panels.run_command` is now the single door onto
+  `Gui.runCommand` and it refuses that command, bang or no bang. Which
+  commands those are is read from FreeCAD once at startup rather than
+  written down: `getAction()` is empty both for a command that is not
+  checkable and for one whose action nothing has built yet -- 231 of 456
+  on FreeCAD 1.1.3, `Part_Box` among them -- so MainWindow's own popup
+  menu is asked to build the second kind, and what it builds can be asked
+  whether it toggles. Read early, because the reading is what changes the
+  answer.
+
 - **A count typed at a generated verb reaches the object (GH #78,
   ADR-203).** `linear_pattern 100 4` exited 0 and read back `Occurrences
   2`, FreeCAD's default. Every number the command line parses is a float

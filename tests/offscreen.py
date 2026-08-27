@@ -5928,6 +5928,41 @@ def _run():
     check("    and the socket it left behind is deleted once, cleanly",
           _sock63.deleted, 1)
 
+    # --- GH #61. A checkable command with no QAction takes FreeCAD down
+    # inside Gui::Command::_invoke; the command line refuses instead.
+    from fccli import panels as _p61
+    _old61 = _p61._ACTIONLESS
+    try:
+        _p61._ACTIONLESS = frozenset({"Std_ToggleToolBarLock"})
+        _refusal61 = None
+        try:
+            # Broad: unguarded, this reaches FreeCAD, and what comes back
+            # should read as a failed check rather than end the suite.
+            _p61.run_command("Std_ToggleToolBarLock")
+        except Exception as exc:
+            _refusal61 = str(exc)
+        check("a toggle with no button is refused, not run",
+              _refusal61 is not None and "takes FreeCAD down" in _refusal61,
+              True)
+        check("  and the refusal names the command",
+              _refusal61 is not None
+              and _refusal61.startswith("Std_ToggleToolBarLock"), True)
+        _ran61 = []
+        import FreeCADGui as _Gui61
+        _oldrun61 = getattr(_Gui61, "runCommand", None)
+        _Gui61.runCommand = lambda name: _ran61.append(name)
+        try:
+            _p61.run_command("Part_Box")
+            check("  every other command still goes straight through",
+                  _ran61, ["Part_Box"])
+        finally:
+            if _oldrun61 is None:
+                del _Gui61.runCommand
+            else:
+                _Gui61.runCommand = _oldrun61
+    finally:
+        _p61._ACTIONLESS = _old61
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

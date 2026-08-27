@@ -867,6 +867,42 @@ def suite_panels_generic(dock):
     dock.engine.submit("close!")
 
 
+def _errors_from(dock, line):
+    """Submit a line and answer what it complained about."""
+    said = []
+    stop = dock.bus.subscribe(
+        lambda m: said.append(m.text) if m.kind == "error" else None)
+    try:
+        dock.engine.submit(line)
+        QtWidgets.QApplication.processEvents()
+    finally:
+        stop()
+    return said
+
+
+def suite_hazards(dock):
+    print("\n7c. what would end the session is refused (GH #61, #73)")
+    from fccli import panels as _panels
+
+    # GH #61. FreeCAD sets a checkable command's button state without
+    # checking there is a button, and a session that has built no toolbar
+    # menu has none for Std_ToggleToolBarLock. The detector has to find it
+    # in a real GUI, or the refusal below is passing for the wrong reason.
+    armed = "Std_ToggleToolBarLock" in _panels.actionless_toggles()
+    truthy("a toggle FreeCAD built no button for is found, at startup", armed)
+    if armed:
+        # Only with the guard proven armed. Typing this line at a session
+        # where it is not is how the instance dies, and a check that takes
+        # the harness with it when it fails reports nothing.
+        truthy("  and running it is refused, not attempted",
+               any("takes FreeCAD down" in text
+                   for text in _errors_from(dock, "lock_toolbars")))
+        # A bang forces past a refusal; there is nothing behind this one.
+        truthy("  a bang does not buy a segfault",
+               any("takes FreeCAD down" in text
+                   for text in _errors_from(dock, "lock_toolbars!")))
+    no_dialog("no dialog appeared")
+
 def suite_roundtrip(dock):
     print("\n8. save, close and reopen, with no dialogs")
     path = os.path.join(tempfile.gettempdir(), "fccli-bvt-doc.FCStd")
@@ -970,6 +1006,7 @@ def run():
         suite_modals(dock)
         suite_panel(dock)
         suite_panels_generic(dock)
+        suite_hazards(dock)
         suite_roundtrip(dock)
         suite_shutdown(dock)
     except Exception:
