@@ -35,6 +35,19 @@
   whether it toggles. Read early, because the reading is what changes the
   answer.
 
+- **What `select` claims, it holds (GH #73, ADR-200).** Part's vertex,
+  edge and face filters leave a selection gate that outlives the document
+  it was set in, and it drops every selection made through it without
+  telling anyone. `select Box` answered `= select Box` over an empty
+  selection, and the command after it failed against itself: `select` the
+  four lines of `closed_wire` then `upgrade`, exit 0 and nothing built,
+  with `upgrade` taking the blame. `select` now reads the selection back
+  and a name FreeCAD did not take is a fault naming the gate and
+  `no_selection_filters`, which lifts it; a fault clears the selection, so
+  nothing half-selected is left for the next command. The gate itself is
+  left alone -- it is FreeCAD's state, set on purpose by a command
+  somebody ran.
+
 - **A count typed at a generated verb reaches the object (GH #78,
   ADR-203).** `linear_pattern 100 4` exited 0 and read back `Occurrences
   2`, FreeCAD's default. Every number the command line parses is a float

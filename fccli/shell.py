@@ -145,6 +145,20 @@ def _emit_delete(v):
     return None
 
 
+def _is_selected(selection, obj, sub):
+    """Whether FreeCAD took the selection it was just handed.
+
+    `addSelection` answers nothing, so the only way to know a name landed
+    is to ask afterwards. FreeCAD that cannot say is read as yes: a
+    missing answer is not evidence of a fault.
+    """
+    try:
+        return bool(selection.isSelected(obj, sub) if sub
+                    else selection.isSelected(obj))
+    except Exception:
+        return True
+
+
 def _emit_select(v):
     """Set FreeCAD's selection from names, so the next command has operands.
 
@@ -182,6 +196,20 @@ def _emit_select(v):
             selection.addSelection(obj.Document.Name, obj.Name, sub)
         else:
             selection.addSelection(obj.Document.Name, obj.Name)
+    swallowed = [label for obj, sub, label in resolved
+                 if not _is_selected(selection, obj, sub)]
+    if swallowed:
+        # What select claims, it holds. A selection gate takes every
+        # addSelection and returns nothing to say so, and `select Box`
+        # answered `= select Box` over an empty selection -- after which
+        # the command that wanted those operands failed against itself,
+        # exit 0 and nothing built (GH #73).
+        selection.clearSelection()      # never leave half a selection
+        raise RuntimeError(
+            f"FreeCAD would not select {', '.join(swallowed)}. A selection "
+            "filter is on: Part's vertex, edge and face filters set a gate "
+            "that outlives the document it was set in, and it drops every "
+            "selection made through it. `no_selection_filters` lifts it.")
     _say(v, "selected " + ", ".join(label for _o, _s, label in resolved))
     return None
 

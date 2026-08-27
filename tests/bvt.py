@@ -903,6 +903,31 @@ def suite_hazards(dock):
                    for text in _errors_from(dock, "lock_toolbars!")))
     no_dialog("no dialog appeared")
 
+    # GH #73. Part's filters leave a gate that outlives the document, and
+    # select used to report success over the empty selection it made.
+    doc = App.ActiveDocument or App.newDocument("gate")
+    box = doc.addObject("Part::Box", "GateBox")
+    doc.recompute()
+    dock.engine.submit("vertex_selection")
+    QtWidgets.QApplication.processEvents()
+    try:
+        said = _errors_from(dock, f"select {box.Name}")
+        truthy("a gate that swallows the selection is a fault, not a claim",
+               any("no_selection_filters" in text for text in said))
+        check("  and nothing is half-selected behind it",
+              Gui.Selection.getSelection(), [])
+    finally:
+        dock.engine.submit("no_selection_filters")
+        QtWidgets.QApplication.processEvents()
+    dock.engine.submit(f"select {box.Name}")
+    QtWidgets.QApplication.processEvents()
+    check("with the gate lifted, select holds what it names",
+          [o.Name for o in Gui.Selection.getSelection()], [box.Name])
+    Gui.Selection.clearSelection()
+    doc.removeObject(box.Name)
+    doc.recompute()
+
+
 def suite_roundtrip(dock):
     print("\n8. save, close and reopen, with no dialogs")
     path = os.path.join(tempfile.gettempdir(), "fccli-bvt-doc.FCStd")

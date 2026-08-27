@@ -5963,6 +5963,82 @@ def _run():
     finally:
         _p61._ACTIONLESS = _old61
 
+    # --- GH #73. select holds what it claims. A selection gate takes
+    # every addSelection and answers nothing, so the only way to know a
+    # name landed is to ask afterwards.
+    from fccli import shell as _sh73
+
+    class _Gated:
+        """FreeCAD's selection with a gate on: it accepts and keeps none."""
+
+        def __init__(self, gate=True):
+            self.gate = gate
+            self.held = []
+            self.cleared = 0
+
+        def clearSelection(self):
+            self.cleared += 1
+            self.held = []
+
+        def addSelection(self, doc, name, sub=""):
+            if not self.gate:
+                self.held.append((name, sub))
+
+        def isSelected(self, obj, sub=""):
+            return (obj.Name, sub) in self.held
+
+    class _Obj73:
+        def __init__(self, name):
+            self.Name = self.Label = name
+
+            class _Doc:
+                Name = "verify"
+            self.Document = _Doc()
+
+    _box73 = _Obj73("Box")
+    check("a gate takes the selection and keeps none",
+          _sh73._is_selected(_Gated(), _box73, ""), False)
+    check("  an ungated selection is held",
+          (lambda s: (s.addSelection("verify", "Box"),
+                      _sh73._is_selected(s, _box73, ""))[1])(_Gated(False)),
+          True)
+    check("  FreeCAD that cannot say is not read as a fault",
+          _sh73._is_selected(object(), _box73, ""), True)
+
+    # The verb itself, over a document that is really open: with a gate
+    # on, `select Box` used to answer `= select Box` and select nothing.
+    _doc73 = App.newDocument("gate73")
+    _doc73.addObject("App::FeaturePython", "Box")
+    _sel73 = _Gated()
+
+    class _Gui73:
+        Selection = _sel73
+
+    from fccli import engine as _eng73mod
+    _oldgui73, _oldresolve73 = _sh73._gui, _eng73mod._resolve_names
+    try:
+        _sh73._gui = lambda: _Gui73
+        _eng73mod._resolve_names = lambda name: [_box73]
+        _fault73 = None
+        try:
+            _sh73._emit_select({"names": "Box", "_engine": None})
+        except RuntimeError as exc:
+            _fault73 = str(exc)
+        check("  select over a gate is a fault, not a claim",
+              (_fault73 or "").startswith("FreeCAD would not select Box"),
+              True)
+        check("    and it names the antidote",
+              "no_selection_filters" in (_fault73 or ""), True)
+        check("    leaving no half-selection behind for the next command",
+              (_sel73.held, _sel73.cleared >= 2), ([], True))
+        _sel73.gate = False
+        _sh73._emit_select({"names": "Box", "_engine": None})
+        check("  with no gate it selects and says so",
+              _sel73.held, [("Box", "")])
+    finally:
+        _sh73._gui, _eng73mod._resolve_names = _oldgui73, _oldresolve73
+        App.closeDocument("gate73")
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])
