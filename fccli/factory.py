@@ -157,7 +157,20 @@ def _clean_doc(meta, tid):
     return text[0].upper() + text[1:] + ("" if text.endswith(".") else ".")
 
 
-def build_type_verb(name, entry, meta=None):
+def build_type_verb(name, entry, meta=None, linked=None):
+    """A parametric type, as a verb whose steps are its own properties.
+
+    ``linked`` is the compiled file (ADR-100) of the command the descriptor
+    ties this type to, when there is one. The type block's `doc` is the
+    one-liner; the file's body is the page, and it reaches the typed verb
+    through here.
+
+    Without it a tier-1 verb had no `man` DESCRIPTION at all (GH #38). The
+    page belongs to the FreeCAD command, and `cylinder` and the qualified
+    launcher beside it are two doors to that command, so both carry it --
+    a reader opens one page at a time, and withholding the body from the
+    door people actually type is the worse of the two duplications.
+    """
     params = entry["params"]
     steps = [s for s in (_step_from_param(p) for p in params) if s is not None]
     if not steps:
@@ -166,6 +179,7 @@ def build_type_verb(name, entry, meta=None):
     if options:
         steps[-1].options = list(steps[-1].options) + options
     meta = meta or {}
+    linked = linked or {}
     return Verb(
         name=name,
         steps=steps,
@@ -173,6 +187,8 @@ def build_type_verb(name, entry, meta=None):
         doc=_clean_doc(meta, entry["type"]),
         gui_command=meta.get("name"),
         creates=entry["type"], generated=True,
+        manual=linked.get("doc") or "",
+        example=linked.get("example") or "",
     )
 
 
@@ -185,7 +201,8 @@ def build_command_verb(command, entry=None):
     fields a person set, and the page `man` shows. The verb's name is the
     file's `verb` when it has one and the slugged label otherwise; the
     one-line doc is the file's `summary` when a person wrote one and the
-    harvested tooltip otherwise, and the body becomes the manual.
+    harvested tooltip otherwise, the body becomes the manual, and the
+    authored `example` (ADR-501) rides along for `man` to show.
 
     It runs the command, and if a task panel opens it reads that panel and
     offers its parameters as prompts rather than leaving them to a mouse.
@@ -208,6 +225,7 @@ def build_command_verb(command, entry=None):
                 doc=entry.get("summary") or command.get("tooltip") or label,
                 aliases=list(entry.get("aliases") or []),
                 manual=entry.get("doc") or "",
+                example=entry.get("example") or "",
                 requires=list(entry.get("requires") or []),
                 panel=entry.get("panel"),
                 gui_command=name, generated=True)
@@ -583,7 +601,9 @@ def register_all(registry: Registry, descriptor=None, tier0=True,
             counts["skipped"] += 1
             continue
         target = patch.get("verb", name) if patch else name
-        verb = build_type_verb(target, entry, by_type.get(tid))
+        meta = by_type.get(tid)
+        verb = build_type_verb(target, entry, meta,
+                               entries.get((meta or {}).get("name")))
         if verb is None:
             counts["skipped"] += 1
             continue

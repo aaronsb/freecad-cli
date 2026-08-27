@@ -21,7 +21,11 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::Offset2D
+  doc: Offset the selected wire or face by a distance, in its own plane.
+  steps: [Value]
+  options: [Mode, Join]
 ---
 
 The Part Offset2D tool constructs a wire, parallel to the original wire, at a certain distance from it. Or enlarges/shrinks a planar face, similarly.

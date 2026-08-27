@@ -21,7 +21,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::Revolution
+  doc: Revolve the selected profile around an axis and add it to the body.
+  steps: [Angle]
+  options: [Type, Angle2]
+  hide: [FuzzyTolerance, UpToFace2, UpToShape2]
 ---
 
 The Revolution tool creates a solid by revolving a selected sketch or 2D object about a given axis.

@@ -21,7 +21,10 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::Mirrored
+  doc: Mirror the selected features across a plane.
+  hide: [FuzzyTolerance]
 ---
 
 The PartDesign Mirrored tool mirrors one or more features.

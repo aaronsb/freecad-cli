@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: PartDesign::Groove
+  doc: Revolve the selected profile around an axis and cut it from the body.
+  steps: [Angle]
+  options: [Type, Angle2]
+  hide: [FuzzyTolerance, UpToFace2, UpToShape2]
 ---
 
 The Groove tool revolves a selected sketch or profile about a given axis, cutting out material from the support .

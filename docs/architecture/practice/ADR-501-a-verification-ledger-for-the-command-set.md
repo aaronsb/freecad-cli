@@ -113,6 +113,22 @@ stale since the upgrade, next to what moved.
 
 ### Neutral
 
+- **The example is the command's, and a command can have two verbs.**
+  Sixteen commands are reachable both as a typed verb and as the launcher
+  the factory re-homed around it, and the authored example names one of
+  them. `man` prints it on the verb its operative token names, so
+  `cylinder 12 40` appears under `cylinder` and the qualified launcher
+  beside it shows no EXAMPLE (GH #44).
+
+- **A stamp is evidence about one invocation.** The ledger records the
+  example it drove. `man` shows the stamp when that text still equals the
+  authored `example`, so an example edited after a sweep leaves the page
+  showing the invocation alone until the next sweep reaches it. A result
+  the sweep did not call `ok` is shown as what it was, with its detail:
+  seventeen of the stamped examples came back `broken`, and a page that
+  printed one of those bare would be documenting what the sweep already
+  disproved.
+
 - The mode taxonomy formalizes what the QA pass found, and it is the same
   classification that decides whether a command is CLI-drivable at all.
 - The ledger can grow per-entry detail — the invocation run, the object it

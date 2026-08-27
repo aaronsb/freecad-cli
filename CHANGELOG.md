@@ -4,6 +4,38 @@
 
 ### Fixed
 
+- **A tier-1 typed verb shows its command's page (GH #38).** `man cylinder`
+  printed NAME, SYNOPSIS, ARGUMENTS, GUI and SEE ALSO, and nothing between:
+  the wiki body reached the tier-0 launcher, which `_make_room` had
+  re-homed to `part_cylinder_2`, while the verb people type got none of it.
+  `build_type_verb` now takes the linked command's compiled file, so the
+  page reaches both doors to one command.
+
+- **`man` shows the authored example, and what a sweep made of it (GH
+  #44).** ADR-501 gives each command one canonical invocation and 266 of
+  them are stamped in `fccli/verified.json`. `man` prints the example
+  between ARGUMENTS and DESCRIPTION, with the sweep's date and FreeCAD
+  version under it -- and where the sweep did not call the result `ok`, the
+  result and its detail instead, so a page never documents an invocation
+  the harness has already refuted. The example appears on the verb its own
+  first token names: sixteen commands have two verbs, and the example
+  belongs to one of them. A two-part selection example keeps its `select`
+  and says whose objects those are.
+
+- **Forty-five more generated verbs lead with the argument the command is
+  about (GH #69).** A tier-1 verb's steps are the type's properties in
+  alphabetical order, so `FuzzyTolerance` sorted in front of the length,
+  radius or count the command exists for and `additive_box 40` set a
+  boolean tolerance FreeCAD clamps to 1. PR #68 authored nine `type` blocks
+  for the commands a sweep had driven; this round takes the rest of the
+  class that can be defended from FreeCAD's own dialog and property docs --
+  the sixteen PartDesign primitives and their eight base types, five
+  base feature types, both patterns, Groove and Revolution, Mirrored,
+  Draft, both lofts, both pipes, Part's Ellipsoid and Prism, Thickness,
+  Offset, Offset2D and Extrusion. Sixty-one types are tuned, up from
+  sixteen, and 63 remain untuned and reported on the issue rather than
+  guessed at.
+
 - **A failed start no longer reports itself as an addon too old (GH
   #53).** `verify.py` read `"panel" not in _snapshot()` as "this FreeCAD
   predates ADR-302", and an instance that never came up answers `{}`, for

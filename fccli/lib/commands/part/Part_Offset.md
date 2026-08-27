@@ -20,7 +20,11 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::Offset
+  doc: Offset the selected shape by a distance.
+  steps: [Value]
+  options: [Mode, Join]
 ---
 
 The Part Offset tool creates parallel copies of a selected shape at a certain distance from the base shape, giving a new object.

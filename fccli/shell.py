@@ -22,6 +22,7 @@ from . import bus as _bus
 from . import curation as _curation
 from . import engine as _engine_mod
 from . import describe as _describe
+from . import ledger as _ledger
 from . import shortcuts as _shortcuts
 from . import paths as _paths
 from .grammar import (CHOICE, PATH, QUANTITY, TEXT, Option, Step, Verb,
@@ -717,6 +718,55 @@ def _wrap(text, width):
     return textwrap.wrap(text, width) or [""]
 
 
+def _runs_verb(example, verb):
+    """Whether this example is an invocation of this verb.
+
+    An `example` is authored per command (ADR-501), and sixteen commands
+    are reachable through two verbs -- the typed one and the launcher the
+    factory re-homed around it. `Part_Cylinder` carries `cylinder 12 40`,
+    which belongs on `cylinder` and not on `part_cylinder_2`. A two-part
+    example sets its selection up first, so the verb is in the segment
+    after the last semicolon.
+
+    Exact name or alias. A prefix would hand `boolean_operation ...` to
+    `boolean`, which is a different verb for the same command.
+    """
+    tail = example.rpartition(";")[2].strip()
+    head = tail.split()[0] if tail else ""
+    return bool(head) and (head == verb.name or head in verb.aliases)
+
+
+def _emit_example(verb, say):
+    """EXAMPLE: the authored invocation, and what a sweep made of it.
+
+    ADR-501 gives the field two jobs, and this is the documentation half.
+    The stamp beside it is the other half read back: the ledger records
+    the date, the FreeCAD version and the result, and seventeen of the
+    stamped examples came back `broken`. Printing those bare would state
+    as documentation the very thing the sweep disproved.
+    """
+    example = getattr(verb, "example", "")
+    if not example or not _runs_verb(example, verb):
+        return
+    say("EXAMPLE", "head")
+    say(f"    {example}", "ok")
+    if example.rpartition(";")[0].strip():
+        say("       the select names objects in the verifier's fixture.",
+            "quiet")
+    entry = _ledger.stamp(getattr(verb, "gui_command", None), example)
+    if entry is None:
+        return
+    when = f"{entry.get('date', '?')} on FreeCAD {entry.get('freecad', '?')}"
+    result = entry.get("result")
+    if result == "ok":
+        say(f"    verified {when}", "quiet")
+        return
+    say(f"    {when}: {result}", "warn")
+    for row in _wrap(entry.get("detail") or "", 66):
+        if row:
+            say(f"       {row}", "warn")
+
+
 def _emit_man(v):
     """The manual. Bare, it lists what exists; given a topic, it describes
     one thing in full -- every step with its kind, unit and choices, the
@@ -776,6 +826,8 @@ def _emit_man(v):
                         say(f"       {row}", "quiet")
             for opt in step.options:
                 say(f"       option {opt.name}: {opt.doc}")
+
+    _emit_example(verb, say)
 
     # The page's own See also is kept for the SEE ALSO below, where the
     # wiki's page names are answered as verb names beside what FreeCAD

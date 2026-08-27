@@ -20,7 +20,12 @@ family: null
 choice: null
 also: []
 rank: null
-type: null
+type:
+  of: Part::Extrusion
+  doc: Extrude the selected shape along a direction.
+  steps: [LengthFwd]
+  options: [LengthRev, TaperAngle, DirMode, FaceMakerMode]
+  hide: [TaperAngleRev]
 ---
 
 Part Extrude extends a shape by a specified distance, in a specified direction. The output shape type will vary depending on the input shape type and the options selected.

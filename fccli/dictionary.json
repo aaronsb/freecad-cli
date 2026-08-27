@@ -1929,11 +1929,40 @@
   },
   "PartDesign_AdditiveLoft": {
    "doc": "Additive Loft creates a solid in the active Body by making a transition between two or more sketches (also referred to as cross-sections). If the Body already contains features, the additive loft will be merged to them.\n\n## See also\n\n- PartDesign_AdditivePipe\n- PartDesign_SubtractiveLoft",
-   "file": "partdesign/PartDesign_AdditiveLoft.md"
+   "file": "partdesign/PartDesign_AdditiveLoft.md",
+   "type": {
+    "doc": "Loft the selected profile through its sections and add it to the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::AdditiveLoft"
+   }
   },
   "PartDesign_AdditivePipe": {
    "doc": "Additive Pipe creates a solid in the active Body by sweeping one or more sketches (also referred to as cross-sections) along an open or closed path. If the Body already contains features, the additive pipe will be merged to them.\n\n## See also\n\n- PartDesign_AdditiveLoft\n- PartDesign_SubtractivePipe",
-   "file": "partdesign/PartDesign_AdditivePipe.md"
+   "file": "partdesign/PartDesign_AdditivePipe.md",
+   "type": {
+    "doc": "Sweep the selected profile along a spine and add it to the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "AuxiliarySpine",
+     "Binormal",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::AdditivePipe",
+    "options": [
+     "Mode",
+     "Transition",
+     "Transformation"
+    ],
+    "steps": [
+     "Profile",
+     "Spine"
+    ]
+   }
   },
   "PartDesign_Body": {
    "doc": "A PartDesign Body is the base element to create solids shapes with the PartDesign Workbench. It can contain sketches, datum objects, and PartDesign Features that help in building a single contiguous solid.\n\nThe Body provides an Origin object which includes local X, Y, and Z axes, and standard planes. These elements can be used as references to attach sketches and primitive objects.\n\nDo not confuse the PartDesign Body with the Std Part. The first one is a specific object used in the PartDesign Workbench, intended to model a single contiguous solid by means of PartDesign Features. The Std Part is a grouping object intended to create assemblies; it is not used for modelling, just to arrange different objects in space. Multiple bodies, and other Std Parts, can be placed inside a single Std Part to create a complex assembly.\n\n## See also\n\n- Std_Part\n- Feature_editing",
@@ -1993,7 +2022,14 @@
   },
   "PartDesign_Draft": {
    "doc": "The PartDesign Draft tool creates angular draft on the selected faces of an object. It adds a Draft object to the document with its corresponding representation in the Tree view.\n\n--\n\n--",
-   "file": "partdesign/PartDesign_Draft.md"
+   "file": "partdesign/PartDesign_Draft.md",
+   "type": {
+    "doc": "Taper the selected faces away from a neutral plane.",
+    "hide": [
+     "FuzzyTolerance"
+    ],
+    "of": "PartDesign::Draft"
+   }
   },
   "PartDesign_DuplicateSelection": {
    "doc": "Duplicates the selected object and adds it to the active body.",
@@ -2016,7 +2052,23 @@
   },
   "PartDesign_Groove": {
    "doc": "The Groove tool revolves a selected sketch or profile about a given axis, cutting out material from the support .\n\n## See also\n\n- PartDesign_Revolution",
-   "file": "partdesign/PartDesign_Groove.md"
+   "file": "partdesign/PartDesign_Groove.md",
+   "type": {
+    "doc": "Revolve the selected profile around an axis and cut it from the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::Groove",
+    "options": [
+     "Type",
+     "Angle2"
+    ],
+    "steps": [
+     "Angle"
+    ]
+   }
   },
   "PartDesign_Hole": {
    "doc": "The Hole feature creates one or more holes from a selected sketch's circles and arcs. If arcs are present they must be part of closed contours. All non arc/circle entities are ignored but they still must form closed contours. Many parameters can be set such as threading and size, fit, hole type (countersink, counterbore, straight) and more.\n\nThe centers of the circles and arcs are used to position the holes, but please note that their radii are not taken into account. The generated holes will be identical even if the radii vary.\n\n## See also\n\n- PartDesign_Pocket",
@@ -2061,7 +2113,31 @@
   },
   "PartDesign_LinearPattern": {
    "doc": "The PartDesign LinearPattern tool creates a linear pattern of one or more features.\n\n## See also\n\n- PartDesign_MultiTransform",
-   "file": "partdesign/PartDesign_LinearPattern.md"
+   "file": "partdesign/PartDesign_LinearPattern.md",
+   "type": {
+    "doc": "Repeat the selected features along a direction.",
+    "hide": [
+     "FuzzyTolerance",
+     "Direction2",
+     "Length2",
+     "Mode2",
+     "Occurrences2",
+     "Offset2",
+     "SpacingPattern",
+     "SpacingPattern2",
+     "Spacings",
+     "Spacings2"
+    ],
+    "of": "PartDesign::LinearPattern",
+    "options": [
+     "Mode",
+     "Offset"
+    ],
+    "steps": [
+     "Length",
+     "Occurrences"
+    ]
+   }
   },
   "PartDesign_Migrate": {
    "doc": "The PartDesign workbench in FreeCAD v0.17 introduces new tools and elements that are not recognized by older FreeCAD versions (0.16 and older). FreeCAD documents created in older versions can still be opened and edited. To benefit from the new features, they must be migrated via the menu PartDesign → Migrate.",
@@ -2070,7 +2146,14 @@
   "PartDesign_Mirrored": {
    "doc": "The PartDesign Mirrored tool mirrors one or more features.\n\n## See also\n\n- PartDesign_MultiTransform",
    "example": "select AdditiveBox001; partdesign_mirror comboplane=Base XZ-plane",
-   "file": "partdesign/PartDesign_Mirrored.md"
+   "file": "partdesign/PartDesign_Mirrored.md",
+   "type": {
+    "doc": "Mirror the selected features across a plane.",
+    "hide": [
+     "FuzzyTolerance"
+    ],
+    "of": "PartDesign::Mirrored"
+   }
   },
   "PartDesign_MoveFeature": {
    "doc": "Move object to other body, as this command is labeled in the context menu, allows moving objects under a Body to another Body. The moved object is placed right below the other Body's tip. Sketches, datum geometry and features are supported.\n\n## See also\n\n- PartDesign_MoveTip\n- PartDesign_MoveFeatureInTree",
@@ -2158,12 +2241,45 @@
   },
   "PartDesign_PolarPattern": {
    "doc": "The PartDesign PolarPattern tool creates a polar pattern of one or more features.\n\n## See also\n\n- PartDesign_MultiTransform",
-   "file": "partdesign/PartDesign_PolarPattern.md"
+   "file": "partdesign/PartDesign_PolarPattern.md",
+   "type": {
+    "doc": "Repeat the selected features around an axis.",
+    "hide": [
+     "FuzzyTolerance",
+     "SpacingPattern",
+     "Spacings"
+    ],
+    "of": "PartDesign::PolarPattern",
+    "options": [
+     "Mode",
+     "Offset"
+    ],
+    "steps": [
+     "Angle",
+     "Occurrences"
+    ]
+   }
   },
   "PartDesign_Revolution": {
    "doc": "The Revolution tool creates a solid by revolving a selected sketch or 2D object about a given axis.\n\n## See also\n\n- PartDesign_Groove",
    "example": "select Sketch001; revolve revolveangle=270",
-   "file": "partdesign/PartDesign_Revolution.md"
+   "file": "partdesign/PartDesign_Revolution.md",
+   "type": {
+    "doc": "Revolve the selected profile around an axis and add it to the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::Revolution",
+    "options": [
+     "Type",
+     "Angle2"
+    ],
+    "steps": [
+     "Angle"
+    ]
+   }
   },
   "PartDesign_ShapeBinder": {
    "doc": "The PartDesign ShapeBinder tool creates a shape binder referencing geometry from a single parent object. A ShapeBinder is used inside a PartDesign Body to reference geometry outside the Body. Using external geometry directly in a Body is not allowed and will lead to out of scope errors.\n\nA ShapeBinder will track the relative placement of the referenced geometry, which is useful in the context of creating assemblies, if its Trace Support property is set to . See the Example below to understand how this works.\n\nThe referenced geometry can either be a single object (for example a Part Box, a PartDesign Body, or a sketch or Feature inside a Body), or one or more subelements (faces, edges or vertices) belonging to the same parent object. Which geometry should be selected depends on the intended purpose of the ShapeBinder. For a Boolean operation you would need to select a solid. For a Pad operation a face or a sketch can be used. And for the external geometry in a sketch, or to attach a sketch, any combination of subelements may be appropriate. The referenced geometry can also belong to the Body the ShapeBinder is nested in.\n\n## See also\n\n- PartDesign_SubShapeBinder\n- PartDesign_Clone",
@@ -2206,11 +2322,40 @@
   },
   "PartDesign_SubtractiveLoft": {
    "doc": "Subtractive Loft creates a subtractive solid in the active Body by making a transition between two or more sketches (also referred to as cross-sections). Its shape is then subtracted from the existing solid.\n\n## See also\n\n- PartDesign_AdditiveLoft\n- PartDesign_SubtractivePipe",
-   "file": "partdesign/PartDesign_SubtractiveLoft.md"
+   "file": "partdesign/PartDesign_SubtractiveLoft.md",
+   "type": {
+    "doc": "Loft the selected profile through its sections and cut it from the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::SubtractiveLoft"
+   }
   },
   "PartDesign_SubtractivePipe": {
    "doc": "Subtractive Pipe creates a subtractive solid in the active Body by sweeping one or more sketches (also referred to as cross-sections) along an open or closed path. Its shape is then subtracted from the existing solid. SubtractivePipe is often used in connection with Part Helix and PartDesign ShapeBinder to create a thread; see the Thread for Screw Tutorial for details.\n\n## See also\n\n- PartDesign_AdditivePipe\n- PartDesign_SubtractiveLoft",
-   "file": "partdesign/PartDesign_SubtractivePipe.md"
+   "file": "partdesign/PartDesign_SubtractivePipe.md",
+   "type": {
+    "doc": "Sweep the selected profile along a spine and cut it from the body.",
+    "hide": [
+     "FuzzyTolerance",
+     "AuxiliarySpine",
+     "Binormal",
+     "UpToFace2",
+     "UpToShape2"
+    ],
+    "of": "PartDesign::SubtractivePipe",
+    "options": [
+     "Mode",
+     "Transition",
+     "Transformation"
+    ],
+    "steps": [
+     "Profile",
+     "Spine"
+    ]
+   }
   },
   "PartDesign_Thickness": {
    "doc": "The PartDesign Thickness tool transforms a solid body into a hollow object with at least one open face, giving to each of its remaining faces a uniform thickness. It adds a Thickness object to the document with its corresponding representation in the Tree view.\n\n## See also\n\n- Part_Thickness",
@@ -2429,7 +2574,23 @@
   },
   "Part_Extrude": {
    "doc": "Part Extrude extends a shape by a specified distance, in a specified direction. The output shape type will vary depending on the input shape type and the options selected.\n\nIn most common scenarios, the following lists the expected output shape type from a given input shape type,\n\n- Extrude a Vertex (point), will produce a lineal Edge (Line)\n- Extrude a open edge (e.g. line, arc), will produce a open face (e.g. plane)\n- Extrude a closed edge (e.g. circle), will optionally produce a closed face (e.g. an open ended cylinder) or if the parameter \"solid\" is \"true\" will produce a solid (e.g. a closed solid cylinder)\n- Extrude a open Wire (e.g. a Draft Wire), will produce a open shell (several joined faces)\n- Extrude a closed Wire (e.g. a Draft Wire), will optionally produce a shell (several joined faces) or if the parameter \"solid\" is \"true\" will produce a solid\n- Extrude a face (e.g. plane), will produce a solid (e.g. Cuboid)\n- Extrude a [Draft ShapeString, will produce a compound of solids (the string is a compound of the letters which are each a solid)\n- Extrude a shell of faces, will produce a Compsolid.\n\n## See also\n\n- Draft_Trimex\n- PartDesign_Pad",
-   "file": "part/Part_Extrude.md"
+   "file": "part/Part_Extrude.md",
+   "type": {
+    "doc": "Extrude the selected shape along a direction.",
+    "hide": [
+     "TaperAngleRev"
+    ],
+    "of": "Part::Extrusion",
+    "options": [
+     "LengthRev",
+     "TaperAngle",
+     "DirMode",
+     "FaceMakerMode"
+    ],
+    "steps": [
+     "LengthFwd"
+    ]
+   }
   },
   "Part_FaceSelection": {
    "doc": "Only allows the selection of faces.",
@@ -2492,12 +2653,34 @@
   },
   "Part_Offset": {
    "doc": "The Part Offset tool creates parallel copies of a selected shape at a certain distance from the base shape, giving a new object.\n\n→\n\n## See also\n\n- Part_Thickness\n- Part_Offset2D",
-   "file": "part/Part_Offset.md"
+   "file": "part/Part_Offset.md",
+   "type": {
+    "doc": "Offset the selected shape by a distance.",
+    "of": "Part::Offset",
+    "options": [
+     "Mode",
+     "Join"
+    ],
+    "steps": [
+     "Value"
+    ]
+   }
   },
   "Part_Offset2D": {
    "doc": "The Part Offset2D tool constructs a wire, parallel to the original wire, at a certain distance from it. Or enlarges/shrinks a planar face, similarly.\n\nThe wire/face must be planar. There can be multiple wires in one object, not necessarily coplanar.\n\n## See also\n\n- Part_Offset\n- Part_Thickness\n- Draft_Offset",
    "example": "select Wire; part_2d_offset offset=2",
-   "file": "part/Part_Offset2D.md"
+   "file": "part/Part_Offset2D.md",
+   "type": {
+    "doc": "Offset the selected wire or face by a distance, in its own plane.",
+    "of": "Part::Offset2D",
+    "options": [
+     "Mode",
+     "Join"
+    ],
+    "steps": [
+     "Value"
+    ]
+   }
   },
   "Part_PickCurveNet": {
    "doc": "Picks a curve network.",
@@ -2624,7 +2807,18 @@
   },
   "Part_Thickness": {
    "doc": "The Thickness tool works on a solid shape and transforms it into a hollow object, giving to each of its faces a defined and constant thickness. On some solids it allows you to significantly speed up the work, and avoids making extrusions and pockets.\n\n## See also\n\n- Part_Offset",
-   "file": "part/Part_Thickness.md"
+   "file": "part/Part_Thickness.md",
+   "type": {
+    "doc": "Hollow the selected solid, leaving the selected faces open.",
+    "of": "Part::Thickness",
+    "options": [
+     "Mode",
+     "Join"
+    ],
+    "steps": [
+     "Value"
+    ]
+   }
   },
   "Part_ToleranceSet": {
    "doc": "Creates a parametric copy of the selected object with all contained tolerances set to at least a certain minimum value.",
@@ -5074,6 +5268,42 @@
    ],
    "strict": true
   },
+  "Part::Ellipsoid": {
+   "doc": "Create an ellipsoid from three radii.",
+   "file": "part/_types.yaml",
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "prompts": {
+    "Radius1": "radius along the local Z axis",
+    "Radius2": "radius along the local X axis",
+    "Radius3": "radius along the local Y axis"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2",
+    "Radius3"
+   ],
+   "strict": true
+  },
+  "Part::Extrusion": {
+   "doc": "Extrude the selected shape along a direction.",
+   "file": "part/Part_Extrude.md",
+   "hide": [
+    "TaperAngleRev"
+   ],
+   "options": [
+    "LengthRev",
+    "TaperAngle",
+    "DirMode",
+    "FaceMakerMode"
+   ],
+   "steps": [
+    "LengthFwd"
+   ]
+  },
   "Part::Helix": {
    "doc": "Create a helix from a pitch, a height and a radius.",
    "file": "part/_types.yaml",
@@ -5086,6 +5316,47 @@
     "Pitch",
     "Height",
     "Radius"
+   ],
+   "strict": true
+  },
+  "Part::Offset": {
+   "doc": "Offset the selected shape by a distance.",
+   "file": "part/Part_Offset.md",
+   "options": [
+    "Mode",
+    "Join"
+   ],
+   "steps": [
+    "Value"
+   ]
+  },
+  "Part::Offset2D": {
+   "doc": "Offset the selected wire or face by a distance, in its own plane.",
+   "file": "part/Part_Offset2D.md",
+   "options": [
+    "Mode",
+    "Join"
+   ],
+   "steps": [
+    "Value"
+   ]
+  },
+  "Part::Prism": {
+   "doc": "Create a regular prism from a side count, a radius and a height.",
+   "file": "part/_types.yaml",
+   "options": [
+    "FirstAngle",
+    "SecondAngle"
+   ],
+   "prompts": {
+    "Circumradius": "distance from the centre to a vertex",
+    "Height": "height along the Z axis",
+    "Polygon": "number of sides"
+   },
+   "steps": [
+    "Polygon",
+    "Circumradius",
+    "Height"
    ],
    "strict": true
   },
@@ -5115,6 +5386,17 @@
     "Radius"
    ],
    "strict": true
+  },
+  "Part::Thickness": {
+   "doc": "Hollow the selected solid, leaving the selected faces open.",
+   "file": "part/Part_Thickness.md",
+   "options": [
+    "Mode",
+    "Join"
+   ],
+   "steps": [
+    "Value"
+   ]
   },
   "Part::Torus": {
    "doc": "Create a torus from a path radius and a tube radius.",
@@ -5146,6 +5428,76 @@
    ],
    "strict": true
   },
+  "PartDesign::AdditiveBox": {
+   "doc": "Add a box to the body, from three dimensions.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "steps": [
+    "Length",
+    "Width",
+    "Height"
+   ]
+  },
+  "PartDesign::AdditiveCone": {
+   "doc": "Add a truncated cone to the body.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle"
+   ],
+   "prompts": {
+    "Height": "height along the Z axis",
+    "Radius1": "radius of the bottom face",
+    "Radius2": "radius of the top face"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2",
+    "Height"
+   ]
+  },
+  "PartDesign::AdditiveCylinder": {
+   "doc": "Add a cylinder to the body, from a radius and a height.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "FirstAngle",
+    "SecondAngle"
+   ],
+   "options": [
+    "Angle"
+   ],
+   "steps": [
+    "Radius",
+    "Height"
+   ]
+  },
+  "PartDesign::AdditiveEllipsoid": {
+   "doc": "Add an ellipsoid to the body, from three radii.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "prompts": {
+    "Radius1": "radius along the local Z axis",
+    "Radius2": "radius along the local X axis",
+    "Radius3": "radius along the local Y axis"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2",
+    "Radius3"
+   ]
+  },
   "PartDesign::AdditiveHelix": {
    "doc": "Sweep the selected profile along a helix and add it to the body.",
    "file": "partdesign/PartDesign_AdditiveHelix.md",
@@ -5168,6 +5520,122 @@
     "Turns"
    ]
   },
+  "PartDesign::AdditiveLoft": {
+   "doc": "Loft the selected profile through its sections and add it to the body.",
+   "file": "partdesign/PartDesign_AdditiveLoft.md",
+   "hide": [
+    "FuzzyTolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ]
+  },
+  "PartDesign::AdditivePipe": {
+   "doc": "Sweep the selected profile along a spine and add it to the body.",
+   "file": "partdesign/PartDesign_AdditivePipe.md",
+   "hide": [
+    "FuzzyTolerance",
+    "AuxiliarySpine",
+    "Binormal",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Mode",
+    "Transition",
+    "Transformation"
+   ],
+   "steps": [
+    "Profile",
+    "Spine"
+   ]
+  },
+  "PartDesign::AdditivePrism": {
+   "doc": "Add a regular prism to the body, from a side count, a radius and a height.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "FirstAngle",
+    "SecondAngle"
+   ],
+   "prompts": {
+    "Circumradius": "distance from the centre to a vertex",
+    "Height": "height along the Z axis",
+    "Polygon": "number of sides"
+   },
+   "steps": [
+    "Polygon",
+    "Circumradius",
+    "Height"
+   ]
+  },
+  "PartDesign::AdditiveSphere": {
+   "doc": "Add a sphere to the body, from a radius.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "steps": [
+    "Radius"
+   ]
+  },
+  "PartDesign::AdditiveTorus": {
+   "doc": "Add a torus to the body, from a path radius and a tube radius.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "prompts": {
+    "Radius1": "radius of the circular path, from the origin to the tube center",
+    "Radius2": "radius of the swept tube"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2"
+   ]
+  },
+  "PartDesign::AdditiveWedge": {
+   "doc": "Add a wedge to the body, from two opposite corners.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "X2min",
+    "X2max",
+    "Z2min",
+    "Z2max"
+   ],
+   "steps": [
+    "Xmin",
+    "Ymin",
+    "Zmin",
+    "Xmax",
+    "Ymax",
+    "Zmax"
+   ]
+  },
+  "PartDesign::Box": {
+   "doc": "A PartDesign box primitive, from three dimensions.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "steps": [
+    "Length",
+    "Width",
+    "Height"
+   ]
+  },
   "PartDesign::Chamfer": {
    "doc": "Bevel the selected edges or faces.",
    "file": "partdesign/PartDesign_Chamfer.md",
@@ -5183,6 +5651,80 @@
     "Size"
    ]
   },
+  "PartDesign::Cone": {
+   "doc": "A PartDesign truncated cone primitive.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle"
+   ],
+   "prompts": {
+    "Height": "height along the Z axis",
+    "Radius1": "radius of the bottom face",
+    "Radius2": "radius of the top face"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2",
+    "Height"
+   ]
+  },
+  "PartDesign::Cylinder": {
+   "doc": "A PartDesign cylinder primitive, from a radius and a height.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "FirstAngle",
+    "SecondAngle"
+   ],
+   "options": [
+    "Angle"
+   ],
+   "steps": [
+    "Radius",
+    "Height"
+   ]
+  },
+  "PartDesign::Draft": {
+   "doc": "Taper the selected faces away from a neutral plane.",
+   "file": "partdesign/PartDesign_Draft.md",
+   "hide": [
+    "FuzzyTolerance"
+   ]
+  },
+  "PartDesign::Ellipsoid": {
+   "doc": "A PartDesign ellipsoid primitive, from three radii.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "prompts": {
+    "Radius1": "radius along the local Z axis",
+    "Radius2": "radius along the local X axis",
+    "Radius3": "radius along the local Y axis"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2",
+    "Radius3"
+   ]
+  },
+  "PartDesign::FeatureExtrude": {
+   "doc": "A PartDesign extrusion of a profile.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ]
+  },
   "PartDesign::Fillet": {
    "doc": "Round the selected edges or faces to a radius.",
    "file": "partdesign/PartDesign_Fillet.md",
@@ -5191,6 +5733,44 @@
    ],
    "steps": [
     "Radius"
+   ]
+  },
+  "PartDesign::Groove": {
+   "doc": "Revolve the selected profile around an axis and cut it from the body.",
+   "file": "partdesign/PartDesign_Groove.md",
+   "hide": [
+    "FuzzyTolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Type",
+    "Angle2"
+   ],
+   "steps": [
+    "Angle"
+   ]
+  },
+  "PartDesign::Helix": {
+   "doc": "A PartDesign helical sweep of a profile.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "Axis",
+    "Base",
+    "Tolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Angle",
+    "Growth"
+   ],
+   "steps": [
+    "Mode",
+    "Pitch",
+    "Height",
+    "Turns"
    ]
   },
   "PartDesign::Hole": {
@@ -5221,6 +5801,46 @@
     "Depth"
    ]
   },
+  "PartDesign::LinearPattern": {
+   "doc": "Repeat the selected features along a direction.",
+   "file": "partdesign/PartDesign_LinearPattern.md",
+   "hide": [
+    "FuzzyTolerance",
+    "Direction2",
+    "Length2",
+    "Mode2",
+    "Occurrences2",
+    "Offset2",
+    "SpacingPattern",
+    "SpacingPattern2",
+    "Spacings",
+    "Spacings2"
+   ],
+   "options": [
+    "Mode",
+    "Offset"
+   ],
+   "steps": [
+    "Length",
+    "Occurrences"
+   ]
+  },
+  "PartDesign::Loft": {
+   "doc": "A PartDesign loft, through a profile and its sections.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ]
+  },
+  "PartDesign::Mirrored": {
+   "doc": "Mirror the selected features across a plane.",
+   "file": "partdesign/PartDesign_Mirrored.md",
+   "hide": [
+    "FuzzyTolerance"
+   ]
+  },
   "PartDesign::Pad": {
    "doc": "Extrude the selected profile and add it to the body.",
    "file": "partdesign/PartDesign_Pad.md",
@@ -5241,6 +5861,26 @@
    ],
    "steps": [
     "Length"
+   ]
+  },
+  "PartDesign::Pipe": {
+   "doc": "A PartDesign sweep, of a profile along a spine.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "AuxiliarySpine",
+    "Binormal",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Mode",
+    "Transition",
+    "Transformation"
+   ],
+   "steps": [
+    "Profile",
+    "Spine"
    ]
   },
   "PartDesign::Pocket": {
@@ -5265,6 +5905,154 @@
     "Length"
    ]
   },
+  "PartDesign::PolarPattern": {
+   "doc": "Repeat the selected features around an axis.",
+   "file": "partdesign/PartDesign_PolarPattern.md",
+   "hide": [
+    "FuzzyTolerance",
+    "SpacingPattern",
+    "Spacings"
+   ],
+   "options": [
+    "Mode",
+    "Offset"
+   ],
+   "steps": [
+    "Angle",
+    "Occurrences"
+   ]
+  },
+  "PartDesign::Prism": {
+   "doc": "A PartDesign regular prism primitive.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "FirstAngle",
+    "SecondAngle"
+   ],
+   "prompts": {
+    "Circumradius": "distance from the centre to a vertex",
+    "Height": "height along the Z axis",
+    "Polygon": "number of sides"
+   },
+   "steps": [
+    "Polygon",
+    "Circumradius",
+    "Height"
+   ]
+  },
+  "PartDesign::ProfileBased": {
+   "doc": "A PartDesign feature built from a profile.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ]
+  },
+  "PartDesign::Revolution": {
+   "doc": "Revolve the selected profile around an axis and add it to the body.",
+   "file": "partdesign/PartDesign_Revolution.md",
+   "hide": [
+    "FuzzyTolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Type",
+    "Angle2"
+   ],
+   "steps": [
+    "Angle"
+   ]
+  },
+  "PartDesign::Sphere": {
+   "doc": "A PartDesign sphere primitive, from a radius.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "steps": [
+    "Radius"
+   ]
+  },
+  "PartDesign::SubtractiveBox": {
+   "doc": "Cut a box out of the body, from three dimensions.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "steps": [
+    "Length",
+    "Width",
+    "Height"
+   ]
+  },
+  "PartDesign::SubtractiveCone": {
+   "doc": "Cut a truncated cone out of the body.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle"
+   ],
+   "prompts": {
+    "Height": "height along the Z axis",
+    "Radius1": "radius of the bottom face",
+    "Radius2": "radius of the top face"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2",
+    "Height"
+   ]
+  },
+  "PartDesign::SubtractiveCylinder": {
+   "doc": "Cut a cylinder out of the body, from a radius and a height.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "FirstAngle",
+    "SecondAngle"
+   ],
+   "options": [
+    "Angle"
+   ],
+   "steps": [
+    "Radius",
+    "Height"
+   ]
+  },
+  "PartDesign::SubtractiveEllipsoid": {
+   "doc": "Cut an ellipsoid out of the body, from three radii.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "prompts": {
+    "Radius1": "radius along the local Z axis",
+    "Radius2": "radius along the local X axis",
+    "Radius3": "radius along the local Y axis"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2",
+    "Radius3"
+   ]
+  },
   "PartDesign::SubtractiveHelix": {
    "doc": "Sweep the selected profile along a helix and cut it from the body.",
    "file": "partdesign/PartDesign_SubtractiveHelix.md",
@@ -5287,6 +6075,110 @@
     "Turns"
    ]
   },
+  "PartDesign::SubtractiveLoft": {
+   "doc": "Loft the selected profile through its sections and cut it from the body.",
+   "file": "partdesign/PartDesign_SubtractiveLoft.md",
+   "hide": [
+    "FuzzyTolerance",
+    "UpToFace2",
+    "UpToShape2"
+   ]
+  },
+  "PartDesign::SubtractivePipe": {
+   "doc": "Sweep the selected profile along a spine and cut it from the body.",
+   "file": "partdesign/PartDesign_SubtractivePipe.md",
+   "hide": [
+    "FuzzyTolerance",
+    "AuxiliarySpine",
+    "Binormal",
+    "UpToFace2",
+    "UpToShape2"
+   ],
+   "options": [
+    "Mode",
+    "Transition",
+    "Transformation"
+   ],
+   "steps": [
+    "Profile",
+    "Spine"
+   ]
+  },
+  "PartDesign::SubtractivePrism": {
+   "doc": "Cut a regular prism out of the body, from a side count, a radius and a height.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "FirstAngle",
+    "SecondAngle"
+   ],
+   "prompts": {
+    "Circumradius": "distance from the centre to a vertex",
+    "Height": "height along the Z axis",
+    "Polygon": "number of sides"
+   },
+   "steps": [
+    "Polygon",
+    "Circumradius",
+    "Height"
+   ]
+  },
+  "PartDesign::SubtractiveSphere": {
+   "doc": "Cut a sphere out of the body, from a radius.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "steps": [
+    "Radius"
+   ]
+  },
+  "PartDesign::SubtractiveTorus": {
+   "doc": "Cut a torus out of the body, from a path radius and a tube radius.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "prompts": {
+    "Radius1": "radius of the circular path, from the origin to the tube center",
+    "Radius2": "radius of the swept tube"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2"
+   ]
+  },
+  "PartDesign::SubtractiveWedge": {
+   "doc": "Cut a wedge out of the body, from two opposite corners.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "X2min",
+    "X2max",
+    "Z2min",
+    "Z2max"
+   ],
+   "steps": [
+    "Xmin",
+    "Ymin",
+    "Zmin",
+    "Xmax",
+    "Ymax",
+    "Zmax"
+   ]
+  },
   "PartDesign::Thickness": {
    "doc": "Hollow the body, leaving the selected faces open to a wall thickness.",
    "file": "partdesign/PartDesign_Thickness.md",
@@ -5297,6 +6189,45 @@
     "Value",
     "Mode",
     "Join"
+   ]
+  },
+  "PartDesign::Torus": {
+   "doc": "A PartDesign torus primitive, from a path radius and a tube radius.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance"
+   ],
+   "options": [
+    "Angle1",
+    "Angle2",
+    "Angle3"
+   ],
+   "prompts": {
+    "Radius1": "radius of the circular path, from the origin to the tube center",
+    "Radius2": "radius of the swept tube"
+   },
+   "steps": [
+    "Radius1",
+    "Radius2"
+   ]
+  },
+  "PartDesign::Wedge": {
+   "doc": "A PartDesign wedge primitive, from two opposite corners.",
+   "file": "partdesign/_types.yaml",
+   "hide": [
+    "FuzzyTolerance",
+    "X2min",
+    "X2max",
+    "Z2min",
+    "Z2max"
+   ],
+   "steps": [
+    "Xmin",
+    "Ymin",
+    "Zmin",
+    "Xmax",
+    "Ymax",
+    "Zmax"
    ]
   }
  },

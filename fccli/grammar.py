@@ -154,6 +154,11 @@ class Verb:
     # The command's own page, from fccli/lib/commands (ADR-100): what `man`
     # shows below the one-line doc. Empty for a verb with no file.
     manual: str = ""
+    # The authored canonical invocation from the same file (ADR-501): the
+    # line `make verify` drives and the line `man` shows. It is the
+    # command's, not the verb's, so a command reachable through two doors
+    # carries it on both and `man` prints it on the one it names.
+    example: str = ""
     # Declared preconditions and panel handling from the same file. Read
     # by nothing yet; the engine's refusal and the panel decision come
     # with the prompt-context work.
