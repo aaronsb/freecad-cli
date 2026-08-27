@@ -18,6 +18,26 @@ Dropping 68% of the properties is what makes either surface usable.
 # Groups that hold plumbing rather than the shape of the thing.
 NOISE_GROUPS = {"Attachment", "Base", ""}
 
+# Property types that hold a count rather than a measurement. FreeCAD's
+# setter for one of these takes an int and refuses a float outright --
+# `type must be int, dict or tuple, not float` -- so a value the command
+# line parsed has to be turned back into an integer before it is written,
+# and a step that asks for one carries no unit (GH #78, ADR-203).
+#
+# The list and set forms are left out on purpose: they hold a sequence
+# rather than a number, the harvest reads them as text steps, and nothing
+# here would know what to make of one.
+COUNTING = {
+    "App::PropertyInteger",
+    "App::PropertyIntegerConstraint",
+    "App::PropertyPercent",
+}
+
+
+def counts(property_type):
+    """Whether a property holds a count rather than a measurement."""
+    return property_type in COUNTING
+
 # Individual properties that survive the group filter and still say nothing
 # a person asked for.
 NOISE_PROPS = {

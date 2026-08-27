@@ -26,7 +26,8 @@ import unicodedata
 
 from . import bus as _bus
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
-                      Option, Registry, Step, Verb)
+                      Option, Registry, Step, Verb, whole_number)
+from .properties import counts
 from . import curation
 from .families import families
 from .patches import load_patches
@@ -83,9 +84,18 @@ def _step_from_param(param):
     if kind is None:
         return None                      # flags become options, not steps
     prompt = param.get("doc") or param["name"]
+    integral = counts(param.get("property_type"))
     step = Step(param["name"], kind, prompt.rstrip("."),
                 optional=True,
-                unit=param.get("unit", "mm"))
+                # A count is in nothing. The default of millimetres is for
+                # a property the harvest gave no unit, and a count is the
+                # one class where that default is not merely cosmetic:
+                # `parse_quantity` appends the schema's preferred length to
+                # a bare number, so under Building US a typed `4` reached
+                # Occurrences as 101.6 and no rounding could save it
+                # (GH #78, ADR-203).
+                unit="" if integral else param.get("unit", "mm"),
+                integral=integral)
     if kind == CHOICE:
         step.choices = param.get("choices", [])
     return step
@@ -98,7 +108,7 @@ def _options_from_flags(params):
         if p["kind"] != "flag":
             continue
         out.append(Option(p["name"], p.get("doc", "") or p["name"],
-                          _flag_setter(p["name"])))
+                          _flag_setter(p["name"]), sets=True))
     return out
 
 
@@ -111,20 +121,34 @@ def _flag_setter(name):
 
 def _emit_type(tid, params):
     """Construct the object and write every collected property onto it."""
+    integral = {p["name"] for p in params if counts(p.get("property_type"))}
+
     def emit(values):
         import FreeCAD as App
         doc = App.ActiveDocument or App.newDocument()
         obj = doc.addObject(tid, tid.split("::")[-1])
         flags = values.get("_flags", {})
+        refused = []
         for p in params:
-            got = values.get(p["name"])
-            if got is None and p["name"] not in flags:
+            name = p["name"]
+            got = values.get(name)
+            if got is None and name not in flags:
                 continue
+            wanted = True if got is None else got
+            if name in integral and not isinstance(wanted, bool):
+                # The engine already refuses a fraction at the prompt. This
+                # is the same reading at the door FreeCAD's setter is
+                # behind, for a value that reached emit any other way.
+                whole = whole_number(wanted)
+                if whole is None:
+                    refused.append(f"{name} counts, and {wanted} is not a "
+                                   f"whole number")
+                    continue
+                wanted = whole
             try:
-                setattr(obj, p["name"],
-                        True if got is None else got)
-            except Exception:
-                pass
+                setattr(obj, name, wanted)
+            except Exception as exc:
+                refused.append(f"FreeCAD would not take {name}: {exc}")
         doc.recompute()
         try:
             import FreeCADGui as Gui
@@ -133,8 +157,29 @@ def _emit_type(tid, params):
             Gui.updateGui()
         except Exception:
             pass
+        _report_refused(values.get("_engine"), obj, refused)
         return obj
     return emit
+
+
+def _report_refused(engine, obj, refused):
+    """Say so when a value the line collected never reached the object.
+
+    `except Exception: pass` around the write made a property FreeCAD
+    refused indistinguishable from one it took, so `linear_pattern 100 4`
+    reported success and the object read back Occurrences 2 -- the default
+    (GH #78). It is the silence ADR-202 took out of the invalid object,
+    one layer further in: a write that raises is not a write.
+
+    Every property is attempted and every refusal is named, so one that
+    FreeCAD will not take costs only itself. The RESULT still goes out
+    after this, on ADR-202's reading: the object exists and the line did
+    run, and the error beside it says what is not on it.
+    """
+    if not refused or engine is None:
+        return
+    engine.bus.emit(_bus.ERROR, f"{obj.Name}: " + "; ".join(refused)
+                    + " -- the rest of the line landed")
 
 
 def _clean_doc(meta, tid):

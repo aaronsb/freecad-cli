@@ -103,7 +103,12 @@ DECLARED_SOURCE = re.compile(r"""\bcompletes\s*=\s*["']([a-z_]+)["']""")
 # vocabulary. `parse_quantity` reads anything that is not "deg" as a
 # length, and `units._internal_unit` asks FreeCAD what a unit is, so a
 # unit outside this set is one nothing in the chain was written for.
-HARVEST_UNITS = {"mm", "mm^2", "mm^3", "deg"}
+# The units the harvest can write, plus the empty one. A step that echoes
+# in nothing is a property FreeCAD gives no dimension, carried through as
+# the absence it is rather than defaulted to millimetres -- `parse_quantity`
+# appends nothing to a bare number, which is the correct reading and the
+# cure for the class below, not a member of it (GH #78, ADR-203).
+HARVEST_UNITS = {"", "mm", "mm^2", "mm^3", "deg"}
 
 # Properties FreeCAD gives no dimension. The harvest maps each to
 # ("quantity", "") and omits the unit, and `_step_from_param` reads the

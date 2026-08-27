@@ -105,8 +105,17 @@ has a value and is not `repeat`. A repeating step is filled only by `done`.
    the rest of a submitted line, which `_start` walks itself and where
    the same token is refused (ADR-201).
 3. If the token is a prefix of one of the step's options, run its action.
-   An action returning `True` finishes the verb.
-4. Otherwise parse by the step's kind and call `_accept`.
+   An action returning `True` finishes the verb; an action that left the
+   engine `IDLE` ended the command itself — `cancel` at a panel step —
+   and nothing further is echoed or announced over it.
+4. Otherwise parse by the step's kind and call `_accept`. A `QUANTITY`
+   step marked `integral` refuses a value that is not a whole number
+   (ADR-203).
+
+`_feed_text` answers whether the value landed, and `_start`'s walk over
+the rest of a submitted line stops when it did not: what follows a
+refused token was answers to a command that is not going to run as
+typed (ADR-201, ADR-203).
 
 `_accept(step, value, typed)`:
 
@@ -116,7 +125,8 @@ has a value and is not `repeat`. A repeating step is filled only by `done`.
    viewport.
 2. If the step has `on_accept`, call it. A returned complaint reverses
    step 1 and reports an error.
-3. Finish if `pending()` is empty; otherwise announce.
+3. Finish if `pending()` is empty; otherwise announce. Answers True when
+   the value stuck and False when step 2 took it back.
 
 `submit("")` while `COLLECTING` calls `_terminate_step`:
 
@@ -235,7 +245,12 @@ executed by then. The `mode` and `mouse` exits leave the panel open with
 the engine `IDLE`.
 
 An adopted panel yields one step: `set`, kind `TEXT`, `raw`, `repeat`,
-`min_count=1`, option `done`, `on_accept=_assign`. `_assign` splits the
+`min_count=1`, options `done` and `cancel`, `on_accept=_assign`. Both
+words are the ones the panel's own instruction line advertises; `cancel`
+aborts the verb, which is what Escape and the socket's cancel op already
+reached (ADR-303). A field genuinely named `cancel` stays addressable,
+because an option is matched against the whole raw line and every
+assignment has an `=` in it. `_assign` splits the
 line into `name=value` pairs, writes every pair before reporting any
 complaint, and re-announces the field list when a write changes which
 fields the panel shows. Values are written as typed; the panel's own
@@ -348,7 +363,8 @@ the engine is already `IDLE` and the call does nothing. Otherwise an open
 task panel is dismissed; otherwise nothing.
 
 `state` returns the active document, the engine state, the open verb,
-step, prompt and options, the floor, and the scope. `bin/fccli` renders
+step, prompt, options and the composed prompt hint, the floor, and the
+scope. `bin/fccli` renders
 its prompt from this reply.
 
 ## Toolbar bridge

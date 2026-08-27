@@ -469,11 +469,40 @@ def _done(engine):
     return True         # the verb is finished
 
 
+def _cancel(engine):
+    """`cancel` at a panel step, doing what the prompt says it does.
+
+    The step takes the whole line, so a bare word could only ever be one
+    of the step's own options, and `cancel` was not one of them -- the
+    line the panel prints named it, `_assign` read it as a failed
+    assignment, and the panel stayed up (GH #71). Escape in the dock and
+    the socket's cancel op both did the job, and neither is the word.
+
+    `engine.cancel` is that word's meaning already: it aborts the verb,
+    which presses the panel's own Cancel and lets FreeCAD put the model
+    back, and then re-prompts. So this returns False rather than True --
+    it did not finish the step, it ended the command -- and the engine
+    stops on the reset rather than announcing over it.
+    """
+    engine.cancel()
+    return False
+
+
 # Not recorded: a line that named its parameters is already complete,
 # and `done` inside one was read back as part of the last value --
 # "xposition=25 mm done" reached FreeCAD's parser as one length.
 DONE = Option("done", "apply what is set and close the panel", _done,
               record=False)
+# Nor this one. There is no command left to replay.
+CANCEL = Option("cancel", "abandon the panel and put the model back", _cancel,
+                record=False)
+
+# The two sentences a panel says about what it takes: one when it opens,
+# one when it refuses a line. Together here because they went apart --
+# the first named `cancel` and the second did not take it (GH #71) -- and
+# because every word in either has to be an option in the list above.
+OFFER = "name=value sets one · done applies · cancel abandons"
+WAYS_OUT = "name=value, `done` to apply, or `cancel` to abandon"
 
 
 def key_for(name):
@@ -581,11 +610,9 @@ def _assign(engine, step, value, typed=None):
         text = stripped[:-5]
     pairs, leftover = split_assignments(text)
     if not pairs:
-        return (f"{text.strip()!r} is not an assignment -- "
-                "name=value, or `done` to apply")
+        return f"{text.strip()!r} is not an assignment -- {WAYS_OUT}"
     if leftover:
-        return (f"{leftover!r} is not an assignment -- "
-                "name=value, or `done` to apply")
+        return f"{leftover!r} is not an assignment -- {WAYS_OUT}"
     seen, problems = {}, []
     found = fields()
     before_names = [key_for(f.name) for f in found]
@@ -654,7 +681,11 @@ def steps_from(found):
         # has been told nothing used to press OK -- undocumented, and the
         # prompt offers `done` and `cancel` and never mentioned it.
         min_count=1,
-        options=[DONE],
+        # Both words the panel's own instruction line advertises. A field
+        # named `cancel` is still reachable, because an option is matched
+        # against the whole raw line and every assignment has an `=` in
+        # it: `cancel=5` is no prefix of `cancel` (GH #71, ADR-303).
+        options=[DONE, CANCEL],
         # The whole line, not a token at a time: a value can hold spaces.
         raw=True,
         completes="fields",
@@ -842,9 +873,7 @@ def _open_panel(command):
         # Ten prompts in a row was the alternative, and four of them were
         # blank Enters on the way to the fifth.
         announce(engine, found)
-        engine.bus.emit(_bus.INFO,
-                        "name=value sets one · done applies · cancel abandons",
-                        role="quiet")
+        engine.bus.emit(_bus.INFO, OFFER, role="quiet")
         return steps_from(found)
     return start
 
