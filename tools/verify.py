@@ -117,8 +117,18 @@ SWEEP_REPORT = os.path.join(ROOT, "modemap_sweep.json")
 # quota stopped it (GH #62).
 _STEREO = "switches the viewer to a stereo GL mode headless GL lacks (GH #62)"
 KNOWN_HAZARDS = {
+    # Guarded, and still skipped. The command line refuses it now
+    # (panels.run_command, GH #61), so a sweep that ran it would record a
+    # refusal rather than lose the instance -- but the refusal is the only
+    # thing standing between this command and a dead FreeCAD. Given a live
+    # action, which MainWindow's own popup menu builds, `runCommand` does
+    # not segfault and aborts a second way instead: an event-filter
+    # recursion out of the toolbar relayout, `Unrecoverable stack
+    # overflow`. Two fatal paths, one of them guarded, is not a command to
+    # verify by running.
     "Std_ToggleToolBarLock":
-        "SIGSEGV: checkable command with no live QAction (GH #61)",
+        "refused by the command line, and fatal a second way if it is not "
+        "(GH #61)",
     "Std_TestProgress":
         "modal progress dialog that outlives the client (GH #60)",
     "Std_ViewIvStereoQuadBuff": _STEREO,

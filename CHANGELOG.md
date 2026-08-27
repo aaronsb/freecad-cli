@@ -4,6 +4,65 @@
 
 ### Fixed
 
+- **The session outlives a client that vanishes mid-command (GH #60).** A
+  command that holds the event loop gives its client thirty seconds to
+  die in, and `breakable_bar` holds it for thirty-one. The client timed
+  out, the disconnect ran while that socket's own `_read` frame was still
+  on the stack, and `deleteLater` there left Qt a read notifier armed on
+  freed memory: FreeCAD went down in
+  `QAbstractSocketPrivate::canReadNotification` the next turn of the main
+  loop, taking the sweep that found it and the 72 commands after it. A
+  dropped socket is now unhooked and closed first, which is what disarms
+  the notifier, and its deletion waits until no dispatch is standing on
+  it; a reply is never written to a client that left. The client half is
+  the other end of the same minute: a raw `TimeoutError` traceback out of
+  `sys.exit(main())` is now one line naming the wait and `fccli cancel`,
+  exit 75. Falsified as an A/B against a live instance -- unguarded, the
+  session died in round one with that trace; guarded, six rounds and 360
+  vanishing clients later it was still answering.
+
+- **A toggle with no button is refused, not run (GH #61).**
+  `Gui::Command::_invoke` sets a checkable command's button state without
+  checking there is a button, so `lock_toolbars` in a session that has
+  built no toolbar menu landed in `Gui::Action::setChecked` on nothing and
+  segfaulted FreeCAD. `panels.run_command` is now the single door onto
+  `Gui.runCommand` and it refuses that command, bang or no bang. Which
+  commands those are is read from FreeCAD once at startup rather than
+  written down: `getAction()` is empty both for a command that is not
+  checkable and for one whose action nothing has built yet -- 231 of 456
+  on FreeCAD 1.1.3, `Part_Box` among them -- so MainWindow's own popup
+  menu is asked to build the second kind, and what it builds can be asked
+  whether it toggles. Read early, because the reading is what changes the
+  answer.
+
+- **What `select` claims, it holds (GH #73, ADR-200).** Part's vertex,
+  edge and face filters leave a selection gate that outlives the document
+  it was set in, and it drops every selection made through it without
+  telling anyone. `select Box` answered `= select Box` over an empty
+  selection, and the command after it failed against itself: `select` the
+  four lines of `closed_wire` then `upgrade`, exit 0 and nothing built,
+  with `upgrade` taking the blame. `select` now reads the selection back
+  and a name FreeCAD did not take is a fault that names it, with the gate
+  and `no_selection_filters` as the usual cause; a fault clears the
+  selection, so nothing half-selected is left for the next command.
+  Visible without any gate: `select Box.Edge1, Box` now faults -- FreeCAD
+  leaves the sub-list in place when a whole object arrives after its own
+  subelement, so Box was never held whole and the old exit 0 claimed a
+  selection nobody's document backed. The
+  read-back asks FreeCAD's sub-lists rather than `isSelected`, which
+  answers "is anything under this object selected" and so let a subelement
+  vouch for a whole object the gate refused, and it asks after each name
+  rather than once at the end, because the end cannot separate a name a
+  gate refused from one FreeCAD replaced with a subelement of itself. The gate itself is
+  left alone -- it is FreeCAD's state, set on purpose by a command
+  somebody ran.
+
+- **`make socket`'s boot call can use the timeout it asks for (GH #67).**
+  `BOOT_TIMEOUT = 90` under a flat 60s subprocess cap was killed thirty
+  seconds before it could answer. The cap is now derived from the call's
+  own `--timeout` or `--wait` rather than written out beside it, which is
+  what let the two numbers drift in the first place.
+
 - **A count typed at a generated verb reaches the object (GH #78,
   ADR-203).** `linear_pattern 100 4` exited 0 and read back `Occurrences
   2`, FreeCAD's default. Every number the command line parses is a float

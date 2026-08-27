@@ -5,6 +5,7 @@ deciders:
   - aaronsb
   - claude
 related:
+  - ADR-203
   - ADR-501
 ---
 
@@ -57,6 +58,45 @@ is one command with several names, not several commands.
 and every command reads. Nothing changes on the consumer side: a selection
 command run next finds its operands the way it always has.
 
+**What it claims, it holds.** `addSelection` answers nothing, and FreeCAD
+does not always take what it is handed: a *selection gate* — what Part's
+vertex, edge and face filters leave on, and it outlives the document it was
+set in — drops every selection made through it and says so to nobody. So
+`select` reads the selection back, and a name FreeCAD did not take is a
+fault that names it, with the gate and `no_selection_filters` offered as
+the usual cause rather than asserted — it is not the only way to get
+there. It is ADR-203's rule one surface over: a selection the line
+accepted reaches FreeCAD, or the line says it did not.
+
+The read-back has to ask the question the name asked, and it has to ask it
+in order. `isSelected(obj)` answers *is anything under this object
+selected*, so a subelement FreeCAD did take vouches for a whole object it
+refused — under a gate, `select Box.Edge1, Box` claimed both and held one.
+FreeCAD's sub-lists tell the two apart: `getSelectionEx` reports a whole
+object with no `SubElementNames` and a subelement with them. And the check
+runs after each name rather than once at the end, because the end cannot
+separate a whole object a gate *refused* from a whole object FreeCAD
+*replaced* with a subelement of itself — both read as that subelement,
+gate or no gate, and only the order the names arrived in distinguishes
+them. Asked per name, `select Box, Box.Edge1` passes and `select
+Box.Edge1, Box` faults, which is FreeCAD's own asymmetry reported rather
+than smoothed over.
+
+A success over an empty selection is worse than a refusal, because the
+command *after* it inherits the failure. `select Line, Line001, Line002,
+Line003` then `upgrade` exited 0 and built nothing, and it was `upgrade`
+that got the blame (GH #73). Nothing half-selected is left behind either:
+a fault clears the selection, so the next command finds nothing rather than
+some of what was asked for.
+
+The gate itself is left alone. It is FreeCAD's state, set by a FreeCAD
+command somebody ran on purpose, and clearing it on a document close would
+be the command line deciding how FreeCAD should be set up — the rule
+`docs/conventions.md` holds for preferences. FreeCAD exposes
+`addSelectionGate` and `removeSelectionGate` and no way to ask whether one
+is on, so `state` cannot report it without making and undoing a selection
+to find out. The refusal carries the news instead, at the moment it matters.
+
 **Completion.** `select` at a name position completes document object labels,
 from the source that already lists them. Subelement completion is left for
 later.
@@ -82,6 +122,10 @@ with the name in the reason.
 
 ### Negative
 
+- A read-back costs one `getSelectionEx` per name, and it trusts
+  FreeCAD's answer. FreeCAD that cannot answer is read as yes: a missing
+  answer is not evidence of a fault, and inventing one would refuse work
+  that runs.
 - Subelement names — Edge1, Face2 — are opaque and shift as a shape is
   rebuilt. A person has to learn or discover them; `describe` listing an
   object's edges and faces would answer that, and is the natural companion.

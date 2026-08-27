@@ -39,9 +39,37 @@ def socket_dir():
     return os.path.join(root, "fccli")
 
 
+WAIT_FLAGS = ("--timeout", "--wait")
+CALL_TIMEOUT = 60
+CALL_SLACK = 30
+
+
+def cap(args, floor=CALL_TIMEOUT, slack=CALL_SLACK):
+    """How long to let one client call run.
+
+    A call that asks the client to wait N seconds needs a cap past N. The
+    boot call passes `--timeout 90` and a flat 60s cap killed it thirty
+    seconds before it could answer, so `make socket` failed on a machine
+    whose cold start ran long while the instance came up healthy a moment
+    later (GH #67).
+
+    Derived from the arguments rather than left to each caller to
+    remember, because the two numbers drifted apart exactly once nobody
+    was holding them together.
+    """
+    asked = 0.0
+    for flag, value in zip(args, args[1:]):
+        if flag in WAIT_FLAGS:
+            try:
+                asked = max(asked, float(value))
+            except (TypeError, ValueError):
+                pass
+    return max(floor, asked + slack)
+
+
 def fccli(*args, **kw):
     kw.setdefault("stdin", subprocess.DEVNULL)
-    kw.setdefault("timeout", 60)
+    kw.setdefault("timeout", cap(args))
     if "input" in kw:
         kw.pop("stdin")
     try:
@@ -79,6 +107,74 @@ class _Handle:
             os.kill(self.pid, 9)
         except OSError:
             pass
+
+
+def vanish(path, line):
+    """Submit a line and disappear in the same breath.
+
+    No client does this on purpose; one that waited out its own timeout
+    and died does it by accident, and that is the shape that took FreeCAD
+    down (GH #60). The data and the EOF land in one read notification, so
+    the server enters the command with a disconnect already pending for
+    the socket whose read frame is on the stack.
+    """
+    import socket as _socket
+    try:
+        sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        sock.settimeout(10)
+        sock.connect(path)
+        sock.sendall((json.dumps({"op": "submit", "text": line})
+                      + "\n").encode("utf-8"))
+        sock.close()
+        return True
+    except OSError:
+        return False
+
+
+def storm(path, rounds=60):
+    """Connect, speak and vanish, over and over.
+
+    One vanishing client does not reliably reproduce GH #60 -- the race
+    wants a read notification in flight for a socket the disconnect is
+    about to delete, and a single disconnect lands wherever it lands. A
+    run of them across the window, while a command holds the event loop,
+    does: the unguarded server dies inside this.
+
+    Each round sends without reading the greeting, so a notification is
+    already queued when the socket goes, and closes with SO_LINGER 0 so
+    the close is an RST rather than a polite FIN.
+    """
+    import socket as _socket
+    import struct as _struct
+    for i in range(rounds):
+        try:
+            sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+            sock.settimeout(5)
+            sock.connect(path)
+            for op in ({"op": "submit", "text": "breakable_bar"},
+                       {"op": "state"}):
+                sock.sendall((json.dumps(op) + "\n").encode("utf-8"))
+            time.sleep((i % 20) * 0.005)        # sweep the window
+            sock.setsockopt(_socket.SOL_SOCKET, _socket.SO_LINGER,
+                            _struct.pack("ii", 1, 0))
+            sock.close()
+        except OSError:
+            return i                            # the session stopped listening
+    return rounds
+
+
+def wait_until_idle(deadline):
+    """Whether the session comes back to idle, and answers while it does."""
+    while time.monotonic() < deadline:
+        code, out, _ = fccli("--json", "state")
+        if code == 0:
+            try:
+                if json.loads(out).get("engine") == "idle":
+                    return True
+            except ValueError:
+                pass
+        time.sleep(1.0)
+    return False
 
 
 def wait_for_socket(before, deadline):
@@ -121,16 +217,12 @@ def main():
         return 2
 
     print("launching FreeCAD through `fccli start`...")
-    # The subprocess cap has to outlast the boot timeout it is passing,
-    # or `start` is killed before it can wait as long as it was asked to.
-    # This was never reached honestly: the suite died on a TimeoutExpired
-    # while the instance came up in five seconds, because `--log` left a
-    # detached copier holding the pipe `capture_output` was reading. That
-    # is fixed in the client; this keeps the two numbers in agreement.
+    # No timeout of its own: `cap` reads the `--timeout` below and gives
+    # the call room past it. The two numbers used to be written out
+    # separately and drifted (GH #67).
     code, out, err = fccli("start", "--headless",
                            "--timeout", str(BOOT_TIMEOUT),
-                           "--log", "/tmp/fccli-socket-test.log",
-                           timeout=BOOT_TIMEOUT + 30)
+                           "--log", "/tmp/fccli-socket-test.log")
     check("start exits clean", code, 0)
     truthy("it reports the pid it started", "started FreeCAD, pid" in out)
     truthy("  and that no --pid is needed", "no --pid" in out)
@@ -395,6 +487,40 @@ def main():
 
         code, out, _ = fccli("--json", "exec", "man box")
         check("a read-only verb works over the socket", code, 0)
+
+        print("\n9b. the session outlives a client that vanishes mid-command "
+              "(GH #60)")
+        # `breakable_bar` holds the event loop for thirty seconds, which is
+        # longer than the client waits, so the client dies while the server
+        # is still inside the command. Deleting the socket there left Qt a
+        # read notifier armed on freed memory and FreeCAD went down in
+        # QAbstractSocketPrivate::canReadNotification -- taking the sweep
+        # that found it, and the 72 commands after it, with it.
+        live = os.path.join(socket_dir(), f"{pid}.sock")
+        truthy("a client can submit and disappear in the same breath",
+               vanish(live, "breakable_bar"))
+        # And a run of them, while that command still holds the loop. One
+        # disconnect lands wherever it lands; a run of them across the
+        # window is what the unguarded server dies inside.
+        check("  a storm of them is answered to the end",
+              storm(live), 60)
+        fccli("--json", "state")
+        # Wait the command out before the next one, or the check below
+        # reads a busy session as the timeout it is looking for.
+        truthy("  the session outlives every client that left",
+               wait_until_idle(time.monotonic() + 90))
+
+        code, out, err = fccli("exec", "breakable_bar")
+        check("  a client that outwaits its own timeout says so, once",
+              (code, "Traceback" in err), (75, False))
+        truthy("    naming the wait, not a busy session",
+               "stopped answering" in err)
+        truthy("      and what ends a command that holds the loop",
+               "fccli cancel" in err)
+        truthy("  the session outlives that one too",
+               wait_until_idle(time.monotonic() + 90))
+        check("    and still runs commands",
+              fccli("exec", "box 0,0,0 4 4 4")[0], 0)
 
     finally:
         print("\n10. shutdown through the socket, no dialogs")

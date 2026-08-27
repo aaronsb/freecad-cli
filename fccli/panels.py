@@ -830,6 +830,84 @@ def can_run(command):
         return True
 
 
+# ------------------------------------------------------- toggles with no button
+
+_ACTIONLESS = None
+
+
+def _without_action(Gui):
+    """Every command FreeCAD has registered and built no QAction for."""
+    out = set()
+    for name in Gui.listCommands():
+        try:
+            cmd = Gui.Command.get(name)
+        except Exception:
+            continue
+        if cmd is not None and not cmd.getAction():
+            out.add(name)
+    return out
+
+
+def actionless_toggles():
+    """Checkable commands FreeCAD has built no QAction for (GH #61).
+
+    `Gui.runCommand` on one of these takes the whole session down.
+    `Gui::Command::_invoke` writes the checked state onto the command's
+    Action without asking whether there is one, so the call lands in
+    `Gui::Action::setChecked` on nothing and FreeCAD segfaults.
+
+    FreeCAD's Python API answers neither half. `getAction()` is empty both
+    for a command that is not checkable and for one whose action nothing
+    has built yet -- 231 of 456 on FreeCAD 1.1.3, `Part_Box` among them --
+    and nothing reports checkable at all. MainWindow's own popup menu, the
+    one a right-click on the toolbar area raises, builds the second kind,
+    and what it builds can then be asked whether it toggles. On 1.1.3 that
+    is exactly one command, `Std_ToggleToolBarLock`; the other 230 stay
+    actionless and are not toggles.
+
+    Read once and kept, because the reading is what changes the answer:
+    asked again after the menu is built, the command has the action the
+    menu gave it and the same question says no.
+    """
+    global _ACTIONLESS
+    if _ACTIONLESS is not None:
+        return _ACTIONLESS
+    try:
+        import FreeCADGui as Gui
+        window = Gui.getMainWindow()
+        if window is None:
+            return frozenset()          # no window yet; ask again later
+        before = _without_action(Gui)
+        menu = window.createPopupMenu()
+        if menu is not None:
+            menu.deleteLater()
+        found = set()
+        for name in before - _without_action(Gui):
+            action = Gui.Command.get(name).getAction()
+            if action and action[0].isCheckable():
+                found.add(name)
+        _ACTIONLESS = frozenset(found)
+    except Exception:
+        _ACTIONLESS = frozenset()
+    return _ACTIONLESS
+
+
+def run_command(command):
+    """Run a FreeCAD command, unless running it would end the session.
+
+    Every door onto `Gui.runCommand` comes through here, so a command that
+    crashes FreeCAD on contact is refused once rather than at each door.
+    """
+    import FreeCADGui as Gui
+    if command in actionless_toggles():
+        raise RuntimeError(
+            f"{command} toggles a button FreeCAD has not built in this "
+            "session, and it sets that button's state without checking "
+            "there is one -- running it from here takes FreeCAD down. "
+            "FreeCAD's own menus still have it.")
+    Gui.runCommand(command)
+
+
 def _open_panel(command):
     """Run the command, and ask whatever panel it opens what it wants.
 
@@ -839,7 +917,6 @@ def _open_panel(command):
     run and there is nothing left to ask.
     """
     def start(engine):
-        import FreeCADGui as Gui
         missing = not_yet_loaded(
             command,
             lambda text: engine.bus.emit(_bus.INFO, text, role="quiet"))
@@ -854,7 +931,7 @@ def _open_panel(command):
             requires = getattr(engine.verb, "requires", None)
             raise RuntimeError(_context.reason(requires))
         before = names_on_screen()
-        Gui.runCommand(command)
+        run_command(command)
         if not wait_for_panel(before):
             return None
         if not can_finish():

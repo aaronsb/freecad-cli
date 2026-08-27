@@ -44,10 +44,10 @@ def _expand(path):
 
 def _run(command):
     """Fall back to FreeCAD's own command, dialog and all."""
-    gui = _gui()
-    if gui is None:
+    if _gui() is None:
         raise RuntimeError(f"{command} needs the GUI")
-    gui.runCommand(command)
+    from .panels import run_command
+    run_command(command)
 
 
 def _say(values, text):
@@ -145,6 +145,45 @@ def _emit_delete(v):
     return None
 
 
+def _held_subs(selection, obj):
+    """What FreeCAD is holding for this object, as subelement names.
+
+    ``None`` when it holds nothing for it, an empty set when it holds the
+    object whole, and the names when it holds parts of it. One entry
+    carries both answers: `getSelectionEx` reports a whole object with no
+    `SubElementNames` and a subelement with them.
+    """
+    doc = getattr(getattr(obj, "Document", None), "Name", "")
+    want = (doc, getattr(obj, "Name", ""))
+    for entry in selection.getSelectionEx(doc):
+        if (getattr(entry, "DocumentName", ""),
+                getattr(entry, "ObjectName", "")) == want:
+            return set(entry.SubElementNames or ())
+    return None
+
+
+def _took(selection, obj, sub):
+    """Whether FreeCAD took the selection it was just handed.
+
+    `addSelection` answers nothing, so the only way to know a name landed
+    is to ask afterwards -- and the question has to be the one the name
+    asked. `isSelected(obj)` answers "is anything under this object
+    selected", so a subelement FreeCAD did take vouches for a whole object
+    it refused: under a gate, `select Box.Edge1, Box` claimed both and held
+    one. The sub-lists tell them apart.
+
+    FreeCAD that cannot say is read as yes: a missing answer is not
+    evidence of a fault, and inventing one would refuse work that runs.
+    """
+    try:
+        held = _held_subs(selection, obj)
+    except Exception:
+        return True
+    if held is None:
+        return False
+    return sub in held if sub else not held
+
+
 def _emit_select(v):
     """Set FreeCAD's selection from names, so the next command has operands.
 
@@ -177,11 +216,34 @@ def _emit_select(v):
     if missing:
         raise RuntimeError(f"no such object: {', '.join(missing)}")
     selection.clearSelection()
-    for obj, sub, _label in resolved:
+    swallowed = []
+    for obj, sub, label in resolved:
         if sub:
             selection.addSelection(obj.Document.Name, obj.Name, sub)
         else:
             selection.addSelection(obj.Document.Name, obj.Name)
+        # Asked after each name rather than once at the end, because the
+        # end cannot tell the two cases apart: a whole object a gate
+        # refused and a whole object FreeCAD replaced with a subelement of
+        # itself both read as that subelement, and only the order the
+        # names arrived in separates them.
+        if not _took(selection, obj, sub):
+            swallowed.append(label)
+    if swallowed:
+        # What select claims, it holds. A selection gate takes every
+        # addSelection and returns nothing to say so, and `select Box`
+        # answered `= select Box` over an empty selection -- after which
+        # the command that wanted those operands failed against itself,
+        # exit 0 and nothing built (GH #73).
+        selection.clearSelection()      # never leave half a selection
+        raise RuntimeError(
+            f"FreeCAD did not take {', '.join(swallowed)}. Usually a "
+            "selection filter: Part's vertex, edge and face filters set "
+            "one, it outlives the document it was set in, and it drops "
+            "every selection made through it -- `no_selection_filters` "
+            "lifts it. Naming a whole object after one of its own "
+            "subelements reaches here too, because FreeCAD keeps the "
+            "subelement.")
     _say(v, "selected " + ", ".join(label for _o, _s, label in resolved))
     return None
 

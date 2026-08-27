@@ -5806,6 +5806,379 @@ def _run():
           (_eng71.state, len(_aborted71)), ("collecting", 1))
     _eng71.cancel()
 
+    print("\n5ao. a client that vanishes, a toggle with no button, a "
+          "selection that was not taken (GH #60, #61, #73, #67)")
+
+    # --- GH #60. The server outlives a client that leaves mid-command.
+    # A command that pumps the event loop runs the disconnect while the
+    # socket's own _read frame is still on the stack, and deleting it
+    # there left Qt a notifier armed on freed memory.
+    from fccli import server as _srv60
+
+    class _FakeSignal:
+        def __init__(self):
+            self.connected = True
+
+        def disconnect(self):
+            if not self.connected:
+                raise RuntimeError("not connected")
+            self.connected = False
+
+    class _FakeSock:
+        def __init__(self):
+            self.readyRead = _FakeSignal()
+            self.disconnected = _FakeSignal()
+            self.closed = False
+            self.deleted = 0
+            self.written = []
+
+        def close(self):
+            self.closed = True
+
+        def deleteLater(self):
+            self.deleted += 1
+
+        def write(self, data):
+            if self.deleted:
+                raise RuntimeError("write to a deleted socket")
+            self.written.append(data)
+
+        def flush(self):
+            pass
+
+    class _Floor60:
+        def __init__(self):
+            self.released = []
+            self.holder = None
+
+        def release(self, who):
+            self.released.append(who)
+
+    class _Session60:
+        def __init__(self):
+            self.floor = _Floor60()
+
+    def _server60():
+        server = _srv60.Server(None)
+        server.session = _Session60()
+        return server
+
+    _s60 = _server60()
+    _sock60 = _FakeSock()
+    _s60._clients[_sock60] = {"name": "client:1", "buffer": b"",
+                              "subscribed": True, "resume": "r1"}
+    _s60._drop(_sock60)
+    check("a dropped client is unhooked and closed before it is deleted",
+          (_sock60.readyRead.connected, _sock60.disconnected.connected,
+           _sock60.closed, _sock60.deleted),
+          (False, False, True, 1))
+    check("  and its floor is let go",
+          _s60.session.floor.released, ["client:1"])
+
+    # The crash shape: dropped from inside its own dispatch. The deletion
+    # waits for the read to unwind, so nothing frees the socket under Qt.
+    _s61 = _server60()
+    _sock61 = _FakeSock()
+    _s61._clients[_sock61] = {"name": "client:1", "buffer": b"",
+                              "subscribed": False, "resume": "r1"}
+    _s61._reading.add(_sock61)
+    _s61._drop(_sock61)
+    check("  dropped mid-read, it is silenced at once",
+          (_sock61.readyRead.connected, _sock61.closed), (False, True))
+    check("    and not deleted while the read is on the stack",
+          _sock61.deleted, 0)
+    _s61._reading.discard(_sock61)
+    _s61._bury()
+    check("    the deletion lands when the read unwinds", _sock61.deleted, 1)
+
+    # A pumped loop can be several reads deep, and the outer one may be
+    # the frame holding the socket being buried.
+    _s62 = _server60()
+    _sock62, _other62 = _FakeSock(), _FakeSock()
+    _s62._clients[_sock62] = {"name": "client:1", "buffer": b"",
+                              "subscribed": False, "resume": "r1"}
+    _s62._reading.update({_sock62, _other62})
+    _s62._drop(_sock62)
+    _s62._reading.discard(_other62)
+    _s62._bury()
+    check("    an inner read finishing does not bury the outer one's socket",
+          _sock62.deleted, 0)
+    _s62._reading.discard(_sock62)
+    _s62._bury()
+    check("      it is buried when the last read ends", _sock62.deleted, 1)
+
+    # And the reply is never written to a client that left mid-command.
+    _s63 = _server60()
+    _sock63 = _FakeSock()
+    _info63 = {"name": "client:1", "buffer": b"", "subscribed": False,
+               "resume": "r1"}
+    _s63._clients[_sock63] = _info63
+    _sock63.readAll = lambda: b'{"op": "ping"}\n'
+    _dispatched63 = []
+
+    def _dispatch63(info, request):
+        _dispatched63.append(request)
+        _s63._drop(_sock63)                 # the client leaves mid-command
+        return {"kind": "pong"}
+
+    _s63._dispatch = _dispatch63
+    _s63._read(_sock63)
+    check("  a reply is not written to a client that left mid-command",
+          (len(_dispatched63), _sock63.written), (1, []))
+    check("    and the socket it left behind is deleted once, cleanly",
+          _sock63.deleted, 1)
+
+    # The checks above hand `_reading` its contents, so they pin when
+    # `_bury` waits and prove nothing about anything ever reading. With
+    # `_read` not recording the frame at all, every one of them still
+    # passed -- and so did the socket suite's 360-client storm, because a
+    # race made likely is not a race made certain. This drives the real
+    # `_read`, drops the socket from inside its own dispatch, and asks
+    # where the burial is at each edge of the frame.
+    _s64 = _server60()
+    _sock64 = _FakeSock()
+    _s64._clients[_sock64] = {"name": "client:1", "buffer": b"",
+                              "subscribed": False, "resume": "r1"}
+    _sock64.readAll = lambda: b'{"op": "ping"}\n'
+    _during64 = {}
+
+    def _dispatch64(info, request):
+        _during64["armed"] = _sock64 in _s64._reading
+        _s64._drop(_sock64)                 # the disconnect a pumped loop runs
+        _during64["doomed"] = list(_s64._doomed)
+        _during64["deleted"] = _sock64.deleted
+        return {"kind": "pong"}
+
+    _s64._dispatch = _dispatch64
+    _serve64 = _s64._serve
+    _after64 = {}
+
+    def _watch64(sock, info):
+        _serve64(sock, info)
+        _after64["doomed"] = list(_s64._doomed)
+        _after64["deleted"] = sock.deleted
+
+    _s64._serve = _watch64
+    _s64._read(_sock64)
+    check("  a read records its own frame while it is on the stack",
+          _during64.get("armed"), True)
+    check("    so the drop inside it defers rather than deleting",
+          (_during64.get("doomed"), _during64.get("deleted")),
+          ([_sock64], 0))
+    check("    and is still deferred when the dispatch returns",
+          (_after64.get("doomed"), _after64.get("deleted")),
+          ([_sock64], 0))
+    check("      the finally is what buries it",
+          (_s64._doomed, _s64._reading, _sock64.deleted), ([], set(), 1))
+
+    # --- GH #61. A checkable command with no QAction takes FreeCAD down
+    # inside Gui::Command::_invoke; the command line refuses instead.
+    from fccli import panels as _p61
+    _old61 = _p61._ACTIONLESS
+    try:
+        _p61._ACTIONLESS = frozenset({"Std_ToggleToolBarLock"})
+        _refusal61 = None
+        try:
+            # Broad: unguarded, this reaches FreeCAD, and what comes back
+            # should read as a failed check rather than end the suite.
+            _p61.run_command("Std_ToggleToolBarLock")
+        except Exception as exc:
+            _refusal61 = str(exc)
+        check("a toggle with no button is refused, not run",
+              _refusal61 is not None and "takes FreeCAD down" in _refusal61,
+              True)
+        check("  and the refusal names the command",
+              _refusal61 is not None
+              and _refusal61.startswith("Std_ToggleToolBarLock"), True)
+        _ran61 = []
+        import FreeCADGui as _Gui61
+        _oldrun61 = getattr(_Gui61, "runCommand", None)
+        _Gui61.runCommand = lambda name: _ran61.append(name)
+        try:
+            _p61.run_command("Part_Box")
+            check("  every other command still goes straight through",
+                  _ran61, ["Part_Box"])
+        finally:
+            if _oldrun61 is None:
+                del _Gui61.runCommand
+            else:
+                _Gui61.runCommand = _oldrun61
+    finally:
+        _p61._ACTIONLESS = _old61
+
+    # --- GH #73. select holds what it claims. A selection gate takes
+    # every addSelection and answers nothing, so the only way to know a
+    # name landed is to ask afterwards -- and to ask the question the
+    # name asked, which is where the first shape of this got it wrong.
+    from fccli import shell as _sh73
+
+    class _Entry73:
+        def __init__(self, doc, name, subs):
+            self.DocumentName, self.ObjectName = doc, name
+            self.SubElementNames = subs
+
+    class _Selection73:
+        """FreeCAD's selection, to the rules that matter here.
+
+        A whole-object add registers only when nothing is held for that
+        object yet -- FreeCAD keeps a subelement over the whole, gate or
+        no gate -- and a subelement add narrows to it. `gate` is what a
+        selection filter refuses: nothing, whole objects (Part's edge
+        filter over a solid), or everything (its vertex filter, which is
+        GH #73's own case).
+        """
+
+        def __init__(self, gate=None):
+            self.gate = gate                # None | "whole" | "all"
+            self.held = {}                  # name -> set of subelements
+            self.cleared = 0
+
+        def clearSelection(self):
+            self.cleared += 1
+            self.held = {}
+
+        def addSelection(self, doc, name, sub=""):
+            if self.gate == "all" or (self.gate == "whole" and not sub):
+                return
+            if sub:
+                self.held[name] = {sub}
+            else:
+                self.held.setdefault(name, set())
+
+        def getSelectionEx(self, doc=""):
+            return [_Entry73("verify", name, tuple(sorted(subs)))
+                    for name, subs in self.held.items()]
+
+        def isSelected(self, obj, sub=""):
+            """What the first shape asked, kept to show what it answered."""
+            return obj.Name in self.held
+
+    class _Obj73:
+        def __init__(self, name):
+            self.Name = self.Label = name
+
+            class _Doc:
+                Name = "verify"
+            self.Document = _Doc()
+
+    _objs73 = {n: _Obj73(n) for n in ("Box", "Box001")}
+    _box73 = _objs73["Box"]
+
+    check("a gate takes the selection and keeps none",
+          _sh73._took(_Selection73("all"), _box73, ""), False)
+    check("  an ungated selection is held",
+          (lambda s: (s.addSelection("verify", "Box"),
+                      _sh73._took(s, _box73, ""))[1])(_Selection73()),
+          True)
+    check("  FreeCAD that cannot say is not read as a fault",
+          _sh73._took(object(), _box73, ""), True)
+    # The predicate the review found: a subelement FreeCAD did take must
+    # not vouch for a whole object it refused.
+    _alias73 = _Selection73("whole")
+    _alias73.addSelection("verify", "Box", "Edge1")
+    _alias73.addSelection("verify", "Box")
+    check("  a subelement does not vouch for its own parent",
+          _sh73._took(_alias73, _box73, ""), False)
+    check("    though the subelement itself is held",
+          _sh73._took(_alias73, _box73, "Edge1"), True)
+    check("    which is what asking isSelected answered instead",
+          _alias73.isSelected(_box73), True)
+
+    # The verb itself, over a document that is really open.
+    _doc73 = App.newDocument("gate73")
+    _doc73.addObject("App::FeaturePython", "Box")
+    from fccli import engine as _eng73mod
+    _oldgui73, _oldresolve73 = _sh73._gui, _eng73mod._resolve_names
+
+    def _select73(sel, line):
+        """Run `select <line>` against this selection; answer the fault."""
+        class _Gui73:
+            Selection = sel
+        _sh73._gui = lambda: _Gui73
+        try:
+            _sh73._emit_select({"names": line, "_engine": None})
+        except RuntimeError as exc:
+            return str(exc)
+        return None
+
+    try:
+        _eng73mod._resolve_names = lambda name: (
+            [_objs73[name]] if name in _objs73 else [])
+
+        # An all-swallowing gate, which is the issue's own sequence.
+        _all73 = _Selection73("all")
+        _fault73 = _select73(_all73, "Box")
+        check("  select over a gate is a fault, not a claim",
+              (_fault73 or "").startswith("FreeCAD did not take Box"), True)
+        check("    and it names the antidote",
+              "no_selection_filters" in (_fault73 or ""), True)
+        check("    leaving no half-selection behind for the next command",
+              (_all73.held, _all73.cleared >= 2), ({}, True))
+        check("    every swallowed name is named",
+              (_select73(_all73, "Box, Box001") or "")
+              .startswith("FreeCAD did not take Box, Box001"), True)
+
+        # A gate that takes subelements and refuses whole objects -- the
+        # four combinations the review isolated the predicate with.
+        def _under_edge_gate(line):
+            return _select73(_Selection73("whole"), line)
+
+        check("  a whole object named beside its own taken subelement "
+              "is still refused",
+              (_under_edge_gate("Box.Edge1, Box") or "")
+              .startswith("FreeCAD did not take Box"), True)
+        check("    as it is when the subelement is another object's",
+              (_under_edge_gate("Box001.Edge1, Box") or "")
+              .startswith("FreeCAD did not take Box"), True)
+        check("    and the other object is named when it is the refused one",
+              (_under_edge_gate("Box.Edge1, Box001") or "")
+              .startswith("FreeCAD did not take Box001"), True)
+        check("    while the subelement the gate allows is not a fault",
+              _under_edge_gate("Box.Edge1"), None)
+
+        # And no legitimate ungated line is refused.
+        for _line, _want in (("Box", {"Box": set()}),
+                             ("Box, Box001", {"Box": set(),
+                                              "Box001": set()}),
+                             ("Box.Edge1", {"Box": {"Edge1"}}),
+                             ("Box.Face6, Box001.Face1",
+                              {"Box": {"Face6"}, "Box001": {"Face1"}}),
+                             ("Box, Box.Edge1", {"Box": {"Edge1"}})):
+            _sel73 = _Selection73()
+            check(f"  ungated, `select {_line}` selects and says so",
+                  (_select73(_sel73, _line), _sel73.held), (None, _want))
+        _bare73 = _Selection73()
+        check("  ungated, bare select clears and claims nothing",
+              (_select73(_bare73, ""), _bare73.held, _bare73.cleared),
+              (None, {}, 1))
+    finally:
+        _sh73._gui, _eng73mod._resolve_names = _oldgui73, _oldresolve73
+        App.closeDocument("gate73")
+
+    # --- GH #67. A call that asks the client to wait needs a cap past
+    # the wait it asked for.
+    import importlib.machinery as _m67
+    import importlib.util as _u67
+    _l67 = _m67.SourceFileLoader(
+        "_fccli_socket_test",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                     "tools", "run_socket_test.py"))
+    _mod67 = _u67.module_from_spec(_u67.spec_from_loader("_fccli_socket_test",
+                                                         _l67))
+    _l67.exec_module(_mod67)
+    check("the boot call's cap outlasts the timeout it passes",
+          _mod67.cap(("start", "--headless", "--timeout", "90")), 120)
+    check("  a short wait does not shrink the floor",
+          _mod67.cap(("exec", "box 1 1 1")), 60)
+    check("    --wait counts the same way",
+          _mod67.cap(("exec", "--wait", "45", "pad 5")), 75)
+    check("    a value that is not a number leaves the floor standing",
+          _mod67.cap(("start", "--timeout", "soon")), 60)
+    check("      and the boot call the suite makes is capped past its ask",
+          _mod67.cap(("start", "--headless",
+                      "--timeout", str(_mod67.BOOT_TIMEOUT)))
+          > _mod67.BOOT_TIMEOUT, True)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

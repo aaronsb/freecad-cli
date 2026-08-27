@@ -160,6 +160,8 @@ class Server(QtCore.QObject):
         from . import paths
         self.ring = Ring(transcript=paths.state("transcript.jsonl"))
         self._cursors = collections.OrderedDict()   # resume id -> seq
+        self._reading = set()       # sockets whose _read frame is on the stack
+        self._doomed = []           # dropped mid-dispatch, buried once it ends
 
     # ------------------------------------------------------------ lifecycle
 
@@ -187,6 +189,7 @@ class Server(QtCore.QObject):
             self._unsubscribe = None
         for sock in list(self._clients):
             sock.disconnectFromServer()
+            self._drop(sock)        # unhook and close, the same as a vanish
         self._clients.clear()
         if self._server is not None:
             self._server.close()
@@ -222,10 +225,56 @@ class Server(QtCore.QObject):
                               **self.session.state()})
 
     def _drop(self, sock):
+        """A client has gone. Let go of it without leaving Qt a stale socket.
+
+        A client can vanish from inside its own dispatch. A command that
+        pumps the event loop -- `breakable_bar` holds one for thirty
+        seconds, and any progress dialog does the same -- runs the
+        disconnect while `_read` for that socket is still on the stack,
+        with Qt's own read notification several frames below it. Deleting
+        the socket there left the notifier armed on freed memory, and the
+        next turn of the main loop took FreeCAD down in
+        `QAbstractSocketPrivate::canReadNotification` (GH #60). One hung
+        command killed the instance and every command after it.
+
+        So the socket is unhooked and closed first, which is what disarms
+        the notifier, and the deletion waits until no dispatch is standing
+        on it.
+        """
         info = self._clients.pop(sock, None)
         if info:
             self.session.floor.release(info["name"])
-        sock.deleteLater()
+        self._retire(sock)
+
+    def _retire(self, sock):
+        """Silence a socket now; delete it when nothing is reading one."""
+        for signal in ("readyRead", "disconnected"):
+            try:
+                getattr(sock, signal).disconnect()
+            except (RuntimeError, TypeError):
+                pass                # already gone, or never connected
+        try:
+            sock.close()
+        except (RuntimeError, AttributeError):
+            pass
+        self._doomed.append(sock)
+        self._bury()
+
+    def _bury(self):
+        """Delete what was dropped, once no read is standing on the stack.
+
+        Not just this socket's own read: a pumped event loop can be
+        several `_read` frames deep, and any of them may hold the one
+        being buried.
+        """
+        if self._reading:
+            return
+        while self._doomed:
+            sock = self._doomed.pop()
+            try:
+                sock.deleteLater()
+            except RuntimeError:
+                pass                # Qt got there first
 
     def _send(self, sock, payload):
         try:
@@ -271,6 +320,14 @@ class Server(QtCore.QObject):
         info = self._clients.get(sock)
         if info is None:
             return
+        self._reading.add(sock)
+        try:
+            self._serve(sock, info)
+        finally:
+            self._reading.discard(sock)
+            self._bury()
+
+    def _serve(self, sock, info):
         info["buffer"] += bytes(sock.readAll())
         while b"\n" in info["buffer"]:
             line, _, info["buffer"] = info["buffer"].partition(b"\n")
@@ -281,7 +338,14 @@ class Server(QtCore.QObject):
             except ValueError:
                 self._send(sock, {"kind": "error", "text": "bad json"})
                 continue
-            self._send(sock, self._dispatch(info, request))
+            reply = self._dispatch(info, request)
+            # A command that pumps the event loop gives the client a
+            # window to leave in, and a client that waited out its own
+            # timeout takes it. There is nobody to answer, and the rest
+            # of this buffer was theirs too.
+            if self._clients.get(sock) is not info:
+                return
+            self._send(sock, reply)
 
     def _busy(self):
         """Why a command cannot run right now, if it cannot.
