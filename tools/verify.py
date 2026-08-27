@@ -146,6 +146,34 @@ KNOWN_HAZARDS = {
 }
 
 
+# A command whose whole effect is a write to the operator's settings, and
+# which the sweep must not run whatever it is asked -- including --force,
+# which means "run the commands recorded as dangerous to the instance",
+# not "write my preferences".
+#
+# `Draft_Snap_Lock` is GH #74. Every `Draft_Snap_*` command and
+# `Draft_ShowSnapBar` derive from `Draft_Snap_Base`, whose IsActive is
+# `Gui.Snapper.isEnabled("Lock")` -- so one bit gates the availability of
+# eight of this sweep's commands. Activated toggles that bit and
+# `save_snap_state` writes it to `snapModes` in the user's parameters, so
+# it outlives the process: a sweep that ran this one left Lock off, and
+# the *next* sweep read eight commands as `is not available here` and
+# blamed whatever happened to precede them. That is why the failures moved
+# with no local cause, why replaying the predecessors never reproduced
+# them, and why a scratch profile always passed.
+#
+# Skipped rather than fixed at the command, because there is nothing wrong
+# with the command: a person who types `snap_lock` means to toggle
+# snapping, and it does. What is wrong is a verification sweep changing
+# the world it is measuring.
+WRITES_SETTINGS = {
+    "Draft_Snap_Lock":
+        "toggles the Draft snap Lock and saves it to the operator's "
+        "parameters, which gates eight other commands' availability in "
+        "the next sweep (GH #74)",
+}
+
+
 # --------------------------------------------------------------- fixtures
 
 # A selection command needs operands. A fixture is the geometry the
@@ -1220,10 +1248,15 @@ def plan(targets, prior, force=False, start_at=None):
 
     ``prior`` is the record of earlier sweeps, {cid: entry}. A command in
     KNOWN_HAZARDS or recorded `hazard` is skipped; --force runs it anyway.
+    A command in WRITES_SETTINGS is skipped even then: --force answers for
+    the instance, and this one answers for the operator's parameters.
     """
     run, skipped = {}, {}
     for cid, example in sorted(targets.items()):
         if start_at and cid < start_at:
+            continue
+        if cid in WRITES_SETTINGS:
+            skipped[cid] = WRITES_SETTINGS[cid]
             continue
         reason = KNOWN_HAZARDS.get(cid)
         if reason is None and prior.get(cid, {}).get("result") == "hazard":

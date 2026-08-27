@@ -3016,6 +3016,36 @@ def _run():
     check("    --start-at drops everything before it",
           _verify.plan({"A_One": "a", "B_Two": "b"}, {}, start_at="B")[0],
           {"B_Two": "b"})
+    # GH #74. A command that writes the operator's parameters is skipped
+    # whatever the sweep is asked, --force included: --force answers for
+    # the instance, and this answers for a file that outlives it. The one
+    # in the list gates eight other commands' availability, so a sweep
+    # that ran it made the next sweep's reading of those eight false.
+    check("  a command that writes the operator's settings is planned out",
+          _verify.plan({"Draft_Snap_Lock": "snap_lock",
+                        "Part_Box": "box 1 1 1"}, {}),
+          ({"Part_Box": "box 1 1 1"},
+           {"Draft_Snap_Lock": _verify.WRITES_SETTINGS["Draft_Snap_Lock"]}))
+    check("    and --force does not plan it back in",
+          _verify.plan({"Draft_Snap_Lock": "snap_lock"}, {}, force=True),
+          ({}, {"Draft_Snap_Lock":
+                _verify.WRITES_SETTINGS["Draft_Snap_Lock"]}))
+    check("      unlike a hazard, which is what --force is for",
+          _verify.plan({"Std_ToggleToolBarLock": "lock_toolbars"}, {},
+                       force=True),
+          ({"Std_ToggleToolBarLock": "lock_toolbars"}, {}))
+    # The eight it gates are the sweep's own targets, so the skip is only
+    # worth anything if they are in the ledger together.
+    _gated74 = ["Draft_ShowSnapBar"] + [
+        f"Draft_Snap_{n}" for n in ("Angle", "Center", "Dimensions",
+                                    "Endpoint", "Extension", "Grid",
+                                    "Intersection")]
+    import json as _json74
+    _ledger74 = _json74.load(open(os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "fccli", "verified.json")))["commands"]
+    check("    every command that bit gates is one the sweep drives",
+          [c for c in _gated74 if c not in _ledger74], [])
     # GH #62: FreeCAD never holds a --log file; a bounded copier does. The
     # cap holds however much the instance spams, and the pipe is drained
     # to the end so the writer never blocks.
