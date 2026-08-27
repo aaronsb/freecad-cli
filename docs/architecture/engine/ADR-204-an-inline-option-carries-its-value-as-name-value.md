@@ -162,9 +162,12 @@ bare keyword sets only a boolean.**
   argument. A token past the last pending step is found by counting the
   steps (`_tail_index`), and the two populations there that name their own
   target are answered rather than dropped: a bare option keyword reads
-  against `_settable_options()` exactly as an assignment's name half does
-  — refused at a non-boolean, applied at a boolean — and a verb name gets
-  ADR-201's refusal, worded for a position with no pending step to name.
+  against the verb's options exactly as an assignment's name half does —
+  refused at a non-boolean, applied at a boolean, and named by the step it
+  belongs to when it sets no property — and a verb name gets ADR-201's
+  refusal, worded for a position past the last step. A refusal that
+  leaves no step to hold — a verb with none — resets the engine rather
+  than leaving it collecting behind an idle prompt.
   So `cylinder 10 20 angle` and `cylinder 10 20 standard` both stop the
   line now, where both exited 0. What is left is the token that names
   nothing, `cylinder 10 20 nonsense`, which wants a count of what the tree

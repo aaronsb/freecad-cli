@@ -6791,6 +6791,14 @@ def _run():
         steps=[_St78("Name", _T78, "What to call it",
                      options=[_O78("Solid", "make it solid", _flag77,
                                    sets=True)])]))
+    # An option that names no property -- `sets` left at its default, the
+    # shape screenshot's `Fit` and circle's `Diameter` have -- on a text
+    # step, then a second text step where a verb name is legitimate.
+    _reg77.add(_V78(
+        name="shot77", transactional=False, emit=_keep77,
+        steps=[_St78("Path", _T78, "Where to save it",
+                     options=[_O78("Fit", "zoom first", None)]),
+               _St78("Label", _T78, "What to call it")]))
     # A raw step, asked for after a step that is not raw.
     _reg77.add(_V78(
         name="memo77", transactional=False, emit=_keep77,
@@ -6843,7 +6851,7 @@ def _run():
     check("a trailing verb name is refused, and says there is no step for it",
           _line77("cyl77 10 20 standard77"),
           (["'standard77' is the command 'standard77', and a command does "
-            "not start inside a line -- cyl77 has no step left for it"], []))
+            "not start inside a line -- it is past the last of cyl77's steps"], []))
     check("  and nothing was built on the way past it",
           (_made77, _eng77.state), ([], "collecting"))
     # The destructive case the issue asked to look at first: a verb that
@@ -6852,9 +6860,21 @@ def _run():
     check("a verb with no steps refuses one too, rather than running",
           _line77("wipe77 standard77"),
           (["'standard77' is the command 'standard77', and a command does "
-            "not start inside a line -- wipe77 has no step left for it"], []))
+            "not start inside a line -- it is past the last of wipe77's steps"], []))
     check("  while the same verb alone still runs",
           (_line77("wipe77")[0], len(_made77)), ([], 1))
+    # The refusal left nothing to keep open -- there is no step to prompt
+    # for -- so the engine is idle, and the next line runs without a
+    # cancel first. `_line77` cancels before every line, which is why the
+    # check above could not see this.
+    _line77("wipe77 standard77")
+    check("  and with no step to hold, the refusal leaves the engine idle",
+          _eng77.state, "idle")
+    _msg77.clear()
+    del _made77[:]
+    _eng77.submit("wipe77")
+    check("    so the next line runs, with nothing to cancel first",
+          ([t for k, t, _ in _msg77 if k == ERROR], len(_made77)), ([], 1))
 
     # --- The third shape stays as it was. A token that names nothing is
     # a sweep of what the tree and the ledger send, not a branch here.
@@ -6880,6 +6900,17 @@ def _run():
     check("  the token after it landed on the step it was for",
           [(v["Name"], v["_flags"].get("Solid")) for v in _made77],
           [("standard77", True)])
+    # An option that sets no property answers no step either, so it costs
+    # none in the count -- `sets` is not what decides whether a keyword
+    # took a step.
+    check("an option that sets nothing costs no step either",
+          _line77("shot77 fit a.png wipe77"), ([], ["shot77 fit a.png wipe77"]))
+    check("  and the verb name reached the step that takes text",
+          [v["Label"] for v in _made77], ["wipe77"])
+    check("  and the same keyword past its step is named by that step, not as a verb",
+          _line77("shot77 a.png x fit"),
+          (["fit goes with Where to save it, and the line has already "
+            "answered that -- it belongs before that value"], []))
 
     # --- Two shapes have no last token to be past.
     check("a raw step takes the rest of the line, so none of it is trailing",

@@ -362,7 +362,16 @@ class Engine:
                 rest = self._take_tail(rest)
             if rest is None:
                 # A refused token stops the line, for the reason a verb
-                # name mid-line does (ADR-201).
+                # name mid-line does (ADR-201). The command it named is
+                # left collecting at its pending step -- unless there is
+                # none. A verb with no steps has nothing to prompt for,
+                # and leaving it collecting put an idle prompt over an
+                # engine that answered nothing until Escape: `delete
+                # standard` read every line after it as an answer to a
+                # step that did not exist.
+                if self.current_step() is None:
+                    self._abort_verb()
+                    self._reset()
                 self._announce(adopt=False)
                 return
         while rest and self.state == COLLECTING:
@@ -591,9 +600,16 @@ class Engine:
         there is no step left to hang it on -- `cylinder 10 20 angle=180`
         has to reach Angle the same way `cylinder angle=180 10 20` does.
         """
-        steps = self.steps if self.steps is not None else (
+        return [o for o in self._options() if o.sets]
+
+    def _steps(self):
+        """This verb's steps: the ones starting it found, else declared."""
+        return self.steps if self.steps is not None else (
             self.verb.steps if self.verb else [])
-        return [o for s in steps for o in s.options if o.sets]
+
+    def _options(self):
+        """Every option this verb offers, across all its steps."""
+        return [o for s in self._steps() for o in s.options]
 
     def _take_assignments(self, tokens):
         """Every `name=value` on the line, applied. The rest, in order.
@@ -622,7 +638,10 @@ class Engine:
 
         An option keyword answers no step, so it costs no step here
         either -- otherwise `loft solid Box` would count `solid` against
-        the selection and call `Box` trailing.
+        the selection and call `Box` trailing. Every option, not only the
+        ones that set a property: screenshot's `fit` and circle's
+        `diameter` set none and take no step either, and counting them
+        called the value after them trailing.
 
         Two shapes have no last token to be past, and under either
         nothing is trailing: a step that repeats reads tokens until
@@ -635,7 +654,7 @@ class Engine:
         if any(s.repeat or s.raw for s in steps):
             return None
         budget = len(steps)
-        options = self._settable_options()
+        options = self._options()
         for index, token in enumerate(tokens):
             if budget <= 0:
                 return index
@@ -665,13 +684,25 @@ class Engine:
         start = self._tail_index(tokens)
         if start is None:
             return tokens
-        kept, options = list(tokens[:start]), self._settable_options()
+        kept, options = list(tokens[:start]), self._options()
         for token in tokens[start:]:
             option, complaint = settable(options, token)
             if complaint:
                 self.bus.emit(_bus.ERROR, complaint)
                 return None
             if option is not None:
+                if not option.sets:
+                    # A way of answering a step, arriving after that step
+                    # was answered. `screenshot shot.png 800 600 fit` used
+                    # to be read as the command `view_fit`, which is not
+                    # what it says.
+                    owner = next(s for s in self._steps() if option in s.options)
+                    self.bus.emit(_bus.ERROR,
+                                  f"{option.name.lower()} goes with "
+                                  f"{owner.prompt}, and the line has "
+                                  f"already answered that -- it belongs "
+                                  f"before that value")
+                    return None
                 if option.takes is not None:
                     # The same refusal the keyword gets at a step it
                     # reaches, in the one position where it reached none
@@ -695,13 +726,17 @@ class Engine:
             hits = self.registry.resolve_prefix(token.lower())
             if len(hits) == 1:
                 # No pending step is named here, unlike the walk's own
-                # refusal: there is none left to name. `cylinder 10 20
-                # standard` had built its cylinder before `standard`
-                # arrived, and said nothing about it.
+                # refusal: the token is past the last of them. `cylinder
+                # 10 20 standard` had built its cylinder before `standard`
+                # arrived, and said nothing about it. Not "no step left"
+                # either: the pre-read runs before the walk, so the
+                # prompt under this error still asks for the first step,
+                # and two lines that disagree is what the walk's own
+                # wording exists to avoid.
                 self.bus.emit(_bus.ERROR,
                               f"{token!r} is the command {hits[0]!r}, and a "
-                              f"command does not start inside a line -- "
-                              f"{self.verb.name} has no step left for it")
+                              f"command does not start inside a line -- it "
+                              f"is past the last of {self.verb.name}'s steps")
                 return None
             kept.append(token)
         return kept
