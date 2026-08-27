@@ -3664,6 +3664,15 @@ def _run():
     check("    one that will not close is not, and it was asked three times",
           (_verify.cleared(_cl_snap2, _cl_cancel2), _cl_log2["cancels"]),
           (False, 3))
+    # The shape that wedged a whole sweep: `cancel` takes the engine's own
+    # open command on the first call and the task panel only on the one
+    # after, so a single ask leaves the panel standing and answers
+    # "cancelled" while it does. Asking again is the whole of the cure.
+    _cl_run3, _cl_snap3, _cl_cancel3, _cl_log3 = _panel(
+        {}, [_S_OPEN, _S_IDLE])
+    check("    a panel the second ask closes is cleared, and asked twice",
+          (_verify.cleared(_cl_snap3, _cl_cancel3), _cl_log3["cancels"]),
+          (True, 2))
 
     # The whole step, on a scripted panel. The happy path first: the verb
     # opens it, the fields are read, the draft's pairs are set, done

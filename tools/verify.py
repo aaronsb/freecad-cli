@@ -639,6 +639,16 @@ def verify_one(example):
     Invalidity is judged on the delta: what this run made invalid, not
     what it found already broken. An invalid run is undone, so one bad
     example cannot mark every example after it.
+
+    A panel is closed with `cleared`, which asks again and confirms,
+    rather than with one `cancel`. One is not enough: `cancel` takes the
+    engine's own open command first and the task panel only on the call
+    after it, so `arc 0,0,0 15 0 90` -- a positional example that opens a
+    Draft panel -- answered "cancelled", left the panel standing, and
+    every command after it read `busy`. A full `--force` sweep filed 238
+    of 265 as `no_fixture` on that one panel. The panel tier has confirmed
+    its own closes since the Tessellation panel did this; the positional
+    path asked once and believed the answer.
     """
     fccli("cancel")                       # clear whatever the last one left
     before = _invalid(_snapshot())
@@ -648,7 +658,11 @@ def verify_one(example):
     result = classify(code, snap.get("engine") or "",
                       snap.get("panel"), fresh)
     if result in ("incomplete", "panel"):
-        fccli("cancel")
+        if not cleared(_snapshot, _cancel):
+            # A fact about the instance, not about whatever runs next.
+            # `stuck_panel` restarts, so the next command reads clean.
+            return "stuck_panel", (f"{example} left a task panel that would "
+                                   f"not close")
     if result == "invalid":
         fccli("exec", "undo")
     abandoned = cancelled_in(out)
