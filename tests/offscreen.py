@@ -1338,11 +1338,25 @@ def _run():
         return b
 
     def _drive16(box, force):
-        """Show it under the filter, the way a verb that raises one does."""
+        """Show it under the filter, the way a verb that raises one does.
+
+        Whether the backstop fired is itself a result, recorded on the
+        Caught as `late`. A dialog the filter does not close stays on
+        screen, and headless that is the wedged instance the verify
+        harness spends its restart logic surviving -- but a backstop that
+        quietly closed it would leave every check below reading the same
+        as if the filter had. It is stopped once `exec` returns, or it
+        would fire three seconds later onto a dialog already gone.
+        """
+        late = []
+        guard = QtCore.QTimer()
+        guard.setSingleShot(True)
+        guard.timeout.connect(lambda: (late.append(True), box.reject()))
         with _modals.intercepted(force=force) as caught:
-            # A backstop. If nothing presses, the suite must not hang here.
-            QtCore.QTimer.singleShot(3000, box.reject)
+            guard.start(3000)
             box.exec()
+            guard.stop()
+        caught.late = bool(late)
         return caught
 
     def _pressed16(box):
@@ -1386,6 +1400,15 @@ def _run():
     check("  nor is one that would proceed with the command",
           _modals._pick([(object(), "AcceptRole"), (object(), "YesRole")],
                         force=False), None)
+    # Pressing nothing is only half of it. `_pick` returning None leaves
+    # `_dismiss` as the sole exit from that path, and a dialog nobody
+    # closes is a hung process rather than a refused question -- so the
+    # check is that the *filter* closed it, not the suite's own backstop.
+    # Without this, replacing `_dismiss`'s body with `pass` left all three
+    # suites green: the backstop closed the box three seconds later and
+    # every reading above came back the same (review of PR #84).
+    check("    and the filter is what closed it, not the suite's backstop",
+          _c16c.late, False)
     _old16 = _modals._DECLINING
     try:
         _modals._DECLINING = ("RejectRole", "NoRole", "DestructiveRole",
@@ -1405,7 +1428,42 @@ def _run():
           (_pressed16(_yesno16), bool(_c16d),
            "Re-run with !" in (_c16d.fault or "")), ("No", True, False))
 
-    for _b in (_forced16, _plain16, _blind16, _again16, _yesno16):
+    # `_dismiss` itself, driven rather than read. One call, and a mutant
+    # that does nothing at all is what the checks above could not see.
+    class _Stub16:
+        def __init__(self, raises=False):
+            self.rejected = 0
+            self.raises = raises
+
+        def reject(self):
+            self.rejected += 1
+            if self.raises:
+                raise RuntimeError("the dialog went away first")
+
+    _stub16 = _Stub16()
+    _modals._dismiss(_stub16)
+    check("closing a dialog unpressed is a reject, and it is made",
+          _stub16.rejected, 1)
+    _gone16 = _Stub16(raises=True)
+    _survived16 = True
+    try:
+        _modals._dismiss(_gone16)
+    except Exception:
+        _survived16 = False
+    check("  and a dialog that went before the loop came round costs nothing",
+          (_survived16, _gone16.rejected), (True, 1))
+
+    # The chooser is the other path `_dismiss` is the only way out of, and
+    # it is the one this module was written for: `fccli exec 'revolve'`
+    # hung on a box waiting for a click nobody was there to make.
+    _pick16 = _QW.QFileDialog()
+    _pick16.setOption(_QW.QFileDialog.DontUseNativeDialog, True)
+    _c16e = _drive16(_pick16, force=False)
+    check("a file chooser is refused and closed by the filter",
+          (bool(_c16e), "path as an argument" in (_c16e.fault or ""),
+           _c16e.late), (True, True, False))
+
+    for _b in (_forced16, _plain16, _blind16, _again16, _yesno16, _pick16):
         _b.deleteLater()
 
     # A file chooser has no buttons worth reading, and calling .text() on
