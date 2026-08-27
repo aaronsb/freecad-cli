@@ -208,8 +208,11 @@ class PatchSet:
             step = steps.pop(name, None)
             if param is None:
                 continue
+            # The step this option replaces is what says how to read its
+            # value. A boolean has none -- flags never become steps -- and
+            # the keyword alone is the whole of setting one (ADR-204).
             inline.append(Option(name, param.get("doc", "") or name,
-                                 _setter(name), sets=True))
+                                 _flag(name), sets=True, takes=step))
         if inline and ordered:
             ordered[-1].options = list(ordered[-1].options) + inline
 
@@ -253,13 +256,16 @@ def _build_step(raw):
 
 
 def _flag(name):
-    def action(engine):
-        engine.flags[name] = True
-        return False
-    return action
+    """Naming a boolean is the whole of setting it.
 
-
-def _setter(name):
+    There were two of these, `_flag` and `_setter`, character for
+    character the same, and the second was what a declared option ran.
+    That is how `angle` on a cylinder came to mean `Angle = True` -- one
+    degree, against FreeCAD's default of 360 (GH #81). An option that
+    carries a value does not reach an action at all now: the engine reads
+    it against `Option.takes` and records it, and what is left here is the
+    boolean case both names always described (ADR-204).
+    """
     def action(engine):
         engine.flags[name] = True
         return False

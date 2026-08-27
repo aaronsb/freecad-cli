@@ -204,12 +204,35 @@ def _starter_verbs(engine):
     return names or engine.registry.names()[:RECENT_LIMIT]
 
 
+def plain_workbench(name):
+    """`BIMWorkbench` -> `BIM`. The word somebody types after `use`."""
+    text = str(name or "")
+    return text[:-9] if text.endswith("Workbench") else text
+
+
 def domain_of(verb):
     """Which corner of FreeCAD a verb belongs to.
 
-    Read off what the verb already carries -- the command it runs or the
-    type it builds -- so nothing has to be tagged by hand.
+    Read off what the verb already carries -- the workbench that brought
+    it, the command it runs, or the type it builds -- so nothing has to be
+    tagged by hand.
+
+    The workbench is asked first because it is the answer to the question
+    `use` puts. The command-name prefix used to be the whole of it, and it
+    is not the same thing twice over: 79 commands ship under a workbench
+    their prefix does not name, so `use bim` did not scope the 53 Arch_
+    commands BIM owns while `use arch` named a workbench nobody can switch
+    to; and CurvedShapes registers `CurvedArray` and `SurfaceCut` with no
+    prefix at all, so ten verbs landed in no domain and `use curvedshapes`
+    said there was none (GH #21).
+
+    The prefix stays as the fallback. A verb from a descriptor harvested
+    before the workbench field existed has nothing else, and half a domain
+    is better than none.
     """
+    workbench = getattr(verb, "workbench", None)
+    if workbench:
+        return plain_workbench(workbench)
     command = getattr(verb, "gui_command", None)
     if command and "_" in command:
         return command.split("_")[0]

@@ -26,8 +26,8 @@ import unicodedata
 
 from . import bus as _bus
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
-                      Option, Registry, Step, Verb, whole_number)
-from .properties import counts
+                      Option, Registry, Step, Verb, value_shape, whole_number)
+from .properties import counts, is_flag, link_value, links
 from . import curation
 from .families import families
 from .patches import load_patches
@@ -122,6 +122,7 @@ def _flag_setter(name):
 def _emit_type(tid, params):
     """Construct the object and write every collected property onto it."""
     integral = {p["name"] for p in params if counts(p.get("property_type"))}
+    property_type = {p["name"]: p.get("property_type") for p in params}
 
     def emit(values):
         import FreeCAD as App
@@ -134,7 +135,27 @@ def _emit_type(tid, params):
             got = values.get(name)
             if got is None and name not in flags:
                 continue
+            if got is None and not is_flag(property_type.get(name)):
+                # The option was named and gave no value. `True` is a
+                # value for a boolean and for nothing else -- on an Angle
+                # whose default is 360 it is a one-degree sliver, on an
+                # enumeration it is index 1, and on a link it raises
+                # (GH #81). The door refuses this first; this is the same
+                # reading at the write, for a flag that reached emit any
+                # other way.
+                refused.append(f"{name} takes a value -- "
+                               f"{name.lower()}={value_shape(None)}")
+                continue
             wanted = True if got is None else got
+            if got is not None and links(property_type.get(name)):
+                # A selection is a list of objects and half the link
+                # properties refuse a list. Shaped rather than written
+                # raw, so the object a line named actually lands on the
+                # feature that needs it (GH #80).
+                wanted, complaint = link_value(property_type[name], got)
+                if complaint:
+                    refused.append(f"{name} {complaint}")
+                    continue
             if name in integral and not isinstance(wanted, bool):
                 # The engine already refuses a fraction at the prompt. This
                 # is the same reading at the door FreeCAD's setter is
@@ -231,6 +252,7 @@ def build_type_verb(name, entry, meta=None, linked=None):
         emit=_emit_type(entry["type"], params),
         doc=_clean_doc(meta, entry["type"]),
         gui_command=meta.get("name"),
+        workbench=meta.get("workbench"),
         creates=entry["type"], generated=True,
         manual=linked.get("doc") or "",
         example=linked.get("example") or "",
@@ -273,6 +295,7 @@ def build_command_verb(command, entry=None):
                 example=entry.get("example") or "",
                 requires=list(entry.get("requires") or []),
                 panel=entry.get("panel"),
+                workbench=command.get("workbench"),
                 gui_command=name, generated=True)
 
 
@@ -298,7 +321,16 @@ def _plain(text, mnemonic=False):
     return " ".join(text.split()).strip()
 
 
-def runtime_commands(known):
+def active_workbench():
+    """What FreeCAD is showing right now, by name, or None if it cannot say."""
+    try:
+        import FreeCADGui as Gui
+        return Gui.activeWorkbench().name()
+    except Exception:
+        return None
+
+
+def runtime_commands(known, workbench=None):
     """Commands FreeCAD has registered that the descriptor never saw.
 
     The descriptor is harvested once, on one machine. An addon installed
@@ -311,6 +343,14 @@ def runtime_commands(known):
     the command name stands in. Placement is unknown, so they rank as
     registry and claim a short name only if nobody else has.
 
+    ``workbench`` is the one that was activating when this ran. A command
+    that appeared during a workbench's Initialize() belongs to it, and
+    that is the only moment anybody knows so: FreeCAD's command registry
+    is flat and `listCommands` says nothing about where a command came
+    from. It is what puts an addon's verbs in a domain -- CurvedShapes
+    names its commands `CurvedArray` and `SurfaceCut` with no prefix at
+    all, and the prefix was what `domain_of` used to read (GH #21).
+
     Empty when there is no GUI to ask, or no listCommands on the one there
     is -- which is the offscreen suite's FreeCADGui.
     """
@@ -319,6 +359,7 @@ def runtime_commands(known):
         names = set(Gui.listCommands())
     except Exception:
         return []
+    workbench = workbench or active_workbench()
     out = []
     for name in sorted(names - set(known)):
         info = {}
@@ -339,11 +380,11 @@ def runtime_commands(known):
             # documentation that ends in the thing it documents.
             tooltip = label if label != name else name.replace("_", " ")
         out.append({"name": name, "label": label, "tooltip": tooltip,
-                    "toolbar": None, "menu": None})
+                    "toolbar": None, "menu": None, "workbench": workbench})
     return out
 
 
-def register_runtime(registry, descriptor=None):
+def register_runtime(registry, descriptor=None, workbench=None):
     """Give a verb to every command FreeCAD has that nothing here does yet.
 
     Called once by register_all and again whenever a workbench activates:
@@ -354,6 +395,9 @@ def register_runtime(registry, descriptor=None):
     registers only what is new. The descriptor's own commands are its
     business either way: the nine of #19 are not rescued here.
 
+    ``workbench`` is the one whose activation brought these, and it
+    becomes their domain (GH #21). Unnamed, the active workbench stands in.
+
     Returns how many were registered.
     """
     descriptor = descriptor if descriptor is not None else load_descriptor()
@@ -361,7 +405,7 @@ def register_runtime(registry, descriptor=None):
     known |= {getattr(registry.get(n), "gui_command", None)
               for n in registry.names()}
     added = 0
-    for command in runtime_commands(known):
+    for command in runtime_commands(known, workbench):
         verb = build_command_verb(command)
         if registry.get(verb.name) is None:
             registry.add(verb)

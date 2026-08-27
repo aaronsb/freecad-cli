@@ -696,11 +696,14 @@ def _d4(found, registry, through, descriptor, commands, claimed, written):
     door winning the word is the design working -- `view` is meant to be
     the door -- and is not reported.
 
-    And #21: `completion.domain_of` reads the domain off the command-name
-    prefix, so `use <domain>` scopes by prefix rather than by the
-    workbench that shipped the command. 79 commands ship under a
-    workbench their prefix does not name. Report, grouped: the fix is
-    `domain_of`'s, not any command file's.
+    And #21: does the domain a verb reports name the workbench that
+    shipped it? It used to be read off the command-name prefix, and 79
+    commands ship under a workbench their prefix does not name -- 53
+    Arch_, 12 Reen_, 7 IFC_, 7 MeshPart_. `domain_of` now reads the
+    workbench the verb carries, so the disagreement is gone and what is
+    left is the invariant: a verb that reaches this lint with a workbench
+    the descriptor knows and a domain that is not it has lost the
+    workbench somewhere between the descriptor and the registry.
     """
     for name, entry in sorted(commands.items()):
         record = found.records.get(name)
@@ -815,11 +818,12 @@ def _d4(found, registry, through, descriptor, commands, claimed, written):
             astray[(domain, shop)].append(name)
     for (domain, shop), names in sorted(astray.items()):
         found.reports.append(
-            f"domains: {len(names)} commands are prefixed {domain}_ and ship "
-            f"in {shop} ({', '.join(sorted(names)[:3])}, ...). domain_of "
-            f"reads the prefix, so `use {shop.replace('Workbench', '').lower()}` "
-            f"does not scope them and `use {domain.lower()}` names a "
-            f"workbench nobody switches to -- GH #21 (D4)")
+            f"domains: {len(names)} commands ship in {shop} and answer to "
+            f"the domain {domain} ({', '.join(sorted(names)[:3])}, ...). "
+            f"`use {_plain(shop)}` does not scope them and "
+            f"`use {domain.lower()}` names a workbench nobody switches to. "
+            f"The verb reached the registry without the workbench the "
+            f"descriptor has for it -- GH #21 (D4)")
 
 
 def _meaningful(name):

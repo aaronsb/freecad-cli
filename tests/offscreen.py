@@ -702,7 +702,7 @@ def _run():
     check("every command lands in exactly one rank",
           sum(census.values()), len(_desc["commands"]))
     check("a toolbar command outranks a registry-only one",
-          curated.rank("Part_Box") < curated.rank("Std_TestQuestion"), True)
+          curated.rank("Part_Box") < curated.rank("Std_Test1"), True)
     check("placement is read off the descriptor",
           curated.placement("Part_Box")[0], "Solids")
     check("adjacency is the rest of the toolbar",
@@ -1320,8 +1320,151 @@ def _run():
     check("the bang asks for the destructive answer instead",
           _modals._pick(_buttons2, force=True).text().replace("&", ""),
           "Discard")
-    check("the bang changes nothing when there is nothing to discard",
-          _modals._pick(_buttons, force=True).text().replace("&", ""), "OK")
+    check("a rejection's one way out is pressed, bang or no bang",
+          _modals._pick(_buttons, force=True, question=False)
+          .text().replace("&", ""), "OK")
+
+    # --- GH #16. One contract, two halves, and they disagreed: `_pick`
+    # pressed the DestructiveRole button when the line carried the bang and
+    # `_catch` recorded a question anyway, so the engine rolled the
+    # transaction back around a button it had already pressed and told the
+    # operator to re-run with the bang they had just used.
+    def _ask16(buttons, title="Close"):
+        b = _QW.QMessageBox()
+        b.setIcon(_QW.QMessageBox.Question)
+        b.setWindowTitle(title)
+        b.setText("Document has been modified.")
+        b.setStandardButtons(buttons)
+        return b
+
+    def _drive16(box, force):
+        """Show it under the filter, the way a verb that raises one does.
+
+        Whether the backstop fired is itself a result, recorded on the
+        Caught as `late`. A dialog the filter does not close stays on
+        screen, and headless that is the wedged instance the verify
+        harness spends its restart logic surviving -- but a backstop that
+        quietly closed it would leave every check below reading the same
+        as if the filter had. It is stopped once `exec` returns, or it
+        would fire three seconds later onto a dialog already gone.
+        """
+        late = []
+        guard = QtCore.QTimer()
+        guard.setSingleShot(True)
+        guard.timeout.connect(lambda: (late.append(True), box.reject()))
+        with _modals.intercepted(force=force) as caught:
+            guard.start(3000)
+            box.exec()
+            guard.stop()
+        caught.late = bool(late)
+        return caught
+
+    def _pressed16(box):
+        b = box.clickedButton()
+        return (b.text() or "").replace("&", "") if b is not None else None
+
+    _forced16 = _ask16(_QW.QMessageBox.Save | _QW.QMessageBox.Discard
+                       | _QW.QMessageBox.Cancel)
+    _c16 = _drive16(_forced16, force=True)
+    check("the bang presses the destructive answer and calls it answered",
+          (_pressed16(_forced16), bool(_c16), _c16.fault),
+          ("Discard", False, None))
+    check("  and says which button went down rather than pressing it blind",
+          [n.endswith("-- pressed Discard, which is what ! asked for")
+           for n in _c16.notices], [True])
+    # The fault, put back: the same dialog recorded as a question, which is
+    # what the filter did whatever the line carried. The contradiction is
+    # the fault text arriving beside a Discard that has already happened.
+    _was16 = _modals.Caught()
+    _was16.questions.append(("Document has been modified.",
+                             ["Save", "Discard", "Cancel"], "Discard"))
+    check("    the question put back is the line the issue reported",
+          (bool(_was16), "Re-run with ! for Discard." in _was16.fault),
+          (True, True))
+
+    _plain16 = _ask16(_QW.QMessageBox.Save | _QW.QMessageBox.Discard
+                      | _QW.QMessageBox.Cancel)
+    _c16b = _drive16(_plain16, force=False)
+    check("unforced, the question fails and Cancel is what was pressed",
+          (_pressed16(_plain16), bool(_c16b),
+           "Re-run with ! for Discard." in _c16b.fault),
+          ("Cancel", True, True))
+
+    # And where the dialog offers no way to decline, nothing is pressed.
+    # The old fallback order ran on through DestructiveRole, so a
+    # Save/Discard box had Discard pressed by a line that never asked.
+    _blind16 = _ask16(_QW.QMessageBox.Save | _QW.QMessageBox.Discard)
+    _c16c = _drive16(_blind16, force=False)
+    check("a destructive answer is not pressed blind",
+          (_pressed16(_blind16), bool(_c16c)), (None, True))
+    check("  nor is one that would proceed with the command",
+          _modals._pick([(object(), "AcceptRole"), (object(), "YesRole")],
+                        force=False), None)
+    # Pressing nothing is only half of it. `_pick` returning None leaves
+    # `_dismiss` as the sole exit from that path, and a dialog nobody
+    # closes is a hung process rather than a refused question -- so the
+    # check is that the *filter* closed it, not the suite's own backstop.
+    # Without this, replacing `_dismiss`'s body with `pass` left all three
+    # suites green: the backstop closed the box three seconds later and
+    # every reading above came back the same (review of PR #84).
+    check("    and the filter is what closed it, not the suite's backstop",
+          _c16c.late, False)
+    _old16 = _modals._DECLINING
+    try:
+        _modals._DECLINING = ("RejectRole", "NoRole", "DestructiveRole",
+                              "AcceptRole", "YesRole")
+        _again16 = _ask16(_QW.QMessageBox.Save | _QW.QMessageBox.Discard)
+        _drive16(_again16, force=False)
+        check("    and the old order put back presses Discard unasked",
+              _pressed16(_again16), "Discard")
+    finally:
+        _modals._DECLINING = _old16
+
+    # The bang speaks for the destructive answer and for nothing else. A
+    # question with none of those is still a question it cannot answer.
+    _yesno16 = _ask16(_QW.QMessageBox.Yes | _QW.QMessageBox.No)
+    _c16d = _drive16(_yesno16, force=True)
+    check("the bang does not answer a question that has nothing to discard",
+          (_pressed16(_yesno16), bool(_c16d),
+           "Re-run with !" in (_c16d.fault or "")), ("No", True, False))
+
+    # `_dismiss` itself, driven rather than read. One call, and a mutant
+    # that does nothing at all is what the checks above could not see.
+    class _Stub16:
+        def __init__(self, raises=False):
+            self.rejected = 0
+            self.raises = raises
+
+        def reject(self):
+            self.rejected += 1
+            if self.raises:
+                raise RuntimeError("the dialog went away first")
+
+    _stub16 = _Stub16()
+    _modals._dismiss(_stub16)
+    check("closing a dialog unpressed is a reject, and it is made",
+          _stub16.rejected, 1)
+    _gone16 = _Stub16(raises=True)
+    _survived16 = True
+    try:
+        _modals._dismiss(_gone16)
+    except Exception:
+        _survived16 = False
+    check("  and a dialog that went before the loop came round costs nothing",
+          (_survived16, _gone16.rejected), (True, 1))
+
+    # The chooser is the other path `_dismiss` is the only way out of, and
+    # it is the one this module was written for: `fccli exec 'revolve'`
+    # hung on a box waiting for a click nobody was there to make.
+    _pick16 = _QW.QFileDialog()
+    _pick16.setOption(_QW.QFileDialog.DontUseNativeDialog, True)
+    _c16e = _drive16(_pick16, force=False)
+    check("a file chooser is refused and closed by the filter",
+          (bool(_c16e), "path as an argument" in (_c16e.fault or ""),
+           _c16e.late), (True, True, False))
+
+    for _b in (_forced16, _plain16, _blind16, _again16, _yesno16, _pick16):
+        _b.deleteLater()
 
     # A file chooser has no buttons worth reading, and calling .text() on
     # one raised out of the event filter -- which left the chooser up and
@@ -1795,6 +1938,83 @@ def _run():
     _rt2 = _Registry()
     _rc2 = register_all(_rt2, tier0=True, patches=PatchSet())
     check("  no GUI, no runtime commands, no error", _rc2.get("runtime", 0), 0)
+
+    # --- GH #21. The domain was read off the command-name prefix, which
+    # is not the workbench: 79 commands ship under one their prefix does
+    # not name, and CurvedShapes registers CurvedArray and SurfaceCut with
+    # no prefix at all, so ten verbs landed in no domain.
+    from fccli import completion as _c21
+    from fccli.factory import build_command_verb as _bcv21
+    from fccli.grammar import Verb as _V21
+    check("a workbench name is the word `use` takes",
+          [_c21.plain_workbench(w) for w in
+           ("BIMWorkbench", "PartDesignWorkbench", "CurvedShapesWorkbench",
+            "Workbench", None)],
+          ["BIM", "PartDesign", "CurvedShapes", "", ""])
+    check("a verb's domain is the workbench that brought it",
+          _c21.domain_of(_bcv21({"name": "Arch_Add", "label": "Add",
+                                 "workbench": "BIMWorkbench"})), "BIM")
+    check("  even when its name carries no prefix at all",
+          _c21.domain_of(_bcv21({"name": "CurvedArray",
+                                 "label": "Curved Array",
+                                 "workbench": "CurvedShapesWorkbench"})),
+          "CurvedShapes")
+    # The fault, put back: the same two verbs with no workbench on them,
+    # which is what every verb carried before this. The first is the 53
+    # Arch_ commands filed under a workbench nobody switches to; the
+    # second is the ten CurvedShapes verbs in no domain at all.
+    check("  the prefix put back files an Arch_ command away from BIM",
+          _c21.domain_of(_bcv21({"name": "Arch_Add", "label": "Add"})), "Arch")
+    check("    and leaves a prefixless command in no domain",
+          _c21.domain_of(_bcv21({"name": "CurvedArray", "label": "C"})), None)
+    check("  a typed verb with neither still answers for what it builds",
+          _c21.domain_of(_V21(name="t21", steps=[], emit=lambda v: None,
+                              creates="Part::Box")), "Part")
+
+    class _Wb21:
+        def __init__(self, name): self._name = name
+        def name(self): return self._name
+
+    class _WbGui21(_RuntimeGui):
+        """A FreeCADGui that can say which workbench is showing."""
+        def __init__(self, extra, workbench):
+            _RuntimeGui.__init__(self, extra)
+            self.workbench = workbench
+        def activeWorkbench(self): return _Wb21(self.workbench)
+
+    _RuntimeGui.Command.registry["CurvedArray"] = _FakeCmd(
+        {"menuText": "Curved Array", "toolTip": "An array along a curve"})
+    _RuntimeGui.Command.registry["SurfaceCut"] = _FakeCmd(
+        {"menuText": "Surface Cut", "toolTip": "Cut with a surface"})
+    _RuntimeGui.Command.registry["CurvedSegment"] = _FakeCmd(
+        {"menuText": "Curved Segment", "toolTip": "A segment along a curve"})
+    _gui21 = _WbGui21(["CurvedArray", "SurfaceCut"], "CurvedShapesWorkbench")
+    try:
+        sys.modules["FreeCADGui"] = _gui21
+        _rt21 = _Registry()
+        register_all(_rt21, tier0=True, patches=PatchSet())
+        _ca21 = _rt21.by_gui_command("CurvedArray")
+        check("an addon's prefixless command lands in its workbench's domain",
+              (_ca21.name if _ca21 else None, _c21.domain_of(_ca21)),
+              ("curved_array", "CurvedShapes"))
+        check("  so `use curvedshapes` narrows to it and `use part` does not",
+              (_c21.in_scope(_rt21, _ca21.name, "curvedshapes"),
+               _c21.in_scope(_rt21, _ca21.name, "part")), (True, False))
+        check("    and the domain is offered as one, with both verbs in it",
+              _domains(_rt21).get("CurvedShapes"), 2)
+        # The dock passes the activating workbench rather than reading the
+        # active one: at Initialize() the workbench being opened is not
+        # yet the one on screen.
+        _gui21.extra.append("CurvedSegment")
+        check("  a runtime pass files what it is told, not what is showing",
+              register_runtime(_rt21, None, "LateWorkbench"), 1)
+        check("    which is the domain the new verb answers for",
+              _c21.domain_of(_rt21.by_gui_command("CurvedSegment")), "Late")
+    finally:
+        if _real_gui is None:
+            sys.modules.pop("FreeCADGui", None)
+        else:
+            sys.modules["FreeCADGui"] = _real_gui
     print("\n5ac. a command file round-trips, and lands where its workbench says")
     # ADR-100. The tree under fccli/lib/commands is the hand-owned layer:
     # one Markdown file per command, a generated: block the tool owns and
@@ -2331,12 +2551,24 @@ def _run():
     check("  a verb no meaningful word reaches",
           _fired(_live_d4, "verbs are not reachable by their meaningful "
                            "word", "reports"), 1)
-    check("  a prefix that names no workbench anyone switches to (GH #21)",
-          _fired(_live_d4, "commands are prefixed Arch_ and ship in "
-                           "BIMWorkbench", "reports"), 1)
-    check("    and a prefix that names its own workbench, which is silent",
-          _fired(_live_d4, "prefixed Part_ and ship in PartWorkbench",
-                 "reports"), 0)
+    # GH #21. `domain_of` reads the workbench off the verb now, so no
+    # command answers for a domain its workbench does not name -- the four
+    # groups this used to pin (53 Arch_, 12 Reen_, 7 IFC_, 7 MeshPart_)
+    # are gone, and the rule is left holding the invariant.
+    check("  no command answers for a domain its workbench does not name",
+          _fired(_live_d4, "domains: ", "reports"), 0)
+    # The fault, put back: a verb that reached the registry without the
+    # workbench the descriptor has for it falls back to its own prefix,
+    # and Arch_ is not BIM.
+    _reg_wb = _copy_registry()
+    for _n in _reg_wb.names():
+        if (getattr(_reg_wb.get(_n), "gui_command", None)
+                or "").startswith("Arch_"):
+            _reg_wb.get(_n).workbench = None
+    check("    and a verb that lost its workbench is reported against BIM",
+          _fired(_grammar(registry=_reg_wb, dictionary=_tree),
+                 "ship in BIMWorkbench and answer to the domain Arch",
+                 "reports"), 1)
     # A family door winning a generic word is the design working, and a
     # hand-written verb winning one is a verb this module is not looking
     # at. Neither is a hijack, and both are shapes that fired before the
@@ -5716,6 +5948,107 @@ def _run():
         _f78._report_refused = _old_report
     App.closeDocument(_doc78.Name)
 
+    # --- GH #80. A selection step's value is a list, and half the link
+    # properties refuse a list. The other half of what #78's swallow hid.
+    from fccli import properties as _props80
+    check("the four link types the harvest produces are classified",
+          [_props80.links(t) for t in
+           ("App::PropertyLink", "App::PropertyLinkSub",
+            "App::PropertyLinkList", "App::PropertyLinkSubList")],
+          ["one", "one_sub", "many", "many"])
+    check("  the cross-document forms take the same shapes",
+          [_props80.links(t) for t in
+           ("App::PropertyXLink", "App::PropertyXLinkSub",
+            "App::PropertyXLinkList", "App::PropertyXLinkSubList")],
+          ["one", "one_sub", "many", "many"])
+    check("  and a property that is no link is not one",
+          [_props80.links(t) for t in
+           ("App::PropertyLength", "App::PropertyInteger", None)],
+          [None, None, None])
+
+    _doc80 = App.newDocument("links80")
+    _b80 = _doc80.addObject("Part::Box", "Box")
+    _b80b = _doc80.addObject("Part::Box", "Box2")
+    _doc80.recompute()
+    check("a single link takes the object, not the list it came in",
+          _props80.link_value("App::PropertyLink", [_b80]), (_b80, None))
+    check("  a sub link takes the pair FreeCAD reads back",
+          _props80.link_value("App::PropertyLinkSub", [_b80]),
+          ((_b80, []), None))
+    check("  a list link takes the list untouched",
+          _props80.link_value("App::PropertyLinkList", [_b80, _b80b]),
+          ([_b80, _b80b], None))
+    check("  and a property that is no link is passed through",
+          _props80.link_value("App::PropertyLength", 4.0), (4.0, None))
+    # Picking the first of several silently is what #78 was about.
+    _many80, _said80 = _props80.link_value("App::PropertyLink", [_b80, _b80b])
+    check("a single link refuses a selection of two and names them",
+          (_many80, _said80),
+          (None, "takes one object and 2 are selected (Box, Box2) -- "
+                 "name the one you mean"))
+    check("  and nothing selected is no link rather than a complaint",
+          _props80.link_value("App::PropertyLink", []), (None, None))
+
+    # Live, through the write, on the two properties the issue names.
+    _off80 = _f78._emit_type(
+        "Part::Offset",
+        [{"name": "Source", "kind": "selection",
+          "property_type": "App::PropertyLink"},
+         {"name": "Value", "kind": "quantity",
+          "property_type": "App::PropertyLength", "unit": "mm"}])
+    _msg78.clear()
+    _made80 = _off80({"Source": [_b80], "Value": 2.0,
+                      "_flags": {}, "_engine": _eng78})
+    check("`offset 2` over a selected box lands its Source",
+          (_made80.Source, [t for k, t in _msg78 if k == ERROR]), (_b80, []))
+    _pat80 = _f78._emit_type(
+        "PartDesign::LinearPattern",
+        [{"name": "Direction", "kind": "selection",
+          "property_type": "App::PropertyLinkSub"},
+         {"name": "Length", "kind": "quantity",
+          "property_type": "App::PropertyLength", "unit": "mm"}])
+    _msg78.clear()
+    _lp80 = _pat80({"Direction": [_b80], "Length": 100.0,
+                    "_flags": {}, "_engine": _eng78})
+    check("  and a linear pattern lands its Direction as (object, [])",
+          (_lp80.Direction, [t for k, t in _msg78 if k == ERROR]),
+          ((_b80, []), []))
+    _msg78.clear()
+    _two80 = _off80({"Source": [_b80, _b80b], "Value": 2.0,
+                     "_flags": {}, "_engine": _eng78})
+    check("    two objects at a single link are refused, not trimmed",
+          (_two80.Source, [t for k, t in _msg78 if k == ERROR]),
+          (None, [f"{_two80.Name}: Source takes one object and 2 are selected "
+                  "(Box, Box2) -- name the one you mean -- the rest of the "
+                  "line landed"]))
+    check("      and the rest of the line landed anyway",
+          float(_two80.Value), 2.0)
+
+    # The fault, put back: the raw list written straight onto the property.
+    # These are the two messages GH #80 opened with, word for word.
+    _old_links80 = _f78.links
+    try:
+        _f78.links = lambda ptype: None
+        _msg78.clear()
+        _raw80 = _off80({"Source": [_b80], "Value": 2.0,
+                         "_flags": {}, "_engine": _eng78})
+        check("the shaping put back to a raw list is what FreeCAD refused",
+              (_raw80.Source, [t for k, t in _msg78 if k == ERROR]),
+              (None, [f"{_raw80.Name}: FreeCAD would not take Source: Type "
+                      "must be App.DocumentObject or None, not list -- the "
+                      "rest of the line landed"]))
+        _msg78.clear()
+        _rawlp80 = _pat80({"Direction": [_b80], "Length": 100.0,
+                           "_flags": {}, "_engine": _eng78})
+        check("  and the sub link refused it with its own words",
+              (_rawlp80.Direction, [t for k, t in _msg78 if k == ERROR]),
+              (None, [f"{_rawlp80.Name}: FreeCAD would not take Direction: "
+                      "Expect input sequence of size 2 -- the rest of the "
+                      "line landed"]))
+    finally:
+        _f78.links = _old_links80
+    App.closeDocument(_doc80.Name)
+
     # --- GH #56. One bracket held two meanings, and on a height step the
     # settable one read as a hint about the height.
     _hint_step = _St78("Height", _Q78, "The height of the cylinder")
@@ -5724,6 +6057,14 @@ def _run():
     _hint_step.options = [_O78("Angle", "the sweep", None, sets=True)]
     check("a property the command will also set is named after the prompt",
           _hint_step.prompt_hint(), "  ·  also angle")
+    # And an option that carries one advertises the syntax that takes it,
+    # rather than a bare word that no longer means anything (GH #81).
+    _hint_step.options = [_O78("Angle", "the sweep", None, sets=True,
+                               takes=_St78("Angle", _Q78, "The angle",
+                                           unit="deg"))]
+    check("  an option that carries a value says how to give it",
+          (_hint_step.prompt_hint(), _hint_step.option_names()),
+          ("  ·  also angle=", ["angle="]))
     _hint_step.options = [_O78("Close", "close the wire", None),
                           _O78("Undo", "drop the last point", None)]
     check("  what you may type instead of answering keeps the bracket",
@@ -5740,7 +6081,7 @@ def _run():
     _cyl_height = [s for s in _cyl_verb.steps if s.id == "Height"][0]
     check("the cylinder's height no longer reads as an angle",
           f"{_cyl_height.prompt}{_cyl_height.prompt_hint()}: ",
-          "The height of the cylinder  ·  also angle: ")
+          "The height of the cylinder  ·  also angle=: ")
 
     # Both renderers read the composed hint rather than joining the names,
     # so the dock and the socket cannot drift apart.
@@ -5756,6 +6097,192 @@ def _run():
     Engine(_bus56, _reg56).submit("cyl56")
     check("  the prompt message carries it composed",
           _hint_seen, ["  ·  also angle"])
+
+    # --- GH #81. A declared option wrote True to whatever property it
+    # named. Not one of the 105 in the tree is a boolean, so `angle` on a
+    # cylinder meant one degree against FreeCAD's default of 360.
+    from fccli.grammar import (assignment as _asg81, settable as _set81,
+                               value_shape as _shape81, CHOICE as _C81,
+                               SELECTION as _S81)
+    check("an assignment is a name, an equals, and the rest",
+          [_asg81(t) for t in ("angle=180", "a=", "angle=3/4 in", "angle")],
+          [("angle", "180"), ("a", ""), ("angle", "3/4 in"), None])
+    check("  and what does not begin with a name is not one",
+          [_asg81(t) for t in ("=180", "2x=3", "", None)],
+          [None, None, None, None])
+    _opts81 = [_O78("Angle", "", None, sets=True,
+                    takes=_St78("Angle", _Q78, "The angle", unit="deg")),
+               _O78("Alignment", "", None, sets=True,
+                    takes=_St78("Alignment", _T78, "How"))]
+    check("an option resolves by unique prefix, exact winning",
+          (_set81(_opts81, "angle")[0].name, _set81(_opts81, "ali")[0].name),
+          ("Angle", "Alignment"))
+    check("  a prefix two answer to says which two rather than guessing",
+          (_set81(_opts81, "a")[0],
+           "names 2 of this command's options (Angle, Alignment)"
+           in _set81(_opts81, "a")[1]), (None, True))
+    check("  and a name that is nobody's option is not an error here",
+          _set81(_opts81, "radius"), (None, None))
+    check("the refusal says what the value looks like",
+          [_shape81(s) for s in
+           (_St78("A", _Q78, ""), _St78("B", _S81, ""),
+            _St78("C", _C81, "", choices=["Standard", "Refine"]), None)],
+          ["<number>", "<object>", "<Standard|Refine>", "<value>"])
+
+    # Through the real type, both directions, with FreeCAD doing the write.
+    _entry81 = _f78.load_descriptor()["types"]["Part::Cylinder"]
+    _spec81 = {"steps": ["Radius", "Height"], "options": ["Angle"],
+               "strict": True}
+
+    def _cylinder81(spec=_spec81):
+        verb = PatchSet().apply(
+            _f78.build_type_verb("cyl81", _entry81, {}), _entry81, dict(spec))
+        verb.transactional = False
+        return verb
+
+    _reg81 = _R78()
+    _reg81.add(_cylinder81())
+    _bus81 = Bus()
+    _msg81 = []
+    _bus81.subscribe(lambda m: _msg81.append((m.kind, m.text)))
+    _eng81 = Engine(_bus81, _reg81)
+    _doc81 = App.newDocument("options81")
+
+    def _run81(line):
+        _msg81.clear()
+        _eng81.cancel()
+        _msg81.clear()
+        _eng81.submit(line)
+        made = _doc81.Objects[-1] if _doc81.Objects else None
+        return made, [t for k, t in _msg81 if k == ERROR]
+
+    _cyl, _said = _run81("cyl81 10 20 angle=180")
+    check("an option carries its value to the property it names",
+          (round(float(_cyl.Angle), 2), round(float(_cyl.Radius), 2),
+           round(float(_cyl.Height), 2), _said), (180.0, 10.0, 20.0, []))
+    check("    and a recalled line puts the assignment first, having no "
+          "position",
+          [x for k, x in _msg81 if k == RESULT],
+          ["cyl81 angle=180.00\u00b0 10.00mm 20.00mm"])
+    _cyl2, _said2 = _run81("cyl81 angle=45 10 20")
+    check("  wherever on the line it appears",
+          (round(float(_cyl2.Angle), 2), round(float(_cyl2.Height), 2),
+           _said2), (45.0, 20.0, []))
+    check("    and it replays as it was typed",
+          [t for k, t in _msg81 if k == RESULT],
+          ["cyl81 angle=45.00° 10.00mm 20.00mm"])
+    _cyl3, _said3 = _run81("cyl81 angle=45.00° 10.00mm 20.00mm")
+    check("      so the recalled line runs to the same object",
+          (round(float(_cyl3.Angle), 2), round(float(_cyl3.Radius), 2),
+           _said3), (45.0, 10.0, []))
+    # At a prompt the whole line is one answer, so a value with a space in
+    # it lands -- the same as a panel field's `3/4 in`.
+    _eng81.cancel()
+    _msg81.clear()
+    _eng81.submit("cyl81 10")
+    _eng81.submit("angle=1/2 rad")
+    _eng81.submit("20")
+    check("  a value with a space in it lands when it is answered at a prompt",
+          round(float(_doc81.Objects[-1].Angle), 2), 28.65)
+
+    # The bare keyword no longer sets anything, and says what to type.
+    _bare81, _saidbare = _run81("cyl81 10 angle")
+    check("the bare keyword is refused, and names the syntax that works",
+          (_saidbare, _eng81.state),
+          (["Angle takes a value -- try angle=<number>"], "collecting"))
+    check("  and the line stops rather than running short (ADR-201)",
+          ([t for k, t in _msg81 if k == RESULT],
+           getattr(_eng81.current_step(), "id", None)), ([], "Height"))
+    _eng81.cancel()
+    _msg81.clear()
+    _eng81.submit("cyl81 10 20 angle=zz")
+    check("  a value the property will not read is refused by name",
+          ([t for k, t in _msg81 if k == ERROR],
+           [t for k, t in _msg81 if k == RESULT]),
+          (["Angle: 'zz' is not a number or quantity"], []))
+    # A name that is nobody's option is left to the step, so a text value
+    # that happens to contain an equals is still that value -- reading
+    # every `=` as a failed assignment is the fault GH #71 was.
+    _txtreg81 = _R78()
+    _txtseen81 = {}
+    _txtreg81.add(_V78(name="text81", transactional=False,
+                       steps=[_St78("Text", _T78, "The text")],
+                       emit=lambda v: _txtseen81.update(v)))
+    _msg81.clear()
+    Engine(_bus81, _txtreg81).submit("text81 label=Wall")
+    check("    while a name that is nobody's option stays the step's value",
+          (_txtseen81.get("Text"), [t for k, t in _msg81 if k == ERROR]),
+          ("label=Wall", []))
+
+    # A boolean is the one property naming alone can set, and it still is.
+    # Part::Cut's only parameter is one, so its verb is a flag and a
+    # selection and nothing else.
+    _cut81 = _f78.load_descriptor()["types"]["Part::Cut"]
+    _cutflags81 = _f78._options_from_flags(_cut81["params"])
+    check("a boolean option carries no value, so it is typed bare",
+          [(o.name, o.takes) for o in _cutflags81], [("Refine", None)])
+    _flagstep81 = _St78("Base", _S81, "What to cut", options=_cutflags81)
+    check("  and its hint says the bare word, with no equals on it",
+          _flagstep81.prompt_hint(), "  \u00b7  also refine")
+    _cutmade81 = _f78._emit_type("Part::Cut", _cut81["params"])(
+        {"_flags": {"Refine": True}, "_engine": _eng81})
+    check("    naming it is the whole of setting it, and True is what lands",
+          (_cutmade81.Refine, [t for k, t in _msg81 if k == ERROR]),
+          (True, []))
+
+    # The fault, put back, at both doors. `_setter` was `_flag` under
+    # another name, so a declared option over an Angle set it to True --
+    # and True is one degree.
+    _old81 = _cylinder81()
+    _old81.name = "old81"
+    for _o in _old81.steps[-1].options:
+        _o.takes = None                      # what a declared option was
+    _rego81 = _R78()
+    _rego81.add(_old81)
+    _engo81 = Engine(_bus81, _rego81)
+    _msg81.clear()
+    _engo81.submit("old81 10 angle 20")
+    check("the flag put back is refused at the write, not written as True",
+          [t for k, t in _msg81 if k == ERROR],
+          [f"{_doc81.Objects[-1].Name}: Angle takes a value -- "
+           "angle=<value> -- the rest of the line landed"])
+    # Over the whole tree: an option is bare exactly when the property it
+    # names is a boolean. The two sources are the registry's options and
+    # the descriptor's property types, and nothing keeps them equal but
+    # this.
+    _types81 = _f78.load_descriptor()["types"]
+    _astray81, _carrying81 = [], 0
+    for _n81 in REGISTRY.names():
+        _v81 = REGISTRY.get(_n81)
+        _tid81 = getattr(_v81, "creates", None)
+        _ptypes81 = {p["name"]: p.get("property_type")
+                     for p in (_types81.get(_tid81) or {}).get("params", [])}
+        for _s81 in _v81.steps:
+            for _o81 in _s81.options:
+                if not _o81.sets:
+                    continue
+                if _o81.takes is not None:
+                    _carrying81 += 1
+                if _o81.name not in _ptypes81:
+                    continue
+                if (_o81.takes is None) != _pr78.is_flag(_ptypes81[_o81.name]):
+                    _astray81.append(f"{_n81} {_o81.name}")
+    check("an option is bare exactly when its property is a boolean",
+          _astray81, [])
+    check("  and the tree's declared options all carry a value now",
+          _carrying81, 104)
+
+    _oldguard81 = _f78.is_flag
+    try:
+        _f78.is_flag = lambda ptype: True          # the guard put back
+        _sliver81 = _f78._emit_type("Part::Cylinder", _entry81["params"])(
+            {"Radius": 10.0, "Height": 20.0,
+             "_flags": {"Angle": True}, "_engine": _eng81})
+        check("  and the write's guard put back too is the 1-degree sliver",
+              round(float(_sliver81.Angle), 2), 1.0)
+    finally:
+        _f78.is_flag = _oldguard81
+    App.closeDocument(_doc81.Name)
 
     # --- GH #71. The panel's own instruction line named a word the step
     # would not take: `cancel` was read as a failed assignment and the
