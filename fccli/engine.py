@@ -355,6 +355,11 @@ class Engine:
         head = self.current_step()
         if head is None or not head.raw:
             rest = self._take_assignments(rest)
+            if rest is not None:
+                # The line past its last step, for the same reason and in
+                # the same place: a token there arrives after the verb has
+                # run (GH #77).
+                rest = self._take_tail(rest)
             if rest is None:
                 # A refused token stops the line, for the reason a verb
                 # name mid-line does (ADR-201).
@@ -604,6 +609,101 @@ class Engine:
                 kept.append(token)
             elif not took:
                 return None
+        return kept
+
+    def _tail_index(self, tokens):
+        """Where the line runs out of steps, or None while they last.
+
+        A step reads one token, so counting the pending steps says which
+        tokens are past the last of them -- before anything runs, which is
+        the only place a refusal can still stop the line. By the time the
+        positional walk reaches such a token the verb has already run:
+        answering the last step is what runs it (GH #77).
+
+        An option keyword answers no step, so it costs no step here
+        either -- otherwise `loft solid Box` would count `solid` against
+        the selection and call `Box` trailing.
+
+        Two shapes have no last token to be past, and under either
+        nothing is trailing: a step that repeats reads tokens until
+        `done`, and a raw step takes the whole rest of the line as one
+        value.
+        """
+        if self.state != COLLECTING:
+            return None
+        steps = self.pending()
+        if any(s.repeat or s.raw for s in steps):
+            return None
+        budget = len(steps)
+        options = self._settable_options()
+        for index, token in enumerate(tokens):
+            if budget <= 0:
+                return index
+            option, complaint = settable(options, token)
+            if option is None and complaint is None:
+                budget -= 1
+        return None
+
+    def _take_tail(self, tokens):
+        """The line past its last step, judged. The rest, in order.
+
+        Two of the populations that land here name their own target, and
+        are answered rather than dropped: an option keyword, which reads
+        against `_settable_options()` exactly as an assignment's name half
+        already does, and a verb name, which ADR-201 refuses inside a line
+        wherever on it the name falls.
+
+        A token that names neither names nothing, and is left where it is
+        to be dropped as before. Making *that* an error is a sweep of what
+        the tree and the ledger actually send rather than a branch here
+        (GH #85).
+
+        None when one of them was refused: the line stops there, and what
+        followed was arguments to a command that is not going to run as
+        typed.
+        """
+        start = self._tail_index(tokens)
+        if start is None:
+            return tokens
+        kept, options = list(tokens[:start]), self._settable_options()
+        for token in tokens[start:]:
+            option, complaint = settable(options, token)
+            if complaint:
+                self.bus.emit(_bus.ERROR, complaint)
+                return None
+            if option is not None:
+                if option.takes is not None:
+                    # The same refusal the keyword gets at a step it
+                    # reaches, in the one position where it reached none
+                    # and set the property to True instead (GH #81).
+                    self.bus.emit(_bus.ERROR,
+                                  f"{option.name} takes a value -- try "
+                                  f"{option.name.lower()}="
+                                  f"{value_shape(option.takes)}")
+                    return None
+                # A boolean, where the keyword alone is the whole of
+                # setting it. Applied here rather than refused: this is
+                # the position an assignment is already read in, and a
+                # flag is an assignment with nothing to say after the
+                # name (ADR-204).
+                if option.record:
+                    self.replay.append(option.name.lower())
+                if option.action:
+                    option.action(self)
+                self._emit_live()
+                continue
+            hits = self.registry.resolve_prefix(token.lower())
+            if len(hits) == 1:
+                # No pending step is named here, unlike the walk's own
+                # refusal: there is none left to name. `cylinder 10 20
+                # standard` had built its cylinder before `standard`
+                # arrived, and said nothing about it.
+                self.bus.emit(_bus.ERROR,
+                              f"{token!r} is the command {hits[0]!r}, and a "
+                              f"command does not start inside a line -- "
+                              f"{self.verb.name} has no step left for it")
+                return None
+            kept.append(token)
         return kept
 
     def _option_assigned(self, text: str):
