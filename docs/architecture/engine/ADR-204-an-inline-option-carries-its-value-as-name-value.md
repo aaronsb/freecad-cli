@@ -158,6 +158,18 @@ bare keyword sets only a boolean.**
   `angle=180` fail silently rather than loudly — the pre-scan routes
   around it rather than curing it.
 
+  Two thirds of it were cured afterwards, in the pre-scan and by the same
+  argument. A token past the last pending step is found by counting the
+  steps (`_tail_index`), and the two populations there that name their own
+  target are answered rather than dropped: a bare option keyword reads
+  against `_settable_options()` exactly as an assignment's name half does
+  — refused at a non-boolean, applied at a boolean — and a verb name gets
+  ADR-201's refusal, worded for a position with no pending step to name.
+  So `cylinder 10 20 angle` and `cylinder 10 20 standard` both stop the
+  line now, where both exited 0. What is left is the token that names
+  nothing, `cylinder 10 20 nonsense`, which wants a count of what the tree
+  and the ledger send before it becomes an error: GH #85 carries it.
+
 ## Alternatives Considered
 
 - **`angle 180` — the option keyword followed by its value.** AutoCAD's
