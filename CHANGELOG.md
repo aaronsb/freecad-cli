@@ -44,7 +44,11 @@
   with `upgrade` taking the blame. `select` now reads the selection back
   and a name FreeCAD did not take is a fault that names it, with the gate
   and `no_selection_filters` as the usual cause; a fault clears the
-  selection, so nothing half-selected is left for the next command. The
+  selection, so nothing half-selected is left for the next command.
+  Visible without any gate: `select Box.Edge1, Box` now faults -- FreeCAD
+  leaves the sub-list in place when a whole object arrives after its own
+  subelement, so Box was never held whole and the old exit 0 claimed a
+  selection nobody's document backed. The
   read-back asks FreeCAD's sub-lists rather than `isSelected`, which
   answers "is anything under this object selected" and so let a subelement
   vouch for a whole object the gate refused, and it asks after each name
