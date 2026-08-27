@@ -2,7 +2,7 @@
 
 """What FreeCAD itself promotes, and what it puts side by side.
 
-The command registry is flat. Part_Box and Std_TestQuestion are peers in
+The command registry is flat. Part_Box and Std_Test1 are peers in
 it, and 1124 peers is not a surface anyone can learn. FreeCAD's toolbars
 and menus are not flat, and they are the project's own answer to the
 question this module asks: putting a command in a default toolbar says

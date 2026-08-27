@@ -13,8 +13,8 @@ from typing import Any, Dict, List, Optional
 from . import bus as _bus
 from . import modals
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
-                      Registry, Step, Verb, match_choice, order_of,
-                      whole_number)
+                      Registry, Step, Verb, assignment, match_choice,
+                      order_of, settable, value_shape, whole_number)
 from .parsing import format_point, format_quantity, parse_point, parse_quantity
 
 IDLE = "idle"
@@ -343,6 +343,23 @@ class Engine:
                 self.bus.emit(_bus.INFO, notice)
             if found:
                 self.steps = list(found)
+        # An assignment names its own target, so it has no position on the
+        # line and is read before the positional walk. It has to be: a step
+        # that answers the last one runs the verb there and then, so a
+        # trailing `angle=180` arrived after the emit it was for and was
+        # dropped without a word (ADR-204).
+        #
+        # Not for a panel verb. Its step takes the whole line and cuts its
+        # own `name=value` pairs out of it (`panels.split_assignments`),
+        # and those name a widget rather than an option.
+        head = self.current_step()
+        if head is None or not head.raw:
+            rest = self._take_assignments(rest)
+            if rest is None:
+                # A refused token stops the line, for the reason a verb
+                # name mid-line does (ADR-201).
+                self._announce(adopt=False)
+                return
         while rest and self.state == COLLECTING:
             step = self.current_step()
             if step is not None and step.raw:
@@ -466,6 +483,11 @@ class Engine:
         said so, and reading on past it runs a command the line was told
         to stop.
         """
+        took = self._option_assigned(text)
+        if took is not None:
+            if took:
+                self._announce()
+            return took
         step = step if step is not None else self._step_for_token(text)
         if step is None:
             return False
@@ -475,6 +497,17 @@ class Engine:
             return True
         for opt in step.options:
             if opt.name.lower().startswith(text.lower()):
+                if opt.takes is not None:
+                    # The keyword on its own used to set the property to
+                    # True, whatever the property was -- one degree onto a
+                    # cylinder's Angle, index 1 onto an enumeration
+                    # (GH #81). It carries a value now, and the refusal
+                    # says how to give it (ADR-204).
+                    self.bus.emit(_bus.ERROR,
+                                  f"{opt.name} takes a value -- try "
+                                  f"{opt.name.lower()}="
+                                  f"{value_shape(opt.takes)}")
+                    return False
                 if opt.record:
                     self.replay.append(opt.name.lower())
                 done = opt.action(self) if opt.action else False
@@ -492,17 +525,34 @@ class Engine:
                     self._announce()
                 return True
 
+        value, typed, error = self._read_value(step, text)
+        if error is not None:
+            self.bus.emit(_bus.ERROR, error)
+            return False
+        return self._accept(step, value, typed)
+
+    def _read_value(self, step: Step, text: str):
+        """One typed answer, read as the kind the step takes.
+
+        Returns ``(value, typed, error)`` -- the typed form being how it
+        reads back in history, so a line replays.
+
+        One function because there are two things that take a value now:
+        a step, and an option that carries one. `angle=180` at a cylinder
+        is the same reading as `180` at an angle step -- the same unit,
+        the same schema, the same refusal of a fraction at a count -- and
+        two copies of it would drift the moment one of them learned
+        something (ADR-204).
+        """
         if step.kind == POINT:
             res = parse_point(text, self.last_point())
             if not res.ok:
-                self.bus.emit(_bus.ERROR, res.error)
-                return False
-            return self._accept(step, res.value, format_point(res.value))
-        elif step.kind == QUANTITY:
+                return None, None, res.error
+            return res.value, format_point(res.value), None
+        if step.kind == QUANTITY:
             res = parse_quantity(text, unit_hint=step.unit)
             if not res.ok:
-                self.bus.emit(_bus.ERROR, res.error)
-                return False
+                return None, None, res.error
             value = res.value
             if step.integral:
                 # A count reaches FreeCAD as an int or not at all, and half
@@ -511,27 +561,90 @@ class Engine:
                 # wrong number (GH #78, ADR-203).
                 whole = whole_number(value)
                 if whole is None:
-                    self.bus.emit(_bus.ERROR,
-                                  f"{step.id} counts -- {text} is not a "
-                                  f"whole number")
-                    return False
+                    return None, None, (f"{step.id} counts -- {text} is not "
+                                        f"a whole number")
                 value = whole
-            return self._accept(step, value, format_quantity(value, step.unit))
-        elif step.kind == SELECTION:
+            return value, format_quantity(value, step.unit), None
+        if step.kind == SELECTION:
             found = _resolve_names(text)
             if not found:
-                self.bus.emit(_bus.ERROR, f"no object called {text!r}")
-                return False
-            return self._accept(step, found, _selection_text(found))
-        elif step.kind in (TEXT, PATH):
-            return self._accept(step, text, text)
-        elif step.kind == CHOICE:
+                return None, None, f"no object called {text!r}"
+            return found, _selection_text(found), None
+        if step.kind == CHOICE:
             hits = match_choice(step.choices, text)
             if len(hits) != 1:
-                self.bus.emit(_bus.ERROR, f"expected one of {step.choices}")
-                return False
-            return self._accept(step, hits[0], hits[0])
-        return self._accept(step, text, text)
+                return None, None, f"expected one of {step.choices}"
+            return hits[0], hits[0], None
+        return text, text, None          # TEXT, PATH, and anything else
+
+    def _settable_options(self):
+        """Every property-setting option this verb offers.
+
+        Across all its steps, not the one in front of you. An option that
+        names a property belongs to the command rather than to the step it
+        is rendered beside (ADR-303), and after the last step is answered
+        there is no step left to hang it on -- `cylinder 10 20 angle=180`
+        has to reach Angle the same way `cylinder angle=180 10 20` does.
+        """
+        steps = self.steps if self.steps is not None else (
+            self.verb.steps if self.verb else [])
+        return [o for s in steps for o in s.options if o.sets]
+
+    def _take_assignments(self, tokens):
+        """Every `name=value` on the line, applied. The rest, in order.
+
+        None when one of them was refused: the line stops there, and what
+        followed was arguments to a command that is not going to run as
+        typed (ADR-201).
+        """
+        kept = []
+        for token in tokens:
+            took = self._option_assigned(token)
+            if took is None:
+                kept.append(token)
+            elif not took:
+                return None
+        return kept
+
+    def _option_assigned(self, text: str):
+        """`angle=180`. True when it landed, False when refused, None when
+        the token is no assignment of this command's.
+
+        None rather than False for a name that is nobody's option: a
+        `label=Wall` at a text step is that step's own value, and reading
+        every `=` as a failed assignment is the fault GH #71 was on the
+        panel side. A raw step is left alone entirely -- it takes the whole
+        line and `panels.split_assignments` cuts its own pairs out of it.
+        """
+        step = self.current_step()
+        if step is not None and step.raw:
+            return None
+        named = assignment(text)
+        if named is None:
+            return None
+        option, complaint = settable(self._settable_options(), named[0])
+        if complaint:
+            self.bus.emit(_bus.ERROR, complaint)
+            return False
+        if option is None:
+            return None
+        if option.takes is None:
+            self.bus.emit(_bus.ERROR,
+                          f"{option.name} is a flag -- type "
+                          f"{option.name.lower()} on its own to set it")
+            return False
+        value, typed, error = self._read_value(option.takes, named[1])
+        if error is not None:
+            self.bus.emit(_bus.ERROR, f"{option.name}: {error}")
+            return False
+        # Recorded under the property's own name, which is the step id the
+        # option was built from, so `_emit_type` writes it with everything
+        # else and nothing there has to know an option was involved.
+        self.values[option.takes.id] = value
+        self.typed[option.takes.id] = typed
+        self.replay.append(f"{option.name.lower()}={typed}")
+        self._emit_live()
+        return True
 
     def _verb_at_step(self, text: str, step: Step) -> Optional[str]:
         """The verb a token names, when it is no answer to the open step.

@@ -24,6 +24,20 @@ the others is. DestructiveRole is the answer ``!`` already means --
 ``close!`` discards -- so a question is refused unless the line carried the
 bang, and then the destructive answer is the one it asked for.
 
+Which is one contract with two halves, and they have to agree (GH #16):
+
+    with the bang        the destructive button is pressed, and the
+                         question is *answered*. The command commits, and
+                         a notice says which button went down.
+    without it           nothing that proceeds or destroys is pressed. A
+                         button whose role declines is, and where the
+                         dialog offers none the dialog is closed unpressed.
+                         The command fails, and the fault says what to
+                         re-run with ``!`` to get.
+
+Pressing Discard and then reporting "Re-run with ! for Discard" was the
+two halves disagreeing on one screen.
+
 One filter for the process, refcounted, answering the innermost armed
 block. Installing one per block let a nested arm claim a dialog its outer
 neighbour raised, and the outer one then committed a command it should
@@ -139,31 +153,62 @@ def read(dialog):
     return kind, text, buttons
 
 
-def _pick(buttons, force):
-    """Which button the command line presses, and why.
+# Roles that decline. A command line with nobody in front of it answers a
+# question with one of these or with none at all.
+_DECLINING = ("RejectRole", "NoRole")
 
-    Reject by default: cancelling is the answer that cannot lose anybody's
-    work. The bang is what asks for the other one, the same way close! does.
+
+def _pick(buttons, force, question=True):
+    """Which button the command line presses, or None to press none.
+
+    A notice or a rejection has one way out, and pressing it answers
+    nothing anybody asked -- it dismisses a message. So it is pressed.
+
+    A question is where the choice is real, and the command line declines
+    it: cancelling is the answer that cannot lose anybody's work. It
+    declines with a button whose *role* says no, never with one that
+    proceeds and never with one that destroys. Where the dialog offers
+    neither, nothing is pressed and the dialog is closed instead -- the
+    fallback order used to run on through DestructiveRole to AcceptRole,
+    so a Save/Discard box with no Cancel had Discard pressed by a line
+    that had not asked for it and was about to report a failure (GH #16).
+
+    The bang is the one thing that asks for the destructive answer, the
+    same way `close!` does. Then it is an answer, and `_catch` records it
+    as one rather than as a question nobody could answer.
     """
     by_role = {}
     for b, role in buttons:
         by_role.setdefault(role, b)
+    if not question:
+        return buttons[0][0]
     if force and "DestructiveRole" in by_role:
         return by_role["DestructiveRole"]
-    for role in ("RejectRole", "NoRole", "DestructiveRole", "AcceptRole",
-                 "YesRole"):
+    for role in _DECLINING:
         if role in by_role:
             return by_role[role]
-    return buttons[0][0]
+    return None
 
 
 def _click(widget):
     """Press it, unless it is already gone."""
     try:
-        (widget.reject if isinstance(widget, QtWidgets.QFileDialog)
-         else widget.click)()
+        widget.click()
     except RuntimeError:
         pass          # the dialog went away before the loop came back round
+
+
+def _dismiss(dialog):
+    """Close it without pressing anything.
+
+    `reject()` is what Escape does, and it is the only way out of a dialog
+    that is not an answer to it. FreeCAD reads the result as its cancel
+    branch, which is where a question the command line refused belongs.
+    """
+    try:
+        dialog.reject()
+    except RuntimeError:
+        pass
 
 
 class _Filter(QtCore.QObject):
@@ -203,9 +248,11 @@ class _Filter(QtCore.QObject):
         obj.setProperty(HANDLED, True)
         caught = self.targets[-1]
 
+        forced = self.forced[-1]
+
         if kind == "chooser":
             caught.faults.append(text)
-            QtCore.QTimer.singleShot(0, lambda: _click(obj))
+            QtCore.QTimer.singleShot(0, lambda: _dismiss(obj))
             return False
         if kind == "notice":
             # "No errors found in the mesh." is the command reporting that
@@ -218,13 +265,29 @@ class _Filter(QtCore.QObject):
             undoable = next(((b.text() or "").replace("&", "")
                              for b, role in buttons
                              if role == "DestructiveRole"), None)
-            caught.questions.append(
-                (text, [(b.text() or "").replace("&", "") for b, _ in buttons],
-                 undoable))
-        chosen = _pick(buttons, self.forced[-1])
+            if forced and undoable is not None:
+                # The bang already asked for this answer, so pressing it is
+                # answering the question, not failing to. Recording it as a
+                # question instead had `revolve!` press Discard and report
+                # "Re-run with ! for Discard" over the top -- one line
+                # contradicting the other, and the transaction rolled back
+                # around a button that had been pressed (GH #16).
+                #
+                # It is said out loud rather than passed over: pressing the
+                # destructive answer is what was asked for, and which
+                # button that was is not something to leave unsaid.
+                caught.notices.append(
+                    f"{text} -- pressed {undoable}, which is what ! asked for")
+            else:
+                caught.questions.append(
+                    (text,
+                     [(b.text() or "").replace("&", "") for b, _ in buttons],
+                     undoable))
+        chosen = _pick(buttons, forced, kind == "question")
         # Deferred: the dialog is still inside its own show handler, and
         # exec() has not started the loop that a click has to unwind.
-        QtCore.QTimer.singleShot(0, lambda: _click(chosen))
+        QtCore.QTimer.singleShot(
+            0, lambda: _click(chosen) if chosen is not None else _dismiss(obj))
         return False
 
 

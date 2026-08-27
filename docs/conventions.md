@@ -113,8 +113,13 @@ Each carries exactly one meaning.
 against 1250 launchers is a wall, not discovery; scoped to Sketcher it is 22
 candidates.
 
-- **Domains are read off the verbs**, from the command a verb runs or the
-  type it builds. Nothing is tagged by hand.
+- **A domain is a workbench.** The verb carries the one that brought its
+  command — harvested for a command the descriptor knows, and the workbench
+  that was activating for one an addon registered at runtime. Nothing is
+  tagged by hand. The command-name prefix is the fallback for a verb that
+  has no workbench, and only that: it filed the 53 `Arch_` commands under a
+  domain BIM owns and no workbench answers to, and left an addon whose
+  commands carry no prefix in no domain at all (GH #21).
 - **A scope never hides a verb someone wrote.** Hand-written, patched and
   family verbs always complete; the scope narrows the launchers.
 - `use` alone lists the domains and says which is active; `use off` clears.
@@ -154,7 +159,7 @@ One session has one line being typed, the same as it has one prompt.
 
 ## Curation
 
-FreeCAD's command registry is flat: `Part_Box` and `Std_TestQuestion` are
+FreeCAD's command registry is flat: `Part_Box` and `Std_Test1` are
 peers in it. Its toolbars and menus are not, and that difference is the
 project's own answer to which commands matter and which belong together.
 `tools/harvest_commands.py` records the placement by activating every
@@ -485,7 +490,7 @@ honoured everywhere.
 | `unit` | how a quantity is echoed and what a bare number means; empty for a count |
 | `integral` | the value is a count: a fraction is refused, not rounded (ADR-203) |
 | `choices` | a closed set, offered on Tab |
-| `options` | inline keywords accepted alongside the value |
+| `options` | inline keywords accepted alongside the value; `name=value` when one carries a value (ADR-204) |
 | `completes` | where else candidates come from: `verbs`, `objects`, `aliases`, `schemas`, `domains` |
 | `raw` | take the rest of the line verbatim, not one token |
 | `prompt_order` | where it sits when asked for; points default last |
@@ -498,6 +503,19 @@ honoured everywhere.
 | `action` | run when it is typed; returning True finishes the verb |
 | `record` | put it in the replay line (default true) |
 | `sets` | it names a property the command will set, rather than a way to answer or finish the step (ADR-303) |
+| `takes` | the value it carries, as the step it would have been; None for a boolean (ADR-204) |
+
+**An option that carries a value is typed `name=value`** — `cylinder 10 20
+angle=180`. One token, read by the same code that reads the step it
+replaced, so the unit, the schema and the refusal of a fraction at a count
+are the step's own. An assignment names its own target, so it may appear
+anywhere on the line and is read before the positional walk.
+
+**The bare keyword sets a boolean and nothing else.** `mirrored` is the
+whole of setting `Mirrored`; `angle` on its own is refused, naming the
+syntax that works. It used to write `True` to whatever property it named —
+one degree onto a cylinder's Angle, against FreeCAD's default of 360
+(GH #81).
 
 `sets` is what the prompt line reads. A step renders what you may type
 **instead of** answering in a bracket beside the thing it replaces, and a
@@ -505,13 +523,13 @@ property the command will **also** set after it:
 
 ```
 Next point [Close/Undo]:
-The height of the cylinder  ·  also angle:
+The height of the cylinder  ·  also angle=:
 name=value [done/cancel]:
 ```
 
 One composer, `Step.prompt_hint()`, and the dock and the socket client
-both call it. `options` on the wire stays the whole pool, because that is
-what completion offers.
+both call it. `options` on the wire is what may be typed — `angle=` for an
+option that carries a value — because that is what completion offers.
 
 ## The verbs written by hand
 

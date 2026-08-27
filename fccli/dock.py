@@ -599,7 +599,10 @@ class CliDock(QtWidgets.QDockWidget):
         try:
             if getattr(self, "_descriptor", None) is None:
                 self._descriptor = load_descriptor()
-            added = register_runtime(REGISTRY, self._descriptor)
+            # The activating workbench is passed in: a command that turns
+            # up during its Initialize() is that workbench's, and this is
+            # the only moment anything knows so (GH #21).
+            added = register_runtime(REGISTRY, self._descriptor, name)
             if not added:
                 return
             if isinstance(self.factory_counts, dict):

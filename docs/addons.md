@@ -13,8 +13,10 @@ Register a command the normal way and it is there:
 ```
 
 The name comes from the command's menu label, the description from its
-tooltip, and it lands in a domain named after your module, so `use
-curvedshapes` narrows Tab to your commands. Running it does exactly what
+tooltip, and it lands in a domain named after the workbench that
+registered it, so `use curvedshapes` narrows Tab to your commands. Your
+command names need no `Module_` prefix for that: the workbench is what the
+domain is read off (GH #21). Running it does exactly what
 clicking the toolbar button does — including opening a Task panel, if that
 is what your command does.
 

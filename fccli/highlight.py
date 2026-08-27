@@ -8,7 +8,8 @@ inside polyline and a plain word everywhere else.
 """
 
 from .qt import QtGui, QtCore
-from .grammar import POINT, QUANTITY, CHOICE, SELECTION, match_choice
+from .grammar import (POINT, QUANTITY, CHOICE, SELECTION, assignment,
+                      match_choice, settable)
 
 PALETTE = {
     "verb":     ("#4ec9b0", True),
@@ -124,6 +125,18 @@ class InputHighlighter(QtGui.QSyntaxHighlighter):
                     else "unknown" if not hits else "option")
 
     def _highlight_argument(self, token, at, step):
+        # `angle=180`: the keyword is an option, and the value after it is
+        # read as the property it names takes it -- so a value that will
+        # not parse is underlined where it is, not the whole token
+        # (ADR-204).
+        named = assignment(token)
+        if named is not None:
+            option = settable(self._settable(), named[0])[0]
+            if option is not None and option.takes is not None:
+                head = len(named[0]) + 1
+                self._apply(at, head, "option")
+                self._highlight_value(named[1], at + head, option.takes)
+                return
         for opt in step.options:
             if opt.name.lower().startswith(token.lower()):
                 self._apply(at, len(token), "option")
@@ -140,6 +153,24 @@ class InputHighlighter(QtGui.QSyntaxHighlighter):
             return
         if self.engine.registry.resolve_prefix(token):
             self._apply(at, len(token), "verb")
+
+    def _settable(self):
+        """The verb's value-carrying options, wherever they are rendered."""
+        engine = self.engine
+        steps = engine.steps if engine.steps is not None else (
+            engine.verb.steps if engine.verb else [])
+        return [o for s in steps for o in s.options if o.sets]
+
+    def _highlight_value(self, token, at, step):
+        """An option's value, coloured as the kind that takes it."""
+        if step.kind == CHOICE:
+            ok = bool(match_choice(step.choices, token))
+            self._apply(at, len(token), "option" if ok else "unknown")
+        elif step.kind == SELECTION:
+            self._apply(at, len(token),
+                        "object" if _resolves(token) else "unknown")
+        elif step.kind in (POINT, QUANTITY):
+            self._highlight_numeric(token, at, step)
 
     def _highlight_numeric(self, token, at, step):
         from .parsing import parse_point, parse_quantity
@@ -185,8 +216,20 @@ def command_spans(registry, text, offset=0):
     # engine follows -- `circle 0,0,0 20` and `circle 20 0,0,0` both run.
     # Walking the steps in declaration order instead coloured the second
     # one entirely `bad`: the line ran, and read as a syntax error.
+    options = [o for s in verb.steps for o in s.options if o.sets]
     remaining, last_point = list(verb.steps), None
     for start, token in tokens[1:]:
+        # An assignment names its own target and consumes no step, the way
+        # the engine reads one (ADR-204).
+        named = assignment(token)
+        if named is not None:
+            option = settable(options, named[0])[0]
+            if option is not None and option.takes is not None:
+                head = len(named[0]) + 1
+                out.append((offset + start, head, "option", False))
+                last_point = _value_spans(out, option.takes, named[1],
+                                          offset + start + head, last_point)
+                continue
         step = _step_for(remaining, token)
         if step is None:
             out.append((offset + start, len(token), "option", False))
@@ -194,26 +237,38 @@ def command_spans(registry, text, offset=0):
         if any(o.name.lower().startswith(token.lower()) for o in step.options):
             out.append((offset + start, len(token), "option", False))
             continue
-        if step.kind == POINT:
-            res = parse_point(token, last_point)
-            if res.ok:
-                last_point = res.value
-            _extend(out, res, offset + start, len(token))
-        elif step.kind == QUANTITY:
-            _extend(out, parse_quantity(token, unit_hint=step.unit),
-                    offset + start, len(token))
-        elif step.kind in (SELECTION,):
-            out.append((offset + start, len(token),
-                        "object" if _resolves(token) else "unknown", False))
-        elif step.kind == CHOICE:
-            ok = bool(match_choice(step.choices, token))
-            out.append((offset + start, len(token),
-                        "option" if ok else "unknown", False))
-        else:
-            out.append((offset + start, len(token), "number", False))
+        last_point = _value_spans(out, step, token, offset + start, last_point)
         if not step.repeat and step in remaining:
             remaining.remove(step)
     return out
+
+
+def _value_spans(out, step, token, at, last_point):
+    """One value's spans, read as the kind that takes it.
+
+    Returns the point a relative coordinate after this one measures from.
+    Shared by a step's own value and an option's, for the reason
+    `Engine._read_value` is shared: they are one reading (ADR-204).
+    """
+    from .parsing import parse_point, parse_quantity
+
+    if step.kind == POINT:
+        res = parse_point(token, last_point)
+        if res.ok:
+            last_point = res.value
+        _extend(out, res, at, len(token))
+    elif step.kind == QUANTITY:
+        _extend(out, parse_quantity(token, unit_hint=step.unit),
+                at, len(token))
+    elif step.kind == SELECTION:
+        out.append((at, len(token),
+                    "object" if _resolves(token) else "unknown", False))
+    elif step.kind == CHOICE:
+        ok = bool(match_choice(step.choices, token))
+        out.append((at, len(token), "option" if ok else "unknown", False))
+    else:
+        out.append((at, len(token), "number", False))
+    return last_point
 
 
 def _step_for(remaining, token):

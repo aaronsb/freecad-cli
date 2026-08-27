@@ -31,6 +31,7 @@ _How a command runs — steps and getters, task panels, picking, modals, transac
 | [ADR-201](./engine/ADR-201-a-submitted-line-is-one-command.md) | A submitted line is one command | Accepted |
 | [ADR-202](./engine/ADR-202-a-command-answers-for-the-object-it-left-invalid.md) | A command answers for the object it left invalid | Accepted |
 | [ADR-203](./engine/ADR-203-a-value-the-line-accepted-reaches-the-object-or-the-line-says-it-did-not.md) | A value the line accepted reaches the object, or the line says it did not | Accepted |
+| [ADR-204](./engine/ADR-204-an-inline-option-carries-its-value-as-name-value.md) | An inline option carries its value as name=value | Accepted |
 
 ## Surface
 _How it is presented and reached — dock, prompt, colour, completion, message bus, socket, external shell, history_

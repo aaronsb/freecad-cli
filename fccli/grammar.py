@@ -9,6 +9,7 @@ all three.
 """
 
 import math
+import re
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
@@ -40,6 +41,18 @@ class Option:
     # made `The height of the cylinder [Angle]` say that height is an
     # angle (GH #56). See Step.prompt_hint.
     sets: bool = False
+    # The value this option carries, as the step it would have been. None
+    # for an option with nothing to give it: a boolean, where the keyword
+    # alone says all there is to say, and the ways out of a step (`Close`,
+    # `done`, `cancel`).
+    #
+    # An option that names a non-boolean property wrote `True` to it --
+    # 1 degree onto an Angle whose default is 360 -- because the action
+    # behind it was `_flag` under another name and there was no grammar
+    # for a value (GH #81). The step is what says how to read one:
+    # `angle=180` at a cylinder is the same reading as `180` at an angle
+    # step, done by the same code (ADR-204).
+    takes: Optional["Step"] = None
 
 
 @dataclass
@@ -80,7 +93,16 @@ class Step:
     integral: bool = False
 
     def option_names(self) -> List[str]:
-        return [o.name for o in self.options]
+        """The words a person types for this step's options.
+
+        The word, not the name: an option that carries a value is typed
+        `angle=`, and every caller of this asks what may be typed --
+        completion's pool, the prompt payload, the socket's state, `man`'s
+        step listing. Offering `angle` where `angle=` is what works is the
+        fault GH #71 was, in the one place that advertises it (ADR-204).
+        """
+        return [o.name.lower() + "=" if o.takes is not None else o.name
+                for o in self.options]
 
     def prompt_hint(self) -> str:
         """What follows this step's own prompt on the prompt line.
@@ -98,11 +120,63 @@ class Step:
         client's prompt, and its `still wants` line -- and one prompt.
         """
         instead = [o.name for o in self.options if not o.sets]
-        also = [o.name.lower() for o in self.options if o.sets]
+        also = [o.name.lower() + ("=" if o.takes is not None else "")
+                for o in self.options if o.sets]
         line = f" [{'/'.join(instead)}]" if instead else ""
         if also:
             line += "  ·  also " + ", ".join(also)
         return line
+
+
+# `angle=180`. The whole token is one assignment: the name up to the first
+# `=`, and everything after it is the value, `=` and all. Anchored, unlike
+# `panels.ASSIGNMENT`, which cuts several pairs out of one raw line and has
+# to find its split points inside prose.
+ASSIGNMENT = re.compile(r"^([A-Za-z_][A-Za-z0-9_]*)=(.*)$", re.S)
+
+
+def assignment(text) -> Optional[tuple]:
+    """`angle=180` -> `('angle', '180')`, or None when it is not one."""
+    found = ASSIGNMENT.match(text or "")
+    return (found.group(1), found.group(2)) if found else None
+
+
+def settable(options, name):
+    """Which of a verb's settable options a typed name means.
+
+    Returns ``(option, complaint)``. Both None means the name is no option
+    of this command's, which is not an error here -- a `label=` at a text
+    step is the step's own value.
+
+    Unique prefix, exact first, which is the rule verbs, choices and panel
+    fields already follow. `panels.resolve` says the same thing about a
+    panel's fields, and says it about widgets rather than about options.
+    """
+    wanted = (name or "").strip().lower()
+    if not wanted:
+        return None, None
+    exact = [o for o in options if o.name.lower() == wanted]
+    if len(exact) == 1:
+        return exact[0], None
+    hits = exact or [o for o in options if o.name.lower().startswith(wanted)]
+    if len(hits) == 1:
+        return hits[0], None
+    if not hits:
+        return None, None
+    return None, (f"{name!r} names {len(hits)} of this command's options "
+                  f"({', '.join(o.name for o in hits)}) -- "
+                  f"use the one you mean by its full name")
+
+
+def value_shape(step) -> str:
+    """What an option's value looks like, for the line that asks for one."""
+    if step is None:
+        return "<value>"
+    if step.kind == CHOICE and step.choices:
+        shown = "|".join(step.choices[:4])
+        return f"<{shown}{'|...' if len(step.choices) > 4 else ''}>"
+    return {QUANTITY: "<number>", SELECTION: "<object>", POINT: "<x,y,z>",
+            PATH: "<path>"}.get(step.kind, "<text>")
 
 
 def whole_number(value) -> Optional[int]:
@@ -225,6 +299,14 @@ class Verb:
     panel: Optional[str] = None
     # The .fccli file this verb runs, when it is a script (ADR-601).
     script: Optional[str] = None
+    # Which workbench brought this command: the harvested name for one the
+    # descriptor knows, and the one that was activating for a command an
+    # addon registered at runtime. It is the domain `use` scopes by. The
+    # command-name prefix used to stand in for it, which put every Arch_
+    # command in a domain called Arch that no workbench answers to, and
+    # left an addon whose commands carry no prefix at all in no domain
+    # (GH #21).
+    workbench: Optional[str] = None
 
 
 class Registry:

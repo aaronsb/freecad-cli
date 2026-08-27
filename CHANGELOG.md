@@ -4,6 +4,86 @@
 
 ### Fixed
 
+- **A link property is written the shape it takes (GH #80, ADR-203).** A
+  selection step's value is a list of objects -- `_resolve_names` and
+  `current_selection` both hand one back -- and only half the link
+  properties take a list. `App::PropertyLink` wants one object and raised
+  `Type must be App.DocumentObject or None, not list`; `App::PropertyLinkSub`
+  wants `(object, [subnames])` and raised `Expect input sequence of size
+  2`. That is 93 sub-links and 51 links over 84 generated verbs, every one
+  of them collecting a value the object never received, and until GH #78
+  took the `except Exception: pass` out of the write, in silence.
+  `properties.links` classifies the eight link types by the shape their
+  setter takes and `properties.link_value` builds it, confirmed against
+  FreeCAD 1.1 rather than read off the docs: `(obj, [])` is FreeCAD's own
+  spelling of "this link is the whole object", and it reads back that way.
+  A selection of two at a link that takes one is refused by name and count
+  rather than trimmed to the first, which is what GH #78 was about.
+
+  Measured live as an A/B over the sixteen commands the GH #52 sweep
+  recorded `invalid`: the refusal is gone from seven of them, and two --
+  `offset` and `scale`, both single `App::PropertyLink` -- go from
+  `refused+invalid` to clean. `pad`, `pocket`, `groove`, `additive_pipe`
+  and `thickness` land their links now and are still invalid, which
+  narrows ADR-202's open question rather than answering it: the dropped
+  link was a real fault and not the cause of their invalidity.
+
+- **An option that names a property carries its value (GH #81, ADR-204).**
+  `patches._setter` was `_flag` character for character, so a declared
+  option wrote `True` to whatever property it named. Not one of the 105
+  options the tree declares is a boolean -- they are 72 quantities, 30
+  enumerations and two link-subs -- so `cylinder 10` then `angle` set
+  Angle to one degree against FreeCAD's default of 360, and built a
+  sliver. An inline option is now typed `name=value`, the syntax a panel
+  field already takes, and it carries the step it replaced as
+  `Option.takes`: `angle=180` at a cylinder is read by the same code that
+  reads `180` at an angle step, so the unit, the schema and the refusal of
+  a fraction at a count are the step's own. An assignment names its own
+  target, so it may appear anywhere on the line and is read before the
+  positional walk -- it has to be, because answering the last step runs the
+  verb, and a trailing `angle=180` used to arrive after the emit it was
+  for. The bare keyword still sets a boolean and is refused at anything
+  else, at the door (`Angle takes a value -- try angle=<number>`) and at
+  the write. The prompt says `also angle=` and completion offers `angle=`,
+  because advertising a syntax that does not work is the fault GH #71 was.
+
+- **The bang's press and the report say the same thing (GH #16).** A
+  dialog with several buttons was recorded as a question whatever the line
+  carried, and `_pick` pressed the `DestructiveRole` button when it
+  carried the bang -- so `revolve!` pressed Discard, the engine aborted the
+  transaction around a button that had already gone down, and the fault
+  told the operator to re-run with the bang they had just used. The bang
+  is the answer now: the destructive button is pressed, the question
+  counts as answered, and a notice says which button it was. Without the
+  bang nothing that proceeds or destroys is pressed at all. The fallback
+  order used to run on through `DestructiveRole` to `AcceptRole`, so a
+  Save/Discard box with no Cancel had Discard pressed by a line that never
+  asked for it; a question offering no way to decline is now closed
+  unpressed, which is FreeCAD's own cancel branch. Also stale, found by
+  the same review: `curation.py` and `docs/conventions.md` cited
+  `Std_TestQuestion`, which is not in the descriptor -- and the suite's
+  rank check cited it too, so it had been passing on a command that does
+  not exist. `Std_Test1` is the real one.
+
+- **A domain is the workbench that shipped the command (GH #21).**
+  `completion.domain_of` read the domain off `gui_command.split("_")[0]`,
+  which is not the same thing twice over. 79 commands ship under a
+  workbench their prefix does not name -- 53 `Arch_`, 12 `Reen_`, 7
+  `IFC_`, 7 `MeshPart_` -- so `use bim` did not scope the commands BIM
+  owns while `use arch` named a workbench nobody can switch to. And
+  CurvedShapes registers `CurvedArray` and `SurfaceCut` with no prefix at
+  all, so ten verbs landed in no domain and `use curvedshapes` said there
+  was none, against what `docs/addons.md` promises. The verb carries the
+  workbench now: harvested for a command the descriptor knows, and the
+  activating workbench for one an addon registers at runtime -- which is
+  the only moment anything knows, since FreeCAD's command registry is flat
+  and `listCommands` says nothing about where a command came from. The
+  prefix stays as the fallback for a verb that has no workbench. The D4
+  grammar report loses its four `domains:` lines covering those 79
+  commands, 527 spec reports to 523, and keeps the rule as the invariant:
+  a verb that reaches the registry without the workbench its descriptor
+  entry has is still reported.
+
 - **The session outlives a client that vanishes mid-command (GH #60).** A
   command that holds the event loop gives its client thirty seconds to
   die in, and `breakable_bar` holds it for thirty-one. The client timed
