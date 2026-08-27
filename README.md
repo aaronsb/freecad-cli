@@ -443,6 +443,7 @@ has changes; a released copy carries a stamped `fccli/_build.py`.
 | [docs/addons.md](docs/addons.md) | adding command-line support to an addon |
 | [docs/shell.md](docs/shell.md) | the terminal client's design |
 | [docs/state.md](docs/state.md) | the engine and the six machines around it: states, transitions, invariants |
+| [docs/trial.md](docs/trial.md) | a session from the outside: a pulley hub built from `help` alone, and what confused |
 | [docs/architecture/](docs/architecture/INDEX.md) | decision records, by domain |
 | [FINDINGS.md](FINDINGS.md) | what was learned about FreeCAD's internals |
 | [CHANGELOG.md](CHANGELOG.md) | releases |
