@@ -6008,27 +6008,50 @@ def _run():
 
     # --- GH #73. select holds what it claims. A selection gate takes
     # every addSelection and answers nothing, so the only way to know a
-    # name landed is to ask afterwards.
+    # name landed is to ask afterwards -- and to ask the question the
+    # name asked, which is where the first shape of this got it wrong.
     from fccli import shell as _sh73
 
-    class _Gated:
-        """FreeCAD's selection with a gate on: it accepts and keeps none."""
+    class _Entry73:
+        def __init__(self, doc, name, subs):
+            self.DocumentName, self.ObjectName = doc, name
+            self.SubElementNames = subs
 
-        def __init__(self, gate=True):
-            self.gate = gate
-            self.held = []
+    class _Selection73:
+        """FreeCAD's selection, to the rules that matter here.
+
+        A whole-object add registers only when nothing is held for that
+        object yet -- FreeCAD keeps a subelement over the whole, gate or
+        no gate -- and a subelement add narrows to it. `gate` is what a
+        selection filter refuses: nothing, whole objects (Part's edge
+        filter over a solid), or everything (its vertex filter, which is
+        GH #73's own case).
+        """
+
+        def __init__(self, gate=None):
+            self.gate = gate                # None | "whole" | "all"
+            self.held = {}                  # name -> set of subelements
             self.cleared = 0
 
         def clearSelection(self):
             self.cleared += 1
-            self.held = []
+            self.held = {}
 
         def addSelection(self, doc, name, sub=""):
-            if not self.gate:
-                self.held.append((name, sub))
+            if self.gate == "all" or (self.gate == "whole" and not sub):
+                return
+            if sub:
+                self.held[name] = {sub}
+            else:
+                self.held.setdefault(name, set())
+
+        def getSelectionEx(self, doc=""):
+            return [_Entry73("verify", name, tuple(sorted(subs)))
+                    for name, subs in self.held.items()]
 
         def isSelected(self, obj, sub=""):
-            return (obj.Name, sub) in self.held
+            """What the first shape asked, kept to show what it answered."""
+            return obj.Name in self.held
 
     class _Obj73:
         def __init__(self, name):
@@ -6038,46 +6061,96 @@ def _run():
                 Name = "verify"
             self.Document = _Doc()
 
-    _box73 = _Obj73("Box")
+    _objs73 = {n: _Obj73(n) for n in ("Box", "Box001")}
+    _box73 = _objs73["Box"]
+
     check("a gate takes the selection and keeps none",
-          _sh73._is_selected(_Gated(), _box73, ""), False)
+          _sh73._took(_Selection73("all"), _box73, ""), False)
     check("  an ungated selection is held",
           (lambda s: (s.addSelection("verify", "Box"),
-                      _sh73._is_selected(s, _box73, ""))[1])(_Gated(False)),
+                      _sh73._took(s, _box73, ""))[1])(_Selection73()),
           True)
     check("  FreeCAD that cannot say is not read as a fault",
-          _sh73._is_selected(object(), _box73, ""), True)
+          _sh73._took(object(), _box73, ""), True)
+    # The predicate the review found: a subelement FreeCAD did take must
+    # not vouch for a whole object it refused.
+    _alias73 = _Selection73("whole")
+    _alias73.addSelection("verify", "Box", "Edge1")
+    _alias73.addSelection("verify", "Box")
+    check("  a subelement does not vouch for its own parent",
+          _sh73._took(_alias73, _box73, ""), False)
+    check("    though the subelement itself is held",
+          _sh73._took(_alias73, _box73, "Edge1"), True)
+    check("    which is what asking isSelected answered instead",
+          _alias73.isSelected(_box73), True)
 
-    # The verb itself, over a document that is really open: with a gate
-    # on, `select Box` used to answer `= select Box` and select nothing.
+    # The verb itself, over a document that is really open.
     _doc73 = App.newDocument("gate73")
     _doc73.addObject("App::FeaturePython", "Box")
-    _sel73 = _Gated()
-
-    class _Gui73:
-        Selection = _sel73
-
     from fccli import engine as _eng73mod
     _oldgui73, _oldresolve73 = _sh73._gui, _eng73mod._resolve_names
-    try:
+
+    def _select73(sel, line):
+        """Run `select <line>` against this selection; answer the fault."""
+        class _Gui73:
+            Selection = sel
         _sh73._gui = lambda: _Gui73
-        _eng73mod._resolve_names = lambda name: [_box73]
-        _fault73 = None
         try:
-            _sh73._emit_select({"names": "Box", "_engine": None})
+            _sh73._emit_select({"names": line, "_engine": None})
         except RuntimeError as exc:
-            _fault73 = str(exc)
+            return str(exc)
+        return None
+
+    try:
+        _eng73mod._resolve_names = lambda name: (
+            [_objs73[name]] if name in _objs73 else [])
+
+        # An all-swallowing gate, which is the issue's own sequence.
+        _all73 = _Selection73("all")
+        _fault73 = _select73(_all73, "Box")
         check("  select over a gate is a fault, not a claim",
-              (_fault73 or "").startswith("FreeCAD would not select Box"),
-              True)
+              (_fault73 or "").startswith("FreeCAD did not take Box"), True)
         check("    and it names the antidote",
               "no_selection_filters" in (_fault73 or ""), True)
         check("    leaving no half-selection behind for the next command",
-              (_sel73.held, _sel73.cleared >= 2), ([], True))
-        _sel73.gate = False
-        _sh73._emit_select({"names": "Box", "_engine": None})
-        check("  with no gate it selects and says so",
-              _sel73.held, [("Box", "")])
+              (_all73.held, _all73.cleared >= 2), ({}, True))
+        check("    every swallowed name is named",
+              (_select73(_all73, "Box, Box001") or "")
+              .startswith("FreeCAD did not take Box, Box001"), True)
+
+        # A gate that takes subelements and refuses whole objects -- the
+        # four combinations the review isolated the predicate with.
+        def _under_edge_gate(line):
+            return _select73(_Selection73("whole"), line)
+
+        check("  a whole object named beside its own taken subelement "
+              "is still refused",
+              (_under_edge_gate("Box.Edge1, Box") or "")
+              .startswith("FreeCAD did not take Box"), True)
+        check("    as it is when the subelement is another object's",
+              (_under_edge_gate("Box001.Edge1, Box") or "")
+              .startswith("FreeCAD did not take Box"), True)
+        check("    and the other object is named when it is the refused one",
+              (_under_edge_gate("Box.Edge1, Box001") or "")
+              .startswith("FreeCAD did not take Box001"), True)
+        check("    while the subelement the gate allows is not a fault",
+              _under_edge_gate("Box.Edge1"), None)
+
+        # And no legitimate ungated line is refused.
+        for _line, _want in (("Box", {"Box": set()}),
+                             ("Box, Box001", {"Box": set(),
+                                              "Box001": set()}),
+                             ("Box.Edge1", {"Box": {"Edge1"}}),
+                             ("Box.Face6, Box001.Face1",
+                              {"Box": {"Face6"}, "Box001": {"Face1"}}),
+                             ("Box, Box.Edge1", {"Box": {"Edge1"}})):
+            _sel73 = _Selection73()
+            check(f"  ungated, `select {_line}` selects and says so",
+                  (_select73(_sel73, _line), _sel73.held), (None, _want))
+        _bare73 = _Selection73()
+        check("  ungated, bare select clears and claims nothing",
+              (_select73(_bare73, ""), _bare73.held, _bare73.cleared),
+              (None, {}, 1))
     finally:
         _sh73._gui, _eng73mod._resolve_names = _oldgui73, _oldresolve73
         App.closeDocument("gate73")

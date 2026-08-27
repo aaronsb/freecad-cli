@@ -907,6 +907,7 @@ def suite_hazards(dock):
     # select used to report success over the empty selection it made.
     doc = App.ActiveDocument or App.newDocument("gate")
     box = doc.addObject("Part::Box", "GateBox")
+    other = doc.addObject("Part::Box", "GateBox2")
     doc.recompute()
     dock.engine.submit("vertex_selection")
     QtWidgets.QApplication.processEvents()
@@ -923,8 +924,36 @@ def suite_hazards(dock):
     QtWidgets.QApplication.processEvents()
     check("with the gate lifted, select holds what it names",
           [o.Name for o in Gui.Selection.getSelection()], [box.Name])
+
+    # An edge filter takes a subelement and refuses the whole object, so
+    # a line naming both is where a subelement can vouch for its own
+    # parent. It must not: the parent was refused.
+    Gui.Selection.clearSelection()
+    dock.engine.submit("edge_selection")
+    QtWidgets.QApplication.processEvents()
+    try:
+        truthy("a subelement does not vouch for its own parent",
+               any(f"did not take {box.Name}" in text
+                   for text in _errors_from(
+                       dock, f"select {box.Name}.Edge1, {box.Name}")))
+        truthy("  the refused name is the one reported",
+               any(f"did not take {other.Name}" in text
+                   for text in _errors_from(
+                       dock, f"select {box.Name}.Edge1, {other.Name}")))
+        truthy("  and the subelement the filter allows is no fault",
+               not _errors_from(dock, f"select {box.Name}.Edge1"))
+    finally:
+        dock.engine.submit("no_selection_filters")
+        QtWidgets.QApplication.processEvents()
+    dock.engine.submit(f"select {box.Name}.Edge1, {other.Name}")
+    QtWidgets.QApplication.processEvents()
+    check("ungated, a subelement and another whole object both land",
+          sorted((e.ObjectName, tuple(e.SubElementNames))
+                 for e in Gui.Selection.getSelectionEx()),
+          [(box.Name, ("Edge1",)), (other.Name, ())])
     Gui.Selection.clearSelection()
     doc.removeObject(box.Name)
+    doc.removeObject(other.Name)
     doc.recompute()
 
 

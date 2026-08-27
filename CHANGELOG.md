@@ -42,9 +42,14 @@
   selection, and the command after it failed against itself: `select` the
   four lines of `closed_wire` then `upgrade`, exit 0 and nothing built,
   with `upgrade` taking the blame. `select` now reads the selection back
-  and a name FreeCAD did not take is a fault naming the gate and
-  `no_selection_filters`, which lifts it; a fault clears the selection, so
-  nothing half-selected is left for the next command. The gate itself is
+  and a name FreeCAD did not take is a fault that names it, with the gate
+  and `no_selection_filters` as the usual cause; a fault clears the
+  selection, so nothing half-selected is left for the next command. The
+  read-back asks FreeCAD's sub-lists rather than `isSelected`, which
+  answers "is anything under this object selected" and so let a subelement
+  vouch for a whole object the gate refused, and it asks after each name
+  rather than once at the end, because the end cannot separate a name a
+  gate refused from one FreeCAD replaced with a subelement of itself. The gate itself is
   left alone -- it is FreeCAD's state, set on purpose by a command
   somebody ran.
 
