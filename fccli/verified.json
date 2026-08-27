@@ -293,83 +293,68 @@
    "result": "ok"
   },
   "Draft_ShowSnapBar": {
-   "after": "Draft_SelectGroup",
    "date": "2026-08-26",
-   "detail": "error: show_snap_toolbar: is not available here",
    "example": "show_snap_toolbar",
    "freecad": "1.1.3",
    "mode": "positional",
-   "result": "broken"
+   "result": "ok"
   },
   "Draft_Snap_Angle": {
-   "after": "Draft_ShowSnapBar",
    "date": "2026-08-26",
-   "detail": "error: snap_angle: is not available here",
    "example": "snap_angle",
    "freecad": "1.1.3",
    "mode": "positional",
-   "result": "broken"
+   "result": "ok"
   },
   "Draft_Snap_Center": {
-   "after": "Draft_Snap_Angle",
    "date": "2026-08-26",
-   "detail": "error: snap_center: is not available here",
    "example": "snap_center",
    "freecad": "1.1.3",
    "mode": "positional",
-   "result": "broken"
+   "result": "ok"
   },
   "Draft_Snap_Dimensions": {
-   "after": "Draft_Snap_Center",
    "date": "2026-08-26",
-   "detail": "error: snap_dimensions: is not available here",
    "example": "snap_dimensions",
    "freecad": "1.1.3",
    "mode": "positional",
-   "result": "broken"
+   "result": "ok"
   },
   "Draft_Snap_Endpoint": {
-   "after": "Draft_Snap_Dimensions",
    "date": "2026-08-26",
-   "detail": "error: snap_endpoint: is not available here",
    "example": "snap_endpoint",
    "freecad": "1.1.3",
    "mode": "positional",
-   "result": "broken"
+   "result": "ok"
   },
   "Draft_Snap_Extension": {
-   "after": "Draft_Snap_Endpoint",
    "date": "2026-08-26",
-   "detail": "error: snap_extension: is not available here",
    "example": "snap_extension",
    "freecad": "1.1.3",
    "mode": "positional",
-   "result": "broken"
+   "result": "ok"
   },
   "Draft_Snap_Grid": {
-   "after": "Draft_Snap_Extension",
    "date": "2026-08-26",
-   "detail": "error: snap_grid: is not available here",
    "example": "snap_grid",
    "freecad": "1.1.3",
    "mode": "positional",
-   "result": "broken"
+   "result": "ok"
   },
   "Draft_Snap_Intersection": {
-   "after": "Draft_Snap_Grid",
    "date": "2026-08-26",
-   "detail": "error: snap_intersection: is not available here",
    "example": "snap_intersection",
    "freecad": "1.1.3",
    "mode": "positional",
-   "result": "broken"
+   "result": "ok"
   },
   "Draft_Snap_Lock": {
    "date": "2026-08-26",
+   "detail": "toggles the Draft snap Lock and saves it to the operator's parameters, which gates eight other commands' availability in the next sweep (GH #74)",
    "example": "snap_lock",
    "freecad": "1.1.3",
    "mode": "positional",
-   "result": "ok"
+   "result": "hazard"
   },
   "Draft_SubelementHighlight": {
    "date": "2026-08-26",
@@ -478,7 +463,7 @@
    "result": "broken"
   },
   "FEM_SolverCalculiXCcxTools": {
-   "after": null,
+   "after": "FEM_SolverCalculiX",
    "date": "2026-08-26",
    "detail": "error: solver_calculix_standard: is not available here",
    "example": "solver_calculix_standard",
