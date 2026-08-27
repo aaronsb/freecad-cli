@@ -5806,6 +5806,128 @@ def _run():
           (_eng71.state, len(_aborted71)), ("collecting", 1))
     _eng71.cancel()
 
+    print("\n5ao. a client that vanishes, a toggle with no button, a "
+          "selection that was not taken (GH #60, #61, #73, #67)")
+
+    # --- GH #60. The server outlives a client that leaves mid-command.
+    # A command that pumps the event loop runs the disconnect while the
+    # socket's own _read frame is still on the stack, and deleting it
+    # there left Qt a notifier armed on freed memory.
+    from fccli import server as _srv60
+
+    class _FakeSignal:
+        def __init__(self):
+            self.connected = True
+
+        def disconnect(self):
+            if not self.connected:
+                raise RuntimeError("not connected")
+            self.connected = False
+
+    class _FakeSock:
+        def __init__(self):
+            self.readyRead = _FakeSignal()
+            self.disconnected = _FakeSignal()
+            self.closed = False
+            self.deleted = 0
+            self.written = []
+
+        def close(self):
+            self.closed = True
+
+        def deleteLater(self):
+            self.deleted += 1
+
+        def write(self, data):
+            if self.deleted:
+                raise RuntimeError("write to a deleted socket")
+            self.written.append(data)
+
+        def flush(self):
+            pass
+
+    class _Floor60:
+        def __init__(self):
+            self.released = []
+            self.holder = None
+
+        def release(self, who):
+            self.released.append(who)
+
+    class _Session60:
+        def __init__(self):
+            self.floor = _Floor60()
+
+    def _server60():
+        server = _srv60.Server(None)
+        server.session = _Session60()
+        return server
+
+    _s60 = _server60()
+    _sock60 = _FakeSock()
+    _s60._clients[_sock60] = {"name": "client:1", "buffer": b"",
+                              "subscribed": True, "resume": "r1"}
+    _s60._drop(_sock60)
+    check("a dropped client is unhooked and closed before it is deleted",
+          (_sock60.readyRead.connected, _sock60.disconnected.connected,
+           _sock60.closed, _sock60.deleted),
+          (False, False, True, 1))
+    check("  and its floor is let go",
+          _s60.session.floor.released, ["client:1"])
+
+    # The crash shape: dropped from inside its own dispatch. The deletion
+    # waits for the read to unwind, so nothing frees the socket under Qt.
+    _s61 = _server60()
+    _sock61 = _FakeSock()
+    _s61._clients[_sock61] = {"name": "client:1", "buffer": b"",
+                              "subscribed": False, "resume": "r1"}
+    _s61._reading.add(_sock61)
+    _s61._drop(_sock61)
+    check("  dropped mid-read, it is silenced at once",
+          (_sock61.readyRead.connected, _sock61.closed), (False, True))
+    check("    and not deleted while the read is on the stack",
+          _sock61.deleted, 0)
+    _s61._reading.discard(_sock61)
+    _s61._bury()
+    check("    the deletion lands when the read unwinds", _sock61.deleted, 1)
+
+    # A pumped loop can be several reads deep, and the outer one may be
+    # the frame holding the socket being buried.
+    _s62 = _server60()
+    _sock62, _other62 = _FakeSock(), _FakeSock()
+    _s62._clients[_sock62] = {"name": "client:1", "buffer": b"",
+                              "subscribed": False, "resume": "r1"}
+    _s62._reading.update({_sock62, _other62})
+    _s62._drop(_sock62)
+    _s62._reading.discard(_other62)
+    _s62._bury()
+    check("    an inner read finishing does not bury the outer one's socket",
+          _sock62.deleted, 0)
+    _s62._reading.discard(_sock62)
+    _s62._bury()
+    check("      it is buried when the last read ends", _sock62.deleted, 1)
+
+    # And the reply is never written to a client that left mid-command.
+    _s63 = _server60()
+    _sock63 = _FakeSock()
+    _info63 = {"name": "client:1", "buffer": b"", "subscribed": False,
+               "resume": "r1"}
+    _s63._clients[_sock63] = _info63
+    _sock63.readAll = lambda: b'{"op": "ping"}\n'
+    _dispatched63 = []
+
+    def _dispatch63(info, request):
+        _dispatched63.append(request)
+        _s63._drop(_sock63)                 # the client leaves mid-command
+        return {"kind": "pong"}
+
+    _s63._dispatch = _dispatch63
+    _s63._read(_sock63)
+    check("  a reply is not written to a client that left mid-command",
+          (len(_dispatched63), _sock63.written), (1, []))
+    check("    and the socket it left behind is deleted once, cleanly",
+          _sock63.deleted, 1)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

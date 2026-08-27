@@ -429,11 +429,13 @@ terminal to ANSI. Neither hard-codes the other's palette.
 | 2 | usage |
 | 3 | no running instance, or it went away |
 | 4 | several instances, pass `--pid` |
-| 75 | busy — a dialog is open or someone holds the floor |
+| 75 | busy — a dialog is open, someone holds the floor, or the session did not answer inside the client's timeout |
 
 75 is `EX_TEMPFAIL`, deliberately far from 1, so `if ! fccli exec ...` does
-not read a busy session as a broken command. Nothing is written to stderr
-for a busy result, because nothing went wrong.
+not read a busy session as a broken command. A busy result writes nothing to
+stderr, because nothing went wrong. A session that stopped answering writes
+one line, because a caller that waited thirty seconds cannot otherwise tell
+what it waited for.
 
 ## Streams
 

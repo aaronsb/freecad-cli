@@ -40,6 +40,10 @@ import time
 EX_OK, EX_REJECTED, EX_USAGE, EX_NOINSTANCE, EX_AMBIGUOUS = 0, 1, 2, 3, 4
 EX_TEMPFAIL = 75
 
+# How long to wait on a session that is there but not talking. Named so
+# the message that reports the wait can name the same number.
+SOCKET_TIMEOUT = 30
+
 # xvfb-run sets DISPLAY. Qt6 on a Wayland session never reads it: the
 # platform plugin is chosen from XDG_SESSION_TYPE and WAYLAND_DISPLAY, and
 # the wayland plugin connects to the operator's compositor, so --headless
@@ -127,7 +131,7 @@ def _remove_stale(path):
 class Client:
     def __init__(self, path):
         self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        self.sock.settimeout(30)
+        self.sock.settimeout(SOCKET_TIMEOUT)
         self.sock.connect(path)
         self.buffer = b""
         self.hello = self.read()
@@ -945,6 +949,17 @@ def main():
     except ConnectionError as exc:
         print(f"fccli: {exc}", file=sys.stderr)
         return EX_NOINSTANCE
+    except TimeoutError:
+        # The session is there and has not answered inside the socket's
+        # own timeout. A command holding the event loop does this --
+        # `breakable_bar` holds it for thirty seconds against a thirty
+        # second read -- and the traceback that used to come out of here
+        # named a recv, which tells nobody what to do next (GH #60).
+        print(f"fccli: the session stopped answering after "
+              f"{SOCKET_TIMEOUT:g}s. It may be part-way through a command "
+              f"that holds the event loop; `fccli cancel` ends one.",
+              file=sys.stderr)
+        return EX_TEMPFAIL
     finally:
         client.close()
 

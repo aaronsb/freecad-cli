@@ -4,6 +4,23 @@
 
 ### Fixed
 
+- **The session outlives a client that vanishes mid-command (GH #60).** A
+  command that holds the event loop gives its client thirty seconds to
+  die in, and `breakable_bar` holds it for thirty-one. The client timed
+  out, the disconnect ran while that socket's own `_read` frame was still
+  on the stack, and `deleteLater` there left Qt a read notifier armed on
+  freed memory: FreeCAD went down in
+  `QAbstractSocketPrivate::canReadNotification` the next turn of the main
+  loop, taking the sweep that found it and the 72 commands after it. A
+  dropped socket is now unhooked and closed first, which is what disarms
+  the notifier, and its deletion waits until no dispatch is standing on
+  it; a reply is never written to a client that left. The client half is
+  the other end of the same minute: a raw `TimeoutError` traceback out of
+  `sys.exit(main())` is now one line naming the wait and `fccli cancel`,
+  exit 75. Falsified as an A/B against a live instance -- unguarded, the
+  session died in round one with that trace; guarded, six rounds and 360
+  vanishing clients later it was still answering.
+
 - **A count typed at a generated verb reaches the object (GH #78,
   ADR-203).** `linear_pattern 100 4` exited 0 and read back `Occurrences
   2`, FreeCAD's default. Every number the command line parses is a float
