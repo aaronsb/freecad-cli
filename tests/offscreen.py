@@ -5928,6 +5928,49 @@ def _run():
     check("    and the socket it left behind is deleted once, cleanly",
           _sock63.deleted, 1)
 
+    # The checks above hand `_reading` its contents, so they pin when
+    # `_bury` waits and prove nothing about anything ever reading. With
+    # `_read` not recording the frame at all, every one of them still
+    # passed -- and so did the socket suite's 360-client storm, because a
+    # race made likely is not a race made certain. This drives the real
+    # `_read`, drops the socket from inside its own dispatch, and asks
+    # where the burial is at each edge of the frame.
+    _s64 = _server60()
+    _sock64 = _FakeSock()
+    _s64._clients[_sock64] = {"name": "client:1", "buffer": b"",
+                              "subscribed": False, "resume": "r1"}
+    _sock64.readAll = lambda: b'{"op": "ping"}\n'
+    _during64 = {}
+
+    def _dispatch64(info, request):
+        _during64["armed"] = _sock64 in _s64._reading
+        _s64._drop(_sock64)                 # the disconnect a pumped loop runs
+        _during64["doomed"] = list(_s64._doomed)
+        _during64["deleted"] = _sock64.deleted
+        return {"kind": "pong"}
+
+    _s64._dispatch = _dispatch64
+    _serve64 = _s64._serve
+    _after64 = {}
+
+    def _watch64(sock, info):
+        _serve64(sock, info)
+        _after64["doomed"] = list(_s64._doomed)
+        _after64["deleted"] = sock.deleted
+
+    _s64._serve = _watch64
+    _s64._read(_sock64)
+    check("  a read records its own frame while it is on the stack",
+          _during64.get("armed"), True)
+    check("    so the drop inside it defers rather than deleting",
+          (_during64.get("doomed"), _during64.get("deleted")),
+          ([_sock64], 0))
+    check("    and is still deferred when the dispatch returns",
+          (_after64.get("doomed"), _after64.get("deleted")),
+          ([_sock64], 0))
+    check("      the finally is what buries it",
+          (_s64._doomed, _s64._reading, _sock64.deleted), ([], set(), 1))
+
     # --- GH #61. A checkable command with no QAction takes FreeCAD down
     # inside Gui::Command::_invoke; the command line refuses instead.
     from fccli import panels as _p61
