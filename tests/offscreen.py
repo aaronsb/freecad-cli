@@ -3016,6 +3016,36 @@ def _run():
     check("    --start-at drops everything before it",
           _verify.plan({"A_One": "a", "B_Two": "b"}, {}, start_at="B")[0],
           {"B_Two": "b"})
+    # GH #74. A command that writes the operator's parameters is skipped
+    # whatever the sweep is asked, --force included: --force answers for
+    # the instance, and this answers for a file that outlives it. The one
+    # in the list gates eight other commands' availability, so a sweep
+    # that ran it made the next sweep's reading of those eight false.
+    check("  a command that writes the operator's settings is planned out",
+          _verify.plan({"Draft_Snap_Lock": "snap_lock",
+                        "Part_Box": "box 1 1 1"}, {}),
+          ({"Part_Box": "box 1 1 1"},
+           {"Draft_Snap_Lock": _verify.WRITES_SETTINGS["Draft_Snap_Lock"]}))
+    check("    and --force does not plan it back in",
+          _verify.plan({"Draft_Snap_Lock": "snap_lock"}, {}, force=True),
+          ({}, {"Draft_Snap_Lock":
+                _verify.WRITES_SETTINGS["Draft_Snap_Lock"]}))
+    check("      unlike a hazard, which is what --force is for",
+          _verify.plan({"Std_ToggleToolBarLock": "lock_toolbars"}, {},
+                       force=True),
+          ({"Std_ToggleToolBarLock": "lock_toolbars"}, {}))
+    # The eight it gates are the sweep's own targets, so the skip is only
+    # worth anything if they are in the ledger together.
+    _gated74 = ["Draft_ShowSnapBar"] + [
+        f"Draft_Snap_{n}" for n in ("Angle", "Center", "Dimensions",
+                                    "Endpoint", "Extension", "Grid",
+                                    "Intersection")]
+    import json as _json74
+    _ledger74 = _json74.load(open(os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "fccli", "verified.json")))["commands"]
+    check("    every command that bit gates is one the sweep drives",
+          [c for c in _gated74 if c not in _ledger74], [])
     # GH #62: FreeCAD never holds a --log file; a bounded copier does. The
     # cap holds however much the instance spams, and the pipe is drained
     # to the end so the writer never blocks.
@@ -3634,6 +3664,15 @@ def _run():
     check("    one that will not close is not, and it was asked three times",
           (_verify.cleared(_cl_snap2, _cl_cancel2), _cl_log2["cancels"]),
           (False, 3))
+    # The shape that wedged a whole sweep: `cancel` takes the engine's own
+    # open command on the first call and the task panel only on the one
+    # after, so a single ask leaves the panel standing and answers
+    # "cancelled" while it does. Asking again is the whole of the cure.
+    _cl_run3, _cl_snap3, _cl_cancel3, _cl_log3 = _panel(
+        {}, [_S_OPEN, _S_IDLE])
+    check("    a panel the second ask closes is cleared, and asked twice",
+          (_verify.cleared(_cl_snap3, _cl_cancel3), _cl_log3["cancels"]),
+          (True, 2))
 
     # The whole step, on a scripted panel. The happy path first: the verb
     # opens it, the fields are read, the draft's pairs are set, done
@@ -6705,6 +6744,203 @@ def _run():
           _mod67.cap(("start", "--headless",
                       "--timeout", str(_mod67.BOOT_TIMEOUT)))
           > _mod67.BOOT_TIMEOUT, True)
+
+    print("\n5ap. a token past the last step names itself, and is "
+          "answered (GH #77)")
+    # A trailing token reaches no step: answering the last one runs the
+    # verb, so by the time the positional walk arrives the line is over.
+    # Two of the three populations that land there name their own target,
+    # and the pre-read ADR-204 built for a trailing assignment is where
+    # they are read.
+    _reg77 = _R78()
+    _made77 = []
+
+    def _keep77(values):
+        _made77.append(values)
+
+    def _flag77(engine):
+        """Naming a boolean is the whole of setting it, as in patches."""
+        engine.flags["Solid"] = True
+        return False
+
+    _reg77.add(_V78(
+        name="cyl77", transactional=False, emit=_keep77,
+        steps=[_St78("Radius", _Q78, "The radius"),
+               _St78("Height", _Q78, "The height",
+                     options=[_O78("Angle", "the sweep", None, sets=True,
+                                   takes=_St78("Angle", _Q78, "The angle",
+                                               unit="deg"))])]))
+    # A verb with no steps at all, which is the shape `delete` has: it
+    # reads the ambient selection and asks for nothing.
+    _reg77.add(_V78(name="standard77", steps=[], transactional=False,
+                    emit=_keep77))
+    _reg77.add(_V78(name="wipe77", steps=[], transactional=False,
+                    emit=_keep77))
+    # A boolean option: the keyword alone is the whole of setting it.
+    _reg77.add(_V78(
+        name="mark77", transactional=False, emit=_keep77,
+        steps=[_St78("Count", _Q78, "How many"),
+               _St78("Size", _Q78, "How big",
+                     options=[_O78("Solid", "make it solid", _flag77,
+                                   sets=True)])]))
+    # The same boolean, on the step the walk actually offers it at, over
+    # a step that takes arbitrary text -- so a verb name is legitimate
+    # input there and the count is what decides.
+    _reg77.add(_V78(
+        name="pick77", transactional=False, emit=_keep77,
+        steps=[_St78("Name", _T78, "What to call it",
+                     options=[_O78("Solid", "make it solid", _flag77,
+                                   sets=True)])]))
+    # An option that names no property -- `sets` left at its default, the
+    # shape screenshot's `Fit` and circle's `Diameter` have -- on a text
+    # step, then a second text step where a verb name is legitimate.
+    _reg77.add(_V78(
+        name="shot77", transactional=False, emit=_keep77,
+        steps=[_St78("Path", _T78, "Where to save it",
+                     options=[_O78("Fit", "zoom first", None)]),
+               _St78("Label", _T78, "What to call it")]))
+    # A raw step, asked for after a step that is not raw.
+    _reg77.add(_V78(
+        name="memo77", transactional=False, emit=_keep77,
+        steps=[_St78("Count", _Q78, "How many"),
+               _St78("Body", _T78, "The note", raw=True, prompt_order=30)]))
+    _reg77.add(_V78(
+        name="chain77", transactional=False, emit=_keep77,
+        steps=[_St78("Lengths", _Q78, "Each length", repeat=True)]))
+    _reg77.add(_V78(
+        name="two77", transactional=False, emit=_keep77,
+        steps=[_St78("Count", _Q78, "How many",
+                     options=[_O78("Angle", "", None, sets=True,
+                                   takes=_St78("Angle", _Q78, "", unit="deg")),
+                              _O78("Angular", "", None, sets=True,
+                                   takes=_St78("Angular", _Q78, ""))])]))
+    _bus77 = Bus()
+    _msg77 = []
+    _bus77.subscribe(lambda m: _msg77.append((m.kind, m.text, m.data)))
+    _eng77 = Engine(_bus77, _reg77)
+
+    def _line77(line, engine=None):
+        """One line from idle. Answers what it said and what it built."""
+        eng = engine if engine is not None else _eng77
+        eng.cancel()
+        _msg77.clear()
+        del _made77[:]
+        eng.submit(line)
+        return ([t for k, t, _ in _msg77 if k == ERROR],
+                [t for k, t, _ in _msg77 if k == RESULT])
+
+    # --- The first shape: a bare option keyword, in the one position
+    # where GH #81's refusal never fired.
+    check("a trailing option keyword is refused, not dropped",
+          _line77("cyl77 10 20 angle"),
+          (["Angle takes a value -- try angle=<number>"], []))
+    check("  and the line stops rather than running short (ADR-201)",
+          (_made77, _eng77.state), ([], "collecting"))
+    check("    which is the refusal the same keyword already got inline",
+          _line77("cyl77 10 angle 20"),
+          (["Angle takes a value -- try angle=<number>"], []))
+    check("  the assignment that keyword asks for still lands there",
+          _line77("cyl77 10 20 angle=45"),
+          ([], ["cyl77 angle=45.00\u00b0 10.00mm 20.00mm"]))
+    check("    with the value on the property, not True",
+          [round(float(v["Angle"]), 2) for v in _made77], [45.0])
+
+    # --- The second shape: a verb name. ADR-201 refuses one inside a
+    # line wherever it falls; until now it only reached the ones that
+    # landed on a step.
+    check("a trailing verb name is refused, and says there is no step for it",
+          _line77("cyl77 10 20 standard77"),
+          (["'standard77' is the command 'standard77', and a command does "
+            "not start inside a line -- it is past the last of cyl77's steps"], []))
+    check("  and nothing was built on the way past it",
+          (_made77, _eng77.state), ([], "collecting"))
+    # The destructive case the issue asked to look at first: a verb that
+    # asks for nothing takes every token as trailing, so `wipe77
+    # standard77` used to run on the ambient selection and say nothing.
+    check("a verb with no steps refuses one too, rather than running",
+          _line77("wipe77 standard77"),
+          (["'standard77' is the command 'standard77', and a command does "
+            "not start inside a line -- it is past the last of wipe77's steps"], []))
+    check("  while the same verb alone still runs",
+          (_line77("wipe77")[0], len(_made77)), ([], 1))
+    # The refusal left nothing to keep open -- there is no step to prompt
+    # for -- so the engine is idle, and the next line runs without a
+    # cancel first. `_line77` cancels before every line, which is why the
+    # check above could not see this.
+    _line77("wipe77 standard77")
+    check("  and with no step to hold, the refusal leaves the engine idle",
+          _eng77.state, "idle")
+    _msg77.clear()
+    del _made77[:]
+    _eng77.submit("wipe77")
+    check("    so the next line runs, with nothing to cancel first",
+          ([t for k, t, _ in _msg77 if k == ERROR], len(_made77)), ([], 1))
+
+    # --- The third shape stays as it was. A token that names nothing is
+    # a sweep of what the tree and the ledger send, not a branch here.
+    _said77, _ran77 = _line77("cyl77 10 20 nonsense")
+    check("a trailing token that names nothing is still dropped (GH #85)",
+          (_said77, _ran77, len(_made77)),
+          ([], ["cyl77 10.00mm 20.00mm"], 1))
+
+    # --- A boolean names itself the same way, and is applied rather than
+    # refused: it is an assignment with nothing to say after the name.
+    check("a trailing boolean keyword sets its flag instead of vanishing",
+          _line77("mark77 1 2 solid"), ([], ["mark77 solid 1.00mm 2.00mm"]))
+    check("  and the flag reaches the emitter",
+          [v["_flags"].get("Solid") for v in _made77], [True])
+
+    # --- The guard that keeps a landing token from being called
+    # trailing: an option keyword answers no step, so it costs none in
+    # the count either.
+    check("an option keyword on the line costs no step, so what follows "
+          "it is not trailing",
+          _line77("pick77 solid standard77"),
+          ([], ["pick77 solid standard77"]))
+    check("  the token after it landed on the step it was for",
+          [(v["Name"], v["_flags"].get("Solid")) for v in _made77],
+          [("standard77", True)])
+    # An option that sets no property answers no step either, so it costs
+    # none in the count -- `sets` is not what decides whether a keyword
+    # took a step.
+    check("an option that sets nothing costs no step either",
+          _line77("shot77 fit a.png wipe77"), ([], ["shot77 fit a.png wipe77"]))
+    check("  and the verb name reached the step that takes text",
+          [v["Label"] for v in _made77], ["wipe77"])
+    check("  and the same keyword past its step is named by that step, not as a verb",
+          _line77("shot77 a.png x fit"),
+          (["fit goes with Where to save it, and the line has already "
+            "answered that -- it belongs before that value"], []))
+
+    # --- Two shapes have no last token to be past.
+    check("a raw step takes the rest of the line, so none of it is trailing",
+          _line77("memo77 1 x standard77"),
+          ([], ["memo77 1.00mm x standard77"]))
+    check("  and the whole remainder reached the step",
+          [v["Body"] for v in _made77], ["x standard77"])
+    check("a repeating step has no last token, so the walk judges it",
+          _line77("chain77 1 2 standard77"),
+          (["'standard77' is the command 'standard77', and a command does "
+            "not start inside a line -- chain77 is still asking for "
+            "Each length"], []))
+
+    # --- An ambiguous name is the complaint the assignment door gives.
+    check("a trailing name that means two options asks for the full one",
+          _line77("two77 1 an"),
+          (["'an' names 2 of this command's options (Angle, Angular) -- "
+            "use the one you mean by its full name"], []))
+    check("  while the exact name is still unambiguous",
+          _line77("two77 1 angle"),
+          (["Angle takes a value -- try angle=<number>"], []))
+
+    # --- `check` reads the line the same way, so it reports the refusal
+    # rather than a command it would not run.
+    _dry77 = Engine(_bus77, _reg77, dry=True)
+    check("check refuses the trailing token too, before anything runs",
+          _line77("cyl77 10 20 angle", engine=_dry77),
+          (["Angle takes a value -- try angle=<number>"], []))
+    _dry77.cancel()
+    _eng77.cancel()
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
