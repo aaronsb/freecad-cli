@@ -6039,6 +6039,30 @@ def _run():
         _sh73._gui, _eng73mod._resolve_names = _oldgui73, _oldresolve73
         App.closeDocument("gate73")
 
+    # --- GH #67. A call that asks the client to wait needs a cap past
+    # the wait it asked for.
+    import importlib.machinery as _m67
+    import importlib.util as _u67
+    _l67 = _m67.SourceFileLoader(
+        "_fccli_socket_test",
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                     "tools", "run_socket_test.py"))
+    _mod67 = _u67.module_from_spec(_u67.spec_from_loader("_fccli_socket_test",
+                                                         _l67))
+    _l67.exec_module(_mod67)
+    check("the boot call's cap outlasts the timeout it passes",
+          _mod67.cap(("start", "--headless", "--timeout", "90")), 120)
+    check("  a short wait does not shrink the floor",
+          _mod67.cap(("exec", "box 1 1 1")), 60)
+    check("    --wait counts the same way",
+          _mod67.cap(("exec", "--wait", "45", "pad 5")), 75)
+    check("    a value that is not a number leaves the floor standing",
+          _mod67.cap(("start", "--timeout", "soon")), 60)
+    check("      and the boot call the suite makes is capped past its ask",
+          _mod67.cap(("start", "--headless",
+                      "--timeout", str(_mod67.BOOT_TIMEOUT)))
+          > _mod67.BOOT_TIMEOUT, True)
+
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
           kf.stats["usurped"] + kf.stats["passed"])

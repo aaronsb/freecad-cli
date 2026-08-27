@@ -39,9 +39,37 @@ def socket_dir():
     return os.path.join(root, "fccli")
 
 
+WAIT_FLAGS = ("--timeout", "--wait")
+CALL_TIMEOUT = 60
+CALL_SLACK = 30
+
+
+def cap(args, floor=CALL_TIMEOUT, slack=CALL_SLACK):
+    """How long to let one client call run.
+
+    A call that asks the client to wait N seconds needs a cap past N. The
+    boot call passes `--timeout 90` and a flat 60s cap killed it thirty
+    seconds before it could answer, so `make socket` failed on a machine
+    whose cold start ran long while the instance came up healthy a moment
+    later (GH #67).
+
+    Derived from the arguments rather than left to each caller to
+    remember, because the two numbers drifted apart exactly once nobody
+    was holding them together.
+    """
+    asked = 0.0
+    for flag, value in zip(args, args[1:]):
+        if flag in WAIT_FLAGS:
+            try:
+                asked = max(asked, float(value))
+            except (TypeError, ValueError):
+                pass
+    return max(floor, asked + slack)
+
+
 def fccli(*args, **kw):
     kw.setdefault("stdin", subprocess.DEVNULL)
-    kw.setdefault("timeout", 60)
+    kw.setdefault("timeout", cap(args))
     if "input" in kw:
         kw.pop("stdin")
     try:
@@ -189,16 +217,12 @@ def main():
         return 2
 
     print("launching FreeCAD through `fccli start`...")
-    # The subprocess cap has to outlast the boot timeout it is passing,
-    # or `start` is killed before it can wait as long as it was asked to.
-    # This was never reached honestly: the suite died on a TimeoutExpired
-    # while the instance came up in five seconds, because `--log` left a
-    # detached copier holding the pipe `capture_output` was reading. That
-    # is fixed in the client; this keeps the two numbers in agreement.
+    # No timeout of its own: `cap` reads the `--timeout` below and gives
+    # the call room past it. The two numbers used to be written out
+    # separately and drifted (GH #67).
     code, out, err = fccli("start", "--headless",
                            "--timeout", str(BOOT_TIMEOUT),
-                           "--log", "/tmp/fccli-socket-test.log",
-                           timeout=BOOT_TIMEOUT + 30)
+                           "--log", "/tmp/fccli-socket-test.log")
     check("start exits clean", code, 0)
     truthy("it reports the pid it started", "started FreeCAD, pid" in out)
     truthy("  and that no --pid is needed", "no --pid" in out)

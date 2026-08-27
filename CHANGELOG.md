@@ -48,6 +48,12 @@
   left alone -- it is FreeCAD's state, set on purpose by a command
   somebody ran.
 
+- **`make socket`'s boot call can use the timeout it asks for (GH #67).**
+  `BOOT_TIMEOUT = 90` under a flat 60s subprocess cap was killed thirty
+  seconds before it could answer. The cap is now derived from the call's
+  own `--timeout` or `--wait` rather than written out beside it, which is
+  what let the two numbers drift in the first place.
+
 - **A count typed at a generated verb reaches the object (GH #78,
   ADR-203).** `linear_pattern 100 4` exited 0 and read back `Occurrences
   2`, FreeCAD's default. Every number the command line parses is a float
