@@ -351,9 +351,10 @@ class CliDock(QtWidgets.QDockWidget):
             self._paint_focus_state()
             return
         else:
-            opts = msg.data.get("options") or []
-            tail = f" [{'/'.join(opts)}]" if opts else ""
-            self.console.set_prompt(f"{msg.text}{tail}: ")
+            # Composed by the step, not here: what a bracket means depends
+            # on which kind of option is in it, and three renderers each
+            # joining the names read the two as one (ADR-303).
+            self.console.set_prompt(f"{msg.text}{msg.data.get('hint', '')}: ")
             # prompt_sequence, not verb.steps: a panel verb finds what it
             # asks for by starting, so the declared list is empty and every
             # one of them read "step 1/0".

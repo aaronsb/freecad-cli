@@ -4,6 +4,46 @@
 
 ### Fixed
 
+- **A count typed at a generated verb reaches the object (GH #78,
+  ADR-203).** `linear_pattern 100 4` exited 0 and read back `Occurrences
+  2`, FreeCAD's default. Every number the command line parses is a float
+  and FreeCAD's integer setter refuses one outright, and `_emit_type`'s
+  bare `except Exception: pass` made the refusal indistinguishable from a
+  write that landed -- `additive_prism 6 10 20` looked like a pass because
+  six is `Polygon`'s own default. A step over a counting property now
+  carries no unit and is marked `integral`, so a bare number takes nothing
+  from the schema and a count works under Imperial as well as Standard; a
+  fraction is refused at the prompt rather than truncated at the write,
+  and the line stops there rather than running with the value missing; and
+  a property FreeCAD will not take is named as an error beside the result,
+  one refusal costing only itself. 86 scalar integer parameters across 49
+  types, and the 71 that are steps leave the D5 census cured rather than
+  counted (212 down to 141). What the swallow was also hiding: `offset 2`
+  now prints `Source: Type must be App.DocumentObject or None, not list`
+  above ADR-202's invalidity report, which is the first answer to the
+  question ADR-202 left open.
+
+- **A settable option no longer reads as part of what the step asks for
+  (GH #56, ADR-303).** After `cylinder 10` the prompt read `The height of
+  the cylinder [Angle]`, and `[...]` is also how a choice and a finish
+  token render -- so the cylinder's angular sweep read as a hint that
+  height is an angle. `Option` now says whether it names a property the
+  command will set, and `Step.prompt_hint()` renders the two apart: what
+  you may type instead of answering keeps the bracket, a property you may
+  also set is named after it. `The height of the cylinder  ·  also angle`.
+  The dock and both of the socket client's prompt lines call the one
+  composer rather than joining the names themselves.
+
+- **A panel step takes the `cancel` its own prompt advertises (GH #71,
+  ADR-303).** Every panel printed `name=value sets one · done applies ·
+  cancel abandons`, and `cancel` was read as a failed assignment while the
+  panel stayed up -- only Escape in the dock or the socket's cancel op got
+  out. The step now carries the option, which aborts the verb and lets
+  FreeCAD put the model back, and the refusal on a line that will not
+  parse names all three ways out rather than two. A field genuinely named
+  `cancel` stays addressable: an option is matched against the whole raw
+  line and every assignment has an `=` in it.
+
 - **A tier-1 typed verb shows its command's page (GH #38).** `man cylinder`
   printed NAME, SYNOPSIS, ARGUMENTS, GUI and SEE ALSO, and nothing between:
   the wiki body reached the tier-0 launcher, which `_make_room` had

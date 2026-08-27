@@ -30,6 +30,7 @@ _How a command runs — steps and getters, task panels, picking, modals, transac
 | [ADR-200](./engine/ADR-200-a-select-verb-sets-the-selection-commands-consume.md) | A select verb sets the selection commands consume | Accepted |
 | [ADR-201](./engine/ADR-201-a-submitted-line-is-one-command.md) | A submitted line is one command | Accepted |
 | [ADR-202](./engine/ADR-202-a-command-answers-for-the-object-it-left-invalid.md) | A command answers for the object it left invalid | Accepted |
+| [ADR-203](./engine/ADR-203-a-value-the-line-accepted-reaches-the-object-or-the-line-says-it-did-not.md) | A value the line accepted reaches the object, or the line says it did not | Accepted |
 
 ## Surface
 _How it is presented and reached — dock, prompt, colour, completion, message bus, socket, external shell, history_
@@ -39,6 +40,7 @@ _How it is presented and reached — dock, prompt, colour, completion, message b
 | [ADR-300](./surface/ADR-300-the-prompt-shows-where-the-session-is.md) | The prompt shows where the session is | Accepted |
 | [ADR-301](./surface/ADR-301-command-matching-is-substring-prefix-first.md) | Command matching is substring, prefix first | Accepted |
 | [ADR-302](./surface/ADR-302-the-socket-replays-the-session-from-a-message-ring.md) | The socket replays the session from a message ring | Accepted |
+| [ADR-303](./surface/ADR-303-the-prompt-line-names-only-what-the-step-will-take.md) | The prompt line names only what the step will take | Accepted |
 
 ## Practice
 _How the project is built and checked — test tiers, review, release, reconcile, records_

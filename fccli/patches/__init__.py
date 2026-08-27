@@ -209,7 +209,7 @@ class PatchSet:
             if param is None:
                 continue
             inline.append(Option(name, param.get("doc", "") or name,
-                                 _setter(name)))
+                                 _setter(name), sets=True))
         if inline and ordered:
             ordered[-1].options = list(ordered[-1].options) + inline
 
@@ -245,8 +245,8 @@ def _build_step(raw):
         default=raw.get("default"),
     )
     step.options = [
-        Option(o["name"], o.get("doc", ""), _flag(o["name"]))
-        if isinstance(o, dict) else Option(o, "", _flag(o))
+        Option(o["name"], o.get("doc", ""), _flag(o["name"]), sets=True)
+        if isinstance(o, dict) else Option(o, "", _flag(o), sets=True)
         for o in raw.get("options", [])
     ]
     return step

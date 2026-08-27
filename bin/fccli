@@ -275,8 +275,10 @@ def render(reply, args):
         print(paint(prefix, role, stream) + body, file=stream)
 
     if reply.get("engine") != "idle" and reply.get("prompt"):
-        options = reply.get("options") or []
-        tail = f" [{'/'.join(options)}]" if options else ""
+        # `hint` arrives composed. The step knows which of its options are
+        # alternatives to answering and which are properties it will also
+        # set, and this side does not (ADR-303).
+        tail = reply.get("hint") or ""
         print(paint(f"incomplete: still wants {reply['prompt']}{tail}",
                     "warn", sys.stderr), file=sys.stderr)
         return EX_REJECTED
@@ -509,9 +511,7 @@ def _prompt_for(state):
             cwd = state.get("cwd") or "/"
             segment = "" if cwd == "/" else cwd
         return f"{segment} > " if segment else "> "
-    options = state.get("options") or []
-    tail = f" [{'/'.join(options)}]" if options else ""
-    return f"{state['prompt']}{tail}: "
+    return f"{state['prompt']}{state.get('hint') or ''}: "
 
 
 def _install_completer(client, readline, args):

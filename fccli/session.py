@@ -338,6 +338,10 @@ class Session:
             "step": step.id if step else None,
             "prompt": step.prompt if step else None,
             "options": step.option_names() if step else [],
+            # What a renderer puts after the prompt. Not the options run
+            # together: a settable property and an alternative to
+            # answering read differently (ADR-303).
+            "hint": step.prompt_hint() if step else "",
             "floor": self.floor.state(),
             "scope": self.scope,
             "cwd": self.cwd,

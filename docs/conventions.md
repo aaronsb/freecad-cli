@@ -468,12 +468,36 @@ honoured everywhere.
 | `optional` | bare Enter skips it |
 | `default` | what it takes when skipped |
 | `repeat`, `min_count` | takes values until Enter, at least this many |
-| `unit` | how a quantity is echoed and what a bare number means |
+| `unit` | how a quantity is echoed and what a bare number means; empty for a count |
+| `integral` | the value is a count: a fraction is refused, not rounded (ADR-203) |
 | `choices` | a closed set, offered on Tab |
 | `options` | inline keywords accepted alongside the value |
 | `completes` | where else candidates come from: `verbs`, `objects`, `aliases`, `schemas`, `domains` |
 | `raw` | take the rest of the line verbatim, not one token |
 | `prompt_order` | where it sits when asked for; points default last |
+
+### Option
+
+| | |
+|---|---|
+| `name`, `doc` | the keyword, and what it does |
+| `action` | run when it is typed; returning True finishes the verb |
+| `record` | put it in the replay line (default true) |
+| `sets` | it names a property the command will set, rather than a way to answer or finish the step (ADR-303) |
+
+`sets` is what the prompt line reads. A step renders what you may type
+**instead of** answering in a bracket beside the thing it replaces, and a
+property the command will **also** set after it:
+
+```
+Next point [Close/Undo]:
+The height of the cylinder  ·  also angle:
+name=value [done/cancel]:
+```
+
+One composer, `Step.prompt_hint()`, and the dock and the socket client
+both call it. `options` on the wire stays the whole pool, because that is
+what completion offers.
 
 ## The verbs written by hand
 

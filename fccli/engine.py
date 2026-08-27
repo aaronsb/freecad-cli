@@ -13,7 +13,8 @@ from typing import Any, Dict, List, Optional
 from . import bus as _bus
 from . import modals
 from .grammar import (CHOICE, PATH, POINT, QUANTITY, SELECTION, TEXT,
-                      Registry, Step, Verb, match_choice, order_of)
+                      Registry, Step, Verb, match_choice, order_of,
+                      whole_number)
 from .parsing import format_point, format_quantity, parse_point, parse_quantity
 
 IDLE = "idle"
@@ -393,7 +394,18 @@ class Engine:
                               f"{pending.prompt}")
                 self._announce(adopt=False)
                 return
-            self._feed_text(token, step=wanted)
+            if not self._feed_text(token, step=wanted):
+                # A token the line refused stops the line, for the reason
+                # a verb name mid-line does (ADR-201): what follows was
+                # answers to a command that is not going to run as typed.
+                # Without this the walk read on, `_only_optional_left`
+                # found nothing required outstanding, and the command ran
+                # with the refused value simply missing -- `pattern 100
+                # 4.5` reported the fraction and then built a pattern of
+                # two, which is the default and not what anybody asked
+                # for.
+                self._announce(adopt=False)
+                return
         if (self.state == COLLECTING and self.steps is not None
                 and self.values):
             # A line that named its parameters is a whole command, the way
@@ -437,64 +449,89 @@ class Engine:
         match = next((s for s in remaining if s.kind == wanted), None)
         return match or head
 
-    def _feed_text(self, text: str, step=None) -> None:
-        # A value goes to the step whose kind it matches, whether it arrived
-        # inline or at a prompt. Typing a coordinate while a length is being
-        # asked for fills the coordinate: the command line can see which is
-        # which, so it should not make the caller keep track.
-        #
-        # This is the prompt door: somebody answered the step in front of
-        # them, and a verb name that will not parse here abandons the open
-        # command and starts that verb. The other door is the rest of a
-        # submitted line, which `_start` walks itself and where the same
-        # token is an error rather than a new command (ADR-201).
+    def _feed_text(self, text: str, step=None) -> bool:
+        """Read one answer. False when it was refused and nothing landed.
+
+        A value goes to the step whose kind it matches, whether it arrived
+        inline or at a prompt. Typing a coordinate while a length is being
+        asked for fills the coordinate: the command line can see which is
+        which, so it should not make the caller keep track.
+
+        This is the prompt door: somebody answered the step in front of
+        them, and a verb name that will not parse here abandons the open
+        command and starts that verb. The other door is the rest of a
+        submitted line, which `_start` walks itself and where the same
+        token is an error rather than a new command (ADR-201). That walk
+        is why the answer comes back: a token this refused has already
+        said so, and reading on past it runs a command the line was told
+        to stop.
+        """
         step = step if step is not None else self._step_for_token(text)
         if step is None:
-            return
+            return False
         other = self._verb_at_step(text, step)
         if other is not None:
             self._restart(text)
-            return
+            return True
         for opt in step.options:
             if opt.name.lower().startswith(text.lower()):
                 if opt.record:
                     self.replay.append(opt.name.lower())
                 done = opt.action(self) if opt.action else False
+                if self.state == IDLE:
+                    # The option ended the command itself rather than
+                    # answering the step -- `cancel` at a panel step
+                    # (GH #71). It has already aborted the verb, said so
+                    # and re-prompted; echoing a replay line the reset just
+                    # emptied and announcing a second time would undo that.
+                    return True
                 self._emit_live()
                 if done:
                     self._finish()
                 else:
                     self._announce()
-                return
+                return True
 
         if step.kind == POINT:
             res = parse_point(text, self.last_point())
             if not res.ok:
                 self.bus.emit(_bus.ERROR, res.error)
-                return
-            self._accept(step, res.value, format_point(res.value))
+                return False
+            return self._accept(step, res.value, format_point(res.value))
         elif step.kind == QUANTITY:
             res = parse_quantity(text, unit_hint=step.unit)
             if not res.ok:
                 self.bus.emit(_bus.ERROR, res.error)
-                return
-            self._accept(step, res.value, format_quantity(res.value, step.unit))
+                return False
+            value = res.value
+            if step.integral:
+                # A count reaches FreeCAD as an int or not at all, and half
+                # an instance is a typo rather than a rounding question, so
+                # it is refused here -- before an object exists to carry the
+                # wrong number (GH #78, ADR-203).
+                whole = whole_number(value)
+                if whole is None:
+                    self.bus.emit(_bus.ERROR,
+                                  f"{step.id} counts -- {text} is not a "
+                                  f"whole number")
+                    return False
+                value = whole
+            return self._accept(step, value, format_quantity(value, step.unit))
         elif step.kind == SELECTION:
             found = _resolve_names(text)
             if not found:
                 self.bus.emit(_bus.ERROR, f"no object called {text!r}")
-                return
-            self._accept(step, found, _selection_text(found))
+                return False
+            return self._accept(step, found, _selection_text(found))
         elif step.kind in (TEXT, PATH):
-            self._accept(step, text, text)
+            return self._accept(step, text, text)
         elif step.kind == CHOICE:
             hits = match_choice(step.choices, text)
             if len(hits) != 1:
                 self.bus.emit(_bus.ERROR, f"expected one of {step.choices}")
-                return
-            self._accept(step, hits[0], hits[0])
-        else:
-            self._accept(step, text, text)
+                return False
+            return self._accept(step, hits[0], hits[0])
+        return self._accept(step, text, text)
 
     def _verb_at_step(self, text: str, step: Step) -> Optional[str]:
         """The verb a token names, when it is no answer to the open step.
@@ -544,7 +581,14 @@ class Engine:
         self._start(text)
 
     def _accept(self, step: Step, value, typed: str, picked: bool = False
-                ) -> None:
+                ) -> bool:
+        """Record an answer. False when the step took it back.
+
+        A step that writes as it is answered -- a panel field -- can
+        refuse after the fact, and that refusal has to reach the walk in
+        `_start` as one: a line whose second pair was rejected is not a
+        line to read the third pair of.
+        """
         if picked:
             self.picked.append(len(self.replay))
         if step.repeat:
@@ -576,12 +620,13 @@ class Engine:
                 self.bus.emit(_bus.ERROR, complaint)
                 self._emit_live()
                 self._announce()
-                return
+                return False
         self._emit_live()
         if not self.pending():
             self._finish()
         else:
             self._announce()
+        return True
 
     def _terminate_step(self) -> None:
         """Bare Enter: advance past a repeating step, or run the verb."""
@@ -777,7 +822,8 @@ class Engine:
         """
         step = self.current_step()
         if step is None:
-            self.bus.emit(_bus.PROMPT, "", step_kind=None, options=[], idle=True)
+            self.bus.emit(_bus.PROMPT, "", step_kind=None, options=[],
+                          hint="", idle=True)
             self._stop_picking()
             return
         if step.kind == SELECTION and adopt:
@@ -787,8 +833,12 @@ class Engine:
             if picked:
                 self._accept(step, picked, _selection_text(picked))
                 return
+        # `options` is the pool completion offers; `hint` is what a
+        # renderer puts after the prompt, which is not the same list run
+        # together (ADR-303).
         self.bus.emit(_bus.PROMPT, step.prompt, step_kind=step.kind,
-                      options=step.option_names(), idle=False)
+                      options=step.option_names(), hint=step.prompt_hint(),
+                      idle=False)
         if step.kind == POINT and self.picker:
             self.picker.start(self.feed_point, last=self.last_point())
         else:

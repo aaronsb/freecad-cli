@@ -8,6 +8,7 @@ declarative rather than hand-coded is what lets the same definition serve
 all three.
 """
 
+import math
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional
 
@@ -33,6 +34,12 @@ class Option:
     # already complete, and `done` recorded into it was read back as part
     # of the last value.
     record: bool = True
+    # Whether this option names a property the command will set, rather
+    # than a way to answer or finish the step in front of it. The two read
+    # differently on the prompt line, and gluing both into one bracket
+    # made `The height of the cylinder [Angle]` say that height is an
+    # angle (GH #56). See Step.prompt_hint.
+    sets: bool = False
 
 
 @dataclass
@@ -66,9 +73,61 @@ class Step:
     # at once at the end -- which is what a panel does for a mouse, and
     # what makes cancelling it mean something. Returns a complaint, or None.
     on_accept: Optional[Callable[[Any, "Step", Any, Any], Optional[str]]] = None
+    # Whether this step's value is a count rather than a measurement. The
+    # property behind it takes an int and refuses a float, so a fraction
+    # typed here is refused at the prompt rather than rounded at the write
+    # (GH #78, ADR-203).
+    integral: bool = False
 
     def option_names(self) -> List[str]:
         return [o.name for o in self.options]
+
+    def prompt_hint(self) -> str:
+        """What follows this step's own prompt on the prompt line.
+
+        Two populations shared one bracket, and read as one. What you may
+        type *instead of* answering keeps it -- `[Close/Undo]` at a
+        polyline's next point are alternatives to a point, and belong
+        beside the thing they replace. A property the command will also
+        set is not an alternative to anything, and glued into the same
+        bracket it read as a hint about the value being asked for:
+        `The height of the cylinder [Angle]` (GH #56, ADR-303).
+
+        The renderers all call this rather than joining the names
+        themselves. There were three of them -- the dock, the socket
+        client's prompt, and its `still wants` line -- and one prompt.
+        """
+        instead = [o.name for o in self.options if not o.sets]
+        also = [o.name.lower() for o in self.options if o.sets]
+        line = f" [{'/'.join(instead)}]" if instead else ""
+        if also:
+            line += "  ·  also " + ", ".join(also)
+        return line
+
+
+def whole_number(value) -> Optional[int]:
+    """The integer a value stands for, or None when it stands for no integer.
+
+    Everything this program parses is a float -- `parse_quantity` hands
+    back `Quantity.Value` -- and FreeCAD's integer properties take an int
+    and refuse a float outright, whatever the float holds: `Occurrences =
+    4.0` raises where `Occurrences = 4` lands (GH #78). So the two have to
+    be told apart, and in one place: the engine refuses a fraction at the
+    prompt and the factory coerces at the write, and they have to agree on
+    what a whole number is.
+
+    Tolerant, because a quantity that arrives through a unit conversion
+    lands a few ulps off the number that was typed -- 4in in millimetres
+    and back is not exactly 4.
+    """
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    nearest = round(number)
+    if math.isclose(number, nearest, rel_tol=1e-9, abs_tol=1e-9):
+        return int(nearest)
+    return None
 
 
 def match_choice(choices, text) -> List[str]:

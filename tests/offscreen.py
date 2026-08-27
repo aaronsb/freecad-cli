@@ -39,7 +39,7 @@ os.environ["XDG_DATA_HOME"] = os.path.join(_XDG, "data")
 import FreeCAD as App  # noqa: E402
 from PySide6 import QtCore, QtGui, QtWidgets  # noqa: E402
 
-from fccli.bus import Bus, ERROR, LIVE, RESULT  # noqa: E402
+from fccli.bus import Bus, ERROR, INFO, LIVE, PROMPT, RESULT  # noqa: E402
 from fccli.engine import Engine  # noqa: E402
 from fccli.completion import candidates as _complete  # noqa: E402
 from fccli import __version__ as _fccli_version  # noqa: E402
@@ -2499,6 +2499,13 @@ def _run():
     # are the FloatConstraint (87 -> 47); Occurrences2 the
     # IntegerConstraint (19 -> 18). The rule finds fewer steps because
     # fewer unitless properties are steps, which is the point of it.
+    #
+    # 141, down from 212: the GH #78 round gives an integer step no unit
+    # at all, so the two integer types leave the census cured rather than
+    # counted -- 53 + 18. They stay in DIMENSIONLESS, which is the rule's
+    # reading of the property and not of the step, so a factory that
+    # defaulted them back to millimetres would be counted again. What is
+    # left is the float half, and it is #47's D5 to finish.
     _census = {}
     for _line in _live_d5.reports:
         _m = _re.match(r"units: (\d+) steps over (\S+) echo in mm", _line)
@@ -2507,11 +2514,17 @@ def _run():
     check("  every dimensionless property type is counted, by name",
           (_census, sum(_census.values())),
           ({"App::PropertyFloat": 80, "App::PropertyFloatConstraint": 47,
-            "App::PropertyInteger": 53, "App::PropertyIntegerConstraint": 18,
-            "App::PropertyPrecision": 14}, 212))
+            "App::PropertyPrecision": 14}, 141))
     check("    and the one with no instances is in the set, uncounted",
           ("App::PropertyPercent" in _ixn.DIMENSIONLESS,
            "App::PropertyPercent" in _census), (True, False))
+    check("    the integer types are in the set and cured, not counted",
+          ({_p for _p in _ixn.DIMENSIONLESS if "Integer" in _p} <=
+           set(_ixn.DIMENSIONLESS),
+           [_p for _p in _census if "Integer" in _p]), (True, []))
+    check("    and no step echoes in a unit parse_quantity cannot read back",
+          [_l for _l in _live_d5.problems if "which the harvest cannot "
+           "produce" in _l], [])
 
     # --- the blind tier reads aliases as well as names. `register_all`
     # refuses a generated verb on a taken alias exactly as it does on a
@@ -5539,6 +5552,259 @@ def _run():
           ([], _doc57.Name))
     App.closeDocument(_other57.Name)
     App.closeDocument(_doc57.Name)
+
+    print("\n5an. a count reaches the object, and the prompt says only what "
+          "the step takes (GH #78, #56, #71)")
+    from fccli.grammar import (Option as _O78, Step as _St78, Verb as _V78,
+                               Registry as _R78, QUANTITY as _Q78,
+                               TEXT as _T78, whole_number as _whole)
+    from fccli import factory as _f78, panels as _p78, properties as _pr78
+    from fccli import units as _u78
+
+    # --- GH #78, the reading. Every number this program parses is a float
+    # and FreeCAD's integer setter refuses one, so the two are told apart
+    # in one place and both callers ask it.
+    check("a whole number is the integer it stands for",
+          [_whole(v) for v in (4, 4.0, -3.0, 0.0, 1e-12)],
+          [4, 4, -3, 0, 0])
+    check("  and a fraction stands for no integer",
+          [_whole(v) for v in (4.5, 0.1, -2.25, "no", None)],
+          [None, None, None, None, None])
+    check("  a conversion's last few ulps are still whole",
+          _whole(float(4 * 25.4) / 25.4), 4)
+    check("the counting property types are the scalar ones",
+          (_pr78.counts("App::PropertyInteger"),
+           _pr78.counts("App::PropertyIntegerConstraint"),
+           _pr78.counts("App::PropertyIntegerList"),
+           _pr78.counts("App::PropertyLength")),
+          (True, True, False, False))
+
+    # --- GH #78, the step. A count is in nothing, so a bare number takes
+    # no unit from the schema, and a fraction is refused before an object
+    # exists to carry the wrong number.
+    _int_param = {"name": "Occurrences", "kind": "quantity",
+                  "doc": "How many", "property_type": "App::PropertyInteger"}
+    _len_param = {"name": "Length", "kind": "quantity", "doc": "How long",
+                  "property_type": "App::PropertyLength", "unit": "mm"}
+    _int_step = _f78._step_from_param(_int_param)
+    check("a step over an integer property counts and is in nothing",
+          (_int_step.integral, _int_step.unit), (True, ""))
+    check("  and one over a length is unchanged",
+          (_f78._step_from_param(_len_param).integral,
+           _f78._step_from_param(_len_param).unit), (False, "mm"))
+
+    _reg78 = _R78()
+    _made78 = {}
+    _reg78.add(_V78(name="pattern", transactional=False,
+                    steps=[_f78._step_from_param(_len_param),
+                           _f78._step_from_param(_int_param)],
+                    emit=lambda v: _made78.update(v) or None))
+    _bus78 = Bus()
+    _msg78 = []
+    _bus78.subscribe(lambda m: _msg78.append((m.kind, m.text)))
+    _eng78 = Engine(_bus78, _reg78)
+    _eng78.submit("pattern 100 4")
+    check("a count typed at the step arrives as an int, not a float",
+          (_made78.get("Occurrences"), type(_made78.get("Occurrences")).__name__),
+          (4, "int"))
+    check("  and echoes back without a unit, so the line replays",
+          [t for k, t in _msg78 if k == RESULT], ["pattern 100.00mm 4"])
+    _msg78.clear()
+    _made78.clear()
+    _eng78.submit("pattern 100 4.5")
+    check("  a fraction at a count is refused at the prompt",
+          ([t for k, t in _msg78 if k == ERROR], _eng78.state, _made78),
+          (["Occurrences counts -- 4.5 is not a whole number"],
+           "collecting", {}))
+    # And the line stops there rather than running without it. Every step
+    # the factory generates is optional, so `_only_optional_left` found
+    # nothing outstanding and ran the command with the refused count
+    # simply absent -- the fraction reported and a pattern of two built.
+    check("    and the line it was on stops rather than running short",
+          ([t for k, t in _msg78 if k == RESULT],
+           getattr(_eng78.current_step(), "id", None)), ([], "Occurrences"))
+    _eng78.cancel()
+    # And it is refused because the *step* counts, not because 4.5 is odd:
+    # the same value at the length lands.
+    _msg78.clear()
+    _made78.clear()
+    _eng78.submit("pattern 4.5 4")
+    check("    while the same fraction at a measurement lands",
+          ([t for k, t in _msg78 if k == ERROR], _made78.get("Length")),
+          ([], 4.5))
+
+    # The schema is what made the unit matter. `parse_quantity` appends the
+    # preferred length to a bare number, so under ImperialBuilding a typed
+    # 4 was 4in -- 101.6 -- and no rounding could turn that back into four
+    # instances.
+    _was78 = _u78.current_name()
+    _u78.set_schema("ImperialBuilding")
+    try:
+        _made78.clear()
+        _eng78.submit("pattern 100 4")
+        check("  a count is a count under a schema that is not millimetres",
+              (_made78.get("Occurrences"), _u78.preferred("length")), (4, "in"))
+        # The fault, put back: the factory's mm default over a count.
+        _old_counts = _f78.counts
+        try:
+            _f78.counts = lambda ptype: False
+            _mm_step = _f78._step_from_param(_int_param)
+            _reg78.add(_V78(name="unpatterned", transactional=False,
+                            steps=[_f78._step_from_param(_len_param), _mm_step],
+                            emit=lambda v: _made78.update(v) or None))
+            _made78.clear()
+            _msg78.clear()
+            _eng78.submit("unpatterned 100 4")
+            check("    and the mm default put back makes four into 101.6",
+                  (_mm_step.unit, _made78.get("Occurrences")), ("mm", 101.6))
+        finally:
+            _f78.counts = _old_counts
+    finally:
+        _u78.set_schema(_was78)
+
+    # --- GH #78, the write. The swallow made a property FreeCAD refused
+    # indistinguishable from one it took.
+    _doc78 = App.newDocument("counts78")
+    _emit78 = _f78._emit_type(
+        "PartDesign::LinearPattern",
+        [{"name": "Occurrences", "kind": "quantity",
+          "property_type": "App::PropertyInteger"},
+         {"name": "Length", "kind": "quantity",
+          "property_type": "App::PropertyLength", "unit": "mm"}])
+    _msg78.clear()
+    _obj78 = _emit78({"Occurrences": 4.0, "Length": 100.0,
+                      "_flags": {}, "_engine": _eng78})
+    check("the write coerces a whole float onto an integer property",
+          (_obj78.Occurrences, [t for k, t in _msg78 if k == ERROR]), (4, []))
+    _bad78 = _f78._emit_type(
+        "Part::Cylinder",
+        [{"name": "Radius", "kind": "quantity",
+          "property_type": "App::PropertyLength", "unit": "mm"},
+         {"name": "NoSuchProperty", "kind": "quantity",
+          "property_type": "App::PropertyLength", "unit": "mm"}])
+    _msg78.clear()
+    _cyl78 = _bad78({"Radius": 7.0, "NoSuchProperty": 3.0,
+                     "_flags": {}, "_engine": _eng78})
+    _said78 = [t for k, t in _msg78 if k == ERROR]
+    check("  a write FreeCAD refuses is said out loud, not swallowed",
+          (len(_said78), ["NoSuchProperty" in t for t in _said78]),
+          (1, [True]))
+    check("    and costs only itself -- the rest of the line landed",
+          (float(_cyl78.Radius),
+           ["the rest of the line landed" in t for t in _said78]),
+          (7.0, [True]))
+    _msg78.clear()
+    _frac78 = _emit78({"Occurrences": 4.5, "Length": 100.0,
+                       "_flags": {}, "_engine": _eng78})
+    check("  a fraction that reached the write is refused, never truncated",
+          (_frac78.Occurrences, [t for k, t in _msg78 if k == ERROR]),
+          (2, [f"{_frac78.Name}: Occurrences counts, and 4.5 is not a whole "
+               "number -- the rest of the line landed"]))
+    # The fault, put back: the bare `except Exception: pass`.
+    _old_report = _f78._report_refused
+    try:
+        _f78._report_refused = lambda engine, obj, refused: None
+        _quiet78 = _f78._emit_type(
+            "Part::Cylinder",
+            [{"name": "NoSuchProperty", "kind": "quantity",
+              "property_type": "App::PropertyLength", "unit": "mm"}])
+        _msg78.clear()
+        _quiet78({"NoSuchProperty": 3.0, "_flags": {}, "_engine": _eng78})
+        check("    and the swallow put back says nothing at all",
+              [t for k, t in _msg78 if k == ERROR], [])
+    finally:
+        _f78._report_refused = _old_report
+    App.closeDocument(_doc78.Name)
+
+    # --- GH #56. One bracket held two meanings, and on a height step the
+    # settable one read as a hint about the height.
+    _hint_step = _St78("Height", _Q78, "The height of the cylinder")
+    check("a step with nothing on it renders no tail",
+          _hint_step.prompt_hint(), "")
+    _hint_step.options = [_O78("Angle", "the sweep", None, sets=True)]
+    check("a property the command will also set is named after the prompt",
+          _hint_step.prompt_hint(), "  ·  also angle")
+    _hint_step.options = [_O78("Close", "close the wire", None),
+                          _O78("Undo", "drop the last point", None)]
+    check("  what you may type instead of answering keeps the bracket",
+          _hint_step.prompt_hint(), " [Close/Undo]")
+    _hint_step.options = [_O78("Close", "", None),
+                          _O78("Angle", "", None, sets=True),
+                          _O78("Growth", "", None, sets=True)]
+    check("  and a step with both keeps them apart",
+          _hint_step.prompt_hint(), " [Close]  ·  also angle, growth")
+    check("    while `options` stays the whole pool, for completion",
+          _hint_step.option_names(), ["Close", "Angle", "Growth"])
+    # The verb the issue was found on, through the real tree.
+    _cyl_verb = REGISTRY.get("cylinder")
+    _cyl_height = [s for s in _cyl_verb.steps if s.id == "Height"][0]
+    check("the cylinder's height no longer reads as an angle",
+          f"{_cyl_height.prompt}{_cyl_height.prompt_hint()}: ",
+          "The height of the cylinder  ·  also angle: ")
+
+    # Both renderers read the composed hint rather than joining the names,
+    # so the dock and the socket cannot drift apart.
+    _hint_seen = []
+    _bus56 = Bus()
+    _bus56.subscribe(lambda m: _hint_seen.append(m.data.get("hint"))
+                     if m.kind == PROMPT else None)
+    _reg56 = _R78()
+    _step56 = _St78("Height", _Q78, "The height of the cylinder",
+                    options=[_O78("Angle", "the sweep", None, sets=True)])
+    _reg56.add(_V78(name="cyl56", steps=[_step56], transactional=False,
+                    emit=lambda v: None))
+    Engine(_bus56, _reg56).submit("cyl56")
+    check("  the prompt message carries it composed",
+          _hint_seen, ["  ·  also angle"])
+
+    # --- GH #71. The panel's own instruction line named a word the step
+    # would not take: `cancel` was read as a failed assignment and the
+    # panel stayed up.
+    _panel_step = _p78.steps_from([])[0]
+    check("a panel step offers both words its instruction line names",
+          _panel_step.option_names(), ["done", "cancel"])
+    check("  and every word in either sentence is one of them",
+          sorted({w for w in ("done", "cancel")
+                  if w in _p78.OFFER and w in _p78.WAYS_OUT}),
+          ["cancel", "done"])
+    check("  the refusal names the way out rather than half of it",
+          _p78._assign(None, _panel_step, "justaword"),
+          "'justaword' is not an assignment -- name=value, `done` to apply, "
+          "or `cancel` to abandon")
+
+    _bus71 = Bus()
+    _msg71 = []
+    _bus71.subscribe(lambda m: _msg71.append((m.kind, m.text, m.data)))
+    _reg71 = _R78()
+    _aborted71 = []
+    _reg71.add(_V78(name="fillet71", steps=[], transactional=False,
+                    open=lambda e: (e.flags.__setitem__("panel", True)
+                                    or _p78.steps_from([])),
+                    abort=lambda e: _aborted71.append(True),
+                    emit=lambda v: _aborted71.append("committed")))
+    _eng71 = Engine(_bus71, _reg71)
+    _eng71.submit("fillet71")
+    check("the panel step is what the engine is asking for",
+          (_eng71.state, _eng71.current_step().id), ("collecting", "set"))
+    _msg71.clear()
+    _eng71.submit("cancel")
+    check("  a typed `cancel` abandons the panel, as the line promised",
+          (_eng71.state, _aborted71, [t for k, t, _ in _msg71 if k == ERROR]),
+          ("idle", [True], []))
+    check("    and says so once, not twice",
+          ([t for k, t, _ in _msg71 if k == INFO],
+           len([d for k, _, d in _msg71 if k == PROMPT])),
+          (["fillet71 cancelled"], 1))
+    check("    with nothing recorded to replay",
+          [d.get("replay") for k, _, d in _msg71 if k == RESULT], [])
+    # A field genuinely named `cancel` is still reachable: an option is
+    # matched against the whole raw line, and every assignment has an `=`.
+    _eng71.submit("fillet71")
+    _msg71.clear()
+    _eng71.submit("cancel=5")
+    check("  a field named cancel is still addressable, the panel still up",
+          (_eng71.state, len(_aborted71)), ("collecting", 1))
+    _eng71.cancel()
 
     print("\n6. filter overhead")
     check("no key was dropped", kf.stats["seen"],
